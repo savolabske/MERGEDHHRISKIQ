@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DollarSign, Users, Cloud, Search, Clock } from 'lucide-react';
 import { AidFlowScrollytelling } from '../features/insights/aid-flow';
 import { MigrationDataScrollytelling } from './MigrationDataScrollytelling';
@@ -13,7 +13,7 @@ interface ReportCard {
   available?: boolean;
 }
 
-type ActiveReport = 'aid-flow' | 'migration-data' | null;
+export type ActiveReport = 'aid-flow' | 'migration-data' | null;
 
 const PLACEHOLDER_REPORTS: ReportCard[] = [
   {
@@ -48,13 +48,27 @@ const PLACEHOLDER_REPORTS: ReportCard[] = [
 ];
 
 interface ReportsProps {
+  initialReport?: ActiveReport;
+  onInitialReportConsumed?: () => void;
   onReportOpen?: () => void;
   onReportClose?: () => void;
 }
 
-export function Reports({ onReportOpen, onReportClose }: ReportsProps) {
+export function Reports({
+  initialReport = null,
+  onInitialReportConsumed,
+  onReportOpen,
+  onReportClose,
+}: ReportsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeReport, setActiveReport] = useState<ActiveReport>(null);
+
+  useEffect(() => {
+    if (!initialReport) return;
+    setActiveReport(initialReport);
+    onReportOpen?.();
+    onInitialReportConsumed?.();
+  }, [initialReport, onReportOpen, onInitialReportConsumed]);
 
   const filteredReports = PLACEHOLDER_REPORTS.filter(
     (r) =>
@@ -102,11 +116,11 @@ export function Reports({ onReportOpen, onReportClose }: ReportsProps) {
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground-emphasis">
-                  Risk Reports
+                  Reports
                 </h2>
                 <Clock size={18} className="text-text-subtle" />
               </div>
-              <p className="text-sm text-muted-foreground">Thematic Risk Dashboard</p>
+              <p className="text-sm text-muted-foreground">Thematic dashboards</p>
             </div>
 
             <div className="flex items-center gap-3 mb-7">

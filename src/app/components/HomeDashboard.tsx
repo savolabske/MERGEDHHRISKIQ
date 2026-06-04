@@ -7,6 +7,8 @@ import { HubHumanitarianSnapshot } from './home-dashboard/HubHumanitarianSnapsho
 import { HUB_BRIEFING_UPDATES } from '../data/homeDashboardMock';
 import { buildHubBriefingUpdateChatPayload } from '../utils/dashboardChatContext';
 import { HubSearchRow } from './home-dashboard/HubSearchRow';
+import { HubReportsSection } from './home-dashboard/HubReportsSection';
+import type { HubReportHighlightId } from '../data/homeDashboardMock';
 
 interface HomeDashboardProps {
   onOpenChat: (payload: DashboardChatPayload) => void;
@@ -14,6 +16,7 @@ interface HomeDashboardProps {
   onNavigate: (view: AppView) => void;
   onSearch: (query: string) => void;
   onOpenDocument?: (documentId: string) => void;
+  onOpenReport?: (reportId: HubReportHighlightId) => void;
 }
 
 export function HomeDashboard({
@@ -22,6 +25,7 @@ export function HomeDashboard({
   onNavigate,
   onSearch,
   onOpenDocument,
+  onOpenReport,
 }: HomeDashboardProps) {
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
@@ -46,6 +50,13 @@ export function HomeDashboard({
               subtitle="Flagged from climate, funding, displacement, and accountability data in your workspace"
               updates={HUB_BRIEFING_UPDATES}
               buildUpdateChatPayload={buildHubBriefingUpdateChatPayload}
+              hideDescription
+            />
+
+            <HubReportsSection
+              onOpenReport={(id) =>
+                onOpenReport ? onOpenReport(id) : onNavigate('reports')
+              }
             />
           </div>
         </div>

@@ -30,7 +30,7 @@ export function ReportLoadingScreen({
     <IntelligenceLoadingScreen
       durationMs={INTELLIGENCE_LOAD_DURATION_MS}
       steps={config.steps}
-      eyebrow="Risk report"
+      eyebrow="Report"
       subtitle={config.subtitle}
       ariaLabel={`Loading ${reportTitle}`}
       centerIcon={centerIcon}

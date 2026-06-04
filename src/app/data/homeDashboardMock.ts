@@ -360,6 +360,51 @@ export const HUB_BRIEFING_UPDATES = [
     relativeTime: '14h ago',
     absoluteTime: '19:10 EAT',
   },
+  {
+    id: '5',
+    dotColor: 'var(--success)',
+    headline: 'Cholera signals up 40% in Mogadishu IDP sites — health cluster alert',
+    description:
+      'Surveillance in Kahda and Dayniile crossed response thresholds. Activate oral rehydration points, hygiene promotion, and WASH chlorination within 72 hours.',
+    relativeTime: '18h ago',
+    absoluteTime: '15:48 EAT',
+  },
+] as const;
+
+export type HubReportHighlightId =
+  | 'aid-flow'
+  | 'migration-displacement'
+  | 'climate-hazards';
+
+/** Home — key metrics teased from full report scrollytellings. */
+export const HUB_REPORT_HIGHLIGHTS = [
+  {
+    id: 'aid-flow' as HubReportHighlightId,
+    title: 'Aid Flow Intelligence',
+    metric: '$15.0B',
+    metricLabel: 'committed',
+    summary:
+      '1,334 projects since 2014 — $9.08B disbursed (61% of envelope). Food Security absorbs 42% of flows.',
+    available: true,
+  },
+  {
+    id: 'migration-displacement' as HubReportHighlightId,
+    title: 'Migration & Displacement Intelligence',
+    metric: '971k',
+    metricLabel: 'arrivals tracked',
+    summary:
+      'Since Oct 2023 across 12 regions — drought drives 68% of recent arrivals; Bay and Banadir receive the most.',
+    available: true,
+  },
+  {
+    id: 'climate-hazards' as HubReportHighlightId,
+    title: 'Climate Hazards Intelligence',
+    metric: '40%',
+    metricLabel: 'below normal rains',
+    summary:
+      'Bay and Bakool Gu rains lagging — drought, flood, and cholera risk elevated for operational planning.',
+    available: false,
+  },
 ] as const;
 
 /** Somalia ADM1 regions (OCHA/geoBoundaries) with coverage per humanitarian layer. */

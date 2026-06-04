@@ -250,6 +250,30 @@ The table below summarizes allegation types and sites flagged this fortnight. [S
         ],
       },
     },
+    '5': {
+      title: update.headline,
+      prompt:
+        'Summarise cholera and AWD surveillance trends in Mogadishu IDP sites and outline WASH and health actions for the next 72 hours.',
+      context: `System query — health cluster surveillance from IDP site reporting. ${update.description}`,
+      response: `**${update.headline}** (${update.relativeTime})
+
+${update.description}
+
+Suspected **AWD/cholera cases rose roughly 40%** week-on-week across Kahda and Dayniile, with overlapping WASH gaps at three high-density blocks. [Source 1]
+
+Scale oral rehydration points, door-to-door hygiene messaging, and emergency chlorination on communal water points. Align health and WASH cluster leads on a joint 72-hour surge plan. [Source 3]
+
+The table below lists sites above threshold and response status. [Source 3]`,
+      contentType: 'table',
+      data: {
+        headers: ['Site', 'Signal', 'Cases (7d)', 'Action'],
+        rows: [
+          ['Kahda Block 12', 'AWD/cholera', '47', 'ORP activation'],
+          ['Dayniile West', 'AWD/cholera', '31', 'Hygiene surge'],
+          ['Garasbaley fringe', 'WASH + health', '12', 'Chlorination today'],
+        ],
+      },
+    },
   };
 
   return (

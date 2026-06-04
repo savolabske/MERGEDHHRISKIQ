@@ -2,7 +2,8 @@ import { Sidebar } from "./components/Sidebar";
 import { AppTopBar } from "./components/AppTopBar";
 import { Auth } from "./components/Auth";
 import { Chat } from "./components/Chat";
-import { Reports } from "./components/Reports";
+import { Reports, type ActiveReport } from "./components/Reports";
+import type { HubReportHighlightId } from "./data/homeDashboardMock";
 import { MapView } from "./components/MapView";
 import { Insights } from "./components/Insights";
 import { Profile } from "./components/Profile";
@@ -576,6 +577,7 @@ export default function App() {
     }
   });
   const sidebarCollapsedBeforeReportRef = useRef<boolean | null>(null);
+  const [pendingHubReport, setPendingHubReport] = useState<ActiveReport>(null);
   const hideMobileMenuButton =
     currentView === 'aiSearch' && !!currentChatId && (cameFromHistory || cameFromPlatformChats || cameFromHome);
   const notificationCount = chatHistory.filter((c) => c.unread).length;
@@ -680,6 +682,18 @@ export default function App() {
       return documentReturnView === 'aiSearch' ? 'aiSearch' : documentReturnView;
     });
   }, [documentReturnView]);
+
+  const handleOpenHubReport = useCallback(
+    (reportId: HubReportHighlightId) => {
+      const active: ActiveReport =
+        reportId === 'migration-displacement' ? 'migration-data' : 'aid-flow';
+      setPendingHubReport(active);
+      sidebarCollapsedBeforeReportRef.current = isSidebarCollapsed;
+      setIsSidebarCollapsed(true);
+      setCurrentView('reports');
+    },
+    [isSidebarCollapsed]
+  );
 
   useEffect(() => {
     if (!isAuthenticated || !pendingLinkState) return;
@@ -1020,6 +1034,7 @@ export default function App() {
             onNavigate={handleNavigate}
             onSearch={handleHomeSearch}
             onOpenDocument={(id) => openDocumentDetail(id, 'home')}
+            onOpenReport={handleOpenHubReport}
           />
         ) : currentView === 'documentDetail' ? (
           <DocumentDetail
@@ -1336,6 +1351,8 @@ export default function App() {
           <Insights />
         ) : currentView === 'reports' ? (
           <Reports
+            initialReport={pendingHubReport}
+            onInitialReportConsumed={() => setPendingHubReport(null)}
             onReportOpen={() => {
               sidebarCollapsedBeforeReportRef.current = isSidebarCollapsed;
               setIsSidebarCollapsed(true);
