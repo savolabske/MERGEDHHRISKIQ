@@ -1,0 +1,2 @@
+QUERY 1: Summarize top operational risks
+'🧭 Top Operational Risks — February 2026\n\nThis month\'s operational risk environment shows a moderate increase in high-likelihood risks, particularly in South-Central Somalia.\n\nThree primary drivers dominate the risk landscape:\n\n• Escalation of armed conflict affecting field mobility\n• Flood-related access disruptions in riverine districts\n• Supply chain delays impacting humanitarian operations\n\nHigh-impact risks are concentrated in Lower Shabelle, Hiraan, and Bay regions.'

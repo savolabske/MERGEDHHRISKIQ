@@ -1,0 +1,158 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+@import 'leaflet/dist/leaflet.css';
+
+@keyframes tableSkeletonShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.table-skeleton-shimmer {
+  background-color: var(--border);
+  background-image: linear-gradient(90deg, var(--border) 0%, var(--secondary) 45%, var(--border) 100%);
+  background-size: 220% 100%;
+  animation: tableSkeletonShimmer 1.3s linear infinite;
+  will-change: background-position;
+}
+
+@keyframes waveHand {
+  0%,
+  82%,
+  100% {
+    transform: rotate(0deg);
+  }
+  4% {
+    transform: rotate(16deg);
+  }
+  8% {
+    transform: rotate(-10deg);
+  }
+  12% {
+    transform: rotate(16deg);
+  }
+  16% {
+    transform: rotate(-6deg);
+  }
+  20% {
+    transform: rotate(12deg);
+  }
+  24% {
+    transform: rotate(0deg);
+  }
+}
+
+.wave-hand {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: waveHand 5s ease-in-out infinite;
+}
+
+/* Intelligence loading screen (dashboard + reports) */
+@keyframes intelligenceLoadRing {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+@keyframes intelligenceLoadOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes intelligenceLoadDotPulse {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.15);
+    opacity: 0.85;
+  }
+}
+
+@keyframes intelligenceLoadGlow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+@keyframes intelligenceLoadEllipsis {
+  0%,
+  20% {
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+  60%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+.intelligence-load-ring {
+  animation: intelligenceLoadRing 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.intelligence-load-orbit {
+  animation: intelligenceLoadOrbit 4.8s linear infinite;
+}
+
+.intelligence-load-dot {
+  animation: intelligenceLoadDotPulse 1.6s ease-in-out infinite;
+}
+
+.intelligence-load-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--primary) 14%, transparent) 0%,
+    color-mix(in srgb, var(--primary) 4%, transparent) 45%,
+    transparent 70%
+  );
+  animation: intelligenceLoadGlow 3s ease-in-out infinite;
+}
+
+.intelligence-load-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--primary) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--primary) 4%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 75%);
+}
+
+.intelligence-load-ellipsis {
+  display: inline-block;
+  letter-spacing: 0.05em;
+  animation: intelligenceLoadEllipsis 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intelligence-load-ring,
+  .intelligence-load-orbit,
+  .intelligence-load-dot,
+  .intelligence-load-glow,
+  .intelligence-load-ellipsis {
+    animation: none;
+  }
+}
