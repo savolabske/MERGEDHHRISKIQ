@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { PageScrollShell } from '../PageScrollShell';
 import { TrendingUp, TrendingDown, Shield, AlertTriangle, DollarSign, Cloud, MapPin, Sparkles, Activity, BarChart3, X } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Area, AreaChart } from 'recharts';
 
@@ -425,11 +426,8 @@ export function ReportsDashboard() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-6">
-          <div className="max-w-[1400px] mx-auto space-y-8">
+    <>
+    <PageScrollShell innerClassName="space-y-8">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -930,9 +928,7 @@ export function ReportsDashboard() {
               </div>
             </div>
           </div>
-          </div>
-        </div>
-      </div>
+    </PageScrollShell>
 
       {/* Side Drawer */}
       {drawerOpen && (
@@ -1066,6 +1062,6 @@ export function ReportsDashboard() {
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }

@@ -105,7 +105,7 @@ export function DashboardBriefingSection({
   buildUpdateChatPayload?: (update: BriefingUpdate) => DashboardChatPayload;
   /** Single-line descriptions — full text opens in chat on click */
   compactDescription?: boolean;
-  /** Hide per-item description text (e.g. home Emerging insights) */
+  /** Hide per-item description text (e.g. home Merging insights) */
   hideDescription?: boolean;
   /** Stretch card to match a sibling column (e.g. home Reports) */
   fillHeight?: boolean;
@@ -113,7 +113,7 @@ export function DashboardBriefingSection({
   return (
     <div className={`space-y-4 ${fillHeight ? 'h-full flex flex-col' : ''}`}>
       <div>
-        <h2 className="text-base font-bold text-foreground">{title}</h2>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
       </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { PageScrollShell } from '../PageScrollShell';
 import { ArrowLeft } from 'lucide-react';
 import {
   BarChart,
@@ -211,10 +212,8 @@ export function AidDiversionReport({ onBack }: AidDiversionReportProps) {
   const trackingData = gatekeeperTrackingMonthly.filter((d) => d.month.includes('-25'));
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden" style={REPORT_FONT_STYLE}>
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-10">
-          <div className="max-w-[1400px] mx-auto space-y-14">
+    <div className="h-full" style={REPORT_FONT_STYLE}>
+      <PageScrollShell innerClassName="space-y-14">
             <button
               onClick={onBack}
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -615,9 +614,7 @@ export function AidDiversionReport({ onBack }: AidDiversionReportProps) {
                 <AdtRiskMap locations={adtMapLocations} />
               </AdtChartPanel>
             </AdtStorySection>
-          </div>
-        </div>
-      </div>
+      </PageScrollShell>
     </div>
   );
 }

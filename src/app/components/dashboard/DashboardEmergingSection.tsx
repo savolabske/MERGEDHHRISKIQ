@@ -131,7 +131,7 @@ export function EmergingRiskCard({
       <p className="text-xs font-semibold uppercase tracking-wider text-white/90 relative">
         {risk.rank} · {risk.level}
       </p>
-      <h3 className="text-base sm:text-base font-bold leading-snug mt-3 relative">{risk.title}</h3>
+      <h3 className="text-base sm:text-sm font-semibold leading-snug mt-3 relative">{risk.title}</h3>
       <p className="text-sm leading-relaxed text-white/90 mt-2 flex-1 relative">{risk.description}</p>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 pt-4 border-t border-white/20 text-xs text-white/85 relative">
         {risk.footer.map((item) => (
@@ -201,7 +201,7 @@ function RiskTrendCard({ onOpenChat }: { onOpenChat: (payload: DashboardChatPayl
     >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
         <div>
-          <h3 className="text-base font-bold text-foreground">{rangeMeta.title}</h3>
+          <h3 className="text-sm font-semibold text-foreground">{rangeMeta.title}</h3>
           <p className="text-sm text-muted-foreground mt-0.5">{rangeMeta.subtitle}</p>
         </div>
         <SegmentToggle

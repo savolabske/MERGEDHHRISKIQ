@@ -23,7 +23,7 @@ export function Insights() {
                     <span className="px-2 py-1 bg-destructive text-white text-xs font-semibold rounded uppercase tracking-wide">Critical</span>
                     <span className="text-xs text-text-subtle">2 hours ago</span>
                   </div>
-                  <h3 className="text-base font-semibold text-foreground mb-2">Food security deteriorating in Lower Shabelle</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-2">Food security deteriorating in Lower Shabelle</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     IPC analysis shows 23% increase in Phase 3+ households compared to last quarter. Flooding has disrupted agricultural cycles and supply routes.
                   </p>
@@ -46,7 +46,7 @@ export function Insights() {
                     <span className="px-2 py-1 bg-warning-strong text-white text-xs font-semibold rounded uppercase tracking-wide">High</span>
                     <span className="text-xs text-text-subtle">5 hours ago</span>
                   </div>
-                  <h3 className="text-base font-semibold text-foreground mb-2">Cholera cases rising across three regions</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-2">Cholera cases rising across three regions</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     764 new suspected cases reported this week in Banadir, Bay, and Lower Shabelle. WHO warns of potential outbreak without immediate intervention.
                   </p>
@@ -69,7 +69,7 @@ export function Insights() {
                     <span className="px-2 py-1 bg-info text-white text-xs font-semibold rounded uppercase tracking-wide">Medium</span>
                     <span className="text-xs text-text-subtle">1 day ago</span>
                   </div>
-                  <h3 className="text-base font-semibold text-foreground mb-2">IDP movement patterns shifting toward urban centers</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-2">IDP movement patterns shifting toward urban centers</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     15,000 newly displaced individuals moved to Mogadishu and Baidoa this month, increasing pressure on already strained urban services.
                   </p>
@@ -92,7 +92,7 @@ export function Insights() {
                     <span className="px-2 py-1 bg-info text-white text-xs font-semibold rounded uppercase tracking-wide">Medium</span>
                     <span className="text-xs text-text-subtle">2 days ago</span>
                   </div>
-                  <h3 className="text-base font-semibold text-foreground mb-2">Water access improving in drought-affected areas</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-2">Water access improving in drought-affected areas</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     Recent WASH interventions have restored water access for 42,000 people in Galmudug. However, sustainability concerns remain due to infrastructure limitations.
                   </p>
@@ -115,7 +115,7 @@ export function Insights() {
                     <span className="px-2 py-1 bg-warning text-white text-xs font-semibold rounded uppercase tracking-wide">Low</span>
                     <span className="text-xs text-text-subtle">3 days ago</span>
                   </div>
-                  <h3 className="text-base font-semibold text-foreground mb-2">Seasonal flooding forecasts predict above-average Gu rains</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-2">Seasonal flooding forecasts predict above-average Gu rains</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     Early warning systems indicate 65% probability of above-average rainfall during Gu season. Riverine areas should prepare for potential flooding events.
                   </p>

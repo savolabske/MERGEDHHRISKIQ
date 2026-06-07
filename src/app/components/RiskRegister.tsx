@@ -1,6 +1,7 @@
 import { Search, Plus, MapPin, Edit2, Trash2, ChevronLeft, ChevronRight, X, ChevronDown, Upload, MoreVertical, Eye, FileText, CheckCircle2, Sparkles, Shield, Lightbulb, Check, Circle, Clock } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
+import { PageFooter } from './PageFooter';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
 
@@ -1053,6 +1054,9 @@ export function RiskRegister() {
           </div>
           )}
         </div>
+        <div className="px-4 sm:px-8">
+          <PageFooter />
+        </div>
         </div>
       </div>
 
@@ -1509,7 +1513,7 @@ export function RiskRegister() {
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400]">
           <div className="bg-card rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
-            <h3 className="text-lg font-bold text-foreground mb-2">Delete Risk</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Delete Risk</h3>
             <p className="text-sm text-muted-foreground mb-6">
               Are you sure you want to delete this risk? This action cannot be undone.
             </p>
@@ -1537,7 +1541,7 @@ export function RiskRegister() {
           <div className="bg-card rounded-2xl max-w-lg w-full shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Modal Header */}
             <div className="px-6 py-5 border-b border-border flex items-center justify-between">
-              <h3 className="text-lg font-bold text-foreground">
+              <h3 className="text-lg font-semibold text-foreground">
                 {uploadStep === 'upload' ? 'Import Risks from Document' : uploadStep === 'processing' ? 'Processing Document' : 'Import Complete'}
               </h3>
               <button onClick={handleModalClose} className="p-2 hover:bg-muted rounded-lg transition-colors">
@@ -1655,7 +1659,7 @@ export function RiskRegister() {
                   <div className="w-16 h-16 bg-success-subtle rounded-full flex items-center justify-center mx-auto mb-4">
                     <CheckCircle2 size={32} className="text-success" />
                   </div>
-                  <h4 className="text-lg font-bold text-foreground mb-2">Import Successful!</h4>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Import Successful!</h4>
                   <p className="text-sm text-muted-foreground mb-6">
                     Extracted {extractedCount} risks from the document. Review and edit entries below.
                   </p>

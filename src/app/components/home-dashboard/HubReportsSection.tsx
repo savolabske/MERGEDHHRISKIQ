@@ -178,7 +178,7 @@ export function HubReportsSection({ onOpenReport }: HubReportsSectionProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-bold text-foreground">Reports</h2>
+        <h2 className="text-sm font-semibold text-foreground">Reports</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           Thematic dashboards — aid flows, displacement, and more
         </p>

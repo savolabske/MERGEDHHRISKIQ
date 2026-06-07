@@ -13,6 +13,7 @@ import {
   dashboardCardClass,
 } from '../utils/dashboardChatContext';
 import { DashboardEmergingSection } from './dashboard/DashboardEmergingSection';
+import { PageScrollShell } from './PageScrollShell';
 import { DashboardBriefingSection } from './dashboard/DashboardBriefingSection';
 import { DashboardHeroSection } from './dashboard/DashboardHeroSection';
 interface DashboardProps {
@@ -70,13 +71,13 @@ function MetricCard({
   onOpenChat: (payload: DashboardChatPayload) => void;
 }) {
   const tintClass =
-    metric.id === 'active'
-      ? 'from-primary-subtle'
-      : metric.id === 'critical'
-        ? 'from-destructive-subtle'
-        : metric.id === 'high'
+    metric.id === 'aid-diversion'
+      ? 'from-destructive-subtle'
+      : metric.id === 'security-incidents'
+        ? 'from-warning-subtle'
+        : metric.id === 'climate-issues'
           ? 'from-warning-subtle'
-          : 'from-success-subtle';
+          : 'from-primary-subtle';
 
   const open = () => onOpenChat(buildMetricChatPayload(metric));
 
@@ -107,10 +108,11 @@ function MetricCard({
 export function Dashboard({ embedded = false, onOpenChat, onOpenBriefing }: DashboardProps) {
   return (
     <div className="relative h-full flex flex-col bg-background overflow-hidden">
-      <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className={`px-4 sm:px-8 pb-6 ${embedded ? 'pt-4 lg:pt-4' : 'pt-6'}`}>
-          <div className="max-w-[1400px] mx-auto space-y-6">
+      <PageScrollShell
+        className="flex-1"
+        paddingClassName={`px-4 sm:px-8 ${embedded ? 'pt-4 lg:pt-4' : 'pt-6'}`}
+        innerClassName="space-y-6"
+      >
             <DashboardHeroSection onOpenChat={onOpenChat} onOpenBriefing={onOpenBriefing} />
 
             {/* Metrics + Categories */}
@@ -175,10 +177,7 @@ export function Dashboard({ embedded = false, onOpenChat, onOpenBriefing }: Dash
             <DashboardEmergingSection onOpenChat={onOpenChat} />
 
             <DashboardBriefingSection onOpenChat={onOpenChat} />
-          </div>
-        </div>
-      </div>
-      </div>
+      </PageScrollShell>
     </div>
   );
 }

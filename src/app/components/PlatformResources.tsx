@@ -5,6 +5,7 @@ import { ResourcesList } from './resources/ResourcesList';
 import { ResourceDetailView } from './resources/ResourceDetailView';
 import { ResourceEditView } from './resources/ResourceEditView';
 import { AddResourceForm } from './resources/AddResourceForm';
+import { PageScrollShell } from './PageScrollShell';
 
 type HubView = 'list' | 'detail' | 'edit' | 'add';
 
@@ -47,10 +48,7 @@ export function PlatformResources() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-6">
-          <div className="max-w-[1400px] mx-auto">
+    <PageScrollShell>
             {view === 'list' && (
               <ResourcesList
                 resources={resources}
@@ -95,9 +93,6 @@ export function PlatformResources() {
                 onSubmit={handleAdd}
               />
             )}
-          </div>
-        </div>
-      </div>
-    </div>
+    </PageScrollShell>
   );
 }

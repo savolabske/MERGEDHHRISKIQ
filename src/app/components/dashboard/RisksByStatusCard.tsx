@@ -115,7 +115,7 @@ export function RisksByStatusCard({
       className={`bg-card rounded-2xl border border-border p-5 sm:p-6 text-left ${dashboardCardClass.white}`}
     >
       <div className="mb-4">
-        <h3 className="text-base font-bold text-foreground">Risks by Status</h3>
+        <h3 className="text-sm font-semibold text-foreground">Risks by Status</h3>
         <p className="text-sm text-muted-foreground mt-0.5">Where they sit in the workflow</p>
       </div>
 

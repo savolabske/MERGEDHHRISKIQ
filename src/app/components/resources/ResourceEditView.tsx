@@ -72,6 +72,25 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
     }
   };
 
+  const resolveWebLinks = () => {
+    const pending = linkInput.trim();
+    if (!pending || webLinks.some((link) => link.url === pending)) {
+      return webLinks;
+    }
+    return [
+      ...webLinks,
+      {
+        id: Date.now().toString(),
+        url: pending,
+        addedAt: new Date().toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+      },
+    ];
+  };
+
   const handleSave = () => {
     if (!title.trim()) {
       toast.error('Resource title is required');
@@ -83,7 +102,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
       description: description.trim(),
       tags,
       files,
-      webLinks,
+      webLinks: resolveWebLinks(),
       userGroups,
       individualUsers,
       lastModified: new Date().toLocaleDateString('en-US', {

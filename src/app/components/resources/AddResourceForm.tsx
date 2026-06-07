@@ -1,9 +1,20 @@
-import { ArrowLeft, Plus, X, Upload, Link as LinkIcon, ChevronDown, Users } from 'lucide-react';
-import { useState } from 'react';
+import {
+  ArrowLeft,
+  Plus,
+  X,
+  Upload,
+  Link as LinkIcon,
+  ChevronDown,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import type { PlatformResource } from '../../data/resourcesMock';
-import { MOCK_USER_GROUPS } from '../../data/resourcesMock';
+import type { PlatformResource, ResourceUserGroup } from '../../data/resourcesMock';
+import { INITIAL_RESOURCE_USER_GROUPS } from '../../data/resourcesMock';
+import { Checkbox } from '../ui/checkbox';
 import { inputClass, textareaClass } from './resourceShared';
+import { UserGroupModal } from './UserGroupModal';
 
 interface AddResourceFormProps {
   onBack: () => void;
@@ -21,14 +32,48 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
   const [userGroups, setUserGroups] = useState<string[]>([]);
   const [individualUsers, setIndividualUsers] = useState<string[]>([]);
   const [emailInput, setEmailInput] = useState('');
+  const [groups, setGroups] = useState<ResourceUserGroup[]>(INITIAL_RESOURCE_USER_GROUPS);
   const [showGroupMenu, setShowGroupMenu] = useState(false);
   const [showTagMenu, setShowTagMenu] = useState(false);
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groupModalMode, setGroupModalMode] = useState<'create' | 'edit'>('create');
+  const [editingGroup, setEditingGroup] = useState<ResourceUserGroup | null>(null);
 
-  const suggestedTags = ['SomaliaGBHA', 'EconomicOutlook', 'FoodSystem', 'HCT', 'WASH', 'coordination'];
+  const tagInputRef = useRef<HTMLInputElement>(null);
+  const [suggestedTags, setSuggestedTags] = useState([
+    'SomaliaGBHA',
+    'EconomicOutlook',
+    'FoodSystem',
+    'HCT',
+    'WASH',
+    'coordination',
+  ]);
+
+  const tagQuery = tagInput.trim();
+  const filteredTagSuggestions = suggestedTags.filter((t) =>
+    t.toLowerCase().includes(tagQuery.toLowerCase()),
+  );
+  const canCreateTag =
+    tagQuery.length > 0 &&
+    !suggestedTags.some((t) => t.toLowerCase() === tagQuery.toLowerCase()) &&
+    !tags.some((t) => t.toLowerCase() === tagQuery.toLowerCase());
+
+  const toggleTag = (tag: string) => {
+    const t = tag.trim();
+    if (!t) return;
+    setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  };
 
   const addTag = (tag: string) => {
     const t = tag.trim();
-    if (t && !tags.includes(t)) setTags([...tags, t]);
+    if (!t || tags.includes(t)) {
+      setTagInput('');
+      return;
+    }
+    setTags([...tags, t]);
+    if (!suggestedTags.some((s) => s.toLowerCase() === t.toLowerCase())) {
+      setSuggestedTags((prev) => [...prev, t]);
+    }
     setTagInput('');
   };
 
@@ -40,12 +85,29 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
     }
   };
 
-  const addEmail = () => {
-    const email = emailInput.trim();
-    if (email && !individualUsers.includes(email)) {
-      setIndividualUsers([...individualUsers, email]);
-      setEmailInput('');
+  const resolveWebLinks = () => {
+    const links = [...webLinks];
+    const pending = linkInput.trim();
+    if (pending && !links.includes(pending)) {
+      links.push(pending);
     }
+    return links;
+  };
+
+  const addEmail = (raw?: string) => {
+    const email = (raw ?? emailInput).trim().replace(/,+$/, '');
+    if (email && !individualUsers.includes(email)) {
+      setIndividualUsers((prev) => [...prev, email]);
+    }
+    setEmailInput('');
+  };
+
+  const handleEmailInputChange = (value: string) => {
+    if (value.endsWith(',') || value.endsWith(' ')) {
+      addEmail(value.slice(0, -1));
+      return;
+    }
+    setEmailInput(value);
   };
 
   const handleSubmit = () => {
@@ -67,7 +129,7 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
       lastModified: now,
       createdAt: now,
       files: [],
-      webLinks: webLinks.map((url, i) => ({
+      webLinks: resolveWebLinks().map((url, i) => ({
         id: `link-${i}`,
         url,
         addedAt: now,
@@ -78,10 +140,67 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
     toast.success('Resource created successfully');
   };
 
-  const availableGroups = MOCK_USER_GROUPS.filter((g) => !userGroups.includes(g));
+  const toggleUserGroup = (groupName: string) => {
+    setUserGroups((prev) =>
+      prev.includes(groupName) ? prev.filter((g) => g !== groupName) : [...prev, groupName],
+    );
+  };
+
+  const openCreateGroupModal = () => {
+    setGroupModalMode('create');
+    setEditingGroup(null);
+    setGroupModalOpen(true);
+    setShowGroupMenu(false);
+  };
+
+  const openEditGroupModal = (group: ResourceUserGroup) => {
+    setGroupModalMode('edit');
+    setEditingGroup(group);
+    setGroupModalOpen(true);
+    setShowGroupMenu(false);
+  };
+
+  const handleSaveGroup = (group: ResourceUserGroup) => {
+    if (groupModalMode === 'create') {
+      if (groups.some((g) => g.name.toLowerCase() === group.name.toLowerCase())) {
+        toast.error('A group with this name already exists');
+        return;
+      }
+      setGroups((prev) => [...prev, group]);
+      setUserGroups((prev) => [...prev, group.name]);
+      toast.success('Group created successfully');
+    } else if (editingGroup) {
+      const nameTaken = groups.some(
+        (g) => g.id !== group.id && g.name.toLowerCase() === group.name.toLowerCase(),
+      );
+      if (nameTaken) {
+        toast.error('A group with this name already exists');
+        return;
+      }
+      setGroups((prev) => prev.map((g) => (g.id === group.id ? group : g)));
+      if (editingGroup.name !== group.name) {
+        setUserGroups((prev) =>
+          prev.map((name) => (name === editingGroup.name ? group.name : name)),
+        );
+      }
+      toast.success('Group updated successfully');
+    }
+    setGroupModalOpen(false);
+    setEditingGroup(null);
+  };
+
+  const handleDeleteGroup = (group: ResourceUserGroup) => {
+    const confirmed = window.confirm(
+      `Delete "${group.name}"? This group will be removed from your selection.`,
+    );
+    if (!confirmed) return;
+    setGroups((prev) => prev.filter((g) => g.id !== group.id));
+    setUserGroups((prev) => prev.filter((name) => name !== group.name));
+    toast.success('Group deleted');
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       <button
         type="button"
         onClick={onBack}
@@ -98,7 +217,7 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
         </p>
       </div>
 
-      <div className="bg-card rounded-xl border border-border p-6 sm:p-8 space-y-8 max-w-3xl">
+      <div className="bg-card rounded-xl border border-border p-6 sm:p-8 space-y-8">
         <section>
           <h3 className="text-sm font-semibold text-foreground mb-4">Resource Details</h3>
           <div className="space-y-4">
@@ -141,28 +260,34 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
         </section>
 
         <section>
-          <h3 className="text-sm font-semibold text-foreground mb-4">Web Links</h3>
-          <div className="relative">
-            <LinkIcon
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
-            />
-            <input
-              type="url"
-              value={linkInput}
-              onChange={(e) => setLinkInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLink())}
-              placeholder="https://example.com/document"
-              className={`${inputClass} pl-10`}
-            />
+          <h3 className="text-sm font-semibold text-foreground mb-1">Web Links</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Use + or Enter to add multiple links. A link left in the field is saved when you submit.
+          </p>
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <LinkIcon
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
+              />
+              <input
+                type="url"
+                value={linkInput}
+                onChange={(e) => setLinkInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLink())}
+                placeholder="https://example.com/document"
+                className={`${inputClass} pl-10`}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={addLink}
+              aria-label="Add link"
+              className="w-11 h-11 flex items-center justify-center bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors shrink-0"
+            >
+              <Plus size={18} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={addLink}
-            className="mt-2 w-9 h-9 flex items-center justify-center bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors"
-          >
-            <Plus size={18} />
-          </button>
           {webLinks.length > 0 && (
             <ul className="mt-3 space-y-1">
               {webLinks.map((link) => (
@@ -182,7 +307,7 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
           <div className="relative">
             <div
               className="min-h-[44px] flex flex-wrap items-center gap-2 px-3 py-2 border border-border rounded-lg bg-card cursor-text"
-              onClick={() => setShowTagMenu(true)}
+              onClick={() => tagInputRef.current?.focus()}
             >
               {tags.map((tag) => (
                 <span
@@ -196,9 +321,13 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
                 </span>
               ))}
               <input
+                ref={tagInputRef}
                 type="text"
                 value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
+                onChange={(e) => {
+                  setTagInput(e.target.value);
+                  setShowTagMenu(true);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ',') {
                     e.preventDefault();
@@ -206,12 +335,23 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
                   }
                 }}
                 onFocus={() => setShowTagMenu(true)}
-                placeholder={tags.length === 0 ? 'Select or add tags...' : ''}
+                placeholder={tags.length === 0 ? 'Type to search or add tags...' : ''}
                 className="flex-1 min-w-[120px] border-0 p-0 text-sm focus:outline-none focus:ring-0 bg-transparent"
               />
-              <ChevronDown size={16} className="text-text-subtle ml-auto shrink-0" />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowTagMenu((v) => !v);
+                  tagInputRef.current?.focus();
+                }}
+                className="ml-auto shrink-0 text-text-subtle hover:text-foreground transition-colors"
+                aria-label="Toggle tag list"
+              >
+                <ChevronDown size={16} />
+              </button>
             </div>
-            {showTagMenu && (
+            {showTagMenu && (filteredTagSuggestions.length > 0 || canCreateTag) && (
               <>
                 <button
                   type="button"
@@ -220,21 +360,41 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
                   onClick={() => setShowTagMenu(false)}
                 />
                 <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 max-h-40 overflow-y-auto">
-                  {suggestedTags
-                    .filter((t) => !tags.includes(t))
-                    .map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => {
-                          addTag(tag);
-                          setShowTagMenu(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-muted"
-                      >
-                        {tag}
-                      </button>
-                    ))}
+                  {canCreateTag && (
+                    <button
+                      type="button"
+                      onClick={() => addTag(tagQuery)}
+                      className="w-full px-4 py-3 text-left hover:bg-muted flex items-start gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center shrink-0">
+                        <Plus size={16} className="text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-foreground flex items-center gap-2 flex-wrap">
+                          Create tag
+                          <span className="px-2 py-0.5 rounded-md bg-primary-subtle text-primary text-xs font-medium">
+                            {tagQuery}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Press Enter to create</p>
+                      </div>
+                    </button>
+                  )}
+                  {filteredTagSuggestions.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2.5"
+                    >
+                      <Checkbox
+                        checked={tags.includes(tag)}
+                        className="pointer-events-none"
+                        aria-hidden
+                      />
+                      <span>{tag}</span>
+                    </button>
+                  ))}
                 </div>
               </>
             )}
@@ -259,26 +419,80 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
                   onClick={() => setShowGroupMenu((v) => !v)}
                   className={`${inputClass} text-left flex items-center justify-between`}
                 >
-                  <span className="text-text-subtle">Select user groups...</span>
-                  <ChevronDown size={16} />
+                  <span className={userGroups.length > 0 ? 'text-foreground' : 'text-text-subtle'}>
+                    {userGroups.length > 0
+                      ? `${userGroups.length} group${userGroups.length === 1 ? '' : 's'} selected`
+                      : 'Select user groups...'}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform ${showGroupMenu ? 'rotate-180' : ''}`}
+                  />
                 </button>
                 {showGroupMenu && (
-                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1">
-                    {availableGroups.map((group) => (
-                      <button
-                        key={group}
-                        type="button"
-                        onClick={() => {
-                          setUserGroups([...userGroups, group]);
-                          setShowGroupMenu(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
-                      >
-                        <Users size={14} className="text-muted-foreground" />
-                        {group}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <button
+                      type="button"
+                      className="fixed inset-0 z-10"
+                      aria-label="Close group menu"
+                      onClick={() => setShowGroupMenu(false)}
+                    />
+                    <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
+                      {groups.map((group) => (
+                        <div
+                          key={group.id}
+                          className="group flex items-center gap-1 px-4 py-2.5 hover:bg-muted"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleUserGroup(group.name)}
+                            className="flex flex-1 items-center gap-2.5 text-left min-w-0"
+                          >
+                            <Checkbox
+                              checked={userGroups.includes(group.name)}
+                              className="pointer-events-none"
+                              aria-hidden
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground">{group.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {group.members.length} member
+                                {group.members.length === 1 ? '' : 's'}
+                              </p>
+                            </div>
+                          </button>
+                          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 shrink-0 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => openEditGroupModal(group)}
+                              title="Edit group"
+                              className="w-7 h-7 flex items-center justify-center rounded-md text-primary hover:bg-primary-subtle transition-colors"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteGroup(group)}
+                              title="Delete group"
+                              className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive-text transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="border-t border-border mt-1 pt-1">
+                        <button
+                          type="button"
+                          onClick={openCreateGroupModal}
+                          className="w-full px-4 py-2.5 text-left text-sm text-primary hover:bg-muted flex items-center gap-2 font-medium"
+                        >
+                          <Plus size={14} />
+                          Create New Group
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
               {userGroups.length > 0 && (
@@ -303,22 +517,56 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
               <input
                 type="text"
                 value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
+                onChange={(e) => handleEmailInputChange(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
                     e.preventDefault();
                     addEmail();
                   }
                 }}
+                onBlur={() => {
+                  if (emailInput.trim()) addEmail();
+                }}
                 placeholder="Add users by email (type comma or space to add)..."
                 className={inputClass}
               />
+              {individualUsers.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {individualUsers.map((email) => (
+                    <span
+                      key={email}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-subtle text-primary text-xs font-medium"
+                    >
+                      {email}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setIndividualUsers(individualUsers.filter((e) => e !== email))
+                        }
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </section>
       </div>
 
-      <div className="flex items-center justify-end gap-3 max-w-3xl">
+      <UserGroupModal
+        open={groupModalOpen}
+        mode={groupModalMode}
+        initialGroup={editingGroup}
+        onClose={() => {
+          setGroupModalOpen(false);
+          setEditingGroup(null);
+        }}
+        onSave={handleSaveGroup}
+      />
+
+      <div className="flex items-center justify-end gap-3">
         <button
           type="button"
           onClick={onCancel}

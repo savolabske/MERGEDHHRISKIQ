@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProgressiveList } from '../hooks/useProgressiveList';
+import { PageFooter } from './PageFooter';
 import { TableSkeleton } from './ui/table-skeleton';
 
 type DocumentFileProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed';
@@ -145,7 +146,7 @@ function DocumentAvailabilityFields({
 }) {
   const heading =
     variant === 'sidebar' ? (
-      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
         Availability{' '}
         <span className="font-normal normal-case text-border-muted">(optional)</span>
       </h3>
@@ -2094,7 +2095,7 @@ export function Documents() {
     return (
       <div className="h-full flex flex-col bg-background overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-8 pt-6 pb-6">
+          <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[1400px] mx-auto space-y-6">
               <button
                 onClick={() => {
@@ -2122,7 +2123,7 @@ export function Documents() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-card rounded-xl border border-border p-6">
-                    <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                       Description
                     </h3>
                     <textarea
@@ -2136,7 +2137,7 @@ export function Documents() {
 
                   <div className="bg-card rounded-xl border border-border p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Files
                       </h3>
                       <span className="text-sm text-muted-foreground">
@@ -2168,7 +2169,7 @@ export function Documents() {
                         ) : (
                           <div className="min-w-[min(100%,720px)]">
                             <div
-                              className={`${DETAIL_FILES_TABLE_GRID} py-2 border-b border-border text-xs font-bold text-text-subtle uppercase tracking-wider bg-surface-subtle`}
+                              className={`${DETAIL_FILES_TABLE_GRID} py-2 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-surface-subtle`}
                               role="row"
                             >
                               <div className="flex items-center justify-center">
@@ -2199,7 +2200,7 @@ export function Documents() {
                                     <div className="h-4 w-4 shrink-0" />
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="text-base font-medium text-foreground truncate">{row.file.name}</p>
+                                    <p className="text-sm font-medium text-foreground truncate">{row.file.name}</p>
                                     <p className="text-sm text-muted-foreground mt-0.5">
                                       {row.kind === 'existing'
                                         ? `${row.file.size} · Uploaded ${row.file.uploadedAt}`
@@ -2347,7 +2348,7 @@ export function Documents() {
                 <div className="space-y-6">
                   <div className="bg-card rounded-xl border border-border p-6 space-y-6">
                     <div>
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                         User Group
                       </h3>
                       <div className="relative" ref={editUserGroupDropdownRef}>
@@ -2392,7 +2393,7 @@ export function Documents() {
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                         Tags
                       </h3>
                       <div className="relative" ref={editTagsDropdownRef}>
@@ -2462,7 +2463,7 @@ export function Documents() {
                                     +
                                   </div>
                                   <div>
-                                    <p className="text-base font-medium text-foreground">
+                                    <p className="text-sm font-medium text-foreground">
                                       Create tag <span className="text-primary">{normalizeTagValue(editTagSearchQuery)}</span>
                                     </p>
                                     <p className="text-sm text-muted-foreground">Press Enter to create</p>
@@ -2508,20 +2509,20 @@ export function Documents() {
                     />
 
                     <div>
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                         Created
                       </h3>
-                      <div className="flex items-center gap-2 text-base text-foreground">
+                      <div className="flex items-center gap-2 text-sm text-foreground">
                         <Calendar size={18} className="text-muted-foreground" />
                         {selectedGroup.dateAdded}
                       </div>
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                         Last Modified
                       </h3>
-                      <div className="flex items-center gap-2 text-base text-foreground">
+                      <div className="flex items-center gap-2 text-sm text-foreground">
                         <Clock size={18} className="text-muted-foreground" />
                         {selectedGroup.lastModified}
                       </div>
@@ -2587,6 +2588,7 @@ export function Documents() {
                 </div>
               </div>
             </div>
+            <PageFooter />
           </div>
         </div>
       </div>
@@ -2606,7 +2608,7 @@ export function Documents() {
     return (
       <div className="h-full flex flex-col bg-background overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-8 pt-6 pb-6">
+          <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[1400px] mx-auto space-y-6">
               <button
                 onClick={() => {
@@ -2632,10 +2634,10 @@ export function Documents() {
                 <div className="lg:col-span-2 space-y-6">
                   {/* Description */}
                   <div className="bg-card rounded-xl border border-border p-6">
-                    <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                       Description
                     </h3>
-                    <p className="text-base text-foreground leading-relaxed">
+                    <p className="text-sm text-foreground leading-relaxed">
                       {selectedGroup.description}
                     </p>
                   </div>
@@ -2643,7 +2645,7 @@ export function Documents() {
                   {/* Documents */}
                   <div className="bg-card rounded-xl border border-border p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Files
                       </h3>
                       <span className="text-sm text-muted-foreground">
@@ -2712,7 +2714,7 @@ export function Documents() {
                         ) : (
                           <div className="min-w-[min(100%,720px)]">
                             <div
-                              className={`${DETAIL_FILES_TABLE_GRID} py-2 border-b border-border text-xs font-bold text-text-subtle uppercase tracking-wider bg-surface-subtle`}
+                              className={`${DETAIL_FILES_TABLE_GRID} py-2 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-surface-subtle`}
                               role="row"
                             >
                               <div className="flex items-center justify-center">
@@ -2745,7 +2747,7 @@ export function Documents() {
                                     />
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="text-base font-medium text-foreground truncate">
+                                    <p className="text-sm font-medium text-foreground truncate">
                                       {file.name}
                                     </p>
                                     <p className="text-sm text-muted-foreground mt-0.5">
@@ -2863,7 +2865,7 @@ export function Documents() {
                   <div className="bg-card rounded-xl border border-border p-6 space-y-6">
                     {/* Availability */}
                     <div>
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                         Available in
                       </h3>
                       <DocumentAvailabilityBadges doc={selectedGroup} size="md" />
@@ -2876,7 +2878,7 @@ export function Documents() {
 
                     {/* User Group */}
                     <div>
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                         User Group
                       </h3>
                       <div className="flex flex-wrap gap-2">
@@ -2894,7 +2896,7 @@ export function Documents() {
                     {/* Tags */}
                     {selectedGroup.tags && selectedGroup.tags.length > 0 && (
                       <div>
-                        <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                           Tags
                         </h3>
                         <div className="flex flex-wrap gap-2">
@@ -2912,10 +2914,10 @@ export function Documents() {
 
                     {/* Created */}
                     <div>
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                         Created
                       </h3>
-                      <div className="flex items-center gap-2 text-base text-foreground">
+                      <div className="flex items-center gap-2 text-sm text-foreground">
                         <Calendar size={18} className="text-muted-foreground" />
                         {selectedGroup.dateAdded}
                       </div>
@@ -2923,10 +2925,10 @@ export function Documents() {
 
                     {/* Last Modified */}
                     <div>
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                         Last Modified
                       </h3>
-                      <div className="flex items-center gap-2 text-base text-foreground">
+                      <div className="flex items-center gap-2 text-sm text-foreground">
                         <Clock size={18} className="text-muted-foreground" />
                         {selectedGroup.lastModified}
                       </div>
@@ -3083,6 +3085,7 @@ export function Documents() {
               </div>,
               document.body,
             )}
+            <PageFooter />
         </div>
       </div>
     );
@@ -3092,7 +3095,7 @@ export function Documents() {
     return (
       <div className="h-full flex flex-col bg-background overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-8 pt-6 pb-6">
+          <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[900px] mx-auto space-y-6">
               <button
                 onClick={() => setShowUploadPage(false)}
@@ -3249,7 +3252,7 @@ export function Documents() {
                               <button onClick={createAndSelectTag} className="w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-center gap-3 border-b border-sidebar-border">
                                 <div className="w-8 h-8 rounded-lg bg-info-subtle text-info flex items-center justify-center text-xl leading-none">+</div>
                                 <div>
-                                  <p className="text-base font-medium text-foreground">Create tag <span className="text-primary">{normalizeTagValue(tagSearchQuery)}</span></p>
+                                  <p className="text-sm font-medium text-foreground">Create tag <span className="text-primary">{normalizeTagValue(tagSearchQuery)}</span></p>
                                   <p className="text-sm text-muted-foreground">Press Enter to create</p>
                                 </div>
                               </button>
@@ -3339,6 +3342,7 @@ export function Documents() {
                 </div>
               </div>
             </div>
+            <PageFooter />
           </div>
         </div>
       </div>
@@ -3349,7 +3353,7 @@ export function Documents() {
     <div className="h-full flex flex-col bg-background overflow-hidden">
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-6">
+        <div className="px-4 sm:px-8 pt-6">
           <div className="max-w-[1400px] mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
@@ -3613,18 +3617,18 @@ export function Documents() {
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Resource</span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resource</span>
                 </div>
-                <div className="col-span-2 col-start-6 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 col-start-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Available in
                 </div>
-                <div className="col-span-2 col-start-8 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 col-start-8 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   User Group
                 </div>
-                <div className="col-span-2 col-start-10 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 col-start-10 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Status
                 </div>
-                <div className="col-span-1 col-start-12 text-xs font-bold text-muted-foreground uppercase tracking-wider text-right">
+                <div className="col-span-1 col-start-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                   Actions
                 </div>
               </div>
@@ -3654,7 +3658,7 @@ export function Documents() {
                           <Folder size={20} className="text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Resource</div>
+                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Resource</div>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -3684,7 +3688,7 @@ export function Documents() {
                     {/* Availability */}
                     <div className="lg:col-span-2 lg:col-start-6 flex items-center" onClick={(e) => e.stopPropagation()}>
                       <div className="w-full">
-                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">
                           Available in
                         </div>
                         <DocumentAvailabilityBadges doc={doc} />
@@ -3694,7 +3698,7 @@ export function Documents() {
                     {/* User Group */}
                     <div className="lg:col-span-2 lg:col-start-8 flex items-center">
                       <div className="w-full">
-                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">User Group</div>
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">User Group</div>
                         <span className="text-sm text-foreground">
                           {doc.userGroup}
                         </span>
@@ -3704,7 +3708,7 @@ export function Documents() {
                     {/* Status */}
                     <div className="lg:col-span-2 lg:col-start-10 flex items-center">
                       <div className="w-full">
-                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Status</div>
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Status</div>
                         <div className="flex items-center gap-2">
                           {doc.uploadStatus === 'uploading' ? (
                             <>
@@ -3811,7 +3815,7 @@ export function Documents() {
 
               {currentPageDocuments.length === 0 && (
                 <div className="py-12 text-center">
-                  <p className="text-base text-muted-foreground">No resources found</p>
+                  <p className="text-sm text-muted-foreground">No resources found</p>
                 </div>
               )}
 
@@ -3911,6 +3915,7 @@ export function Documents() {
                 </div>
               )}
             </div>
+            <PageFooter />
           </div>
         </div>
       </div>

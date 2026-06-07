@@ -8,7 +8,7 @@ export const HUB_BRIEFING = {
 
 export const HUB_MAIN_INSIGHT = {
   badge: 'Main insight',
-  subtitle: 'A quick read on Somalia — aid, climate, and people on the move.',
+  subtitle: 'A quick read on Somalia - A decision support tool built for humanitarian and development operations',
   meta: `Updated ${HUB_BRIEFING.generatedAt} · ${HUB_BRIEFING.sources} sources · aid, climate & displacement`,
   briefingCta: 'Read full briefing',
   body: {
@@ -269,6 +269,150 @@ export const HUB_TRENDING_DOCUMENTS: HubTrendingDocument[] = [
 ];
 
 export const HUB_TRENDING_PREVIEW_COUNT = 5;
+
+export type HubKeyInsightCategory = 'climate' | 'aid' | 'displacement';
+
+export type HubKeyInsight = {
+  id: string;
+  category: HubKeyInsightCategory;
+  dotColor: string;
+  headline: string;
+  description: string;
+};
+
+export const HUB_KEY_INSIGHT_CATEGORIES: {
+  id: HubKeyInsightCategory;
+  label: string;
+}[] = [
+  { id: 'climate', label: 'Climate' },
+  { id: 'aid', label: 'Aid flow' },
+  { id: 'displacement', label: 'Displacement' },
+];
+
+export const HUB_KEY_INSIGHTS: HubKeyInsight[] = [
+  {
+    id: 'climate-1',
+    category: 'climate',
+    dotColor: 'var(--destructive-text)',
+    headline: 'Bay and Bakool rains 40% below normal — drought risk raised',
+    description:
+      'Rain and early-warning data crossed alert levels in six districts. Three WASH and nutrition programmes may run short within 48 hours.',
+  },
+  {
+    id: 'climate-2',
+    category: 'climate',
+    dotColor: 'var(--warning)',
+    headline: 'Gu rains starting 2–3 weeks late across central Somalia',
+    description:
+      'Vegetation indices show severe stress in pastoral corridors. Without scaled water trucking, livestock losses could accelerate through June.',
+  },
+  {
+    id: 'climate-3',
+    category: 'climate',
+    dotColor: 'var(--warning-strong)',
+    headline: 'Shabelle river levels rising — flood watch for Middle Shabelle',
+    description:
+      'River gauges crossed 108% of seasonal norms. Pre-position shelter and WASH kits in Hiraan and Lower Shabelle before peak flow.',
+  },
+  {
+    id: 'climate-4',
+    category: 'climate',
+    dotColor: 'var(--destructive-text)',
+    headline: 'Northern coast dry spell extends into third month',
+    description:
+      'Awdal and Woqooyi Galbeed show critical vegetation loss. Water trucking demand up 28% vs prior month.',
+  },
+  {
+    id: 'climate-5',
+    category: 'climate',
+    dotColor: 'var(--chart-3)',
+    headline: 'Cholera risk elevated where rains lag and WASH gaps persist',
+    description:
+      'Health surveillance links dry-season movement with AWD signals in Mogadishu peri-urban sites. Chlorination and ORP activation advised.',
+  },
+  {
+    id: 'aid-1',
+    category: 'aid',
+    dotColor: 'var(--warning)',
+    headline: 'WASH and nutrition funding faces a 22% shortfall in Q3',
+    description:
+      'Donor pledges and internal reviews show six programmes at risk in Bay and Middle Shabelle.',
+  },
+  {
+    id: 'aid-2',
+    category: 'aid',
+    dotColor: 'var(--primary)',
+    headline: 'Galguduud and Lower Shabelle show largest aid delivery gaps',
+    description:
+      'Late funding meets hard-to-reach corridors. Delivery rates 18–34% below corridor averages.',
+  },
+  {
+    id: 'aid-3',
+    category: 'aid',
+    dotColor: 'var(--destructive-text)',
+    headline: '$4.2M WASH pipeline at risk if Q2 payments slip three weeks',
+    description:
+      'Six nutrition and WASH programmes in Bay and Bakool would face ration cuts before mid-June.',
+  },
+  {
+    id: 'aid-4',
+    category: 'aid',
+    dotColor: 'var(--chart-3)',
+    headline: 'Aid diversion reports rising in Banadir — pattern flagged',
+    description:
+      'Partner and community feedback matched three diversion reports in 14 days at MPCA sites.',
+  },
+  {
+    id: 'aid-5',
+    category: 'aid',
+    dotColor: 'var(--success)',
+    headline: 'Mogadishu corridor programmes reaching 92% of targets',
+    description:
+      'Strong disbursement along the main logistics spine; reallocate surge capacity to Bay and Galguduud gaps.',
+  },
+  {
+    id: 'displacement-1',
+    category: 'displacement',
+    dotColor: 'var(--primary)',
+    headline: 'Mogadishu outskirts: three camps now over capacity',
+    description:
+      'Protection and camp partners logged a sharp rise in arrivals in 18 hours across Kahda, Dayniile, and Garasbaley.',
+  },
+  {
+    id: 'displacement-2',
+    category: 'displacement',
+    dotColor: 'var(--warning)',
+    headline: 'Baidoa arrivals up 12% month-on-month — shelter stretched',
+    description:
+      'DTM tracking shows steady inflows from Bay. WASH and shelter sites need surge capacity before rainy season.',
+  },
+  {
+    id: 'displacement-3',
+    category: 'displacement',
+    dotColor: 'var(--destructive-text)',
+    headline: 'Lower Shabelle insecurity driving new IDP movement to Banadir',
+    description:
+      'Protection incidents correlate with arrival spikes along the Afgooye corridor in the last fortnight.',
+  },
+  {
+    id: 'displacement-4',
+    category: 'displacement',
+    dotColor: 'var(--chart-3)',
+    headline: '48.2k new arrivals in 30 days — above seasonal average',
+    description:
+      'Displacement tracking points to drought and conflict as primary drivers across 12 regions.',
+  },
+  {
+    id: 'displacement-5',
+    category: 'displacement',
+    dotColor: 'var(--success)',
+    headline: 'Jubaland coastal sites stabilizing after February surge',
+    description:
+      'Shelter occupancy fell below 85% in Kismayo corridor; capacity available for planned relocations.',
+  },
+];
+
+export const HUB_KEY_INSIGHT_PREVIEW_COUNT = 2;
 
 export type HubMapLayer = 'aid' | 'climate' | 'displacement';
 

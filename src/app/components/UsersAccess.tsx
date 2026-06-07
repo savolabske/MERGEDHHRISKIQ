@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Users, UserCog, Shield, Plus, Search, Filter, Download, Check, X, Calendar, MoreVertical, ChevronLeft, ChevronRight, Edit, Key, Activity, Ban, HelpCircle, UserPlus, Trash2, ChevronDown } from 'lucide-react';
 import { RolesPermissions } from './RolesPermissions';
 import { toast } from 'sonner';
+import { PageScrollShell } from './PageScrollShell';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
 
@@ -536,11 +537,8 @@ export function UsersAccess() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-6">
-          <div className="max-w-[1400px] mx-auto space-y-6">
+    <>
+    <PageScrollShell innerClassName="space-y-6">
             {/* Page Header */}
             <div>
               <h1 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Users & Access</h1>
@@ -850,7 +848,7 @@ export function UsersAccess() {
 
                   {filteredUsers.length === 0 && (
                     <div className="py-12 text-center">
-                      <p className="text-base text-muted-foreground">No users found</p>
+                      <p className="text-sm text-muted-foreground">No users found</p>
                     </div>
                   )}
 
@@ -1075,7 +1073,7 @@ export function UsersAccess() {
 
                   {filteredGroups.length === 0 && (
                     <div className="py-12 text-center">
-                      <p className="text-base text-muted-foreground">No groups found</p>
+                      <p className="text-sm text-muted-foreground">No groups found</p>
                     </div>
                   )}
                 </div>
@@ -1086,9 +1084,7 @@ export function UsersAccess() {
             {activeTab === 'rolesPermissions' && (
               <RolesPermissions />
             )}
-          </div>
-        </div>
-      </div>
+    </PageScrollShell>
 
       {/* Add Group Modal */}
       {showAddGroupModal && (
@@ -1323,19 +1319,19 @@ export function UsersAccess() {
                 {/* Edit Role & Group */}
                 <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">
                   <Edit size={18} className="text-muted-foreground" />
-                  <span className="text-base text-foreground">Edit Role & Group</span>
+                  <span className="text-sm text-foreground">Edit Role & Group</span>
                 </button>
 
                 {/* Send Password Reset Link */}
                 <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">
                   <Key size={18} className="text-muted-foreground" />
-                  <span className="text-base text-foreground">Send Password Reset Link</span>
+                  <span className="text-sm text-foreground">Send Password Reset Link</span>
                 </button>
 
                 {/* View Activity */}
                 <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">
                   <Activity size={18} className="text-muted-foreground" />
-                  <span className="text-base text-foreground">View Activity</span>
+                  <span className="text-sm text-foreground">View Activity</span>
                 </button>
 
                 {/* Block User */}
@@ -1368,7 +1364,7 @@ export function UsersAccess() {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4">
                   <div 
-                    className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-xl font-bold shrink-0"
+                    className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-xl font-semibold shrink-0"
                     style={{ backgroundColor: selectedGroup.color }}
                   >
                     {selectedGroup.initials}
@@ -1491,7 +1487,7 @@ export function UsersAccess() {
       {showBulkBlockConfirm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400] p-4">
           <div className="bg-card rounded-2xl max-w-[500px] w-full p-6">
-            <h3 className="text-lg font-bold text-foreground mb-3">Confirm Block Users</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-3">Confirm Block Users</h3>
             <p className="text-base text-muted-foreground mb-6">
               Are you sure you want to block {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''}? They will lose access to the platform.
             </p>
@@ -1517,7 +1513,7 @@ export function UsersAccess() {
       {showBulkDeleteConfirm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400] p-4">
           <div className="bg-card rounded-2xl max-w-[500px] w-full p-6">
-            <h3 className="text-lg font-bold text-foreground mb-3">Confirm Delete Users</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-3">Confirm Delete Users</h3>
             <p className="text-base text-muted-foreground mb-6">
               Are you sure you want to permanently delete {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''}? This action cannot be undone.
             </p>
@@ -1641,6 +1637,6 @@ export function UsersAccess() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { Package, AlertTriangle, MapPin, TrendingUp, Settings, Play, Search, ChevronDown, ArrowUpDown, ChevronRight, ChevronLeft, X, Plus, Sparkles, Check, CircleDot, Trash2, Shield, Lightbulb, CheckCircle2, Circle, Clock } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { PageFooter } from './PageFooter';
 import { toast } from 'sonner';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
@@ -956,7 +957,7 @@ export function CollectiveRisk() {
                 </div>
 
                 {/* Title */}
-                <h3 className="text-base font-semibold text-foreground mb-2 leading-tight">
+                <h3 className="text-sm font-semibold text-foreground mb-2 leading-tight">
                   {risk.title}
                 </h3>
 
@@ -1086,7 +1087,7 @@ export function CollectiveRisk() {
             {/* Header */}
             <div className="flex-shrink-0 bg-card border-b border-border px-6 py-4">
               <div className="flex items-start justify-between">
-                <h2 className="text-base font-semibold text-foreground">
+                <h2 className="text-sm font-semibold text-foreground">
                   Risk Details
                 </h2>
                 <button 
@@ -1565,6 +1566,9 @@ export function CollectiveRisk() {
           </>
           );
         })()}
+        <div className="px-4 sm:px-8">
+          <PageFooter />
+        </div>
         </div>
       </div>
     </div>

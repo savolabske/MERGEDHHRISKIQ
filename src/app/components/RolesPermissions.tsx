@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Plus, MoreVertical, ChevronLeft, Check, Shield, Users, Trash2, X, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageFooter } from './PageFooter';
 
 interface Role {
   id: string;
@@ -311,7 +312,7 @@ export function RolesPermissions() {
     return (
       <div className="h-full flex flex-col bg-background overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-8 pt-6 pb-6">
+          <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[1400px] mx-auto space-y-6">
               {/* Back Button */}
               <button
@@ -587,6 +588,7 @@ export function RolesPermissions() {
                   </div>
                 </div>
               </div>
+              <PageFooter />
             </div>
           </div>
         </div>
@@ -768,7 +770,7 @@ export function RolesPermissions() {
 
         {filteredRoles.length === 0 && (
           <div className="py-12 text-center">
-            <p className="text-base text-muted-foreground">No roles found</p>
+            <p className="text-sm text-muted-foreground">No roles found</p>
           </div>
         )}
       </div>
@@ -954,7 +956,7 @@ export function RolesPermissions() {
 
               {activeTab === 'users' && (
                 <div className="py-12 text-center">
-                  <p className="text-base text-muted-foreground">No users assigned to this role yet</p>
+                  <p className="text-sm text-muted-foreground">No users assigned to this role yet</p>
                 </div>
               )}
             </div>

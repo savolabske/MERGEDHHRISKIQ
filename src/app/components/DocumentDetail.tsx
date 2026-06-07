@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { hubCard } from './home-dashboard/hubStyles';
+import { PageFooter } from './PageFooter';
 import { Button } from './ui/button';
 import { getDocumentContent, type DocumentContent } from '../data/documentDetailData';
 import type { AppView } from '../types/navigation';
@@ -268,7 +269,7 @@ export function DocumentDetail({
         }`}
       >
         <div className={`flex-1 overflow-y-auto min-h-0 ${isChatExpanded ? '' : 'pb-4'}`}>
-          <div className="px-4 sm:px-8 pt-6 pb-6">
+          <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[900px] mx-auto w-full space-y-6">
               <button
                 type="button"
@@ -307,7 +308,7 @@ export function DocumentDetail({
               </div>
 
               <div className={`${hubCard} p-6 sm:p-8`}>
-                <h2 className="text-base font-bold text-foreground mb-3">Document Summary</h2>
+                <h2 className="text-sm font-semibold text-foreground mb-3">Document Summary</h2>
                 <p className="text-sm sm:text-base text-secondary-foreground leading-relaxed">
                   {content.summary}
                 </p>
@@ -316,7 +317,7 @@ export function DocumentDetail({
               {content.relatedDocs.length > 0 && (
                 <div className={`${hubCard} overflow-hidden`}>
                   <div className="px-6 sm:px-8 pt-6 pb-2">
-                    <h2 className="text-base font-bold text-foreground">
+                    <h2 className="text-sm font-semibold text-foreground">
                       Related Documents ({content.relatedDocs.length})
                     </h2>
                   </div>
@@ -349,6 +350,7 @@ export function DocumentDetail({
                 </div>
               )}
             </div>
+            <PageFooter />
           </div>
         </div>
 

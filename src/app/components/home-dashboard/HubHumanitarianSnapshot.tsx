@@ -88,7 +88,7 @@ export function HubHumanitarianSnapshot() {
       <div className="flex flex-col gap-3 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <h2 className="text-base font-bold text-foreground">Somalia humanitarian map</h2>
+            <h2 className="text-sm font-semibold text-foreground">Somalia humanitarian map</h2>
             <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
           </div>
           <MapToggle
@@ -139,7 +139,7 @@ export function HubHumanitarianSnapshot() {
         </div>
 
         <aside className="flex flex-col rounded-xl border border-border bg-muted/40 p-5">
-          <p className="text-base font-bold text-foreground">
+          <p className="text-sm font-semibold text-foreground">
             {layer === 'climate'
               ? `${layerMeta.label} · ${climateMeta.label}`
               : `${layerMeta.label} coverage`}

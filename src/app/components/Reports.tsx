@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { DollarSign, Users, Cloud, Search, Clock } from 'lucide-react';
 import { AidFlowScrollytelling } from '../features/insights/aid-flow';
 import { MigrationDataScrollytelling } from './MigrationDataScrollytelling';
+import { PageScrollShell } from './PageScrollShell';
 
 interface ReportCard {
   id: string;
@@ -109,10 +110,7 @@ export function Reports({
   }
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-8 pb-10">
-          <div className="max-w-[1280px] mx-auto">
+    <PageScrollShell paddingClassName="px-4 sm:px-8 pt-8" maxWidth="1280">
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground-emphasis">
@@ -187,9 +185,6 @@ export function Reports({
                 </p>
               </div>
             )}
-          </div>
-        </div>
-      </div>
-    </div>
+    </PageScrollShell>
   );
 }

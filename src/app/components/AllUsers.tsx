@@ -279,7 +279,7 @@ export function AllUsers() {
                   </span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-base text-foreground">{user.group}</span>
+                  <span className="text-sm text-foreground">{user.group}</span>
                 </div>
                 <div className="flex items-center">
                   <div className="flex items-center gap-2">
@@ -306,7 +306,7 @@ export function AllUsers() {
 
           {filteredUsers.length === 0 && (
             <div className="py-12 text-center">
-              <p className="text-base text-muted-foreground">No users found</p>
+              <p className="text-sm text-muted-foreground">No users found</p>
             </div>
           )}
         </div>
@@ -332,7 +332,7 @@ export function AllUsers() {
                 {selectedUser.avatar}
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-bold text-foreground mb-1">{selectedUser.name}</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-1">{selectedUser.name}</h2>
                 <p className="text-sm text-muted-foreground">{selectedUser.email} · Last login {selectedUser.lastLogin}</p>
               </div>
               <button
@@ -362,19 +362,19 @@ export function AllUsers() {
               {/* User Details - Two Column Layout */}
               <div className="space-y-5">
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
-                  <div className="text-base text-text-subtle">Full Name</div>
+                  <div className="text-sm text-muted-foreground">Full Name</div>
                   <div className="text-base text-foreground font-medium text-right">{selectedUser.name}</div>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
-                  <div className="text-base text-text-subtle">Email</div>
+                  <div className="text-sm text-muted-foreground">Email</div>
                   <div className="text-base text-foreground font-medium text-right">{selectedUser.email}</div>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
-                  <div className="text-base text-text-subtle">Organization</div>
+                  <div className="text-sm text-muted-foreground">Organization</div>
                   <div className="text-base text-foreground font-medium text-right">{selectedUser.group.split(' ')[0]}</div>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
-                  <div className="text-base text-text-subtle">Role</div>
+                  <div className="text-sm text-muted-foreground">Role</div>
                   <div className="text-right">
                     <span 
                       className="inline-block px-3 py-1.5 rounded-full text-sm font-medium"
@@ -385,7 +385,7 @@ export function AllUsers() {
                   </div>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
-                  <div className="text-base text-text-subtle">User Group</div>
+                  <div className="text-sm text-muted-foreground">User Group</div>
                   <div className="text-base text-foreground font-medium text-right">{selectedUser.group}</div>
                 </div>
                 
@@ -398,17 +398,17 @@ export function AllUsers() {
                 <div className="space-y-2">
                   <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">
                     <Edit2 size={18} className="text-muted-foreground" />
-                    <span className="text-base text-foreground">Edit Role & Group</span>
+                    <span className="text-sm text-foreground">Edit Role & Group</span>
                   </button>
                   
                   <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">
                     <Key size={18} className="text-muted-foreground" />
-                    <span className="text-base text-foreground">Send Password Reset Link</span>
+                    <span className="text-sm text-foreground">Send Password Reset Link</span>
                   </button>
                   
                   <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">
                     <Clock size={18} className="text-muted-foreground" />
-                    <span className="text-base text-foreground">View Activity</span>
+                    <span className="text-sm text-foreground">View Activity</span>
                   </button>
                   
                   <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-destructive-subtle rounded-lg transition-colors text-left mt-2">

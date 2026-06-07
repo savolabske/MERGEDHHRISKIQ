@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Check, X, Clock, Edit } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageScrollShell } from './PageScrollShell';
 
 interface PendingUser {
   id: string;
@@ -169,11 +170,8 @@ export function Approvals() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-6">
-          <div className="max-w-[1400px] mx-auto space-y-6">
+    <>
+    <PageScrollShell innerClassName="space-y-6">
             {/* Header */}
             <div>
               <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Pending Approvals</h2>
@@ -317,9 +315,7 @@ export function Approvals() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
+    </PageScrollShell>
 
       {/* Approval Side Drawer */}
       {selectedUser && (
@@ -340,7 +336,7 @@ export function Approvals() {
                     {selectedUserIds.length}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-bold text-foreground mb-1">Bulk Approval</h2>
+                    <h2 className="text-xl font-semibold text-foreground mb-1">Bulk Approval</h2>
                     <p className="text-sm text-muted-foreground">{selectedUserIds.length} users selected for approval</p>
                   </div>
                 </>
@@ -353,7 +349,7 @@ export function Approvals() {
                     {selectedUser.avatar}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-bold text-foreground mb-1">{selectedUser.name}</h2>
+                    <h2 className="text-xl font-semibold text-foreground mb-1">{selectedUser.name}</h2>
                     <p className="text-sm text-muted-foreground">{selectedUser.email} · Submitted {selectedUser.submitted}</p>
                   </div>
                 </>
@@ -522,7 +518,7 @@ export function Approvals() {
 
           {/* Modal */}
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card z-[1410] shadow-2xl rounded-2xl p-6 w-[90%] max-w-[420px]">
-            <h3 className="text-lg font-bold text-foreground mb-3">Confirm Decline</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-3">Confirm Decline</h3>
             <p className="text-base text-muted-foreground mb-6">
               {usersToDecline.length === 1 
                 ? `Are you sure you want to decline ${usersToDecline[0].name}'s registration request?`
@@ -546,6 +542,6 @@ export function Approvals() {
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }

@@ -43,6 +43,8 @@ import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { CURRENT_USER, getUserById } from "./utils/mockUsers";
+import { INITIAL_NOTIFICATIONS } from "./data/notificationsMock";
+import type { AppNotification } from "./types/notifications";
 
 interface ChatHistoryItem {
   id: string;
@@ -580,7 +582,7 @@ export default function App() {
   const [pendingHubReport, setPendingHubReport] = useState<ActiveReport>(null);
   const hideMobileMenuButton =
     currentView === 'aiSearch' && !!currentChatId && (cameFromHistory || cameFromPlatformChats || cameFromHome);
-  const notificationCount = chatHistory.filter((c) => c.unread).length;
+  const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
 
   const openThreadInView = useCallback((thread: ChatHistoryItem) => {
     setSelectedHistoryMessages(thread.messages || null);
@@ -954,6 +956,37 @@ export default function App() {
     setInvitePreviewThreadId(linkedThread.id);
   };
 
+  const markNotificationRead = (notificationId: string) => {
+    setNotifications((prev) =>
+      prev.map((item) => (item.id === notificationId ? { ...item, unread: false } : item)),
+    );
+  };
+
+  const handleMarkAllNotificationsRead = () => {
+    setNotifications((prev) => prev.map((item) => ({ ...item, unread: false })));
+  };
+
+  const handleNotificationClick = (notification: AppNotification) => {
+    markNotificationRead(notification.id);
+
+    switch (notification.action.type) {
+      case 'open-chat':
+      case 'open-briefing':
+        openChatFromHistory(notification.action.threadId, 'riskIQ');
+        break;
+      case 'join-shared-chat':
+        handleChatSelect(notification.action.threadId);
+        appendJoinActivity(notification.action.threadId, CURRENT_USER.name);
+        break;
+      case 'open-invite':
+        handleOpenInvitePreview(notification.action.threadId);
+        break;
+      case 'navigate':
+        handleNavigate(notification.action.view);
+        break;
+    }
+  };
+
   const handleJoinInviteThread = () => {
     if (!invitePreviewThreadId) return;
     const linkedThread = chatHistory.find(chat => chat.id === invitePreviewThreadId);
@@ -1020,7 +1053,9 @@ export default function App() {
         {currentView !== 'mapAI' && (
           <AppTopBar
             onNavigateHome={() => handleNavigate('home')}
-            notificationCount={notificationCount}
+            notifications={notifications}
+            onNotificationClick={handleNotificationClick}
+            onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
             showMobileMenuButton={!hideMobileMenuButton}
             isMobileMenuOpen={isMobileSidebarOpen}
             onMobileMenuToggle={() => setIsMobileSidebarOpen((open) => !open)}

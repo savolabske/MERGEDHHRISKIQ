@@ -98,7 +98,7 @@ export function RiskIQPage({
               {onNewChat && (
                 <Button type="button" onClick={onNewChat} className="shrink-0 gap-2 mb-2.5">
                   <Sparkles size={18} strokeWidth={1.8} />
-                  New chat
+                  Chat with Risk iQ
                 </Button>
               )}
             </div>

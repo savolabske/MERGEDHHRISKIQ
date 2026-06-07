@@ -30,12 +30,36 @@ export interface PlatformResource {
   individualUsers: string[];
 }
 
-export const MOCK_USER_GROUPS = [
-  'Humanitarian Affairs',
-  'Mission Leadership',
-  'Security & Access',
-  'WASH Cluster',
+export interface ResourceUserGroup {
+  id: string;
+  name: string;
+  members: string[];
+}
+
+export const INITIAL_RESOURCE_USER_GROUPS: ResourceUserGroup[] = [
+  {
+    id: '1',
+    name: 'Humanitarian Affairs',
+    members: ['sarah.johnson@un.org', 'ahmed.hassan@un.org', 'maria.garcia@un.org'],
+  },
+  {
+    id: '2',
+    name: 'Mission Leadership',
+    members: ['collins.otieno@un.org', 'david.mutua@ocha.org'],
+  },
+  {
+    id: '3',
+    name: 'Security & Access',
+    members: ['field.ops@un.org', 'geo.analyst@un.org', 'risk.officer@un.org'],
+  },
+  {
+    id: '4',
+    name: 'WASH Cluster',
+    members: ['wash.lead@un.org'],
+  },
 ];
+
+export const MOCK_USER_GROUPS = INITIAL_RESOURCE_USER_GROUPS.map((group) => group.name);
 
 function generateFiles(prefix: string, count: number): ResourceFile[] {
   const types: ResourceFileType[] = ['PDF', 'DOCX', 'XLSX', 'PPTX'];
@@ -48,6 +72,249 @@ function generateFiles(prefix: string, count: number): ResourceFile[] {
       size: `${(0.4 + (i % 5) * 0.2).toFixed(1)} MB`,
       type,
       uploadedAt: `Feb ${String((i % 28) + 1).padStart(2, '0')}, 2026`,
+    };
+  });
+}
+
+interface ResourceTemplate {
+  title: string;
+  description: string;
+  ownership: ResourceOwnership;
+  tags: string[];
+  fileCount: number;
+  userGroups: string[];
+  lastModified: string;
+  createdAt: string;
+}
+
+const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
+  {
+    title: 'Nutrition Cluster Sitrep — Feb 2026',
+    description:
+      'Monthly nutrition cluster situation report covering acute malnutrition trends, SAM/MAM caseloads, and partner coverage across priority districts.',
+    ownership: 'shared_with_me',
+    tags: ['nutrition', 'sitrep', '2026'],
+    fileCount: 4,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 19, 2026',
+    createdAt: 'Feb 14, 2026',
+  },
+  {
+    title: 'Protection Monitoring Framework',
+    description:
+      'Standardized indicators and data collection tools for protection monitoring, including displacement-related risks and civilian harm documentation.',
+    ownership: 'created_by_me',
+    tags: ['protection', 'monitoring', 'framework'],
+    fileCount: 7,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 17, 2026',
+    createdAt: 'Feb 05, 2026',
+  },
+  {
+    title: 'CCCM Camp Management Guidelines',
+    description:
+      'Camp coordination and camp management operational guidelines for IDP sites, covering site planning, service standards, and population tracking.',
+    ownership: 'shared_with_me',
+    tags: ['CCCM', 'displacement', 'guidelines'],
+    fileCount: 5,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 16, 2026',
+    createdAt: 'Jan 22, 2026',
+  },
+  {
+    title: 'Education in Emergencies Baseline',
+    description:
+      'Baseline assessment of education access, school functionality, and learning continuity needs in conflict-affected and drought-impacted areas.',
+    ownership: 'created_by_me',
+    tags: ['education', 'baseline', 'assessment'],
+    fileCount: 9,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 14, 2026',
+    createdAt: 'Jan 30, 2026',
+  },
+  {
+    title: 'Shelter & NFI Distribution Plan Q1',
+    description:
+      'Quarterly distribution plan for emergency shelter materials and non-food items, including pipeline status and gap analysis by region.',
+    ownership: 'shared_with_me',
+    tags: ['shelter', 'NFI', 'distribution'],
+    fileCount: 6,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 13, 2026',
+    createdAt: 'Jan 25, 2026',
+  },
+  {
+    title: 'Health Cluster Epidemiological Surveillance',
+    description:
+      'Weekly epidemiological surveillance summary covering AWD/cholera alerts, measles cases, and health facility reporting completeness.',
+    ownership: 'created_by_me',
+    tags: ['health', 'surveillance', 'epidemiology'],
+    fileCount: 3,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 12, 2026',
+    createdAt: 'Feb 01, 2026',
+  },
+  {
+    title: 'Logistics Common Transport Arrangements',
+    description:
+      'Shared transport arrangements and corridor access protocols for humanitarian cargo movement across Somalia supply routes.',
+    ownership: 'shared_with_me',
+    tags: ['logistics', 'transport', 'supply chain'],
+    fileCount: 4,
+    userGroups: ['Mission Leadership'],
+    lastModified: 'Feb 11, 2026',
+    createdAt: 'Jan 18, 2026',
+  },
+  {
+    title: 'Food Security Analysis — Feb 2026',
+    description:
+      'Integrated food security phase classification analysis with market price trends, livestock conditions, and household coping strategies.',
+    ownership: 'created_by_me',
+    tags: ['food security', 'FSNAU', 'analysis'],
+    fileCount: 8,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 10, 2026',
+    createdAt: 'Jan 20, 2026',
+  },
+  {
+    title: 'Drought Response Operational Plan',
+    description:
+      'Multi-sector drought response plan outlining priority interventions, geographic targeting, and resource requirements for Q1 2026.',
+    ownership: 'shared_with_me',
+    tags: ['drought', 'response', 'operations'],
+    fileCount: 11,
+    userGroups: ['Humanitarian Affairs', 'Mission Leadership'],
+    lastModified: 'Feb 09, 2026',
+    createdAt: 'Jan 12, 2026',
+  },
+  {
+    title: 'Displacement Tracking Matrix Update',
+    description:
+      'Latest displacement tracking matrix with population movements, return intentions, and site-level population figures.',
+    ownership: 'created_by_me',
+    tags: ['DTM', 'displacement', 'tracking'],
+    fileCount: 5,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 07, 2026',
+    createdAt: 'Jan 08, 2026',
+  },
+  {
+    title: 'GBV Referral Pathways Directory',
+    description:
+      'Comprehensive directory of gender-based violence referral pathways, safe spaces, and psychosocial support services by location.',
+    ownership: 'shared_with_me',
+    tags: ['GBV', 'protection', 'referral'],
+    fileCount: 4,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 06, 2026',
+    createdAt: 'Jan 05, 2026',
+  },
+  {
+    title: 'Cash & Voucher Assistance Toolkit',
+    description:
+      'Operational toolkit for cash and voucher assistance programming, including targeting criteria, delivery mechanisms, and MEAL frameworks.',
+    ownership: 'created_by_me',
+    tags: ['CVA', 'cash', 'toolkit'],
+    fileCount: 10,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Feb 05, 2026',
+    createdAt: 'Dec 28, 2025',
+  },
+  {
+    title: 'Mine Action Survey — South Central',
+    description:
+      'Explosive ordnance contamination survey results for south-central Somalia, including hazard area mapping and clearance priorities.',
+    ownership: 'shared_with_me',
+    tags: ['mine action', 'EO', 'survey'],
+    fileCount: 6,
+    userGroups: ['Security & Access'],
+    lastModified: 'Feb 04, 2026',
+    createdAt: 'Jan 02, 2026',
+  },
+  {
+    title: 'Famine Prevention Early Warning Bulletin',
+    description:
+      'Early warning bulletin on famine risk indicators, including rainfall deficits, pasture conditions, and market access constraints.',
+    ownership: 'created_by_me',
+    tags: ['early warning', 'famine', 'IPC'],
+    fileCount: 3,
+    userGroups: ['Humanitarian Affairs', 'Mission Leadership'],
+    lastModified: 'Feb 03, 2026',
+    createdAt: 'Dec 20, 2025',
+  },
+  {
+    title: 'Partner Capacity Assessment Matrix',
+    description:
+      'Standardized partner capacity assessment matrix covering financial management, programme quality, and accountability standards.',
+    ownership: 'shared_with_me',
+    tags: ['partners', 'capacity', 'assessment'],
+    fileCount: 7,
+    userGroups: ['Mission Leadership'],
+    lastModified: 'Feb 02, 2026',
+    createdAt: 'Jan 10, 2026',
+  },
+  {
+    title: 'Contingency Stock Pre-positioning Map',
+    description:
+      'Geospatial map of pre-positioned contingency stocks including warehouse locations, stock levels, and replenishment timelines.',
+    ownership: 'created_by_me',
+    tags: ['logistics', 'stock', 'map'],
+    fileCount: 4,
+    userGroups: ['Mission Leadership'],
+    lastModified: 'Feb 01, 2026',
+    createdAt: 'Jan 03, 2026',
+  },
+  {
+    title: 'Inter-Cluster Coordination Minutes',
+    description:
+      'Minutes from the latest inter-cluster coordination meeting covering cross-cutting issues, pipeline updates, and action points.',
+    ownership: 'shared_with_me',
+    tags: ['coordination', 'clusters', 'minutes'],
+    fileCount: 2,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Jan 31, 2026',
+    createdAt: 'Jan 31, 2026',
+  },
+  {
+    title: 'Environmental Impact Assessment Guidelines',
+    description:
+      'Guidelines for conducting environmental impact assessments in humanitarian programming, aligned with donor compliance requirements.',
+    ownership: 'created_by_me',
+    tags: ['environment', 'compliance', 'guidelines'],
+    fileCount: 5,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Jan 30, 2026',
+    createdAt: 'Jan 15, 2026',
+  },
+  {
+    title: 'Community Engagement & Accountability Framework',
+    description:
+      'Framework for community engagement and accountability mechanisms, including feedback channels, complaint handling, and participation standards.',
+    ownership: 'shared_with_me',
+    tags: ['CEA', 'accountability', 'community'],
+    fileCount: 6,
+    userGroups: ['Humanitarian Affairs'],
+    lastModified: 'Jan 29, 2026',
+    createdAt: 'Jan 07, 2026',
+  },
+];
+
+function generateAdditionalResources(): PlatformResource[] {
+  return ADDITIONAL_RESOURCE_TEMPLATES.map((template, index) => {
+    const id = String(index + 6);
+    const slug = template.title.replace(/[^a-zA-Z0-9]+/g, '_').slice(0, 24);
+    return {
+      id,
+      title: template.title,
+      description: template.description,
+      ownership: template.ownership,
+      tags: template.tags,
+      lastModified: template.lastModified,
+      createdAt: template.createdAt,
+      files: generateFiles(slug, template.fileCount),
+      webLinks: [],
+      userGroups: template.userGroups,
+      individualUsers: index % 3 === 0 ? ['field.ops@un.org'] : [],
     };
   });
 }
@@ -143,4 +410,5 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
     userGroups: ['Humanitarian Affairs'],
     individualUsers: ['risk.officer@un.org'],
   },
+  ...generateAdditionalResources(),
 ];

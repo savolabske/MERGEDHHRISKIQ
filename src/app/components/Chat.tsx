@@ -210,8 +210,8 @@ export function Chat({
 
   useEffect(() => {
     if (!isSharedThread) return;
-    // Extended Knowledge only applies while Risk IQ AI is invoked in the composer.
-    if (!/@risk\s*iq/i.test(inputValue)) {
+    // Extended Knowledge only applies while Humanity Hub AI is invoked in the composer.
+    if (!/@humanity\s*hub/i.test(inputValue)) {
       setIsSharedExtendedPillVisible(false);
     }
   }, [inputValue, isSharedThread]);
@@ -408,7 +408,7 @@ export function Chat({
   const handleSend = () => {
     if (!inputValue.trim() || isProcessing) return;
     const trimmedValue = inputValue.trim();
-    const invokesAi = /@risk\s*iq/i.test(trimmedValue);
+    const invokesAi = /@humanity\s*hub/i.test(trimmedValue);
 
     const newUserMessage: Message = {
       id: Date.now().toString(),
@@ -422,7 +422,7 @@ export function Chat({
     setMessages(prev => [...prev, newUserMessage]);
     messageCountRef.current += 1;
     
-    const currentQuery = trimmedValue.replace(/@risk\s*iq/ig, '').trim() || trimmedValue;
+    const currentQuery = trimmedValue.replace(/@humanity\s*hub/ig, '').trim() || trimmedValue;
     setInputValue('');
 
     if (isSharedThread) {
@@ -503,11 +503,11 @@ export function Chat({
     });
   };
 
-  const applyRiskIqMention = () => {
+  const applyHumanityHubMention = () => {
     const parts = inputValue.split(/\s+/);
     const lastToken = parts[parts.length - 1] || '';
     if (!lastToken.startsWith('@')) return;
-    parts[parts.length - 1] = '@risk iq';
+    parts[parts.length - 1] = '@humanity hub';
     const nextValue = `${parts.join(' ')} `.replace(/\s+/g, ' ');
     setInputValue(nextValue);
     setIsMentionMenuOpen(false);
@@ -963,7 +963,7 @@ export function Chat({
                 <div className="sticky top-0 bg-card border-b border-border px-4 sm:px-6 py-5 sm:py-6 z-10">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h2 className="text-xl font-bold text-foreground mb-1">
+                      <h2 className="text-xl font-semibold text-foreground mb-1">
                         Sources
                       </h2>
                       <p className="text-sm text-muted-foreground">
@@ -1458,12 +1458,12 @@ export function Chat({
     return null;
   }, [messages]);
 
-  const invokesAiInComposer = /@risk\s*iq/i.test(inputValue);
+  const invokesAiInComposer = /@humanity\s*hub/i.test(inputValue);
   const isExtendedInputActive = isSharedThread
     ? invokesAiInComposer && isSharedExtendedPillVisible
     : isExtendedKnowledgeMode;
 
-  /** Group chats hide the AI toolbar until @riskiq is present — keep the composer short until then. */
+  /** Group chats hide the AI toolbar until @humanityhub is present — keep the composer short until then. */
   const sharedComposerCompact = isSharedThread && !invokesAiInComposer;
 
   return (
@@ -1657,7 +1657,7 @@ export function Chat({
               <div className="absolute left-3 right-3 bottom-full mb-2 z-20">
                 <button
                   type="button"
-                  onClick={applyRiskIqMention}
+                  onClick={applyHumanityHubMention}
                   className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-left hover:bg-muted transition-colors shadow-sm"
                 >
                   <div className="flex items-center gap-3">
@@ -1665,8 +1665,8 @@ export function Chat({
                       AI
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-foreground-emphasis">Risk IQ AI</div>
-                      <div className="text-xs text-muted-foreground">@risk iq</div>
+                      <div className="text-sm font-semibold text-foreground-emphasis">Humanity Hub AI</div>
+                      <div className="text-xs text-muted-foreground">@humanity hub</div>
                     </div>
                   </div>
                 </button>
@@ -1727,7 +1727,7 @@ export function Chat({
               onKeyDown={(e) => {
                 if (isMentionMenuOpen && e.key === 'Enter') {
                   e.preventDefault();
-                  applyRiskIqMention();
+                  applyHumanityHubMention();
                   return;
                 }
                 if (isMentionMenuOpen && e.key === 'Escape') {
@@ -1745,8 +1745,8 @@ export function Chat({
                   ? invokesAiInComposer && isExtendedInputActive
                     ? "Ask in Extended Knowledge mode..."
                     : invokesAiInComposer
-                      ? "Ask Risk IQ AI..."
-                      : "Send a message or mention @riskiq for AI"
+                      ? "Ask Humanity Hub AI..."
+                      : "Send a message or mention @humanityhub for AI"
                   : isExtendedInputActive
                     ? "Ask in Extended Knowledge mode..."
                     : "Ask a follow-up question..."

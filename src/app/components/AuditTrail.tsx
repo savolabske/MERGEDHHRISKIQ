@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, Filter, Download, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { toast } from 'sonner';
+import { PageScrollShell } from './PageScrollShell';
 import { TableSkeleton } from './ui/table-skeleton';
 
 interface AuditEvent {
@@ -367,11 +368,7 @@ export function AuditTrail() {
   const endIndex = startIndex + itemsPerPage;
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-6">
-          <div className="max-w-[1400px] mx-auto space-y-6">
+    <PageScrollShell innerClassName="space-y-6">
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -619,7 +616,7 @@ export function AuditTrail() {
 
               {filteredEvents.length === 0 && (
                 <div className="py-12 text-center">
-                  <p className="text-base text-muted-foreground">No audit events found</p>
+                  <p className="text-sm text-muted-foreground">No audit events found</p>
                 </div>
               )}
 
@@ -719,9 +716,6 @@ export function AuditTrail() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </PageScrollShell>
   );
 }

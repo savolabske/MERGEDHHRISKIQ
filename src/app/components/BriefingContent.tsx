@@ -291,7 +291,7 @@ export function BriefingContent({ onFollowUp, mode = 'briefing' }: BriefingConte
                 </div>
 
                 {/* Title */}
-                <h3 className="text-base font-bold text-foreground mb-3 leading-snug">
+                <h3 className="text-sm font-semibold text-foreground mb-3 leading-snug">
                   {risk.title}
                 </h3>
 

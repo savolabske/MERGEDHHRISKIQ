@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { PageFooter } from './PageFooter';
 import { ChevronDown, X, ChevronLeft, MapPin, Sparkles, Shield, Plus, Check, Lightbulb, CheckCircle2, Circle, Clock, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -916,14 +917,14 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
                     <p className="text-xs text-text-subtle font-bold uppercase tracking-wide mb-1">
                       {likelihoodLabels[selectedCell.likelihood - 1]} x {impactLabels[selectedCell.impact - 1]}
                     </p>
-                    <h2 className="text-xl font-bold text-foreground leading-tight">
+                    <h2 className="text-xl font-semibold text-foreground leading-tight">
                       {selectedCellRisks.length} {selectedCellRisks.length === 1 ? 'Risk' : 'Risks'} in this Cell
                     </h2>
                   </>
                 ) : (
                   <>
                     
-                    <h2 className="text-xl font-bold text-foreground leading-tight">
+                    <h2 className="text-xl font-semibold text-foreground leading-tight">
                       {selectedRisk.title}
                     </h2>
                   </>
@@ -1419,6 +1420,11 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
             )}
           </div>
           </>
+        )}
+        {!compact && (
+          <div className="px-4 sm:px-8">
+            <PageFooter />
+          </div>
         )}
         </div>
       </div>

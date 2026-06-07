@@ -288,6 +288,35 @@ The table below lists sites above threshold and response status. [Source 3]`,
   );
 }
 
+type HubKeyInsight = {
+  id: string;
+  headline: string;
+  description: string;
+  category: 'climate' | 'aid' | 'displacement';
+};
+
+const HUB_KEY_INSIGHT_CATEGORY_LABELS: Record<HubKeyInsight['category'], string> = {
+  climate: 'Climate',
+  aid: 'Aid flow',
+  displacement: 'Displacement',
+};
+
+/** Humanity Hub home — key insights by climate, aid flow, and displacement. */
+export function buildHubKeyInsightChatPayload(insight: HubKeyInsight): DashboardChatPayload {
+  const categoryLabel = HUB_KEY_INSIGHT_CATEGORY_LABELS[insight.category];
+  return {
+    title: insight.headline,
+    prompt: `Explain this ${categoryLabel.toLowerCase()} insight for Somalia and what field teams should do next.`,
+    context: `System query — ${categoryLabel} key insight from humanitarian workspace data. ${insight.description}`,
+    response: `**${insight.headline}**
+
+${insight.description}
+
+This signal is flagged under **${categoryLabel}** on the Humanity Hub home dashboard. Cross-check cluster sitreps, DTM, FTS, and early-warning feeds for the latest figures. [Source 1] [Source 3]`,
+    contentType: 'text',
+  };
+}
+
 export function buildSummaryChatPayload(): DashboardChatPayload {
   return {
     title: 'Risk intelligence summary — Somalia',
@@ -313,53 +342,100 @@ export function buildMetricChatPayload(metric: {
   trend: string;
 }): DashboardChatPayload {
   const payloads: Record<string, DashboardChatPayload> = {
-    active: {
+    'aid-diversion': {
       title: `${metric.label} — ${metric.value}`,
       prompt:
-        'What is the current active risk count and weekly trend across all Somalia registers based on the latest entries in the system?',
-      context: `System query — aggregate active risk count and week-over-week delta from internal registers.`,
-      response: `You have **${metric.value} active risks** on the register — **${metric.trend}**. Most of the net increase this week sits in Lower Shabelle security and linked logistics flags, including the MSR-3 IED cluster and vendor delivery failures on Banadir routes. [Source 1]
+        'List all open aid diversion cases and allegations in Somalia from partner reporting, ADT data, and accountability feeds — include location, type, and status.',
+      context: `System query — aid diversion tracker. ${metric.value} active cases. ${metric.trend}.`,
+      response: `**${metric.value} aid diversion cases** are open — **${metric.trend}**. Most new flags this week cluster in **Banadir** and the **Afgooye corridor**, with gatekeeper patterns at MPCA distribution sites and checkpoint taxation on supply routes. [Source 1]
 
-The internal register shows concentration in south-central Somalia, with conflict and access constraints driving the majority of new entries since last week. [Source 3]
+Three concurrent allegations in Garasbaley share the same gatekeeper profile flagged in prior accountability reviews. Partner warehouse audits in Baidoa and Mogadishu also surfaced inventory gaps. [Source 3]
 
-The matrix below maps where likelihood and impact are highest — start with the critical cluster before wider register review. [Source 3]`,
-      contentType: 'matrix',
+The table below lists each open case with location, allegation type, and review status. [Source 3]`,
+      contentType: 'table',
+      data: {
+        headers: ['Case', 'Location', 'Type', 'Status'],
+        rows: [
+          ['ADT-034', 'Garasbaley MPCA', 'Gatekeeper deductions', 'Under review'],
+          ['ADT-031', 'Afgooye corridor', 'Checkpoint taxation', 'Field verification'],
+          ['ADT-028', 'Wadajir distribution', 'Undocumented deductions', 'Monitoring reinforced'],
+          ['ADT-025', 'Baidoa warehouse', 'Inventory discrepancy', 'Partner audit'],
+          ['ADT-022', 'Kahda IDP', 'Ghost registrations (340)', 'Biometric rollout'],
+          ['ADT-019', 'Kismayo port', 'Cargo confiscation', 'Escalated'],
+        ],
+      },
     },
-    critical: {
+    'security-incidents': {
       title: `${metric.label} — ${metric.value}`,
       prompt:
-        'Identify all critical-severity risks in the register and highlight any that have escalated in the last week.',
-      context: `System query — filter critical risks and compare severity changes vs prior week.`,
-      response: `**Critical risks are at ${metric.value}** — **${metric.trend}**. Four items escalated this week: the MSR-3 IED cluster, vendor compliance gaps on Banadir contracts, generator fuel supply in Baidoa, and Afgooye corridor access constraints. [Source 1]
+        'List all security incidents affecting humanitarian operations in Somalia from the last 30 days — include type, location, date, and impact on aid access.',
+      context: `System query — security incident log. ${metric.value} incidents. ${metric.trend}.`,
+      response: `**${metric.value} security incidents** logged in the last 30 days — **${metric.trend}**. Lower Shabelle and the Afgooye corridor account for most of the increase, with IED activity on MSR-3 and checkpoint pressure on convoy routes. [Source 1]
 
-Existing critical entries — staff kidnapping threat in Mogadishu and cholera in Baidoa IDP camps — remain active alongside these new escalations. [Source 3]
+Four incidents in the past 72 hours alone affect planned movements this week. Armed escort is mandatory for essential travel in flagged corridors. [Source 3]
 
-The matrix below shows how the four new critical items sit against the wider register. [Source 3]`,
-      contentType: 'matrix',
+The table below lists each incident with type, location, and current impact on operations. [Source 3]`,
+      contentType: 'table',
+      data: {
+        headers: ['Date', 'Type', 'Location', 'Impact'],
+        rows: [
+          ['Mar 4', 'IED (safely detonated)', 'Afgooye checkpoint', 'Route delay 6h'],
+          ['Mar 2', 'Convoy taxation', 'MSR-3 near Marka', 'Cargo surrendered 18%'],
+          ['Feb 28', 'Vehicle hijacking attempt', 'Daynile', 'INGO convoy — no loss'],
+          ['Feb 26', 'Armed robbery', 'Kahda distribution', 'NFI shipment disrupted'],
+          ['Feb 22', 'Kidnapping threat', 'Mogadishu–Baidoa route', 'Travel restricted'],
+          ['Feb 19', 'Mortar attack', 'Near Mogadishu airport', 'No casualties'],
+          ['Feb 15', 'Checkpoint blockade', 'Jowhar road', '3-day supply delay'],
+          ['Feb 12', 'AS infiltration report', 'Lower Shabelle', 'Partner movement paused'],
+        ],
+      },
     },
-    high: {
+    'climate-issues': {
       title: `${metric.label} — ${metric.value}`,
       prompt:
-        'Analyze the geographic distribution of high-severity risks using the internal register and recent field reports uploaded to the system.',
-      context: `System query — map high-severity risks by region from register + field documents.`,
-      response: `**${metric.value} high-severity risks** are **${metric.trend}** at the headline level, but geography is splitting. Bay & Bakool drought strain and Mogadishu port delays are rising, while two Jubaland access items improved after mediation progress. [Source 3]
+        'List all active climate-related issues in Somalia from FSNAU, CHIRPS, and field reporting — drought, flooding, and disease signals with affected regions.',
+      context: `System query — climate hazards tracker. ${metric.value} active signals. ${metric.trend}.`,
+      response: `**${metric.value} active climate signals** — **${metric.trend}**. Drought stress in **Bay and Bakool** remains the dominant driver, while flash flooding in **Baidoa** and cholera risk in **Mogadishu IDP camps** add concurrent pressure. [Source 1]
 
-Security-linked high risks remain concentrated in Lower Shabelle and riverine districts ahead of mid-week rainfall forecasts. [Source 1]
+Gu rainfall is roughly **40% below average** in six districts. Three health facilities in Baidoa are non-operational after flooding. WASH and nutrition programmes should pre-position before river levels drop further. [Source 3]
 
-The map below highlights regional concentration so you can focus field coordination before any of these step up to critical. [Source 3]`,
-      contentType: 'geographic',
+The table below lists each active climate issue with region, hazard type, and recommended action window. [Source 3]`,
+      contentType: 'table',
+      data: {
+        headers: ['Signal', 'Region', 'Hazard', 'Action window'],
+        rows: [
+          ['Gu rainfall deficit', 'Bay & Bakool', 'Drought', '48h pre-position'],
+          ['Flash floods', 'Baidoa', 'Flooding', 'Active — 15K displaced'],
+          ['Livestock mortality 40%', 'Bakool pastoral', 'Drought', 'Cash + vet surge'],
+          ['Health facilities flooded', 'Bay Region', 'Flooding', 'Helicopter access'],
+          ['AWD/cholera spike', 'Kahda & Dayniile', 'Waterborne disease', '72h WASH surge'],
+          ['Crop failure 70%', 'Hudur & Wajid', 'Drought', 'Nutrition screening'],
+          ['Drainage overwhelmed', 'Kahda IDP', 'Urban flooding', 'Shelter repairs'],
+        ],
+      },
     },
-    mitigated: {
+    'programmatic-risks': {
       title: `${metric.label} — ${metric.value}`,
       prompt:
-        'Summarize risk mitigation and closure performance over the last 30 days based on workflow status changes in the register.',
-      context: `System query — count mitigated risks in rolling 30d window and compare closure velocity.`,
-      response: `**${metric.value} risks mitigated in the last 30 days** — **${metric.trend}**. Workflow automation and RiskIQ clustering cut average cycle time from 18 to 11 days, with compliance items closing fastest. [Source 3]
+        'List all open programmatic risks affecting humanitarian programme delivery in Somalia — cash, partner capacity, supply chain, and compliance issues.',
+      context: `System query — programmatic risk register. ${metric.value} open items. ${metric.trend}.`,
+      response: `**${metric.value} programmatic risks** remain open — **${metric.trend}**. Cash transfer suspension risk from mobile money providers and partner capacity gaps in Bay, Gedo, and Hiraan are the highest-urgency items this week. [Source 3]
 
-Despite faster closures, active risks still grew faster than mitigations (+12 net this week), driven by Lower Shabelle security entries outpacing register review capacity. [Source 1]
+Three key implementing partners are behind delivery targets, while pharmaceutical delays at Mogadishu port affect two health programmes. Q3 WASH and nutrition funding exposure adds financial pressure on six programmes. [Source 1]
 
-The comparison panel below contrasts January and February patterns across conflict, flooding, and supply chain drivers. [Source 3]`,
-      contentType: 'comparison',
+The table below lists each open programmatic risk with programme, exposure, and owner. [Source 3]`,
+      contentType: 'table',
+      data: {
+        headers: ['Risk', 'Programme / area', 'Exposure', 'Owner'],
+        rows: [
+          ['Mobile money suspension threat', 'Nationwide MPCA', '4,200 transfers at risk', 'Cash working group'],
+          ['Partner capacity shortfall', 'Bay, Gedo, Hiraan', '3 partners behind target', 'Programme leads'],
+          ['Port pharmaceutical delay', 'Mogadishu health', '2 programmes affected', 'Supply chain'],
+          ['Q3 WASH funding gap', 'Bay & Middle Shabelle', '$4.2M · 6 programmes', 'Resource mobilization'],
+          ['Vendor compliance (Banadir)', 'Logistics contracts', '2 active vendors flagged', 'Procurement'],
+          ['Beneficiary data protection', '2 IDP programmes', 'Audit finding open', 'Compliance'],
+        ],
+      },
     },
   };
 

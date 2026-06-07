@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { getUserById } from '../utils/mockUsers';
 import { TableSkeleton } from './ui/table-skeleton';
+import { PageScrollShell } from './PageScrollShell';
 
 interface ChatHistoryItem {
   id: string;
@@ -338,10 +339,11 @@ export function Chats({
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className={`px-4 sm:px-8 pb-6 ${embedded ? 'pt-4 lg:pt-4' : 'pt-6'}`}>
-          <div className="max-w-[1400px] mx-auto space-y-6">
+    <>
+    <PageScrollShell
+      paddingClassName={`px-4 sm:px-8 ${embedded ? 'pt-4 lg:pt-4' : 'pt-6'}`}
+      innerClassName="space-y-6"
+    >
             {!embedded && (
               <div>
                 <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Chats</h2>
@@ -451,8 +453,8 @@ export function Chats({
                     aria-label="Select all on this page"
                   />
                 </div>
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Query</div>
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider text-right">Shared</div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Topic</div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Shared</div>
                 <div className="w-8"></div>
               </div>
 
@@ -498,7 +500,7 @@ export function Chats({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors">
+                          <p className="text-sm font-medium text-foreground leading-snug group-hover:text-primary transition-colors">
                             {chat.query}
                           </p>
                           {chat.unread && (
@@ -685,9 +687,7 @@ export function Chats({
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
+    </PageScrollShell>
 
       {showBulkDeleteConfirm && (
         <div
@@ -695,7 +695,7 @@ export function Chats({
           onClick={() => setShowBulkDeleteConfirm(false)}
         >
           <div className="bg-card rounded-2xl max-w-[500px] w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground mb-3">Delete chats</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-3">Delete chats</h3>
             <p className="text-base text-muted-foreground mb-6">
               Delete {selectedChatIds.size} conversation{selectedChatIds.size > 1 ? 's' : ''}? This cannot be undone.
             </p>
@@ -718,6 +718,6 @@ export function Chats({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

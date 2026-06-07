@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, X, Search, FileText, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageScrollShell } from './PageScrollShell';
 
 interface Definition {
   id: string;
@@ -196,11 +197,8 @@ export function Definitions() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-6">
-          <div className="max-w-[1400px] mx-auto space-y-6">
+    <>
+    <PageScrollShell innerClassName="space-y-6">
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -322,13 +320,11 @@ export function Definitions() {
 
               {filteredDefinitions.length === 0 && (
                 <div className="py-12 text-center">
-                  <p className="text-base text-muted-foreground">No definitions found</p>
+                  <p className="text-sm text-muted-foreground">No definitions found</p>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
+    </PageScrollShell>
 
       {/* Add Definition Modal */}
       {showAddModal && (
@@ -487,6 +483,6 @@ export function Definitions() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

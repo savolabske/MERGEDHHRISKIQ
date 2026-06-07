@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, X, Search, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, Clock, Trash2, ChevronLeft, ChevronRight, Filter, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageScrollShell } from './PageScrollShell';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
 
@@ -420,11 +421,8 @@ export function URLSources() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-6">
-          <div className="max-w-[1400px] mx-auto space-y-6">
+    <>
+    <PageScrollShell innerClassName="space-y-6">
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -615,7 +613,7 @@ export function URLSources() {
 
               {filteredSources.length === 0 && (
                 <div className="py-12 text-center">
-                  <p className="text-base text-muted-foreground">No URL sources found</p>
+                  <p className="text-sm text-muted-foreground">No URL sources found</p>
                 </div>
               )}
 
@@ -710,9 +708,7 @@ export function URLSources() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
+    </PageScrollShell>
 
       {/* Add Source Modal */}
       {showAddModal && (
@@ -852,6 +848,6 @@ export function URLSources() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

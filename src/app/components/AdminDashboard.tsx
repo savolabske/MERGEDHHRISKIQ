@@ -1,3 +1,5 @@
+import { PageScrollShell } from './PageScrollShell';
+
 export function AdminDashboard() {
   const groupUsage = [
     { name: "UNICEF", value: "63% (24/38)", width: "63%", color: "var(--chart-2)" },
@@ -31,10 +33,7 @@ export function AdminDashboard() {
   ];
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-6">
-          <div className="max-w-[1400px] mx-auto">
+    <PageScrollShell>
             <h2 className="text-base sm:text-lg font-semibold text-foreground mb-1">
               Admin Dashboard
             </h2>
@@ -72,7 +71,7 @@ export function AdminDashboard() {
               <div className="bg-card border border-border rounded-2xl p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-base font-semibold text-foreground-emphasis">Usage by user groups</h3>
+                    <h3 className="text-sm font-semibold text-foreground-emphasis">Usage by user groups</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">Active this week vs total registered</p>
                   </div>
                   <div className="flex items-center bg-muted border border-border rounded-lg p-0.5">
@@ -106,7 +105,7 @@ export function AdminDashboard() {
               </div>
 
               <div className="bg-card border border-border rounded-2xl p-5">
-                <h3 className="text-base font-semibold text-foreground-emphasis">AI platform Insights</h3>
+                <h3 className="text-sm font-semibold text-foreground-emphasis">AI platform Insights</h3>
                 <div className="mt-3 divide-y divide-border">
                   {platformInsights.map((insight) => (
                     <div key={insight.text} className="flex items-start gap-3 py-3">
@@ -123,7 +122,7 @@ export function AdminDashboard() {
 
             <div className="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
               <div className="bg-card border border-border rounded-2xl p-5">
-                <h3 className="text-base font-semibold text-foreground-emphasis">System health</h3>
+                <h3 className="text-sm font-semibold text-foreground-emphasis">System health</h3>
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-secondary-foreground">Search service</p>
@@ -153,7 +152,7 @@ export function AdminDashboard() {
               </div>
 
               <div className="bg-card border border-border rounded-2xl p-5">
-                <h3 className="text-base font-semibold text-foreground-emphasis">Search activity today</h3>
+                <h3 className="text-sm font-semibold text-foreground-emphasis">Search activity today</h3>
 
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="border border-border rounded-xl py-3 px-4 text-center">
@@ -190,7 +189,7 @@ export function AdminDashboard() {
             </div>
 
             <div className="mt-4 bg-card border border-border rounded-2xl p-5">
-              <h3 className="text-base font-semibold text-foreground-emphasis">Top resources being accessed</h3>
+              <h3 className="text-sm font-semibold text-foreground-emphasis">Top resources being accessed</h3>
 
               <div className="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-x-6">
                 <div className="space-y-2">
@@ -258,9 +257,6 @@ export function AdminDashboard() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </PageScrollShell>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { PageScrollShell } from '../PageScrollShell';
 import { motion } from 'motion/react';
 import { ArrowLeft, Info } from 'lucide-react';
 import {
@@ -340,12 +341,10 @@ export function ReportRiskMap({
 
 export function ReportShell({ children }: { children: ReactNode }) {
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden" style={REPORT_FONT_STYLE}>
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-8 pt-6 pb-10">
-          <div className="max-w-[1400px] mx-auto space-y-14">{children}</div>
-        </div>
-      </div>
+    <div className="h-full" style={REPORT_FONT_STYLE}>
+      <PageScrollShell innerClassName="space-y-14">
+        {children}
+      </PageScrollShell>
     </div>
   );
 }

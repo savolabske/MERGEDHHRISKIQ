@@ -43,7 +43,7 @@ function PredictiveInsightCard({
       <p className="text-xs font-semibold uppercase tracking-wider text-white/90 relative">
         {insight.theme} · {insight.horizon}
       </p>
-      <h3 className="text-base sm:text-base font-bold leading-snug mt-3 relative">{insight.title}</h3>
+      <h3 className="text-base sm:text-sm font-semibold leading-snug mt-3 relative">{insight.title}</h3>
       <p className="text-sm leading-relaxed text-white/90 mt-2 flex-1 relative">
         {insight.description}
       </p>
@@ -66,7 +66,7 @@ export function HubEmergingRisks({ onOpenChat }: HubPredictiveInsightsProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
-        <h2 className="text-base font-bold text-foreground">Predictive insights</h2>
+        <h2 className="text-sm font-semibold text-foreground">Predictive insights</h2>
         <p className="text-sm text-muted-foreground">
           Forecasts from cluster reports, displacement tracking, food security data, and funding · next 30 days
         </p>
