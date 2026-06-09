@@ -56,5 +56,5 @@ export const MIGRATION_KPI_BASE = [
   { label: 'Unmet Need', prompt: 'Where are the biggest gaps between needs and response?', icon: Check, iconBg: '#fbe6e3', iconColor: COLORS.conflict, color: COLORS.conflict },
 ];
 
-export const MIGRATION_CHIPS = ['What is driving displacement?', 'Which regions receive the most people?', 'Break down by age and gender', 'Where are the biggest response gaps?', 'Show the trend over time', 'Are these movements long-term?'];
+export const MIGRATION_CHIPS = ['What is driving displacement?', 'Which regions receive the most people?'];
 export const FORWARD_ICONS = [AlertTriangle, TrendingUp, MapPin, AlertTriangle, Users, Calendar] as const;

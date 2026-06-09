@@ -1,0 +1,86 @@
+@keyframes reportLoadIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reportNarrativeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reportAiIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.report-load-item {
+  opacity: 0;
+  animation: reportLoadIn 400ms ease-out forwards;
+}
+
+.report-animate-narrative {
+  opacity: 0;
+}
+
+.report-animate-narrative.is-visible {
+  animation: reportNarrativeIn 400ms ease-out forwards;
+}
+
+.report-animate-ai {
+  animation: reportAiIn 350ms ease-out forwards;
+}
+
+.report-animate-treemap-cell {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+.report-animate-treemap-cell.is-visible {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 400ms ease-out,
+    transform 400ms ease-out;
+}
+
+.report-animate-bar-fill {
+  width: 0 !important;
+  transition: width 600ms ease-out;
+}
+
+.report-animate-bar-fill.is-visible {
+  width: var(--bar-target-width) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-animate-bar,
+  .report-animate-bar-fill,
+  .report-animate-treemap-cell,
+  .report-animate-narrative,
+  .report-animate-ai,
+  .report-load-item {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    width: var(--bar-target-width, auto) !important;
+  }
+}

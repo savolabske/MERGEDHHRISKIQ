@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { ChevronRight, Cloud, DollarSign, Users, type LucideIcon } from 'lucide-react';
+import { ChevronRight, Cloud, DollarSign, Landmark, Users, type LucideIcon } from 'lucide-react';
 import {
   HUB_REPORT_HIGHLIGHTS,
   type HubReportHighlightId,
@@ -35,6 +35,15 @@ const REPORT_VISUALS: Record<
     topBorder: 'border-t-chart-3',
     metricTint: 'bg-chart-3/10',
     ctaColor: 'text-chart-3 group-hover:opacity-90',
+  },
+  'somalia-joint-fund': {
+    Icon: Landmark,
+    iconBg: 'bg-emerald-500/10',
+    iconColor: 'text-emerald-700',
+    metricColor: 'text-emerald-700',
+    topBorder: 'border-t-emerald-600',
+    metricTint: 'bg-emerald-500/10',
+    ctaColor: 'text-emerald-700 group-hover:opacity-90',
   },
   'climate-hazards': {
     Icon: Cloud,

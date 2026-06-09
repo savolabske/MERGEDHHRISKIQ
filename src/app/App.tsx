@@ -688,7 +688,11 @@ export default function App() {
   const handleOpenHubReport = useCallback(
     (reportId: HubReportHighlightId) => {
       const active: ActiveReport =
-        reportId === 'migration-displacement' ? 'migration-data' : 'aid-flow';
+        reportId === 'migration-displacement'
+          ? 'migration-data'
+          : reportId === 'somalia-joint-fund'
+            ? 'somalia-joint-fund'
+            : 'aid-flow';
       setPendingHubReport(active);
       sidebarCollapsedBeforeReportRef.current = isSidebarCollapsed;
       setIsSidebarCollapsed(true);

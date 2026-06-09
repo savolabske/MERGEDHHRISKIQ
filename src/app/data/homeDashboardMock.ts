@@ -518,6 +518,7 @@ export const HUB_BRIEFING_UPDATES = [
 export type HubReportHighlightId =
   | 'aid-flow'
   | 'migration-displacement'
+  | 'somalia-joint-fund'
   | 'climate-hazards';
 
 /** Home — key metrics teased from full report scrollytellings. */
@@ -538,6 +539,15 @@ export const HUB_REPORT_HIGHLIGHTS = [
     metricLabel: 'arrivals tracked',
     summary:
       'Since Oct 2023 across 12 regions — drought drives 68% of recent arrivals; Bay and Banadir receive the most.',
+    available: true,
+  },
+  {
+    id: 'somalia-joint-fund' as HubReportHighlightId,
+    title: 'Somalia Joint Fund Intelligence',
+    metric: '$597.7M',
+    metricLabel: 'deposited since 2014',
+    summary:
+      '12 active programmes · H1 2025 deposits 2.1× H1 2024 — Inclusive Politics leads at 37% of the portfolio.',
     available: true,
   },
   {

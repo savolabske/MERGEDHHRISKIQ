@@ -74,6 +74,17 @@ export function PlatformResources() {
                 onBack={goToList}
                 onEdit={() => setView('edit')}
                 onDelete={() => handleDelete(selectedResource.id)}
+                onFilesChange={(files) =>
+                  handleSave({
+                    ...selectedResource,
+                    files,
+                    lastModified: new Date().toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    }),
+                  })
+                }
               />
             )}
 

@@ -1,18 +1,22 @@
 import {
   ArrowLeft,
   ExternalLink,
-  Pencil,
   Trash2,
   Calendar,
   Clock,
-  Users,
   Globe,
   User,
+  Edit2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { PlatformResource } from '../../data/resourcesMock';
-import { OwnershipBadge, SectionLabel, TagPill } from './resourceShared';
+import {
+  OwnershipBadge,
+  ChatsAvailabilityBadge,
+  SidebarTagBadge,
+  SidebarUserGroupBadge,
+} from './resourceShared';
 import { ResourceDocumentsList } from './ResourceDocumentsList';
 
 interface ResourceDetailViewProps {
@@ -20,6 +24,7 @@ interface ResourceDetailViewProps {
   onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onFilesChange?: (files: PlatformResource['files']) => void;
 }
 
 export function ResourceDetailView({
@@ -27,8 +32,21 @@ export function ResourceDetailView({
   onBack,
   onEdit,
   onDelete,
+  onFilesChange,
 }: ResourceDetailViewProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAllIndividualUsers, setShowAllIndividualUsers] = useState(false);
+
+  const { individualUsers } = resource;
+  const hiddenIndividualUserCount = individualUsers.length - 1;
+  const visibleIndividualUsers =
+    individualUsers.length <= 2 || showAllIndividualUsers
+      ? individualUsers
+      : individualUsers.slice(0, 1);
+
+  useEffect(() => {
+    setShowAllIndividualUsers(false);
+  }, [resource.id]);
 
   const handleDeleteConfirm = () => {
     toast.promise(
@@ -49,31 +67,32 @@ export function ResourceDetailView({
       <button
         type="button"
         onClick={onBack}
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+        className="flex items-center gap-2 text-base text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft size={16} />
+        <ArrowLeft size={18} />
         Back to Resources
       </button>
 
-      <div className="flex flex-col xl:flex-row gap-6">
-        <div className="flex-1 min-w-0 space-y-6">
+      <div>
+        <h1 className="text-xl font-semibold text-foreground">{resource.title}</h1>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
           <div className="bg-card rounded-xl border border-border p-6">
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground mb-3">
-              {resource.title}
-            </h1>
-            <OwnershipBadge ownership={resource.ownership} />
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Description
+            </h3>
+            <p className="text-sm text-foreground leading-relaxed">{resource.description}</p>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6">
-            <SectionLabel>Description</SectionLabel>
-            <p className="text-sm text-muted-foreground leading-relaxed">{resource.description}</p>
-          </div>
-
-          <ResourceDocumentsList files={resource.files} />
+          <ResourceDocumentsList files={resource.files} onChange={onFilesChange} />
 
           {resource.webLinks.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6">
-              <SectionLabel>Web Links</SectionLabel>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                Web Links
+              </h3>
               <div className="space-y-4">
                 {resource.webLinks.map((link) => (
                   <div key={link.id}>
@@ -93,96 +112,129 @@ export function ResourceDetailView({
               </div>
             </div>
           )}
+        </div>
 
-          <div className="bg-card rounded-xl border border-border p-6">
-            <SectionLabel>Shared With</SectionLabel>
-            <p className="text-sm text-muted-foreground mb-4">
-              Groups and individuals who have access to this resource.
-            </p>
+        <div className="space-y-6">
+          <div className="bg-card rounded-xl border border-border p-6 space-y-6">
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                Available in
+              </h3>
+              <div className="flex flex-wrap gap-1">
+                <ChatsAvailabilityBadge />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                Ownership
+              </h3>
+              <OwnershipBadge ownership={resource.ownership} />
+            </div>
+
             {resource.userGroups.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs font-medium text-muted-foreground mb-2">User Groups</p>
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  User Group
+                </h3>
                 <div className="flex flex-wrap gap-2">
                   {resource.userGroups.map((group) => (
-                    <span
-                      key={group}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-subtle text-primary text-sm font-medium"
-                    >
-                      <Users size={14} />
-                      {group}
-                    </span>
+                    <SidebarUserGroupBadge key={group} group={group} />
                   ))}
                 </div>
               </div>
             )}
-            {resource.individualUsers.length > 0 && (
+
+            {individualUsers.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Individual Users</p>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Individual Users
+                </h3>
                 <div className="space-y-2">
-                  {resource.individualUsers.map((email) => (
+                  {visibleIndividualUsers.map((email) => (
                     <div key={email} className="flex items-center gap-2 text-sm text-foreground">
                       <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                         <User size={14} className="text-muted-foreground" />
                       </span>
-                      {email}
+                      <span className="truncate">{email}</span>
                     </div>
+                  ))}
+                  {individualUsers.length > 2 && !showAllIndividualUsers && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllIndividualUsers(true)}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors pl-10 text-left"
+                    >
+                      + {hiddenIndividualUserCount} other email address
+                      {hiddenIndividualUserCount === 1 ? '' : 'es'}
+                    </button>
+                  )}
+                  {individualUsers.length > 2 && showAllIndividualUsers && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllIndividualUsers(false)}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors pl-10 text-left"
+                    >
+                      Show less
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {resource.tags.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Tags
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {resource.tags.map((tag) => (
+                    <SidebarTagBadge key={tag} tag={tag} />
                   ))}
                 </div>
               </div>
             )}
-          </div>
-        </div>
 
-        <aside className="w-full xl:w-72 shrink-0 space-y-4">
-          <div className="bg-card rounded-xl border border-border p-5">
-            <SectionLabel>Tags</SectionLabel>
-            <div className="flex flex-wrap gap-2">
-              {resource.tags.map((tag) => (
-                <TagPill key={tag} tag={tag} />
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-card rounded-xl border border-border p-5 space-y-4">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Created
-              </p>
+              </h3>
               <div className="flex items-center gap-2 text-sm text-foreground">
-                <Calendar size={16} className="text-muted-foreground" />
+                <Calendar size={18} className="text-muted-foreground" />
                 {resource.createdAt}
               </div>
             </div>
+
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Last Modified
-              </p>
+              </h3>
               <div className="flex items-center gap-2 text-sm text-foreground">
-                <Clock size={16} className="text-muted-foreground" />
+                <Clock size={18} className="text-muted-foreground" />
                 {resource.lastModified}
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <button
               type="button"
               onClick={onEdit}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
+              className="w-full px-4 py-3 bg-primary hover:bg-primary-hover text-white rounded-lg text-base font-medium transition-colors flex items-center justify-center gap-2"
             >
-              <Pencil size={16} />
+              <Edit2 size={18} />
               Edit Resource
             </button>
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-destructive-subtle text-destructive-text rounded-lg text-sm font-medium hover:bg-destructive-subtle transition-colors"
+              className="w-full px-4 py-3 border border-border hover:bg-destructive-subtle hover:border-destructive text-destructive-text rounded-lg text-base font-medium transition-colors flex items-center justify-center gap-2"
             >
-              <Trash2 size={16} />
+              <Trash2 size={18} />
               Delete
             </button>
           </div>
-        </aside>
+        </div>
       </div>
 
       {showDeleteConfirm && (

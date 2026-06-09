@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, Users, Cloud, Search, Clock } from 'lucide-react';
+import { DollarSign, Users, Cloud, Search, Clock, Landmark } from 'lucide-react';
 import { AidFlowScrollytelling } from '../features/insights/aid-flow';
 import { MigrationDataScrollytelling } from './MigrationDataScrollytelling';
+import { SomaliaJointFundScrollytelling } from './SomaliaJointFundScrollytelling';
 import { PageScrollShell } from './PageScrollShell';
 
 interface ReportCard {
@@ -14,7 +15,7 @@ interface ReportCard {
   available?: boolean;
 }
 
-export type ActiveReport = 'aid-flow' | 'migration-data' | null;
+export type ActiveReport = 'aid-flow' | 'migration-data' | 'somalia-joint-fund' | null;
 
 const PLACEHOLDER_REPORTS: ReportCard[] = [
   {
@@ -35,6 +36,16 @@ const PLACEHOLDER_REPORTS: ReportCard[] = [
     IconComponent: Users,
     iconBg: 'bg-chart-3/10',
     iconColor: 'text-chart-3',
+    available: true,
+  },
+  {
+    id: 'somalia-joint-fund',
+    title: 'Somalia Joint Fund Intelligence',
+    description:
+      'Track the SJF portfolio, donor base, thematic windows, programmes, and H1 2025 results.',
+    IconComponent: Landmark,
+    iconBg: 'bg-emerald-500/10',
+    iconColor: 'text-emerald-700',
     available: true,
   },
   {
@@ -85,6 +96,9 @@ export function Reports({
     } else if (reportId === 'migration-displacement') {
       setActiveReport('migration-data');
       onReportOpen?.();
+    } else if (reportId === 'somalia-joint-fund') {
+      setActiveReport('somalia-joint-fund');
+      onReportOpen?.();
     }
   };
 
@@ -95,7 +109,7 @@ export function Reports({
 
   if (activeReport === 'aid-flow') {
     return (
-      <div className="h-full min-h-0 overflow-y-auto overscroll-contain" data-report-scroll>
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
         <AidFlowScrollytelling onBack={handleReportBack} />
       </div>
     );
@@ -103,8 +117,16 @@ export function Reports({
 
   if (activeReport === 'migration-data') {
     return (
-      <div className="h-full min-h-0 overflow-y-auto overscroll-contain" data-report-scroll>
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
         <MigrationDataScrollytelling onBack={handleReportBack} />
+      </div>
+    );
+  }
+
+  if (activeReport === 'somalia-joint-fund') {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <SomaliaJointFundScrollytelling onBack={handleReportBack} />
       </div>
     );
   }

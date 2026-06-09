@@ -69,5 +69,5 @@ export const SCENES: AidFlowScene[] = [
 export const DONOR_OPTIONS = ['FCDO', 'USAID (USA)', 'Germany', 'World Bank', 'EU', 'Sweden', 'Denmark', 'CERF', 'UNICEF', 'WFP'];
 export const SECTOR_OPTIONS = ['Food Security', 'Health', 'Nutrition', 'Social Protection', 'Refugees & Durable Sol.', 'Public Fin. Mgmt', 'Civil Service Reform', 'Budget Support'];
 export const REGION_OPTIONS = ['Banadir (BRA)', 'Puntland', 'Somaliland', 'South West', 'Jubaland', 'Hirshabelle', 'Galmudug', 'FGS (federal)'];
-export const AI_CHIPS = ['Analyze FCDO funding by sector', 'Which regions are underfunded?', 'Show climate-related aid flows', 'Compare humanitarian vs development funding'];
+export const AI_CHIPS = ['Analyze FCDO funding by sector', 'Which regions are underfunded?'];
 export const FORWARD_ICONS = [AlertTriangle, TrendingDown, MapPin, Sparkles, Layers, Check] as const;
