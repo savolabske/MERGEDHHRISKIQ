@@ -1,4 +1,5 @@
-import { ArrowLeft, ExternalLink, FileText, Edit, Trash2, Download, Globe, Lock, Tag as TagIcon } from 'lucide-react';
+import { ExternalLink, FileText, Edit, Trash2, Download, Globe, Lock, Tag as TagIcon } from 'lucide-react';
+import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -52,14 +53,13 @@ export function ResourceDetail({ resourceId, onBack, onEdit, onSave, onDelete, i
     <div className="h-full flex flex-col overflow-y-auto bg-background">
       <div className="flex-1 flex flex-col">
         <div className="w-full px-16 pt-12 pb-16">
-          {/* Back Button */}
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-text-subtle hover:text-primary transition-colors mb-8"
-          >
-            <ArrowLeft size={16} strokeWidth={2} />
-            <span className="text-sm font-medium uppercase tracking-wider">Back to Resources</span>
-          </button>
+          <PageBreadcrumb
+            className="mb-4"
+            items={[
+              { label: 'Resources', onClick: onBack },
+              { label: resource.name },
+            ]}
+          />
 
           {/* Header with Actions */}
           <div className="flex items-start justify-between mb-8">

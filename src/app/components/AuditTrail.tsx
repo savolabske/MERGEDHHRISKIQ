@@ -372,7 +372,7 @@ export function AuditTrail() {
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Audit Trail</h2>
+                <h2 className="text-page-title mb-1">Audit Trail</h2>
                 <p className="text-sm sm:text-sm text-muted-foreground">
                   {mockEvents.length} recorded events · Complete log of all system activity
                 </p>
@@ -557,17 +557,17 @@ export function AuditTrail() {
             {/* Events Table */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               {/* Table Header - Desktop Only */}
-              <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 bg-muted border-b border-border">
-                <div className="col-span-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
+                <div className="col-span-3 table-header-label">
                   User
                 </div>
-                <div className="col-span-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-4 table-header-label">
                   Action
                 </div>
-                <div className="col-span-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-3 table-header-label">
                   Date & Time
                 </div>
-                <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label">
                   IP Address
                 </div>
               </div>
@@ -578,7 +578,7 @@ export function AuditTrail() {
                   <TableSkeleton variant="grid" rows={itemsPerPage} columns={4} />
                 ) : (
                   visibleCurrentEvents.map((event) => (
-                  <div key={event.id} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-4 sm:px-6 py-4 hover:bg-muted transition-colors">
+                  <div key={event.id} className="table-row-narrative grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-4 sm:px-6 transition-colors">
                     {/* User Info */}
                     <div className="lg:col-span-3 flex items-center gap-3">
                       <div 
@@ -588,24 +588,24 @@ export function AuditTrail() {
                         {event.userAvatar}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-foreground truncate">{event.userName}</div>
+                        <div className="table-primary-text truncate">{event.userName}</div>
                         {/* Mobile: Show time ago inline */}
                         <div className="text-sm text-muted-foreground lg:hidden">{event.timeAgo}</div>
                       </div>
                     </div>
                     {/* Action */}
                     <div className="lg:col-span-4 flex flex-col justify-center">
-                      <div className="text-sm font-medium text-foreground mb-0.5">{event.action}</div>
-                      <div className="text-sm text-muted-foreground truncate">{event.actionDetail}</div>
+                      <div className="table-primary-text mb-0.5">{event.action}</div>
+                      <div className="table-supporting-text">{event.actionDetail}</div>
                     </div>
                     {/* Date & Time - Desktop Only */}
                     <div className="hidden lg:flex lg:col-span-3 flex-col justify-center">
-                      <div className="text-sm text-foreground mb-0.5">{event.dateTime}</div>
-                      <div className="text-sm text-muted-foreground">{event.timeAgo}</div>
+                      <div className="table-value-text tabular-nums whitespace-nowrap mb-0.5">{event.dateTime}</div>
+                      <div className="table-metadata-text">{event.timeAgo}</div>
                     </div>
                     {/* IP Address */}
                     <div className="lg:col-span-2 flex items-center">
-                      <span className="text-sm text-muted-foreground font-mono">{event.ipAddress}</span>
+                      <span className="table-metadata-text font-mono whitespace-nowrap">{event.ipAddress}</span>
                       {/* Mobile: Show full date */}
                       <span className="text-sm text-text-subtle ml-auto lg:hidden">{event.dateTime}</span>
                     </div>

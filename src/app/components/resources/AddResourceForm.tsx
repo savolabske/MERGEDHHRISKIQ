@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   Plus,
   X,
   Upload,
@@ -15,6 +14,7 @@ import { INITIAL_RESOURCE_USER_GROUPS } from '../../data/resourcesMock';
 import { Checkbox } from '../ui/checkbox';
 import { inputClass, textareaClass } from './resourceShared';
 import { UserGroupModal } from './UserGroupModal';
+import { PageBreadcrumb } from '../ui/page-breadcrumb';
 
 interface AddResourceFormProps {
   onBack: () => void;
@@ -201,17 +201,16 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Back to Resource Hub
-      </button>
+      <PageBreadcrumb
+        className="mb-4"
+        items={[
+          { label: 'Resources', onClick: onBack },
+          { label: 'Add New Resource' },
+        ]}
+      />
 
       <div>
-        <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Add New Resource</h2>
+        <h2 className="text-page-title mb-1">Add New Resource</h2>
         <p className="text-sm text-muted-foreground">
           Provide resource details and upload content to your workspace repository.
         </p>

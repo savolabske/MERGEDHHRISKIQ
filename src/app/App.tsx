@@ -1080,17 +1080,6 @@ export default function App() {
             documentId={currentDocumentId}
             onBack={handleDocumentDetailBack}
             onOpenDocument={(id) => openDocumentDetail(id, documentReturnView)}
-            backLabel={
-              documentReturnView === 'home'
-                ? 'Back to Home'
-                : documentReturnView === 'aiSearch'
-                  ? cameFromHome
-                    ? 'Back to Home'
-                    : cameFromRiskIq
-                      ? 'Back to Risk IQ'
-                      : 'Back to Chat'
-                  : 'Back'
-            }
           />
         ) : currentView === 'platformChats' ? (
           <PlatformChats
@@ -1118,7 +1107,7 @@ export default function App() {
           invitePreviewThreadId ? (
             <div className="h-full flex items-center justify-center px-4 sm:px-8 py-8 bg-background">
               <div className="w-full max-w-[620px] rounded-2xl border border-border bg-card shadow-sm p-6 sm:p-7">
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Invite preview</p>
+                <p className="text-xs font-semibold text-primary">Invite preview</p>
                 <h2 className="mt-2 text-2xl font-semibold text-foreground-emphasis leading-tight">
                   {chatHistory.find(c => c.id === invitePreviewThreadId)?.query || 'Chat invite'}
                 </h2>
@@ -1126,7 +1115,7 @@ export default function App() {
                   You were invited to this chat. Review participants and join when ready.
                 </p>
                 <div className="mt-5 rounded-xl border border-border bg-muted p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Participants</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Participants</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {(() => {
                       const inviteThread = chatHistory.find(c => c.id === invitePreviewThreadId);
@@ -1179,17 +1168,45 @@ export default function App() {
               onShareUpdate={handleShareUpdate}
               showThreadHeader={!!currentChatId}
               showRiskIqContext={cameFromRiskIq && !cameFromHistory}
-              showBackButton={cameFromHistory || cameFromRiskIq || cameFromHome}
-              backButtonLabel={
-                cameFromHistory
-                  ? 'Back to Chats'
-                  : cameFromHome
-                    ? 'Back to Home'
-                    : cameFromRiskIq && riskIqReturnTab === 'dashboard'
-                      ? 'Back to Dashboard'
-                      : cameFromRiskIq
-                        ? 'Back to Risk IQ'
-                        : 'Back to Home'
+              navigation={
+                cameFromHistory || cameFromPlatformChats
+                  ? 'breadcrumb'
+                  : cameFromHome || cameFromRiskIq
+                    ? 'back'
+                    : 'none'
+              }
+              breadcrumbItems={
+                cameFromHistory || cameFromPlatformChats
+                  ? [
+                      {
+                        label: 'Chats',
+                        onClick: () => {
+                          if (cameFromPlatformChats) {
+                            setCurrentView('platformChats');
+                          } else if (cameFromHistory || cameFromRiskIq) {
+                            returnToRiskIq('chats');
+                          }
+                          setSearchQuery('');
+                          setLoadDemoConversation(false);
+                          setSelectedHistoryMessages(null);
+                          setSelectedHistoryTitle('');
+                          setCurrentChatId(null);
+                          setCameFromHistory(false);
+                          setCameFromPlatformChats(false);
+                          setCameFromRiskIq(false);
+                          setCameFromHome(false);
+                        },
+                      },
+                      {
+                        label:
+                          selectedHistoryTitle ||
+                          (loadDemoConversation
+                            ? 'Summarize the top operational risks'
+                            : searchQuery) ||
+                          'Conversation',
+                      },
+                    ]
+                  : undefined
               }
               onBack={() => {
                 if (cameFromPlatformChats) {
@@ -1234,9 +1251,6 @@ export default function App() {
                     setCameFromHome(false);
                     setCameFromHistory(false);
                   }}
-                  backLabel={
-                    riskIqReturnTab === 'dashboard' ? 'Back to Dashboard' : 'Back to Risk IQ'
-                  }
                 />
               )}
 

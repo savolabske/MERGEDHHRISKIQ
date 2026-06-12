@@ -129,7 +129,7 @@ export function HubHumanitarianSnapshot() {
           />
 
           <div className="absolute bottom-4 left-4 sm:bottom-5 sm:left-5 z-[401] rounded-xl border border-border bg-card px-4 py-3 shadow-sm pointer-events-none">
-            <p className="text-xs font-semibold text-text-subtle uppercase tracking-wider">
+            <p className="text-xs font-semibold text-text-subtle">
               {activeMeta.statLabel}
             </p>
             <p className="text-2xl font-bold text-foreground leading-none mt-2 tabular-nums">
@@ -148,7 +148,7 @@ export function HubHumanitarianSnapshot() {
             {activeMeta.summary}
           </p>
           <div className="mt-5 pt-5 border-t border-border space-y-3">
-            <p className="text-xs font-semibold text-text-subtle uppercase tracking-wider">
+            <p className="text-xs font-semibold text-text-subtle">
               Legend
             </p>
             {legendItems.map((item) => (

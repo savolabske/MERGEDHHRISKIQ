@@ -53,7 +53,7 @@ export function BriefingContent({ onFollowUp, mode = 'briefing' }: BriefingConte
       case 'Stable':
         return 'text-muted-foreground';
       default:
-        return 'text-gray-700';
+        return 'text-text-description';
     }
   };
 
@@ -222,7 +222,7 @@ export function BriefingContent({ onFollowUp, mode = 'briefing' }: BriefingConte
               {/* Color Legend */}
               <div className="mt-8 pt-6 border-t border-border">
                 <div className="flex items-center gap-6">
-                  <span className="text-xs font-bold text-text-subtle uppercase tracking-wide">Risk Levels:</span>
+                  <span className="text-xs font-semibold text-text-subtle">Risk Levels:</span>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded bg-success-subtle border border-border-muted"></div>

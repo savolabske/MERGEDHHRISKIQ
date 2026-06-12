@@ -425,7 +425,7 @@ export function Sidebar({
                             </span>
                           )}
                           {badge != null && isCollapsed && (
-                            <span className="absolute top-1 right-1 min-w-[14px] h-[14px] px-0.5 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                            <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-xs font-semibold flex items-center justify-center leading-none tabular-nums">
                               {badge}
                             </span>
                           )}
@@ -463,7 +463,7 @@ export function Sidebar({
                       setIsProfileMenuOpen(false);
                       setIsMobileMenuOpen(false);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[14px] text-[var(--sidebar-nav-text)] hover:bg-[var(--sidebar-nav-hover-bg)] hover:text-[var(--sidebar-nav-text-hover)] transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--sidebar-nav-text)] hover:bg-[var(--sidebar-nav-hover-bg)] hover:text-[var(--sidebar-nav-text-hover)] transition-colors"
                   >
                     <User size={17} strokeWidth={1.75} />
                     <span>My Profile</span>
@@ -476,7 +476,7 @@ export function Sidebar({
                     type="button"
                     variant="ghost"
                     onClick={onLogout}
-                    className="w-full justify-start gap-2.5 px-3 py-2.5 h-auto text-[14px] text-destructive-text hover:bg-destructive-subtle hover:text-destructive-text"
+                    className="w-full justify-start gap-2.5 px-3 py-2.5 h-auto text-sm text-destructive-text hover:bg-destructive-subtle hover:text-destructive-text"
                   >
                     <LogOut size={17} strokeWidth={1.75} />
                     Sign out
@@ -506,11 +506,11 @@ export function Sidebar({
                 {!isCollapsed && (
                   <>
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="text-[13px] font-medium text-[#0A0A0A] truncate">
+                      <div className="text-label text-foreground truncate">
                         Amina Mohamed
                       </div>
                       <div
-                        className="text-[11.5px] font-normal truncate"
+                        className="text-xs font-normal truncate"
                         style={{ color: 'var(--text-3)' }}
                       >
                         Field Coordinator

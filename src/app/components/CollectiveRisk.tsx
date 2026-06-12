@@ -588,7 +588,7 @@ export function CollectiveRisk() {
       case 'LOW':
         return 'bg-success text-white';
       default:
-        return 'bg-gray-500 text-white';
+        return 'bg-muted-foreground text-white';
     }
   };
 
@@ -645,7 +645,7 @@ export function CollectiveRisk() {
         <div className="max-w-[1400px] mx-auto">
         {/* Header */}
         <div className="bg-background px-4 sm:px-8 py-6 pt-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Collective Risks</h2>
+          <h2 className="text-page-title mb-1">Collective Risks</h2>
           <p className="text-sm sm:text-sm text-muted-foreground">AI-powered pattern analysis across all humanitarian risks in Somalia</p>
         </div>
 
@@ -667,10 +667,10 @@ export function CollectiveRisk() {
                   <Package size={18} className="text-chart-3" strokeWidth={1.5} />
                 </div>
               </div>
-              <p className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-2">
+              <p className="table-header-label mb-2">
                 Total Patterns
               </p>
-              <p className="text-3xl font-bold text-foreground leading-none">18</p>
+              <p className="text-kpi">18</p>
             </div>
 
             {/* Critical Threats */}
@@ -680,10 +680,10 @@ export function CollectiveRisk() {
                   <AlertTriangle size={18} className="text-destructive" strokeWidth={1.5} />
                 </div>
               </div>
-              <p className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-2">
+              <p className="table-header-label mb-2">
                 Critical Threats
               </p>
-              <p className="text-3xl font-bold text-foreground leading-none">05</p>
+              <p className="text-kpi">05</p>
             </div>
 
             {/* Affected Regions */}
@@ -693,8 +693,8 @@ export function CollectiveRisk() {
                   <MapPin size={18} className="text-primary" strokeWidth={1.5} />
                 </div>
               </div>
-              <p className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-2">Affected Locations</p>
-              <p className="text-3xl font-bold text-foreground leading-none">12</p>
+              <p className="table-header-label mb-2">Affected Locations</p>
+              <p className="text-kpi">12</p>
             </div>
 
             {/* Top Category */}
@@ -704,10 +704,10 @@ export function CollectiveRisk() {
                   <TrendingUp size={18} className="text-success" strokeWidth={1.5} />
                 </div>
               </div>
-              <p className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-2">
+              <p className="table-header-label mb-2">
                 Top Category
               </p>
-              <p className="text-3xl font-bold text-foreground leading-none">Security</p>
+              <p className="text-kpi">Security</p>
             </div>
           </div>
         </div>
@@ -777,10 +777,10 @@ export function CollectiveRisk() {
               <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-6 py-4 text-xs font-bold text-text-subtle uppercase tracking-wide w-[35%]">Risk Description</th>
-                  <th className="text-left px-6 py-4 text-xs font-bold text-text-subtle uppercase tracking-wide w-[15%]">Inherent Risk Ranking</th>
-                  <th className="text-left px-6 py-4 text-xs font-bold text-text-subtle uppercase tracking-wide w-[15%]">Mitigation</th>
-                  <th className="text-left px-6 py-4 text-xs font-bold text-text-subtle uppercase tracking-wide w-[15%]">Residual Risk Ranking</th>
+                  <th className="text-left px-6 py-3 table-header-label w-[35%]">Risk description</th>
+                  <th className="text-right px-6 py-3 table-header-label w-[15%]">Inherent risk</th>
+                  <th className="text-left px-6 py-3 table-header-label w-[15%]">Mitigation</th>
+                  <th className="text-right px-6 py-3 table-header-label w-[15%]">Residual risk</th>
                   <th className="w-[20%]"></th>
                 </tr>
               </thead>
@@ -791,47 +791,47 @@ export function CollectiveRisk() {
                   visiblePaginatedRisks.map((risk) => (
                   <tr 
                     key={risk.id} 
-                    className="hover:bg-sidebar transition-colors cursor-pointer"
+                    className="table-row-narrative cursor-pointer"
                     onClick={() => setSelectedRisk(risk.id)}
                   >
                     {/* Risk Description */}
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-3.5">
                       
-                      <p className="text-sm text-foreground line-clamp-2">
+                      <p className="table-value-text line-clamp-2" title={risk.causes}>
                         {risk.causes}
                       </p>
-                      <p className="text-xs text-text-subtle mt-1">
+                      <p className="table-metadata-text mt-1">
                         {risk.contributingCount} contributing risks
                       </p>
                     </td>
 
                     {/* Inherent Risk Ranking */}
-                    <td className="px-6 py-5">
-                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-sm font-semibold ${getRiskScoreColor(risk.inherentLikelihood * risk.inherentImpact).bg} ${getRiskScoreColor(risk.inherentLikelihood * risk.inherentImpact).text}`}>
+                    <td className="px-6 py-3.5 text-right">
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full table-status-text tabular-nums ${getRiskScoreColor(risk.inherentLikelihood * risk.inherentImpact).bg} ${getRiskScoreColor(risk.inherentLikelihood * risk.inherentImpact).text}`}>
                         {risk.inherentLikelihood * risk.inherentImpact}
                       </span>
                     </td>
 
                     {/* Mitigation */}
-                    <td className="px-6 py-5">
-                      <span className={`text-sm font-medium ${risk.mitigationStatus === 'Available' ? 'text-success' : 'text-text-subtle'}`}>
+                    <td className="px-6 py-3.5">
+                      <span className={`table-status-text ${risk.mitigationStatus === 'Available' ? 'text-success-text' : 'text-text-subtle'}`}>
                         {risk.mitigationStatus}
                       </span>
                     </td>
 
                     {/* Residual Risk Ranking */}
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-3.5 text-right">
                       {residualRankings[risk.id] && residualRankings[risk.id] !== '—' ? (
-                        <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-sm font-semibold ${getRiskScoreColor(residualRankings[risk.id]).bg} ${getRiskScoreColor(residualRankings[risk.id]).text}`}>
+                        <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full table-status-text tabular-nums ${getRiskScoreColor(residualRankings[risk.id]).bg} ${getRiskScoreColor(residualRankings[risk.id]).text}`}>
                           {residualRankings[risk.id]}
                         </span>
                       ) : (
-                        <span className="text-sm text-text-subtle">—</span>
+                        <span className="table-metadata-text">—</span>
                       )}
                     </td>
 
                     {/* Arrow */}
-                    <td className="px-6 py-5 text-right">
+                    <td className="px-6 py-3.5 text-right">
                       <ChevronRight size={18} className="text-text-subtle inline-block" />
                     </td>
                   </tr>
@@ -1108,7 +1108,7 @@ export function CollectiveRisk() {
 
               {/* Description */}
               <div>
-                <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">
+                <h3 className="table-header-label mb-3">
                   Description
                 </h3>
                 <p className="text-sm text-secondary-foreground leading-relaxed">
@@ -1118,7 +1118,7 @@ export function CollectiveRisk() {
 
               {/* Causes/Effects */}
               <div>
-                <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">
+                <h3 className="table-header-label mb-3">
                   Causes/Effects
                 </h3>
                 <p className="text-sm text-secondary-foreground leading-relaxed">
@@ -1128,7 +1128,7 @@ export function CollectiveRisk() {
 
               {/* Inherent Risk Ranking */}
               <div>
-                <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">
+                <h3 className="table-header-label mb-3">
                   Inherent Risk Ranking
                 </h3>
                 <div className="flex items-center gap-2">
@@ -1147,7 +1147,7 @@ export function CollectiveRisk() {
 
               {/* Residual Risk Ranking */}
               <div>
-                <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">
+                <h3 className="table-header-label mb-3">
                   Residual Risk Ranking
                 </h3>
                 {!isEditingResidual ? (
@@ -1209,7 +1209,7 @@ export function CollectiveRisk() {
               {/* Mitigation Measures */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide">MITIGATION MEASURES</h3>
+                  <h3 className="table-header-label">MITIGATION MEASURES</h3>
                   <div className="flex items-center gap-1 bg-secondary rounded-lg p-0.5">
                     <button
                       onClick={() => setMitigationTab('active')}
@@ -1452,7 +1452,7 @@ export function CollectiveRisk() {
 
               {/* Contributing Risks */}
               <div>
-                <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">Contributing Risks</h3>
+                <h3 className="table-header-label mb-3">Contributing Risks</h3>
                 <div className="divide-y divide-border">
                   {selectedRiskData.topContributingRisks.map((risk) => (
                     <button 
@@ -1476,7 +1476,7 @@ export function CollectiveRisk() {
 
               {/* Notes Section */}
               <div>
-                <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">
+                <h3 className="table-header-label mb-3">
                   Notes
                 </h3>
                 <div className="space-y-3">

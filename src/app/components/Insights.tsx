@@ -3,7 +3,7 @@ export function Insights() {
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="bg-card border-b border-sidebar-border px-4 sm:px-8 py-6 pt-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Insights</h2>
+        <h2 className="text-page-title mb-1">Insights</h2>
         <p className="text-sm sm:text-sm text-muted-foreground">AI-generated insights and trend analysis across all data sources</p>
       </div>
 

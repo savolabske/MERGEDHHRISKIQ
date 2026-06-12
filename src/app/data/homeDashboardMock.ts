@@ -518,8 +518,7 @@ export const HUB_BRIEFING_UPDATES = [
 export type HubReportHighlightId =
   | 'aid-flow'
   | 'migration-displacement'
-  | 'somalia-joint-fund'
-  | 'climate-hazards';
+  | 'somalia-joint-fund';
 
 /** Home — key metrics teased from full report scrollytellings. */
 export const HUB_REPORT_HIGHLIGHTS = [
@@ -549,15 +548,6 @@ export const HUB_REPORT_HIGHLIGHTS = [
     summary:
       '12 active programmes · H1 2025 deposits 2.1× H1 2024 — Inclusive Politics leads at 37% of the portfolio.',
     available: true,
-  },
-  {
-    id: 'climate-hazards' as HubReportHighlightId,
-    title: 'Climate Hazards Intelligence',
-    metric: '40%',
-    metricLabel: 'below normal rains',
-    summary:
-      'Bay and Bakool Gu rains lagging — drought, flood, and cholera risk elevated for operational planning.',
-    available: false,
   },
 ] as const;
 

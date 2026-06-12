@@ -75,7 +75,7 @@ export function Resources({ onResourceClick }: ResourcesProps) {
               className="w-full h-[48px] pl-12 pr-4 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle outline-none focus:border-primary transition-colors"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 h-[48px] bg-card border border-border rounded-lg hover:bg-gray-50 transition-colors">
+          <button className="flex items-center gap-2 px-4 h-[48px] bg-card border border-border rounded-lg hover:bg-muted transition-colors">
             <SlidersHorizontal size={16} className="text-muted-foreground" strokeWidth={2} />
             <span className="text-sm font-medium text-muted-foreground">Filter</span>
           </button>
@@ -83,7 +83,7 @@ export function Resources({ onResourceClick }: ResourcesProps) {
             <button 
               onClick={() => setViewMode('grid')}
               className={`w-9 h-9 flex items-center justify-center rounded transition-colors ${
-                viewMode === 'grid' ? 'bg-primary' : 'hover:bg-gray-100'
+                viewMode === 'grid' ? 'bg-primary' : 'hover:bg-secondary'
               }`}
             >
               <Grid2X2 size={16} className={viewMode === 'grid' ? 'text-white' : 'text-muted-foreground'} strokeWidth={2} />
@@ -91,7 +91,7 @@ export function Resources({ onResourceClick }: ResourcesProps) {
             <button 
               onClick={() => setViewMode('list')}
               className={`w-9 h-9 flex items-center justify-center rounded transition-colors ${
-                viewMode === 'list' ? 'bg-primary' : 'hover:bg-gray-100'
+                viewMode === 'list' ? 'bg-primary' : 'hover:bg-secondary'
               }`}
             >
               <List size={16} className={viewMode === 'list' ? 'text-white' : 'text-muted-foreground'} strokeWidth={2} />

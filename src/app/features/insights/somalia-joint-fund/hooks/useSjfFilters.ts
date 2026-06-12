@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react';
-import { COLORS, GAP_BARS, KPI_CARDS, SJF_DATA } from '../data/sjfData';
-import type { SjfDonorH1, SjfPair, SjfPairWithColor, SjfProgramme, SjfWindow, SjfYearly } from '../types';
+import { KPI_CARDS, SCENES } from '../data/sjfData';
+import type {
+  SjfChartKind,
+  SjfDonorH1,
+  SjfPair,
+  SjfPairWithColor,
+  SjfProgramme,
+  SjfWindow,
+  SjfYearly,
+} from '../types';
+import { SJF_DATA } from '../data/sjfData';
+import { COLORS } from '../data/sjfData';
 
 export const fmtM = (v: number) =>
   v >= 1e9
@@ -145,56 +155,44 @@ export function useSjfFilters() {
       .map((p) => [p[0], p[3], COLORS.brand] as SjfPairWithColor);
   }, [filteredProgrammes]);
 
-  const portfolio = Math.round(SJF_DATA.totals.portfolio * combinedScale);
   const capInception = Math.round(SJF_DATA.totals.capInception * donorScale * yearScale);
-  const depositsH1 = Math.round(SJF_DATA.totals.depositsH1_2025 * combinedScale);
-  const transfersH1 = Math.round(SJF_DATA.totals.transfersH1_2025 * entityScale * combinedScale);
 
-  const kpiCards = useMemo(
-    () =>
-      KPI_CARDS.map((k, i) => {
-        const dynamic = [
-          { value: fmtM(portfolio), sub: `${SJF_DATA.totals.programmesActive} programmes · ${SJF_DATA.totals.unEntities} UN entities` },
-          { value: fmtM(capInception), sub: `as of 30 June 2025 · ${SJF_DATA.totals.donorsInception} donors` },
-          { value: fmtM(depositsH1), sub: hasAnyFilter ? `filtered · ${yearLabel}` : '2.1× H1 2024 — momentum returning' },
-          { value: fmtM(transfersH1), sub: `to ${filteredPunoH1.length} UN agencies` },
-          { value: filteredDonorsAllTime[0]?.[0] ?? 'Sweden', sub: `${fmtM(filteredDonorsAllTime[0]?.[1] ?? 141364389)} deposited` },
-          { value: filteredWindows[0]?.[0] ?? 'Inclusive Politics', sub: `${filteredWindows[0]?.[1] ?? 37}% · $${filteredWindows[0]?.[2] ?? 42}M in 2025` },
-        ][i];
-        return { ...k, ...dynamic };
-      }),
-    [
-      portfolio,
-      capInception,
-      depositsH1,
-      transfersH1,
-      filteredDonorsAllTime,
-      filteredWindows,
-      filteredPunoH1.length,
-      hasAnyFilter,
-      yearLabel,
-    ],
-  );
+  const kpiCards = useMemo(() => {
+    if (!hasAnyFilter) return KPI_CARDS;
+    return KPI_CARDS.map((k) => ({
+      ...k,
+      sub: k.sub.includes('filtered') ? k.sub : `${k.sub} · filtered view`,
+    }));
+  }, [hasAnyFilter]);
 
   const sceneStats = useMemo(
-    () => [
-      { stat: fmtM(capInception), statLbl: 'deposited into the SJF since 2014' },
-      { stat: hasAnyFilter ? fmtM(depositsH1) : '2.1×', statLbl: 'H1 2025 deposits vs H1 2024' },
-      { stat: fmtM(transfersH1), statLbl: 'transferred to UN agencies in H1 2025' },
-      { stat: `${filteredWindows[0]?.[1] ?? 37}%`, statLbl: `of the 2025 portfolio is ${filteredWindows[0]?.[0] ?? 'Inclusive Politics'}` },
-      { stat: fmtM(filteredPunoH1[0]?.[1] ?? 10593920), statLbl: `flowed through ${filteredPunoH1[0]?.[0] ?? 'UNDP'} in H1 2025` },
-      { stat: fmtM(portfolio), statLbl: 'in approved budgets across the portfolio' },
-      { stat: '190k', statLbl: 'citizens registered for digital ID by mid-2025' },
-      { stat: '$65M', statLbl: 'the annual fundraising target' },
-    ],
-    [capInception, depositsH1, transfersH1, filteredWindows, filteredPunoH1, portfolio, hasAnyFilter],
+    () =>
+      SCENES.map((s) => ({
+        stat: s.stat,
+        statLbl: s.statLbl,
+      })),
+    [],
   );
 
-  const gapBars: SjfPairWithColor[] = GAP_BARS.map(([name, val, color]) => [
-    name,
-    Math.round(val * combinedScale) || val,
-    color,
-  ]);
+  const getSceneChart = (sceneIndex: number, chart: SjfChartKind): SjfChartKind => {
+    if (sceneIndex === 7 && chart.kind === 'hbars') {
+      return {
+        kind: 'hbars',
+        rows: filteredDonorsAllTime.map(([n, v]) => [n, v, COLORS.navy] as SjfPairWithColor),
+      };
+    }
+    if (sceneIndex === 8 && chart.kind === 'gapCallout' && hasAnyFilter) {
+      return {
+        ...chart,
+        rows: chart.rows.map(([label, value, color]) => [
+          label,
+          Math.round(value * combinedScale),
+          color,
+        ]),
+      };
+    }
+    return chart;
+  };
 
   return {
     startYear,
@@ -218,14 +216,11 @@ export function useSjfFilters() {
     filteredYearly,
     filteredProgrammes,
     topProgrammesBars,
-    gapBars,
     kpiCards,
     sceneStats,
+    getSceneChart,
     totals: {
-      portfolio,
       capInception,
-      depositsH1,
-      transfersH1,
     },
   };
 }

@@ -58,7 +58,7 @@ export function SearchStatus({ currentPhase, isBriefing }: SearchStatusProps) {
 
   return (
     <div className="flex flex-col gap-2 max-w-md w-full my-4">
-      <div className="relative overflow-hidden rounded-xl bg-card border border-slate-200 shadow-sm p-4">
+      <div className="relative overflow-hidden rounded-xl bg-card border border-border shadow-sm p-4">
         {/* Animated Background Gradient */}
         <motion.div 
           className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-50 to-transparent"
@@ -105,17 +105,17 @@ export function SearchStatus({ currentPhase, isBriefing }: SearchStatusProps) {
                   initial={{ y: 5, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -5, opacity: 0 }}
-                  className="text-sm font-medium text-slate-800"
+                  className="text-sm font-medium text-foreground"
                 >
                   {activeConfig.label}
                 </motion.span>
               </AnimatePresence>
-              <span className="text-xs text-slate-400">Processing real-time data...</span>
+              <span className="text-xs text-text-subtle">Processing real-time data...</span>
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
             <motion.div 
               className="h-full bg-blue-500"
               initial={{ width: "0%" }}
@@ -153,7 +153,7 @@ export function SearchStatus({ currentPhase, isBriefing }: SearchStatusProps) {
                initial={{ opacity: 0, scale: 0.8 }}
                animate={{ opacity: 1, scale: 1 }}
                transition={{ delay: i * 0.2 }}
-               className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full border border-slate-200"
+               className="text-xs bg-secondary text-muted-foreground px-2 py-1 rounded-full border border-border"
              >
                Scanning {source}...
              </motion.div>

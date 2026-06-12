@@ -36,7 +36,7 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/80 via-transparent to-[#0a1628]/20" />
 
         <div className="relative z-10 flex flex-col justify-end p-12 pb-14 w-full">
-          <h1 className="text-white text-[2.75rem] font-bold leading-[1.1] tracking-tight mb-4">
+          <h1 className="auth-display-title text-white text-[2.75rem] font-bold leading-[1.1] tracking-tight mb-4">
             HUMANITY HUB.<br />SOMALIA
           </h1>
           <p className="text-white/70 text-[1rem] leading-relaxed max-w-[400px] mb-8">
@@ -58,7 +58,7 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
             ))}
           </div>
 
-          <p className="text-[0.6875rem] text-[#4FA8DA] tracking-[0.25em] uppercase font-medium">
+          <p className="text-xs text-[#4FA8DA] tracking-[0.25em] uppercase font-medium">
             Decision Support Intelligence
           </p>
         </div>
@@ -71,11 +71,11 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
             <img src={unLogo} alt="United Nations Somalia" className="h-14 w-auto" />
           </div>
 
-          <h2 className="text-[1.75rem] font-bold text-[#1f2937] mb-8">Sign In</h2>
+          <h2 className="text-page-title mb-6">Sign In</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-[0.6875rem] font-semibold text-[#374151] tracking-wider uppercase mb-2">
+              <label className="block text-label mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -84,20 +84,20 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full px-4 py-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-[0.9375rem] placeholder:text-[#9CA3AF] pr-12"
+                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:ring-3 focus:ring-primary/20 focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
                 />
-                <Mail size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                <Mail size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle" />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-[0.6875rem] font-semibold text-[#374151] tracking-wider uppercase">
+                <label className="block text-label">
                   Password
                 </label>
                 <button
                   type="button"
-                  className="text-[0.8125rem] text-primary hover:text-primary-hover font-medium transition-colors"
+                  className="text-label text-primary hover:text-primary-hover transition-colors"
                   onClick={onNavigateToForgotPassword}
                 >
                   Forgot Password?
@@ -109,12 +109,12 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full px-4 py-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-[0.9375rem] placeholder:text-[#9CA3AF] pr-12"
+                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:ring-3 focus:ring-primary/20 focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -125,10 +125,10 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
               <button
                 type="button"
                 onClick={() => setRememberMe(!rememberMe)}
-                className={`w-4 h-4 rounded border border-[#D1D5DB] flex items-center justify-center flex-shrink-0 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                className={`w-4 h-4 rounded border border-border-muted flex items-center justify-center flex-shrink-0 transition-all focus:outline-none focus:ring-3 focus:ring-primary/20 ${
                   rememberMe
                     ? 'bg-primary border-primary'
-                    : 'bg-white hover:border-[#9CA3AF]'
+                    : 'bg-card hover:border-text-subtle'
                 }`}
               >
                 {rememberMe && (
@@ -137,22 +137,22 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
                   </svg>
                 )}
               </button>
-              <span className="text-[0.875rem] text-[#374151]">Remember me</span>
+              <span className="text-sm text-foreground">Remember me</span>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-primary text-white rounded-full text-[0.9375rem] font-semibold hover:bg-primary-hover active:bg-primary-active transition-colors"
+              className="w-full py-3.5 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary-hover active:bg-primary-active transition-colors"
             >
               Sign In
             </button>
           </form>
 
-          <p className="text-center mt-6 text-[0.875rem] text-[#6B7280]">
+          <p className="text-center mt-6 text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}
             <button
               type="button"
-              className="text-[0.875rem] text-[#1f2937] font-semibold hover:text-primary transition-colors underline"
+              className="text-sm text-foreground font-semibold hover:text-primary transition-colors underline"
               onClick={onNavigateToSignUp}
             >
               Sign up

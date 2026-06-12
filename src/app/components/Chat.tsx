@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronLeft, FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, UserPlus, Sparkles, CircleHelp, Check } from 'lucide-react';
+import { FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, UserPlus, Sparkles, CircleHelp, Check } from 'lucide-react';
 import { RiskIQChatHeader } from './RiskIQChatHeader';
+import { BackLink } from './ui/back-link';
+import { PageBreadcrumb, type PageBreadcrumbItem } from './ui/page-breadcrumb';
 import { RiskMatrix } from './RiskMatrix';
 import { BriefingContent } from './BriefingContent';
 import { SomaliaMap } from './SomaliaMap';
@@ -80,8 +82,8 @@ interface ChatProps {
   sharedWithUserIds?: string[];
   onShareUpdate?: (threadId: string, userIds: string[]) => void;
   showThreadHeader?: boolean;
-  showBackButton?: boolean;
-  backButtonLabel?: string;
+  navigation?: 'none' | 'breadcrumb' | 'back';
+  breadcrumbItems?: PageBreadcrumbItem[];
   showRiskIqContext?: boolean;
   createdByName?: string;
   isSharedThread?: boolean;
@@ -104,8 +106,8 @@ export function Chat({
   sharedWithUserIds = [],
   onShareUpdate,
   showThreadHeader = false,
-  showBackButton = false,
-  backButtonLabel = 'Back',
+  navigation = 'none',
+  breadcrumbItems,
   showRiskIqContext = false,
   createdByName = CURRENT_USER.name,
   isSharedThread = false,
@@ -219,8 +221,7 @@ export function Chat({
   const sharedUsers = useMemo(() => {
     return (sharedWithUserIds || []).map(getUserById).filter(Boolean);
   }, [sharedWithUserIds]);
-  const showChatsBackButton = backButtonLabel.toLowerCase().includes('chats');
-  const showNavigationBackButton = showBackButton || showChatsBackButton;
+  const showNavigation = navigation !== 'none';
 
   // Initial AI response - only if not loading from history
   useEffect(() => {
@@ -817,7 +818,7 @@ export function Chat({
                       <thead>
                         <tr className="border-b border-border">
                           {message.data.headers.map((header: string, idx: number) => (
-                            <th key={idx} className="text-left px-6 py-4 text-xs font-bold text-text-subtle uppercase tracking-wide">
+                            <th key={idx} className="text-left px-4 py-3 table-header-label">
                               {header}
                             </th>
                           ))}
@@ -825,23 +826,23 @@ export function Chat({
                       </thead>
                       <tbody>
                         {message.data.rows.map((row: string[], rowIdx: number) => (
-                          <tr key={rowIdx} className="border-b border-border last:border-b-0 hover:bg-sidebar transition-colors">
+                          <tr key={rowIdx} className="border-b border-border last:border-b-0 hover:bg-surface-row-hover transition-colors">
                             {row.map((cell, cellIdx) => (
-                              <td key={cellIdx} className="px-6 py-5">
+                              <td key={cellIdx} className="px-4 py-3">
                                 {message.data.headers[cellIdx].toLowerCase().includes('level') ? (
-                                  <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold uppercase ${getRiskLevelColor(cell)}`}>
+                                  <span className={`inline-block px-2.5 py-1 rounded-full table-status-text ${getRiskLevelColor(cell)}`}>
                                     {cell}
                                   </span>
                                 ) : message.data.headers[cellIdx].toLowerCase().includes('status') || message.data.headers[cellIdx].toLowerCase().includes('trend') ? (
-                                  <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(cell)}`}>
+                                  <span className={`inline-block px-2.5 py-1 rounded-full table-status-text ${getStatusColor(cell)}`}>
                                     {cell}
                                   </span>
                                 ) : cellIdx === 0 ? (
-                                  <span className="text-sm font-semibold text-foreground">{cell}</span>
+                                  <span className="table-primary-text">{cell}</span>
                                 ) : cellIdx === 1 ? (
-                                  <span className="text-base font-bold text-foreground">{cell}</span>
+                                  <span className="table-numeric-text">{cell}</span>
                                 ) : (
-                                  <span className="text-sm text-muted-foreground">{cell}</span>
+                                  <span className="table-supporting-text">{cell}</span>
                                 )}
                               </td>
                             ))}
@@ -1161,7 +1162,7 @@ export function Chat({
                 <thead>
                   <tr className="border-b border-border">
                     {headerCells.map((header, idx) => (
-                      <th key={idx} className="text-left px-6 py-4 text-xs font-bold text-text-subtle uppercase tracking-wide">
+                      <th key={idx} className="text-left px-4 py-3 table-header-label">
                         {header}
                       </th>
                     ))}
@@ -1169,13 +1170,13 @@ export function Chat({
                 </thead>
                 <tbody>
                   {dataRows.map((row, rowIdx) => (
-                    <tr key={rowIdx} className="border-b border-border last:border-b-0 hover:bg-sidebar transition-colors">
+                    <tr key={rowIdx} className="border-b border-border last:border-b-0 hover:bg-surface-row-hover transition-colors">
                       {row.map((cell, cellIdx) => (
-                        <td key={cellIdx} className="px-6 py-5">
+                        <td key={cellIdx} className="px-4 py-3">
                           {cellIdx === 0 ? (
-                            <span className="text-sm text-foreground font-medium">{cell}</span>
+                            <span className="table-primary-text">{cell}</span>
                           ) : (
-                            <span className="text-sm text-muted-foreground">{cell}</span>
+                            <span className="table-supporting-text">{cell}</span>
                           )}
                         </td>
                       ))}
@@ -1290,7 +1291,7 @@ export function Chat({
                 <thead>
                   <tr className="border-b border-border">
                     {message.data.headers.map((header: string, idx: number) => (
-                      <th key={idx} className="text-left px-6 py-4 text-xs font-bold text-text-subtle uppercase tracking-wide">
+                      <th key={idx} className="text-left px-4 py-3 table-header-label">
                         {header}
                       </th>
                     ))}
@@ -1298,23 +1299,23 @@ export function Chat({
                 </thead>
                 <tbody>
                   {message.data.rows.map((row: string[], rowIdx: number) => (
-                    <tr key={rowIdx} className="border-b border-border last:border-b-0 hover:bg-sidebar transition-colors">
+                    <tr key={rowIdx} className="border-b border-border last:border-b-0 hover:bg-surface-row-hover transition-colors">
                       {row.map((cell: string, cellIdx: number) => (
-                        <td key={cellIdx} className="px-6 py-5">
+                        <td key={cellIdx} className="px-4 py-3">
                           {message.data.headers[cellIdx].toLowerCase().includes('level') ? (
-                            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold uppercase ${getRiskLevelColor(cell)}`}>
+                            <span className={`inline-block px-2.5 py-1 rounded-full table-status-text ${getRiskLevelColor(cell)}`}>
                               {cell}
                             </span>
                           ) : message.data.headers[cellIdx].toLowerCase().includes('status') || message.data.headers[cellIdx].toLowerCase().includes('trend') ? (
-                            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${getStatusColor(cell)}`}>
+                            <span className={`inline-block px-2.5 py-1 rounded-full table-status-text ${getStatusColor(cell)}`}>
                               {cell}
                             </span>
                           ) : cellIdx === 0 ? (
-                            <span className="text-sm font-semibold text-foreground">{cell}</span>
+                            <span className="table-primary-text">{cell}</span>
                           ) : cellIdx === 1 ? (
-                            <span className="text-base font-bold text-foreground">{cell}</span>
+                            <span className="table-numeric-text">{cell}</span>
                           ) : (
-                            <span className="text-sm text-muted-foreground">{cell}</span>
+                            <span className="table-supporting-text">{cell}</span>
                           )}
                         </td>
                       ))}
@@ -1470,19 +1471,19 @@ export function Chat({
     <div className="h-full flex flex-col bg-background">
       {/* Risk IQ context + back navigation */}
       {showRiskIqContext && !showThreadHeader && (
-        <RiskIQChatHeader onBack={onBack} backLabel={backButtonLabel} />
+        <RiskIQChatHeader onBack={onBack} />
       )}
-      {showBackButton && !showRiskIqContext && !showThreadHeader && (
+      {navigation === 'back' && !showRiskIqContext && !showThreadHeader && (
         <div className="bg-background sticky top-0 z-20">
-          <div className="px-4 sm:px-8 lg:px-10 py-4 pt-6">
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-text transition-colors"
-            >
-              <ChevronLeft size={18} />
-              <span>{backButtonLabel}</span>
-            </button>
+          <div className="px-4 sm:px-8 lg:px-10 pt-6 pb-4">
+            <BackLink onClick={onBack} />
+          </div>
+        </div>
+      )}
+      {navigation === 'breadcrumb' && !showThreadHeader && breadcrumbItems && breadcrumbItems.length > 0 && (
+        <div className="bg-background sticky top-0 z-20">
+          <div className="px-4 sm:px-8 lg:px-10 pt-6 pb-4">
+            <PageBreadcrumb className="mb-0" items={breadcrumbItems} />
           </div>
         </div>
       )}
@@ -1491,16 +1492,14 @@ export function Chat({
       {showThreadHeader && (
         <div className="bg-background sticky top-0 z-20">
           <div className="px-4 sm:px-8 lg:px-10 py-4 pt-5 lg:pt-4">
-            <div className={`w-full flex items-center justify-between gap-3 ${showNavigationBackButton ? '' : 'pl-14 sm:pl-0'}`}>
-              {showNavigationBackButton ? (
-                <button
-                  type="button"
-                  onClick={onBack}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-text transition-colors"
-                >
-                  <ChevronLeft size={18} />
-                  <span>{backButtonLabel}</span>
-                </button>
+            {navigation === 'breadcrumb' && breadcrumbItems && breadcrumbItems.length > 0 && (
+              <PageBreadcrumb className="mb-4" items={breadcrumbItems} />
+            )}
+            <div className={`w-full flex items-center justify-between gap-3 ${showNavigation && navigation === 'back' ? '' : 'pl-14 sm:pl-0'}`}>
+              {navigation === 'back' ? (
+                <BackLink onClick={onBack} />
+              ) : navigation === 'breadcrumb' ? (
+                <div className="w-0 sm:w-0" />
               ) : (
                 <div className="w-10 sm:w-0" />
               )}
@@ -1532,7 +1531,7 @@ export function Chat({
 
                     {isSharedPopoverOpen && (
                       <div className="absolute right-0 top-full mt-2 w-[min(280px,88vw)] rounded-xl border border-border bg-card shadow-xl p-4 z-30">
-                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                        <div className="table-header-label mb-3">
                           Shared with ({sharedUsers.length})
                         </div>
                         <div className="space-y-2 max-h-[220px] overflow-y-auto">

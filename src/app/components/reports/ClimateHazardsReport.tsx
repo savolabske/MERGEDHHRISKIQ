@@ -33,7 +33,7 @@ export function ClimateHazardsReport({ onBack }: { onBack: () => void }) {
 
   return (
     <ReportShell>
-      <ReportBackButton onBack={onBack} />
+      <ReportBackButton onBack={onBack} title="Climate Hazards" />
       <ReportHero
         title="Climate Hazards"
         createdAt={CLIMATE_REPORT_CREATED}
@@ -110,7 +110,7 @@ export function ClimateHazardsReport({ onBack }: { onBack: () => void }) {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-foreground-emphasis">{CLIMATE_KPIS.totalHazardEvents2025}</span>
+                <span className="text-kpi">{CLIMATE_KPIS.totalHazardEvents2025}</span>
                 <span className="text-xs text-text-subtle uppercase">events</span>
               </div>
             </div>

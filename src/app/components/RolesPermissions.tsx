@@ -325,7 +325,7 @@ export function RolesPermissions() {
 
               {/* Header */}
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Create New Role</h2>
+                <h2 className="text-page-title mb-1">Create New Role</h2>
                 <p className="text-sm sm:text-sm text-muted-foreground">
                   Define a role name and configure module-level permissions
                 </p>
@@ -335,7 +335,7 @@ export function RolesPermissions() {
               <div className="bg-card rounded-xl border border-border p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                    <label className="block table-header-label mb-2">
                       Role Name *
                     </label>
                     <input
@@ -347,7 +347,7 @@ export function RolesPermissions() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                    <label className="block table-header-label mb-2">
                       Description
                     </label>
                     <input
@@ -366,7 +366,7 @@ export function RolesPermissions() {
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-border flex items-center justify-between">
                   <div>
-                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Module Permissions</h3>
+                    <h3 className="table-header-label">Module Permissions</h3>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     <span className="text-primary font-semibold">{selectedCount}</span> of {TOTAL_PERMISSIONS} permissions selected
@@ -377,26 +377,26 @@ export function RolesPermissions() {
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-border bg-muted">
-                        <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider w-[40%]">
+                      <tr className="border-b border-border bg-muted/70">
+                        <th className="text-left px-6 py-3 table-header-label w-[40%]">
                           Module
                         </th>
-                        <th className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider w-[12%]">
+                        <th className="text-center px-3 py-3 table-header-label w-[12%]">
                           <button onClick={() => toggleColumnPermissions('view')} className="hover:text-primary transition-colors">
                             View
                           </button>
                         </th>
-                        <th className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider w-[12%]">
+                        <th className="text-center px-3 py-3 table-header-label w-[12%]">
                           <button onClick={() => toggleColumnPermissions('create')} className="hover:text-primary transition-colors">
                             Create
                           </button>
                         </th>
-                        <th className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider w-[12%]">
+                        <th className="text-center px-3 py-3 table-header-label w-[12%]">
                           <button onClick={() => toggleColumnPermissions('edit')} className="hover:text-primary transition-colors">
                             Edit
                           </button>
                         </th>
-                        <th className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider w-[12%]">
+                        <th className="text-center px-3 py-3 table-header-label w-[12%]">
                           <button onClick={() => toggleColumnPermissions('delete')} className="hover:text-primary transition-colors">
                             Delete
                           </button>
@@ -408,10 +408,10 @@ export function RolesPermissions() {
                         <>
                           {/* Section Header */}
                           <tr key={section.section}>
-                            <td colSpan={5} className="px-6 py-3 bg-muted border-t border-b border-border">
+                            <td colSpan={5} className="px-6 py-2.5 bg-muted/70 border-t border-b border-border">
                               <div className="flex items-center gap-2">
                                 <div className="w-1 h-4 bg-primary rounded-full" />
-                                <span className="text-xs font-bold text-foreground uppercase tracking-wider">
+                                <span className="table-header-label text-foreground">
                                   {section.section}
                                 </span>
                               </div>
@@ -428,8 +428,8 @@ export function RolesPermissions() {
                             const deleteApplicable = isPermissionApplicable(item.module, 'delete');
 
                             return (
-                              <tr key={item.module} className="border-b border-border hover:bg-muted transition-colors">
-                                <td className="px-6 py-4">
+                              <tr key={item.module} className="border-b border-border hover:bg-surface-row-hover transition-colors">
+                                <td className="px-6 py-2.5">
                                   <div className="flex items-center gap-3">
                                     <input
                                       type="checkbox"
@@ -438,12 +438,12 @@ export function RolesPermissions() {
                                       disabled={item.disabled}
                                       className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
-                                    <span className={`text-sm ${item.disabled ? 'text-text-subtle' : 'text-foreground'}`}>
+                                    <span className={`table-value-text ${item.disabled ? 'text-text-subtle' : ''}`}>
                                       {getModuleLabel(item)}
                                     </span>
                                   </div>
                                 </td>
-                                <td className="px-3 py-4 text-center">
+                                <td className="px-3 py-2.5 text-center">
                                   {viewApplicable ? (
                                     <input
                                       type="checkbox"
@@ -456,7 +456,7 @@ export function RolesPermissions() {
                                     <span className="text-border-muted text-sm">—</span>
                                   )}
                                 </td>
-                                <td className="px-3 py-4 text-center">
+                                <td className="px-3 py-2.5 text-center">
                                   {createApplicable ? (
                                     <input
                                       type="checkbox"
@@ -469,7 +469,7 @@ export function RolesPermissions() {
                                     <span className="text-border-muted text-sm">—</span>
                                   )}
                                 </td>
-                                <td className="px-3 py-4 text-center">
+                                <td className="px-3 py-2.5 text-center">
                                   {editApplicable ? (
                                     <input
                                       type="checkbox"
@@ -482,7 +482,7 @@ export function RolesPermissions() {
                                     <span className="text-border-muted text-sm">—</span>
                                   )}
                                 </td>
-                                <td className="px-3 py-4 text-center">
+                                <td className="px-3 py-2.5 text-center">
                                   {deleteApplicable ? (
                                     <input
                                       type="checkbox"
@@ -510,7 +510,7 @@ export function RolesPermissions() {
                     <div key={section.section} className="p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-1 h-4 bg-primary rounded-full" />
-                        <span className="text-xs font-bold text-foreground uppercase tracking-wider">
+                        <span className="table-header-label text-foreground">
                           {section.section}
                         </span>
                       </div>
@@ -601,7 +601,7 @@ export function RolesPermissions() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Roles & Permissions</h2>
+          <h2 className="text-page-title mb-1">Roles & Permissions</h2>
           <p className="text-sm sm:text-sm text-muted-foreground">
             {roles.length} roles defined · {TOTAL_PERMISSIONS} permissions across {modules.length} sections
           </p>
@@ -630,17 +630,17 @@ export function RolesPermissions() {
       {/* Roles Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         {/* Table Header - Desktop */}
-        <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 bg-muted border-b border-border">
-          <div className="col-span-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+        <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
+          <div className="col-span-4 table-header-label">
             Role
           </div>
-          <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="col-span-2 table-header-label">
             Users
           </div>
-          <div className="col-span-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="col-span-3 table-header-label">
             Permissions
           </div>
-          <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="col-span-2 table-header-label">
             Created
           </div>
           <div className="col-span-1"></div>
@@ -651,12 +651,12 @@ export function RolesPermissions() {
           {filteredRoles.map((role) => (
             <div
               key={role.id}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 py-4 hover:bg-muted transition-colors cursor-pointer"
+              className="table-row-standard grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors cursor-pointer"
               onClick={() => setViewingRole(role)}
             >
               {/* Role Info */}
               <div className="lg:col-span-4">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Role</div>
+                <div className="table-header-label mb-1 lg:hidden">Role</div>
                 <div className="flex items-start gap-3">
                   <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
@@ -666,30 +666,30 @@ export function RolesPermissions() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-semibold text-foreground">{role.name}</h3>
+                      <h3 className="table-primary-text">{role.name}</h3>
                       {role.isSystem && (
                         <span className="px-2 py-0.5 bg-secondary text-muted-foreground text-xs font-medium rounded">
                           SYSTEM
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{role.description}</p>
+                    <p className="table-supporting-text mt-0.5 line-clamp-1" title={role.description}>{role.description}</p>
                   </div>
                 </div>
               </div>
 
               {/* Users */}
               <div className="lg:col-span-2">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Users</div>
+                <div className="table-header-label mb-1 lg:hidden">Users</div>
                 <div className="flex items-center gap-2">
                   <Users className="text-text-subtle" size={16} />
-                  <span className="text-sm text-muted-foreground">{role.users}</span>
+                  <span className="table-numeric-text">{role.users}</span>
                 </div>
               </div>
 
               {/* Permissions */}
               <div className="lg:col-span-3">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Permissions</div>
+                <div className="table-header-label mb-1 lg:hidden">Permissions</div>
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -702,7 +702,7 @@ export function RolesPermissions() {
                       />
                     </div>
                   </div>
-                  <span className="text-sm text-muted-foreground font-medium whitespace-nowrap">
+                  <span className="table-numeric-text">
                     {role.permissions}/{role.totalPermissions}
                   </span>
                 </div>
@@ -710,8 +710,8 @@ export function RolesPermissions() {
 
               {/* Created */}
               <div className="lg:col-span-2">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Created</div>
-                <span className="text-sm text-muted-foreground">{role.created}</span>
+                <div className="table-header-label mb-1 lg:hidden">Created</div>
+                <span className="table-metadata-text">{role.created}</span>
               </div>
 
               {/* Actions */}
@@ -875,17 +875,17 @@ export function RolesPermissions() {
               {/* Tab Content */}
               {activeTab === 'permissions' && (
                 <div className="space-y-4">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Module Permissions</h4>
+                  <h4 className="table-header-label">Module Permissions</h4>
                   
                   <div className="border border-border rounded-xl overflow-hidden">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-muted border-b border-border">
-                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Module</th>
-                          <th className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">View</th>
-                          <th className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Create</th>
-                          <th className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Edit</th>
-                          <th className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Delete</th>
+                        <tr className="bg-muted/70 border-b border-border">
+                          <th className="text-left px-4 py-3 table-header-label">Module</th>
+                          <th className="text-center px-3 py-3 table-header-label">View</th>
+                          <th className="text-center px-3 py-3 table-header-label">Create</th>
+                          <th className="text-center px-3 py-3 table-header-label">Edit</th>
+                          <th className="text-center px-3 py-3 table-header-label">Delete</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -893,10 +893,10 @@ export function RolesPermissions() {
                           <>
                             {/* Section Header */}
                             <tr key={section.section}>
-                              <td colSpan={5} className="px-4 py-3 bg-muted border-y border-border">
+                              <td colSpan={5} className="px-4 py-2.5 bg-muted/70 border-y border-border">
                                 <div className="flex items-center gap-2">
                                   <div className="w-1 h-4 bg-primary rounded-full" />
-                                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">
+                                  <span className="table-header-label text-foreground">
                                     {section.section}
                                   </span>
                                 </div>
@@ -913,30 +913,30 @@ export function RolesPermissions() {
                               const isChecked = viewingRole.id === '1';
 
                               return (
-                                <tr key={item.module} className="border-b border-border last:border-b-0">
-                                  <td className="px-4 py-3 text-sm text-foreground">{getModuleLabel(item)}</td>
-                                  <td className="px-3 py-3 text-center">
+                                <tr key={item.module} className="border-b border-border last:border-b-0 hover:bg-surface-row-hover transition-colors">
+                                  <td className="px-4 py-2.5 table-value-text">{getModuleLabel(item)}</td>
+                                  <td className="px-3 py-2.5 text-center">
                                     {viewApplicable ? (
                                       <Check size={18} className="mx-auto text-success-text" />
                                     ) : (
                                       <span className="text-border-muted">—</span>
                                     )}
                                   </td>
-                                  <td className="px-3 py-3 text-center">
+                                  <td className="px-3 py-2.5 text-center">
                                     {createApplicable && isChecked ? (
                                       <Check size={18} className="mx-auto text-success-text" />
                                     ) : (
                                       <span className="text-border-muted">—</span>
                                     )}
                                   </td>
-                                  <td className="px-3 py-3 text-center">
+                                  <td className="px-3 py-2.5 text-center">
                                     {editApplicable && isChecked ? (
                                       <Check size={18} className="mx-auto text-success-text" />
                                     ) : (
                                       <span className="text-border-muted">—</span>
                                     )}
                                   </td>
-                                  <td className="px-3 py-3 text-center">
+                                  <td className="px-3 py-2.5 text-center">
                                     {deleteApplicable && isChecked ? (
                                       <Check size={18} className="mx-auto text-success-text" />
                                     ) : (

@@ -1,7 +1,15 @@
 import { AID_FLOW_DATA } from '../../aid-flow/data/aidFlowData';
 import { MIGRATION_DATA } from '../../migration-displacement/data/migrationData';
-import { COLORS, SJF_DATA } from './sjfData';
-import type { SjfRecipeResult } from '../types';
+import { getChatOnlyAnswer, isChatOnlyPrompt, stripHtml } from '../../shared/classifyReportPrompt';
+import { AI_CHIPS, COLORS, SJF_DATA } from './sjfData';
+import {
+  PBI_PLAN_Y25,
+  PBI_PLAN_Y26,
+  PBI_PLAN_Y27,
+  balanceCfRows,
+  scenarioTotals,
+} from './sjfPbiUtils';
+import type { SjfPromptResult, SjfRecipeResult } from '../types';
 
 function rDonors(): SjfRecipeResult {
   return {
@@ -331,6 +339,7 @@ function rOverview(): SjfRecipeResult {
 
 function rGeneric(q: string): SjfRecipeResult {
   return {
+    isFallback: true,
     title: 'SJF data',
     summaryHtml: `Here's what the SJF data shows for <b>"${q}"</b>. As of mid-2025, the fund holds a $214.7M active portfolio, with $597.7M raised since 2014. 12 programmes run across 5 open windows; Inclusive Politics is the largest theme. H1 2025 deposits more than doubled vs H1 2024. Try a chip below for a sharper cut.`,
     findings: [
@@ -584,6 +593,7 @@ function xClimateMigration(): SjfRecipeResult {
 
 function xGeneric(_q: string): SjfRecipeResult {
   return {
+    isFallback: true,
     title: 'Cross-report comparison',
     extended: true,
     summaryHtml:
@@ -615,6 +625,16 @@ function xGeneric(_q: string): SjfRecipeResult {
           },
         ],
       },
+      {
+        type: 'chips',
+        title: 'Try a cross-cutting question',
+        prompts: [
+          'Compare SJF with the Aid Flow donor base',
+          'How does SJF respond to displacement?',
+          'Show climate funding across all reports',
+          "What's the aid diversion picture across reports?",
+        ],
+      },
     ],
     followUps: [
       'Compare SJF vs Aid Flow donors',
@@ -626,8 +646,261 @@ function xGeneric(_q: string): SjfRecipeResult {
   };
 }
 
+function rForwardPlan(): SjfRecipeResult {
+  return {
+    title: 'Forward commitment plan 2025–2027',
+    summaryHtml:
+      `The SJF team's forward plan totals roughly <b>$63M across 2025–2027</b>. <b>2025: $37.4M</b> (with $9.8M Balance C/F), <b>2026: $25.2M</b> (almost half is C/F), <b>2027: $0.74M</b> — Canada only. The 2027 cliff is the single most urgent funding conversation.`,
+    findings: [
+      { value: '$37.4M', label: '2025 plan' },
+      { value: '$25.2M', label: '2026 plan' },
+      { value: '$0.74M', label: '2027 plan' },
+      { value: 'Canada only', label: '2027 confirmed' },
+    ],
+    sections: [
+      {
+        type: 'full',
+        title: 'Plan by year',
+        subtitle: '2025 / 2026 / 2027 totals',
+        chart: {
+          kind: 'hbars',
+          rows: [
+            ['2025 Plan', PBI_PLAN_Y25, COLORS.brand],
+            ['2026 Plan', PBI_PLAN_Y26, COLORS.navy],
+            ['2027 Plan', PBI_PLAN_Y27, COLORS.coral],
+          ],
+        },
+      },
+      {
+        type: 'grid',
+        items: [
+          { title: 'By donor (multi-year)', subtitle: 'New commitments + Balance C/F', chart: { kind: 'donorTrend' } },
+          { title: 'By window (2025)', subtitle: 'Where the money goes', chart: { kind: 'windowYearBars', donor: null, year: '2025' } },
+        ],
+      },
+    ],
+    followUps: [
+      'Show 2025 transfers to programmes',
+      'Compare the three scenarios',
+      'Show Balance C/F breakdown',
+      'What is the funding gap?',
+    ],
+    chips: ['Show 2025', 'Show 2026', 'Show scenarios'],
+  };
+}
+
+function r2025Transfers(): SjfRecipeResult {
+  const data = SJF_DATA.pbi.transfers2025;
+  const tot = data.reduce((s, r) => s + r[1], 0);
+  return {
+    title: '2025 transfers to programmes',
+    summaryHtml:
+      `In 2025, the SJF transferred <b>$24M to 10 programmes</b>. <b>SRSP led at $5.7M (23.8%)</b>, followed by <b>Dawlad Kab at $5.1M (21.1%)</b>. Together the top 4 (SRSP, Dawlad Kab, JJCP, JPHR II) absorbed about <b>67% of all transfers</b>.`,
+    findings: [
+      { value: '$24M', label: 'Total transferred' },
+      { value: '10', label: 'Programmes' },
+      { value: 'SRSP', label: 'Top recipient' },
+      { value: '67%', label: 'Top 4 share' },
+    ],
+    sections: [
+      {
+        type: 'full',
+        title: 'By programme — 2025',
+        subtitle: 'Total $24M',
+        chart: { kind: 'projectDonut', year: 2025, label: '2025' },
+      },
+      {
+        type: 'full',
+        title: 'Ranked bars',
+        subtitle: '2025 transfers ranked',
+        chart: {
+          kind: 'hbars',
+          rows: data.map(([n, v]) => [n, v, COLORS.brand]),
+        },
+      },
+    ],
+    followUps: [
+      'Show 2026 transfers',
+      'Compare 2025 vs 2026 transfers',
+      'Show 2025 plan by donor',
+      'Which window gets the most?',
+    ],
+    chips: ['Show 2026', 'Compare years'],
+  };
+}
+
+function r2026Transfers(): SjfRecipeResult {
+  const data = SJF_DATA.pbi.transfers2026;
+  const tot = data.reduce((s, r) => s + r[1], 0);
+  return {
+    title: '2026 transfers to programmes',
+    summaryHtml:
+      `In 2026, planned transfers are <b>$16.2M to 7 programmes</b> — a 33% drop from 2025. <b>Maareynta becomes the top recipient at $4.8M (30%)</b> as the climate-governance flagship scales. Two new programmes appear: <b>Saameynta II</b> ($2M) and <b>WPP successor</b> ($2M).`,
+    findings: [
+      { value: '$16.2M', label: 'Total transferred' },
+      { value: '7', label: 'Programmes' },
+      { value: 'Maareynta', label: 'Top recipient' },
+      { value: '−33%', label: 'vs 2025' },
+    ],
+    sections: [
+      {
+        type: 'full',
+        title: 'By programme — 2026',
+        subtitle: 'Total $16.2M',
+        chart: { kind: 'projectDonut', year: 2026, label: '2026' },
+      },
+      {
+        type: 'full',
+        title: 'Ranked bars',
+        subtitle: '2026 transfers ranked',
+        chart: {
+          kind: 'hbars',
+          rows: data.map(([n, v]) => [n, v, COLORS.brand]),
+        },
+      },
+    ],
+    followUps: [
+      'Show 2025 transfers',
+      'Compare scenarios',
+      'Why does Maareynta lead?',
+      'Show 2026 plan by donor',
+    ],
+    chips: ['Show 2025', 'Show scenarios'],
+  };
+}
+
+function rScenarios(): SjfRecipeResult {
+  const totals = scenarioTotals();
+  return {
+    title: 'Three funding scenarios for 2026',
+    summaryHtml:
+      `The team models <b>three 2026 funding scenarios</b>. <b>Best Case: $37.6M</b> allocated if all targeted donors deliver. <b>Most Likely: $24.9M</b> — the realistic plan. <b>Worst Case: $12.5M</b> — if only confirmed commitments materialise. The <b>$25M gap</b> between best and worst is what the fundraising conversation is really about.`,
+    findings: [
+      { value: '$37.6M', label: 'Best Case 2026' },
+      { value: '$24.9M', label: 'Most Likely' },
+      { value: '$12.5M', label: 'Worst Case' },
+      { value: '$25M', label: 'Best–Worst gap' },
+    ],
+    sections: [
+      {
+        type: 'full',
+        title: 'Scenario totals',
+        subtitle: '2026 allocation under each scenario',
+        chart: { kind: 'scenarioBars' },
+      },
+      {
+        type: 'full',
+        title: 'Programme-by-programme comparison',
+        subtitle: 'Approved budget, net-funded, and 2026 allocation under each scenario',
+        chart: { kind: 'scenarioTable' },
+      },
+    ],
+    followUps: [
+      'Show 2026 transfers',
+      'Show forward plan',
+      'Which programmes are most at risk?',
+      "What's the funding gap?",
+    ],
+    chips: ['Show transfers', 'Show plan'],
+  };
+}
+
+function rBalanceCF(): SjfRecipeResult {
+  const cf25 = balanceCfRows('2025');
+  const cf26 = balanceCfRows('2026');
+  const tot25 = cf25.reduce((s, r) => s + r[1], 0);
+  const tot26 = cf26.reduce((s, r) => s + r[1], 0);
+  return {
+    title: 'Balance Carried Forward',
+    summaryHtml:
+      `<b>Balance C/F</b> is the SJF's accumulated balance from prior years — funds already inside the fund, earmarked to specific windows. In <b>2025</b>, $9.76M is being deployed. In <b>2026</b>, the C/F line grows to <b>$12.47M</b> and becomes the single biggest source.`,
+    findings: [
+      { value: '$9.76M', label: '2025 C/F deploy' },
+      { value: '$12.47M', label: '2026 C/F deploy' },
+      { value: '$22.2M', label: 'Total 2-yr' },
+      { value: 'Earmarked', label: 'Not unrestricted' },
+    ],
+    sections: [
+      {
+        type: 'grid',
+        items: [
+          {
+            title: 'Balance C/F — 2025',
+            subtitle: 'by window',
+            chart: { kind: 'hbars', rows: cf25 },
+          },
+          {
+            title: 'Balance C/F — 2026',
+            subtitle: 'by window',
+            chart: { kind: 'hbars', rows: cf26 },
+          },
+        ],
+      },
+    ],
+    followUps: [
+      'Show forward plan',
+      'Compare with new commitments',
+      'Show by window',
+      'Show scenarios',
+    ],
+    chips: ['Show plan', 'Show windows'],
+  };
+}
+
+const CHIP_ROUTES: Record<string, () => SjfRecipeResult> = {
+  'show 2025 only': rDepositRate,
+  'show all-time': rDonors,
+  'show 2025': rForwardPlan,
+  'show 2026': r2026Transfers,
+  'show scenarios': rScenarios,
+  'show gap': rOutlook,
+  'show by agency': rPUNO,
+  'show annual trend': rAnnualFlow,
+  'show by donor': rDepositRate,
+  'show programmes': rProgrammes,
+  'show donors': rDonors,
+  'show windows': rWindows,
+  'show results': rResults,
+  'show 2026 transfers': r2026Transfers,
+  'compare years': r2025Transfers,
+  'show plan': rForwardPlan,
+  'show transfers': r2026Transfers,
+  'show pipeline': rOutlook,
+  'show donor risks': rOutlook,
+  'group by window': rProgrammes,
+  'show recently closed': rProgrammes,
+  'show by window': rResults,
+  'show gender outcomes': rResults,
+  'show by programme': rPUNO,
+  'show change': rPUNO,
+  'aid flow comparison': xAidFlow,
+  'migration comparison': xMigration,
+  'compare with humanitarian': xMigration,
+  'show by region': xClimateMigration,
+  'show governance work': xDiversion,
+  'show monitoring': xDiversion,
+  'show by sector': xAidFlow,
+};
+
+function resolveChipRoute(q: string): SjfRecipeResult | null {
+  const key = q.trim().toLowerCase();
+  const factory = CHIP_ROUTES[key];
+  return factory ? factory() : null;
+}
+
 function recipeStandard(q: string): SjfRecipeResult {
+  const chip = resolveChipRoute(q);
+  if (chip) return chip;
+
   const t = q.toLowerCase();
+  if (/forward plan|2025 plan|2026 plan|2027 plan|3.year|three.year|pipeline|cliff/.test(t))
+    return rForwardPlan();
+  if (/2025 transfer|transfers.*2025|transfers in 2025/.test(t)) return r2025Transfers();
+  if (/2026 transfer|transfers.*2026|transfers in 2026|maareynta.*top|maareynta.*lead/.test(t))
+    return r2026Transfers();
+  if (/scenario|worst.case|best.case|most likely|funding scenario/.test(t)) return rScenarios();
+  if (/balance c.f|balance.*forward|carry.forward|carry over|carried forward/.test(t))
+    return rBalanceCF();
   if (/summar|overall|overview|active portfolio|sjf overview/.test(t)) return rOverview();
   if (/donor|contribut|funding source|who fund/.test(t) && !/window/.test(t)) return rDonors();
   if (/deposit rate|deposit performance|trending|commit vs|finland|switzerland.*pending|deposits.*2025|2025.*deposit/.test(t))
@@ -643,6 +916,9 @@ function recipeStandard(q: string): SjfRecipeResult {
 }
 
 function recipeExtended(q: string): SjfRecipeResult {
+  const chip = resolveChipRoute(q);
+  if (chip) return chip;
+
   const t = q.toLowerCase();
   if (/aid flow|donor.*compar|aims|fcdo|bilateral/.test(t)) return xAidFlow();
   if (/displac|migration|drought.*fund|where.*displaced|gap.*displac/.test(t)) return xMigration();
@@ -651,12 +927,27 @@ function recipeExtended(q: string): SjfRecipeResult {
   return xGeneric(q);
 }
 
-export function resolveSjfRecipe(query: string, extendedKnowledge: boolean): SjfRecipeResult {
+function resolveSjfRecipe(query: string, extendedKnowledge: boolean): SjfRecipeResult {
   if (extendedKnowledge) return recipeExtended(query);
   return recipeStandard(query);
 }
 
-export function getRecipeAssistantReply(recipe: SjfRecipeResult): string {
-  const ext = recipe.extended ? ' (cross-referencing linked reports)' : '';
-  return `${recipe.title}${ext}: summary, charts and detail on the left.${recipe.chips?.length ? ' Drill further with the chips below.' : ''}`;
+export function resolveSjfPrompt(query: string, extendedKnowledge: boolean): SjfPromptResult {
+  if (isChatOnlyPrompt(query)) {
+    return { lane: 'chat', body: getChatOnlyAnswer('sjf', query), chips: [...AI_CHIPS] };
+  }
+
+  const recipe = resolveSjfRecipe(query, extendedKnowledge);
+  if (recipe.isFallback) {
+    return {
+      lane: 'chat',
+      body: stripHtml(recipe.summaryHtml),
+      chips: (recipe.followUps.length > 0 ? recipe.followUps : recipe.chips)?.slice(0, 3),
+    };
+  }
+
+  return { lane: 'dashboard', recipe };
 }
+
+export { resolveSjfRecipe };
+

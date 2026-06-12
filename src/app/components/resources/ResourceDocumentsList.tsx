@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import type { ResourceFile, ResourceFileType } from '../../data/resourcesMock';
 import {
   DETAIL_FILES_TABLE_GRID,
+  DetailSectionTitle,
   PlatformFileStatusCell,
 } from './resourceShared';
 
@@ -171,9 +172,7 @@ export function ResourceDocumentsList({
   return (
     <div className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Files
-        </h3>
+        <DetailSectionTitle className="mb-0">Files</DetailSectionTitle>
         <span className="text-sm text-muted-foreground">
           {files.length} file{files.length !== 1 ? 's' : ''}
         </span>
@@ -249,7 +248,7 @@ export function ResourceDocumentsList({
         <div className="border-t border-border overflow-x-auto">
           <div className="min-w-[min(100%,720px)]">
             <div
-              className={`${DETAIL_FILES_TABLE_GRID} py-2 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-surface-subtle`}
+              className={`${DETAIL_FILES_TABLE_GRID} min-h-10 py-2 border-b border-border table-header-label bg-muted/70`}
               role="row"
             >
               <div className="flex items-center justify-center">
@@ -269,7 +268,7 @@ export function ResourceDocumentsList({
               {pageFiles.map((file) => (
                 <div
                   key={file.id}
-                  className={`${DETAIL_FILES_TABLE_GRID} py-3.5 bg-card hover:bg-surface-subtle transition-colors`}
+                  className={`${DETAIL_FILES_TABLE_GRID} table-row-entity bg-card transition-colors`}
                   role="row"
                 >
                   <div className="flex items-center justify-center">
@@ -282,8 +281,8 @@ export function ResourceDocumentsList({
                     />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
+                    <p className="table-primary-text truncate">{file.name}</p>
+                    <p className="table-supporting-text mt-0.5">
                       {file.size} · Uploaded {file.uploadedAt}
                     </p>
                   </div>

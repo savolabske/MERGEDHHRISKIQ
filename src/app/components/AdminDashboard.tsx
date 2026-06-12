@@ -34,7 +34,7 @@ export function AdminDashboard() {
 
   return (
     <PageScrollShell>
-            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-1">
+            <h2 className="text-page-title mb-1">
               Admin Dashboard
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground">
@@ -44,25 +44,25 @@ export function AdminDashboard() {
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <div className="bg-card border border-border rounded-2xl p-5">
                 <p className="text-sm text-muted-foreground">Total users</p>
-                <p className="text-3xl leading-none font-semibold text-foreground-emphasis mt-2">214</p>
+                <p className="text-kpi mt-2">214</p>
                 <p className="text-sm text-success font-medium mt-2">+12 this month</p>
               </div>
 
               <div className="bg-card border border-border rounded-2xl p-5">
                 <p className="text-sm text-muted-foreground">Pending approvals</p>
-                <p className="text-3xl leading-none font-semibold text-foreground-emphasis mt-2">7</p>
+                <p className="text-kpi mt-2">7</p>
                 <p className="text-sm text-warning-strong font-medium mt-2">Oldest: 6 days ago</p>
               </div>
 
               <div className="bg-card border border-border rounded-2xl p-5">
                 <p className="text-sm text-muted-foreground">Active this week</p>
-                <p className="text-3xl leading-none font-semibold text-foreground-emphasis mt-2">89</p>
+                <p className="text-kpi mt-2">89</p>
                 <p className="text-sm text-muted-foreground font-medium mt-2">42% of all users</p>
               </div>
 
               <div className="bg-card border border-border rounded-2xl p-5">
                 <p className="text-sm text-muted-foreground">Searches today</p>
-                <p className="text-3xl leading-none font-semibold text-foreground-emphasis mt-2">341</p>
+                <p className="text-kpi mt-2">341</p>
                 <p className="text-sm text-success font-medium mt-2">+18% vs yesterday</p>
               </div>
             </div>
@@ -157,11 +157,11 @@ export function AdminDashboard() {
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="border border-border rounded-xl py-3 px-4 text-center">
                     <p className="text-sm text-muted-foreground">Total searches</p>
-                    <p className="text-4xl leading-none font-semibold text-foreground-emphasis mt-1">341</p>
+                    <p className="text-kpi-hero mt-1">341</p>
                   </div>
                   <div className="border border-border rounded-xl py-3 px-4 text-center">
                     <p className="text-sm text-muted-foreground">Avg per user</p>
-                    <p className="text-4xl leading-none font-semibold text-foreground-emphasis mt-1">3.8</p>
+                    <p className="text-kpi-hero mt-1">3.8</p>
                   </div>
                 </div>
 

@@ -1,5 +1,6 @@
 interface TableSkeletonProps {
   variant?: 'table' | 'grid' | 'users' | 'detailFiles';
+  density?: 'compact' | 'standard' | 'entity' | 'narrative';
   rows?: number;
   columns?: number;
 }
@@ -10,16 +11,24 @@ function ShimmerBlock({ className, style }: { className: string; style?: Record<
 
 export function TableSkeleton({
   variant = 'table',
+  density = 'standard',
   rows = 10,
   columns = 6,
 }: TableSkeletonProps) {
+  const rowPadding = {
+    compact: 'py-2',
+    standard: 'py-2.5',
+    entity: 'py-3',
+    narrative: 'py-3.5',
+  }[density];
+
   if (variant === 'users') {
     return (
       <>
         {Array.from({ length: rows }, (_, rowIndex) => (
           <div
             key={`table-skeleton-user-row-${rowIndex}`}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 py-4 border-b border-border items-center"
+            className="grid min-h-14 grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-4 sm:px-6 py-3 border-b border-border items-center"
           >
             <div className="lg:col-span-4 flex items-center gap-3">
               <ShimmerBlock className="hidden lg:block w-4 h-4 rounded-sm" />
@@ -55,7 +64,7 @@ export function TableSkeleton({
         {Array.from({ length: rows }, (_, rowIndex) => (
           <div
             key={`table-skeleton-detail-file-${rowIndex}`}
-            className={`${detailGrid} py-3.5 bg-card border-b border-border`}
+            className={`${detailGrid} min-h-14 py-3 bg-card border-b border-border`}
           >
             <div className="flex items-center justify-center">
               <ShimmerBlock className="w-4 h-4 shrink-0 rounded" />
@@ -88,7 +97,7 @@ export function TableSkeleton({
         {Array.from({ length: rows }, (_, rowIndex) => (
           <div
             key={`table-skeleton-row-${rowIndex}`}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 py-4 border-b border-border"
+            className={`grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-4 sm:px-6 ${rowPadding} border-b border-border`}
           >
             {Array.from({ length: columns }, (_, columnIndex) => (
               <div key={`table-skeleton-cell-${rowIndex}-${columnIndex}`} className="lg:col-span-2">
@@ -108,7 +117,7 @@ export function TableSkeleton({
           {Array.from({ length: columns }, (_, columnIndex) => (
             <td
               key={`table-skeleton-cell-${rowIndex}-${columnIndex}`}
-              className="px-6 py-4 align-middle"
+              className={`px-4 sm:px-6 ${rowPadding} align-middle`}
             >
               <ShimmerBlock className="h-4 w-full rounded-md" />
             </td>

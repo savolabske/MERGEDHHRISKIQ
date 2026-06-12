@@ -11,7 +11,7 @@ interface MultiSelectMenuProps {
 
 export function MultiSelectMenu({ title, options, selected, onToggle, onClear }: MultiSelectMenuProps) {
   return (
-    <div className="absolute right-0 top-[44px] z-40 w-[280px] rounded-xl border border-[#e6e9ef] bg-white shadow-lg">
+    <div className="absolute right-0 top-[44px] z-50 w-[280px] rounded-xl border border-[#e6e9ef] bg-white shadow-lg">
       <div className="flex items-center justify-between border-b border-[#eef1f6] px-3 py-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#6b7a8d]">{title}</span>
         {selected.length > 0 && (

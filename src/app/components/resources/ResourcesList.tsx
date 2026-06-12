@@ -122,7 +122,7 @@ export function ResourcesList({
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">My Resources</h2>
+          <h2 className="text-page-title mb-1">My Resources</h2>
           <p className="text-sm text-muted-foreground">
             Manage and discover operational documents, research, and technical links.
           </p>
@@ -213,14 +213,14 @@ export function ResourcesList({
 
       {viewMode === 'list' ? (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/60 border-b border-border">
-            <div className="col-span-7 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="hidden min-h-10 md:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
+            <div className="col-span-7 table-header-label">
               Name
             </div>
-            <div className="col-span-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="col-span-3 table-header-label">
               Last Modified
             </div>
-            <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
+            <div className="col-span-2 table-header-label text-right">
               Actions
             </div>
           </div>
@@ -229,14 +229,14 @@ export function ResourcesList({
             {paginatedResources.map((resource) => (
               <div
                 key={resource.id}
-                className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-6 py-4 hover:bg-muted/50 transition-colors"
+                className="table-row-entity grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-6 transition-colors"
               >
                 <button
                   type="button"
                   onClick={() => onSelect(resource.id)}
                   className="md:col-span-7 text-left min-w-0"
                 >
-                  <h3 className="text-sm font-medium text-foreground mb-2 hover:text-primary transition-colors">
+                  <h3 className="table-primary-text mb-2 hover:text-primary-text transition-colors">
                     {resource.title}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2">
@@ -248,7 +248,7 @@ export function ResourcesList({
                 </button>
 
                 <div className="md:col-span-3 flex items-center">
-                  <span className="text-sm text-muted-foreground">{resource.lastModified}</span>
+                  <span className="table-metadata-text">{resource.lastModified}</span>
                 </div>
 
                 <div className="md:col-span-2 flex items-center justify-start md:justify-end relative">
@@ -325,14 +325,14 @@ export function ResourcesList({
               onClick={() => onSelect(resource.id)}
               className="text-left p-5 bg-card border border-border rounded-xl hover:border-primary hover:shadow-sm transition-all group"
             >
-              <h3 className="font-medium text-sm text-foreground mb-2 group-hover:text-primary transition-colors">
+              <h3 className="table-primary-text mb-2 group-hover:text-primary transition-colors">
                 {resource.title}
               </h3>
               <div className="flex flex-wrap gap-2 mb-3">
                 <OwnershipBadge ownership={resource.ownership} />
               </div>
-              <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{resource.description}</p>
-              <p className="text-xs text-text-subtle">{resource.lastModified}</p>
+              <p className="table-supporting-text line-clamp-2 mb-3">{resource.description}</p>
+              <p className="table-metadata-text">{resource.lastModified}</p>
             </button>
           ))}
           {filtered.length === 0 && (

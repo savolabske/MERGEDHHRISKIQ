@@ -94,7 +94,7 @@ function MetricCard({
       <p className="text-xs font-semibold text-text-subtle uppercase tracking-wider relative">
         {metric.label}
       </p>
-      <p className="text-3xl font-bold text-foreground leading-none mt-2 relative">{metric.value}</p>
+      <p className="text-kpi mt-2 relative">{metric.value}</p>
       <p className={`text-xs font-medium mt-2 relative ${metric.trendClass}`}>{metric.trend}</p>
       <ChevronRight
         size={16}

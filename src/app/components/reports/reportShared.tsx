@@ -1,7 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { PageScrollShell } from '../PageScrollShell';
 import { motion } from 'motion/react';
-import { ArrowLeft, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
+import { PageBreadcrumb } from '../ui/page-breadcrumb';
 import {
   ChartScrollReveal,
   ScrollReveal,
@@ -111,7 +112,7 @@ export function ReportStorySection({
           </p>
         </div>
         <h2
-          className="text-2xl sm:text-3xl font-semibold leading-[1.15] tracking-tight text-foreground-emphasis mb-3"
+          className="report-display-title text-2xl sm:text-3xl font-semibold leading-[1.15] tracking-tight text-foreground-emphasis mb-3"
           style={REPORT_FONT_STYLE}
         >
           {narrative.headline}
@@ -204,7 +205,7 @@ export function ReportHero({
         <div className="relative z-10">
           <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-2">Report</p>
           <h1
-            className="text-3xl sm:text-4xl font-semibold leading-tight mb-2 tracking-tight"
+            className="report-display-title text-3xl sm:text-4xl font-semibold leading-tight mb-2 tracking-tight"
             style={REPORT_FONT_STYLE}
           >
             {title}
@@ -216,15 +217,21 @@ export function ReportHero({
   );
 }
 
-export function ReportBackButton({ onBack }: { onBack: () => void }) {
+export function ReportBackButton({
+  onBack,
+  title,
+}: {
+  onBack: () => void;
+  title: string;
+}) {
   return (
-    <button
-      onClick={onBack}
-      className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-    >
-      <ArrowLeft size={16} />
-      <span>Back to all reports</span>
-    </button>
+    <PageBreadcrumb
+      className="mb-4"
+      items={[
+        { label: 'Reports', onClick: onBack },
+        { label: title },
+      ]}
+    />
   );
 }
 
@@ -326,7 +333,7 @@ export function ReportRiskMap({
       )}
       {legend && (
         <div className="mt-4 flex flex-wrap items-center gap-4">
-          <span className="text-xs font-bold text-text-subtle uppercase tracking-wide">Legend:</span>
+          <span className="text-xs font-semibold text-text-subtle">Legend:</span>
           {legend.map((item) => (
             <div key={item.label} className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full" style={{ background: item.color }} />

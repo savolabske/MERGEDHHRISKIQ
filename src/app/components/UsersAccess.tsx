@@ -541,7 +541,7 @@ export function UsersAccess() {
     <PageScrollShell innerClassName="space-y-6">
             {/* Page Header */}
             <div>
-              <h1 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Users & Access</h1>
+              <h1 className="text-page-title mb-1">Users & Access</h1>
               <p className="text-sm sm:text-sm text-muted-foreground">
                 Manage platform users, groups, roles, and access permissions.
               </p>
@@ -736,7 +736,7 @@ export function UsersAccess() {
                   )}
 
                   {/* Table Header */}
-                  <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted border-b border-border items-center">
+                  <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border items-center">
                     <div className="col-span-4 flex items-center gap-3">
                       <input
                         type="checkbox"
@@ -744,18 +744,18 @@ export function UsersAccess() {
                         onChange={toggleAllUsers}
                         className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                       />
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">User</span>
+                      <span className="table-header-label">User</span>
                     </div>
-                    <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <div className="col-span-2 table-header-label">
                       Role
                     </div>
-                    <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <div className="col-span-2 table-header-label">
                       Group
                     </div>
-                    <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <div className="col-span-2 table-header-label">
                       Status
                     </div>
-                    <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <div className="col-span-2 table-header-label">
                       Last Login
                     </div>
                   </div>
@@ -768,7 +768,7 @@ export function UsersAccess() {
                       visibleCurrentUsers.map((user) => (
                       <div 
                         key={user.id} 
-                        className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 py-4 hover:bg-muted transition-colors items-center cursor-pointer"
+                        className="table-row-entity grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors items-center cursor-pointer"
                         onClick={() => {
                           setSelectedUser(user);
                           setShowUserDrawer(true);
@@ -794,37 +794,37 @@ export function UsersAccess() {
                               {user.initials}
                             </div>
                             <div className="min-w-0">
-                              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">User</div>
-                              <h3 className="text-sm font-medium text-foreground truncate">{user.name}</h3>
-                              <p className="text-sm text-primary truncate">{user.email}</p>
+                              <div className="table-header-label mb-1 lg:hidden">User</div>
+                              <h3 className="table-primary-text truncate">{user.name}</h3>
+                              <p className="table-supporting-text text-primary-text truncate">{user.email}</p>
                             </div>
                           </div>
                         </div>
 
                         {/* Role */}
                         <div className="lg:col-span-2">
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Role</div>
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium ${getRoleBadgeColor(user.role)}`}>
+                          <div className="table-header-label mb-1 lg:hidden">Role</div>
+                          <span className={`table-status-text inline-flex items-center px-2.5 py-1 rounded-md ${getRoleBadgeColor(user.role)}`}>
                             {user.role}
                           </span>
                         </div>
 
                         {/* Group */}
                         <div className="lg:col-span-2">
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Group</div>
-                          <span className="text-sm text-foreground">{user.group}</span>
+                          <div className="table-header-label mb-1 lg:hidden">Group</div>
+                          <span className="table-value-text">{user.group}</span>
                         </div>
 
                         {/* Status */}
                         <div className="lg:col-span-2">
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Status</div>
+                          <div className="table-header-label mb-1 lg:hidden">Status</div>
                           <div className="flex items-center gap-1.5">
                             <div className={`w-2 h-2 rounded-full ${
                               user.status === 'Active' ? 'bg-success' : 
                               user.status === 'Pending' ? 'bg-warning-text' : 
                               'bg-muted-foreground'
                             }`} />
-                            <span className={`text-sm font-medium ${getStatusColor(user.status)}`}>
+                            <span className={`table-status-text ${getStatusColor(user.status)}`}>
                               {user.status}
                             </span>
                           </div>
@@ -832,8 +832,8 @@ export function UsersAccess() {
 
                         {/* Last Login */}
                         <div className="lg:col-span-2">
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Last Login</div>
-                          <span className={`text-sm ${
+                          <div className="table-header-label mb-1 lg:hidden">Last Login</div>
+                          <span className={`table-supporting-text ${
                             user.lastLogin === 'Never' ? 'text-muted-foreground' :
                             user.lastLogin.includes('min') || user.lastLogin.includes('hr') ? 'text-primary' :
                             'text-muted-foreground'
@@ -984,7 +984,7 @@ export function UsersAccess() {
                   )}
 
                   {/* Table Header */}
-                  <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 bg-muted border-b border-border">
+                  <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
                     <div className="col-span-5 flex items-center gap-3">
                       <input
                         type="checkbox"
@@ -992,12 +992,12 @@ export function UsersAccess() {
                         onChange={toggleAllGroups}
                         className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                       />
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Group Name</span>
+                      <span className="table-header-label">Group Name</span>
                     </div>
-                    <div className="col-span-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <div className="col-span-3 table-header-label">
                       Users
                     </div>
-                    <div className="col-span-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <div className="col-span-3 table-header-label">
                       Date Created
                     </div>
                     <div className="col-span-1"></div>
@@ -1008,7 +1008,7 @@ export function UsersAccess() {
                     {filteredGroups.map((group) => (
                       <div 
                         key={group.id} 
-                        className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 py-4 hover:bg-muted transition-colors cursor-pointer"
+                        className="table-row-standard grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors cursor-pointer"
                         onClick={() => {
                           setSelectedGroup(group);
                           setShowGroupDrawer(true);
@@ -1027,7 +1027,7 @@ export function UsersAccess() {
                             className="hidden lg:block w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                           />
                           <div className="flex-1">
-                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Group Name</div>
+                            <div className="table-header-label mb-1 lg:hidden">Group Name</div>
                             <div className="flex items-center gap-3">
                               <div 
                                 className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
@@ -1042,7 +1042,7 @@ export function UsersAccess() {
 
                         {/* Users */}
                         <div className="lg:col-span-3">
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Users</div>
+                          <div className="table-header-label mb-1 lg:hidden">Users</div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Users size={16} className="text-text-subtle" />
                             <span>{group.userCount}</span>
@@ -1051,7 +1051,7 @@ export function UsersAccess() {
 
                         {/* Date Created */}
                         <div className="lg:col-span-3">
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Date Created</div>
+                          <div className="table-header-label mb-1 lg:hidden">Date Created</div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar size={16} className="text-text-subtle" />
                             <span>{formatDate(group.dateCreated)}</span>
@@ -1314,7 +1314,7 @@ export function UsersAccess() {
 
             {/* Actions Section */}
             <div className="px-6 py-4 border-t border-border">
-              <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wider mb-3">Actions</h3>
+              <h3 className="table-header-labelr mb-3">Actions</h3>
               <div className="space-y-2">
                 {/* Edit Role & Group */}
                 <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">

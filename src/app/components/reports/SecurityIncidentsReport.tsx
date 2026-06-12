@@ -36,7 +36,7 @@ export function SecurityIncidentsReport({ onBack }: { onBack: () => void }) {
 
   return (
     <ReportShell>
-      <ReportBackButton onBack={onBack} />
+      <ReportBackButton onBack={onBack} title="Security Incidents" />
       <ReportHero
         title="Security Incidents"
         createdAt={SECURITY_REPORT_CREATED}
@@ -196,7 +196,7 @@ export function SecurityIncidentsReport({ onBack }: { onBack: () => void }) {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold text-foreground-emphasis">{SECURITY_KPIS.totalIncidents2025}</span>
+                  <span className="text-kpi">{SECURITY_KPIS.totalIncidents2025}</span>
                   <span className="text-xs text-text-subtle uppercase">total</span>
                 </div>
               </div>

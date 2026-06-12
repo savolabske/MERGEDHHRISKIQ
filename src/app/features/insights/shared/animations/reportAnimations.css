@@ -70,13 +70,139 @@
   width: var(--bar-target-width) !important;
 }
 
+@keyframes reportCustomizeOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes reportCustomizeOverlayOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes reportCustomizeCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes reportCustomizeCardReady {
+  from {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes reportCustomizeSparkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    box-shadow: 0 4px 14px var(--report-sparkle-shadow, rgba(0, 104, 157, 0.25));
+  }
+  50% {
+    transform: scale(1.06) rotate(6deg);
+    box-shadow: 0 6px 20px var(--report-sparkle-shadow, rgba(0, 104, 157, 0.35));
+  }
+}
+
+@keyframes reportCustomizeStepIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reportCustomizeProgress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@keyframes reportCustomizeReadyDot {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.report-customize-overlay {
+  animation: reportCustomizeOverlayIn 280ms ease-out forwards;
+}
+
+.report-customize-overlay--exit {
+  animation: reportCustomizeOverlayOut 520ms ease-in forwards;
+}
+
+.report-customize-card {
+  animation: reportCustomizeCardIn 380ms ease-out forwards;
+}
+
+.report-customize-card--ready {
+  animation: reportCustomizeCardReady 520ms ease-out forwards;
+}
+
+.report-customize-sparkle {
+  animation: reportCustomizeSparkle 1.8s ease-in-out infinite;
+}
+
+.report-customize-step {
+  animation: reportCustomizeStepIn 280ms ease-out forwards;
+}
+
+.report-customize-progress {
+  width: 45%;
+  animation: reportCustomizeProgress 1.1s ease-in-out infinite;
+}
+
+.report-customize-ready-dot {
+  animation: reportCustomizeReadyDot 900ms ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .report-animate-bar,
   .report-animate-bar-fill,
   .report-animate-treemap-cell,
   .report-animate-narrative,
   .report-animate-ai,
-  .report-load-item {
+  .report-load-item,
+  .report-customize-overlay,
+  .report-customize-overlay--exit,
+  .report-customize-card,
+  .report-customize-card--ready,
+  .report-customize-sparkle,
+  .report-customize-step,
+  .report-customize-progress,
+  .report-customize-ready-dot {
     animation: none !important;
     transition: none !important;
     transform: none !important;

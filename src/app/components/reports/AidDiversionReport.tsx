@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { PageScrollShell } from '../PageScrollShell';
-import { ArrowLeft } from 'lucide-react';
+import { ReportBackButton } from './reportShared';
 import {
   BarChart,
   Bar,
@@ -214,13 +214,7 @@ export function AidDiversionReport({ onBack }: AidDiversionReportProps) {
   return (
     <div className="h-full" style={REPORT_FONT_STYLE}>
       <PageScrollShell innerClassName="space-y-14">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft size={16} />
-              <span>Back to all reports</span>
-            </button>
+            <ReportBackButton onBack={onBack} title="Aid Diversion Tracker" />
 
             {/* Cover hero */}
             <ScrollReveal y={16}>
@@ -233,7 +227,7 @@ export function AidDiversionReport({ onBack }: AidDiversionReportProps) {
                     Report
                   </p>
                   <h1
-                    className="text-3xl sm:text-4xl font-semibold leading-tight mb-2 tracking-tight"
+                    className="report-display-title text-3xl sm:text-4xl font-semibold leading-tight mb-2 tracking-tight"
                     style={REPORT_FONT_STYLE}
                   >
                     Aid Diversion Tracker
@@ -511,7 +505,7 @@ export function AidDiversionReport({ onBack }: AidDiversionReportProps) {
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-2xl font-bold text-foreground-emphasis">{ADT_KPIS.totalAllegations2025}</span>
+                        <span className="text-kpi">{ADT_KPIS.totalAllegations2025}</span>
                         <span className="text-xs text-text-subtle uppercase">total</span>
                       </div>
                     </div>

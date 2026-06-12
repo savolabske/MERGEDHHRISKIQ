@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, Users, Cloud, Search, Clock, Landmark } from 'lucide-react';
+import { DollarSign, Users, Search, Clock, Landmark } from 'lucide-react';
 import { AidFlowScrollytelling } from '../features/insights/aid-flow';
 import { MigrationDataScrollytelling } from './MigrationDataScrollytelling';
 import { SomaliaJointFundScrollytelling } from './SomaliaJointFundScrollytelling';
@@ -47,15 +47,6 @@ const PLACEHOLDER_REPORTS: ReportCard[] = [
     iconBg: 'bg-emerald-500/10',
     iconColor: 'text-emerald-700',
     available: true,
-  },
-  {
-    id: 'climate-hazards',
-    title: 'Climate Hazards Intelligence',
-    description:
-      'Drought severity, flash flooding, cholera outbreaks, and seasonal hazard forecasting for operational planning.',
-    IconComponent: Cloud,
-    iconBg: 'bg-success-subtle',
-    iconColor: 'text-success',
   },
 ];
 
@@ -135,7 +126,7 @@ export function Reports({
     <PageScrollShell paddingClassName="px-4 sm:px-8 pt-8" maxWidth="1280">
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-xl sm:text-2xl font-bold text-foreground-emphasis">
+                <h2 className="text-page-title">
                   Reports
                 </h2>
                 <Clock size={18} className="text-text-subtle" />
@@ -173,7 +164,7 @@ export function Reports({
                     }`}
                   >
                     {!report.available && (
-                      <span className="absolute top-5 right-5 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                      <span className="absolute top-5 right-5 text-metadata uppercase tracking-wide bg-muted px-2.5 py-1 rounded-full">
                         Coming soon
                       </span>
                     )}

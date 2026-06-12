@@ -236,17 +236,17 @@ function renderMarkdown(text: string) {
     if (tableHeaders.length > 0) {
       elements.push(
         <div key={`table-${elements.length}`} className="overflow-x-auto my-3">
-          <table className="w-full text-[0.75rem] border-collapse">
+          <table className="w-full text-[13px] leading-[18px] border-collapse">
             <thead>
               <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                 {tableHeaders.map((h, i) => (
-                  <th key={i} className="text-left px-3 py-2 font-semibold text-[#374151]">{h.trim()}</th>
+                  <th key={i} className="text-left px-3 py-2 text-[12px] leading-4 font-semibold text-[#64748B]">{h.trim()}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {tableRows.map((row, ri) => (
-                <tr key={ri} className="border-b border-[#F3F4F6]">
+                <tr key={ri} className="border-b border-[#F3F4F6] transition-colors hover:bg-[#F8FAFC]">
                   {row.map((cell, ci) => (
                     <td key={ci} className="px-3 py-2 text-[#4B5563]">{cell.trim()}</td>
                   ))}
@@ -1900,7 +1900,7 @@ export function MapView() {
         {currentStep && (
           <div className="absolute top-14 left-4 z-10 bg-[#0F172A]/90 backdrop-blur-sm rounded-xl border border-[#1E293B] shadow-lg p-4 min-w-[200px]" style={{ marginTop: activeFilters.length > 0 ? '8px' : '0' }}>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-[0.6875rem] font-semibold text-[#64748B] uppercase tracking-wider">{currentStep.legendTitle}</h4>
+              <h4 className="text-[0.6875rem] font-semibold text-[#64748B]">{currentStep.legendTitle}</h4>
               <button onClick={handleReset} className="text-[#64748B] hover:text-[#CBD5E1] transition-colors">
                 <X size={14} />
               </button>
@@ -2026,7 +2026,7 @@ export function MapView() {
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: activeFlow.bgColor, color: activeFlow.color }}>
                       {activeFlow.icon}
                     </div>
-                    <span className="text-[0.75rem] font-semibold text-[#6B7280] uppercase tracking-wider">Analysis</span>
+                    <span className="text-[0.75rem] font-semibold text-[#6B7280]">Analysis</span>
                   </div>
                   {/* Step indicator */}
                   <div className="ml-auto flex items-center gap-1">

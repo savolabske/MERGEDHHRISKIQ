@@ -2019,7 +2019,7 @@ export function MapIntelligence() {
                         ))}
                         {!isAssistantStreaming && activeSecondaryList && activeSecondaryList.items.length > 0 && (
                           <div className="space-y-2 pl-1">
-                            <div className="text-xs font-semibold uppercase tracking-wide text-text-subtle">
+                            <div className="text-xs font-semibold text-text-subtle">
                               {activeSecondaryList.title}
                             </div>
                             <div className="max-h-[280px] space-y-2 overflow-auto pr-1">
@@ -2048,7 +2048,7 @@ export function MapIntelligence() {
                         )}
                         {!isAssistantStreaming && suggestedFollowUps.length > 0 && (
                           <div className="space-y-2 pl-1 pt-2">
-                            <div className="text-xs font-semibold uppercase tracking-wide text-text-subtle">
+                            <div className="text-xs font-semibold text-text-subtle">
                               Suggested Next
                             </div>
                             <div className="space-y-2">

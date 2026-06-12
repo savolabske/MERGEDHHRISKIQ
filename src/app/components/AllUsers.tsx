@@ -165,7 +165,7 @@ export function AllUsers() {
         {/* Header */}
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <h1 className="text-lg sm:text-xl font-semibold text-foreground mb-1">All Users</h1>
+            <h1 className="text-page-title mb-1">All Users</h1>
             <p className="text-sm sm:text-sm text-muted-foreground">
               {mockUsers.length} users · {activeUsers} active · {pendingUsers} pending · {blockedUsers} blocked
             </p>
@@ -224,7 +224,7 @@ export function AllUsers() {
         {/* Users Table */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           {/* Table Header */}
-          <div className="grid grid-cols-[280px_180px_200px_150px_150px] gap-6 px-6 py-4 bg-muted border-b border-border">
+          <div className="grid min-h-10 grid-cols-[280px_180px_200px_150px_150px] items-center gap-6 px-6 py-3 bg-muted/70 border-b border-border">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
@@ -232,26 +232,26 @@ export function AllUsers() {
                 onChange={toggleAllUsers}
                 className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring cursor-pointer"
               />
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">User</span>
+              <span className="table-header-label">User</span>
             </div>
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <div className="table-header-label">
               Role
             </div>
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <div className="table-header-label">
               Group
             </div>
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <div className="table-header-label">
               Status
             </div>
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Last Login
+            <div className="table-header-label">
+              Last login
             </div>
           </div>
 
           {/* Table Rows */}
           <div className="divide-y divide-border">
             {filteredUsers.map((user) => (
-              <div key={user.id} className="grid grid-cols-[280px_180px_200px_150px_150px] gap-6 px-6 py-4 hover:bg-muted transition-colors cursor-pointer" onClick={() => setSelectedUser(user)}>
+              <div key={user.id} className="table-row-entity grid grid-cols-[280px_180px_200px_150px_150px] items-center gap-6 px-6 cursor-pointer" onClick={() => setSelectedUser(user)}>
                 <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
@@ -266,20 +266,20 @@ export function AllUsers() {
                     {user.avatar}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-base font-medium text-foreground truncate">{user.name}</div>
-                    <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+                    <div className="table-primary-text truncate">{user.name}</div>
+                    <div className="table-supporting-text truncate">{user.email}</div>
                   </div>
                 </div>
                 <div className="flex items-center">
                   <span 
-                    className="px-3 py-1 rounded-full text-sm font-medium"
+                    className="px-3 py-1 rounded-full table-status-text"
                     style={{ backgroundColor: user.roleColor, color: user.role === 'Admin' ? 'var(--destructive-text)' : user.role === 'Agency' ? 'var(--primary)' : user.role === 'Contributor' ? 'var(--success-text)' : 'var(--muted-foreground)' }}
                   >
                     {user.role}
                   </span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-sm text-foreground">{user.group}</span>
+                  <span className="table-value-text">{user.group}</span>
                 </div>
                 <div className="flex items-center">
                   <div className="flex items-center gap-2">
@@ -288,7 +288,7 @@ export function AllUsers() {
                       user.status === 'Pending' ? 'bg-warning' : 
                       'bg-destructive'
                     }`}></div>
-                    <span className={`text-base font-medium ${
+                    <span className={`table-status-text ${
                       user.status === 'Active' ? 'text-success' : 
                       user.status === 'Pending' ? 'text-warning' : 
                       'text-destructive'
@@ -298,7 +298,7 @@ export function AllUsers() {
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-base text-primary">{user.lastLogin}</span>
+                  <span className="table-metadata-text">{user.lastLogin}</span>
                 </div>
               </div>
             ))}

@@ -1,13 +1,24 @@
 import React from 'react';
 import { AnimatedDonut, AnimatedHBars } from '../../shared/animations';
 import { COLORS, SJF_DATA } from '../data/sjfData';
+import {
+  PBI_PLAN_Y25,
+  PBI_PLAN_Y26,
+  PBI_PLAN_Y27,
+  pbiAgg,
+  scenarioTotals,
+  winColor,
+} from '../data/sjfPbiUtils';
 import { fmtM, fmtMillions } from '../hooks/useSjfFilters';
-import type { SjfChartKind, SjfDonorH1, SjfPair, SjfPairWithColor, SjfProgramme, SjfWindow, SjfYearly, SjfAchievement } from '../types';
+import type { SjfChartKind, SjfPairWithColor } from '../types';
 import { AchievementGrid } from './AchievementGrid';
 import { AnimatedDepositGauges } from './AnimatedDepositGauges';
 import { AnimatedWindowGrid } from './AnimatedWindowGrid';
-import { SjfYearlyDualBars } from './SjfYearlyDualBars';
+import { DonorTrendChart, DonorYearBars } from './DonorTrendChart';
+import { ProjectDonut } from './ProjectDonut';
 import { ProgrammeTable } from './ProgrammeTable';
+import { ScenarioTable } from './ScenarioTable';
+import { SjfYearlyDualBars } from './SjfYearlyDualBars';
 
 export function HBars({
   rows,
@@ -23,10 +34,43 @@ export function HBars({
       rows={rows}
       formatter={formatter}
       color={color}
-      emptyClassName="rounded-lg border border-dashed border-[#c4dcd5] p-4 text-[12px] text-[#6f8094]"
+      emptyClassName="rounded-lg border border-dashed border-[#B8D9EE] p-4 text-[12px] text-[#6f8094]"
       labelClassName="w-[140px] text-right text-[12px] font-medium text-[#324559]"
       trackClassName="h-[22px] flex-1 overflow-hidden rounded-md bg-[#eef1f7]"
       valueClassName="w-[66px] text-[12px] font-semibold text-[#0b1a2c]"
+    />
+  );
+}
+
+function WindowYearBars({
+  donor,
+  year,
+}: {
+  donor: string | null;
+  year: '2025' | '2026' | '2027' | null;
+}) {
+  const data = pbiAgg(donor, year);
+  if (!data.length) {
+    return (
+      <div className="py-8 text-center text-[13px] text-[#6f8094]">
+        No allocation recorded{donor ? ` for ${donor}` : ''}
+        {year ? ` in ${year}` : ''}.
+      </div>
+    );
+  }
+  const rows: SjfPairWithColor[] = data.map(([w, v]) => [w, v, winColor(w)]);
+  return <HBars rows={rows} />;
+}
+
+function ScenarioBars() {
+  const totals = scenarioTotals();
+  return (
+    <HBars
+      rows={[
+        ['Best Case 2026 Plan', totals.best, COLORS.brand],
+        ['Most Likely 2026 Plan', totals.most, COLORS.navy],
+        ['Worst Case 2026 Plan', totals.worst, COLORS.coral],
+      ]}
     />
   );
 }
@@ -66,73 +110,42 @@ export function SjfChartRenderer({ chart }: { chart: SjfChartKind }) {
     case 'gapCallout':
       return (
         <div>
-          <HBars rows={chart.rows} formatter={fmtMillions} />
+          <HBars rows={chart.rows} formatter={fmtM} />
           <div className="mt-4 rounded-[10px] bg-[#f4f6fa] p-3.5 text-[12.5px] text-[#324559]">
-            <b>Gap:</b> {chart.note}
+            <b>The 2027 cliff:</b> {chart.note}
           </div>
         </div>
       );
+    case 'planYearBars':
+      return (
+        <HBars
+          rows={[
+            ['2025 Plan', PBI_PLAN_Y25, COLORS.brand],
+            ['2026 Plan', PBI_PLAN_Y26, COLORS.navy],
+            ['2027 Plan', PBI_PLAN_Y27, COLORS.coral],
+          ]}
+        />
+      );
+    case 'donorTrend':
+      return <DonorTrendChart />;
+    case 'windowYearBars':
+      return <WindowYearBars donor={chart.donor} year={chart.year} />;
+    case 'projectDonut':
+      return <ProjectDonut year={chart.year} label={chart.label} />;
+    case 'scenarioBars':
+      return <ScenarioBars />;
+    case 'scenarioTable':
+      return <ScenarioTable />;
     default:
       return null;
   }
 }
 
-export function SjfSceneChart({
-  index,
-  donorsAllTime,
-  donorsH1,
-  yearly,
-  windows,
-  punoH1,
-  topProgrammes,
-  achievements,
-  gapBars,
-}: {
-  index: number;
-  donorsAllTime: SjfPair[];
-  donorsH1: SjfDonorH1[];
-  yearly: SjfYearly[];
-  windows: SjfWindow[];
-  punoH1: SjfPair[];
-  topProgrammes: SjfPairWithColor[];
-  achievements: SjfAchievement[];
-  gapBars: SjfPairWithColor[];
-}) {
-  if (index === 0) {
-    return (
-      <HBars
-        rows={donorsAllTime.map(([name, val]) => [name, val, COLORS.navy] as SjfPairWithColor)}
-        color={COLORS.navy}
-      />
-    );
-  }
-  if (index === 1) return <AnimatedDepositGauges rows={donorsH1} />;
-  if (index === 2) return <SjfYearlyDualBars rows={yearly} />;
-  if (index === 3) return <AnimatedWindowGrid rows={windows} />;
-  if (index === 4) {
-    return (
-      <HBars
-        rows={punoH1.map(([name, val]) => [name, val, COLORS.brand] as SjfPairWithColor)}
-        color={COLORS.brand}
-      />
-    );
-  }
-  if (index === 5) return <HBars rows={topProgrammes} color={COLORS.brand} />;
-  if (index === 6) return <AchievementGrid rows={achievements} limit={8} />;
-  if (index === 7) {
-    return (
-      <div className="px-2.5 py-2">
-        <HBars rows={gapBars} formatter={fmtMillions} />
-        <div className="mt-4 rounded-[10px] bg-[#f4f6fa] p-3.5 text-[12.5px] text-[#324559]">
-          <b>Gap:</b> roughly <b>$35M annually</b>, before factoring two unfunded windows. SJF Connect
-          platform launches H2 2025 to strengthen transparency.
-        </div>
-      </div>
-    );
-  }
-  return null;
+export function SjfSceneChart({ chart }: { chart: SjfChartKind }) {
+  return <SjfChartRenderer chart={chart} />;
 }
 
 export function getDefaultAchievements() {
   return SJF_DATA.achievements_H1_2025;
 }
+

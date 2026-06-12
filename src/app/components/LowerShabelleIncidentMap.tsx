@@ -178,7 +178,7 @@ export function LowerShabelleIncidentMap() {
       {/* Legend */}
       <div className="mt-6 pt-6 border-t border-border">
         <div className="flex items-center gap-6">
-          <span className="text-xs font-bold text-text-subtle uppercase tracking-wide">Incident Severity:</span>
+          <span className="text-xs font-semibold text-text-subtle">Incident Severity:</span>
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-destructive"></div>

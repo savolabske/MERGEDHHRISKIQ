@@ -84,7 +84,7 @@ export function AppTopBar({
               onClick={onNavigateHome}
               className="group min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 rounded-md px-0.5 -mx-0.5"
             >
-              <span className="block truncate text-[15px] font-semibold tracking-tight text-primary uppercase">
+              <span className="block truncate text-sm font-semibold tracking-tight text-primary uppercase">
                 HUMANITY HUB
               </span>
             </button>
@@ -119,7 +119,7 @@ export function AppTopBar({
                     aria-hidden
                   >
                     <span className="absolute inset-0 scale-125 rounded-full bg-destructive/30 animate-pulse" />
-                    <span className="relative flex size-5 items-center justify-center rounded-full bg-destructive text-[11px] font-bold leading-none text-destructive-foreground shadow-[0_1px_3px_rgba(0,0,0,0.25)] ring-2 ring-card">
+                    <span className="relative flex size-5 items-center justify-center rounded-full bg-destructive text-xs font-semibold leading-none text-destructive-foreground shadow-sm ring-2 ring-card tabular-nums">
                       {badge}
                     </span>
                   </span>

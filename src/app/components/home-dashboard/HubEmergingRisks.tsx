@@ -43,7 +43,9 @@ function PredictiveInsightCard({
       <p className="text-xs font-semibold uppercase tracking-wider text-white/90 relative">
         {insight.theme} · {insight.horizon}
       </p>
-      <h3 className="text-base sm:text-sm font-semibold leading-snug mt-3 relative">{insight.title}</h3>
+      <h3 className="text-on-emphasis text-base sm:text-sm font-semibold leading-snug mt-3 relative">
+        {insight.title}
+      </h3>
       <p className="text-sm leading-relaxed text-white/90 mt-2 flex-1 relative">
         {insight.description}
       </p>

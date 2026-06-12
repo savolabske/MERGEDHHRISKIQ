@@ -95,7 +95,7 @@ export function Profile() {
       <div className="max-w-4xl mx-auto px-6 py-8 pt-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-lg sm:text-xl font-semibold text-foreground mb-1">My Profile</h1>
+          <h1 className="text-page-title mb-1">My Profile</h1>
           <p className="text-sm sm:text-sm text-muted-foreground">
             Manage your account information and preferences
           </p>

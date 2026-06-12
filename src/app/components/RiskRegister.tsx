@@ -632,10 +632,10 @@ export function RiskRegister() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-[1400px] mx-auto">
         {/* Header */}
-        <div className="bg-background border-b border-sidebar-border px-4 sm:px-8 pt-6 pb-8">
+        <div className="bg-background px-4 sm:px-8 pt-6 pb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Internal Risks</h2>
+              <h2 className="text-page-title mb-1">Internal Risks</h2>
               <p className="text-sm sm:text-sm text-muted-foreground">Operational risk register for Somalia humanitarian operations</p>
             </div>
             <div className="flex items-center gap-3">
@@ -728,12 +728,12 @@ export function RiskRegister() {
               <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Risk Description</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Risk Category</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Inherent Risk</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mitigation</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Residual Risk</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Risk Owner</th>
+                  <th className="text-left px-6 py-3 table-header-label">Risk description</th>
+                  <th className="text-left px-6 py-3 table-header-label">Risk category</th>
+                  <th className="text-right px-6 py-3 table-header-label">Inherent risk</th>
+                  <th className="text-left px-6 py-3 table-header-label">Mitigation</th>
+                  <th className="text-right px-6 py-3 table-header-label">Residual risk</th>
+                  <th className="text-left px-6 py-3 table-header-label">Risk owner</th>
                   <th className="w-12"></th>
                 </tr>
               </thead>
@@ -744,39 +744,39 @@ export function RiskRegister() {
                   visiblePaginatedRisks.map((risk) => (
                   <tr 
                     key={risk.id} 
-                    className="hover:bg-sidebar transition-colors cursor-pointer"
+                    className="table-row-narrative transition-colors cursor-pointer"
                     onClick={() => setSelectedRisk(risk)}
                   >
                     {/* Risk Description */}
-                    <td className="px-6 py-5">
-                      <p className="text-sm text-foreground line-clamp-2">
+                    <td className="px-6 py-3.5">
+                      <p className="table-value-text line-clamp-2" title={risk.description}>
                         {risk.description}
                       </p>
                     </td>
 
                     {/* Risk Category */}
-                    <td className="px-6 py-5">
-                      <span className="text-sm text-foreground">{risk.category}</span>
+                    <td className="px-6 py-3.5">
+                      <span className="table-value-text">{risk.category}</span>
                     </td>
 
                     {/* Inherent Risk Ranking */}
-                    <td className="px-6 py-5">
-                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-sm font-semibold ${getRiskScoreColor(risk.inherentRisk).bg} ${getRiskScoreColor(risk.inherentRisk).text}`}>
+                    <td className="px-6 py-3.5 text-right">
+                      <span className={`table-status-text inline-flex items-center justify-center px-2 py-0.5 rounded-full tabular-nums ${getRiskScoreColor(risk.inherentRisk).bg} ${getRiskScoreColor(risk.inherentRisk).text}`}>
                         {risk.inherentRisk}
                       </span>
                     </td>
 
                     {/* Mitigation */}
-                    <td className="px-6 py-5">
-                      <span className={`text-sm font-medium ${risk.mitigationStatus === 'Available' ? 'text-success' : 'text-text-subtle'}`}>
+                    <td className="px-6 py-3.5">
+                      <span className={`table-status-text ${risk.mitigationStatus === 'Available' ? 'text-success-text' : 'text-text-subtle'}`}>
                         {risk.mitigationStatus}
                       </span>
                     </td>
 
                     {/* Residual Risk Ranking */}
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-3.5 text-right">
                       {residualRankings[risk.id] && residualRankings[risk.id] !== '—' ? (
-                        <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-sm font-semibold ${getRiskScoreColor(residualRankings[risk.id]).bg} ${getRiskScoreColor(residualRankings[risk.id]).text}`}>
+                        <span className={`table-status-text inline-flex items-center justify-center px-2 py-0.5 rounded-full tabular-nums ${getRiskScoreColor(residualRankings[risk.id]).bg} ${getRiskScoreColor(residualRankings[risk.id]).text}`}>
                           {residualRankings[risk.id]}
                         </span>
                       ) : (
@@ -785,12 +785,12 @@ export function RiskRegister() {
                     </td>
 
                     {/* Risk Owner */}
-                    <td className="px-6 py-5">
-                      <span className="text-sm text-foreground">{risk.owner}</span>
+                    <td className="px-6 py-3.5">
+                      <span className="table-value-text">{risk.owner}</span>
                     </td>
 
                     {/* Actions */}
-                    <td className="px-6 py-5 relative">
+                    <td className="px-4 py-3.5 relative text-right">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -951,7 +951,7 @@ export function RiskRegister() {
             >
               {/* Risk ID and Level */}
               <div className="flex items-start justify-between mb-3">
-                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{risk.id}</p>
+                <p className="table-header-label">{risk.id}</p>
                 <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold uppercase ${getRiskLevelColor(risk.riskLevel)}`}>
                   {risk.riskLevel}
                 </span>
@@ -1090,7 +1090,7 @@ export function RiskRegister() {
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {/* Description */}
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Description</h3>
+              <h3 className="table-header-label mb-3">Description</h3>
               <p className="text-sm text-secondary-foreground leading-relaxed">
                 {selectedRisk.description}
               </p>
@@ -1098,7 +1098,7 @@ export function RiskRegister() {
 
             {/* Risk Cause/Effects */}
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Risk Cause/Effects</h3>
+              <h3 className="table-header-label mb-3">Risk Cause/Effects</h3>
               <p className="text-sm text-secondary-foreground leading-relaxed">
                 {selectedRisk.causeEffects}
               </p>
@@ -1106,7 +1106,7 @@ export function RiskRegister() {
 
             {/* Inherent Risk Ranking */}
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Inherent Risk Ranking</h3>
+              <h3 className="table-header-label mb-3">Inherent Risk Ranking</h3>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground text-base">
                   {selectedRisk.likelihood} × {selectedRisk.impact} =
@@ -1123,7 +1123,7 @@ export function RiskRegister() {
 
             {/* Residual Risk Ranking */}
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Residual Risk Ranking</h3>
+              <h3 className="table-header-label mb-3">Residual Risk Ranking</h3>
               {!isEditingResidual ? (
                 <div className="flex items-center justify-between px-5 py-4 rounded-xl border border-border bg-muted">
                   <div>
@@ -1182,7 +1182,7 @@ export function RiskRegister() {
 
             {/* Risk Owner */}
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Risk Owner</h3>
+              <h3 className="table-header-label mb-3">Risk Owner</h3>
               <p className="text-sm font-medium text-secondary-foreground">
                 {selectedRisk.owner}
               </p>
@@ -1192,7 +1192,7 @@ export function RiskRegister() {
             {/* Mitigation Measures */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">MITIGATION MEASURES</h3>
+                <h3 className="table-header-label">MITIGATION MEASURES</h3>
                 <div className="flex items-center gap-1 bg-secondary rounded-lg p-0.5">
                   <button
                     onClick={() => setMitigationTab('active')}
@@ -1434,7 +1434,7 @@ export function RiskRegister() {
 
             {/* Notes Section */}
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Notes</h3>
+              <h3 className="table-header-label mb-3">Notes</h3>
               <div className="space-y-3">
                 {notes[selectedRisk.id]?.map((note, idx) => (
                   <div key={idx} className="p-4 border border-warning-subtle rounded-xl bg-warning-subtle">

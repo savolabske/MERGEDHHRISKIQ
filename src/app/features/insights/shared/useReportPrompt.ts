@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { REPORT_QUERY_DELAY_MS, REPORT_STICKY_HEADER_OFFSET } from './constants';
+import {
+  REPORT_QUERY_DELAY_MS,
+  REPORT_REVEAL_DELAY_MS,
+  REPORT_STICKY_HEADER_OFFSET,
+} from './constants';
+import type { ReportCustomizePhase } from './ReportDashboardCustomizeOverlay';
 
 export interface UseReportPromptOptions {
   initialMessage?: string;
@@ -19,10 +24,13 @@ export function useReportPrompt({
   const [resultMode, setResultMode] = useState(false);
   const [resultTitle, setResultTitle] = useState(defaultResultTitle);
   const [isQuerying, setIsQuerying] = useState(false);
+  const [customizePhase, setCustomizePhase] = useState<ReportCustomizePhase>('idle');
+  const [activeQuery, setActiveQuery] = useState('');
 
   const resultSectionRef = useRef<HTMLElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const queryTimeoutRef = useRef<number | null>(null);
+  const revealTimeoutRef = useRef<number | null>(null);
   const isQueryingRef = useRef(false);
 
   const cancelQuery = useCallback(() => {
@@ -30,8 +38,14 @@ export function useReportPrompt({
       window.clearTimeout(queryTimeoutRef.current);
       queryTimeoutRef.current = null;
     }
+    if (revealTimeoutRef.current !== null) {
+      window.clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
     isQueryingRef.current = false;
     setIsQuerying(false);
+    setCustomizePhase('idle');
+    setActiveQuery('');
   }, []);
 
   const backToReport = useCallback(() => {
@@ -46,16 +60,29 @@ export function useReportPrompt({
 
       setMessages((prev) => [...prev, q]);
       setResultTitle(q);
+      setActiveQuery(q);
       setPromptInput('');
       isQueryingRef.current = true;
       setIsQuerying(true);
+      setCustomizePhase('customizing');
+
+      requestAnimationFrame(() => {
+        const scrollRoot = document.querySelector<HTMLElement>('[data-report-scroll]');
+        scrollRoot?.scrollTo({ top: 0, behavior: 'smooth' });
+      });
 
       queryTimeoutRef.current = window.setTimeout(() => {
         setMessages((prev) => [...prev, assistantReply]);
         isQueryingRef.current = false;
         setIsQuerying(false);
         setResultMode(true);
+        setCustomizePhase('revealing');
         queryTimeoutRef.current = null;
+
+        revealTimeoutRef.current = window.setTimeout(() => {
+          setCustomizePhase('idle');
+          revealTimeoutRef.current = null;
+        }, REPORT_REVEAL_DELAY_MS);
       }, REPORT_QUERY_DELAY_MS);
     },
     [promptInput, assistantReply],
@@ -65,6 +92,9 @@ export function useReportPrompt({
     return () => {
       if (queryTimeoutRef.current !== null) {
         window.clearTimeout(queryTimeoutRef.current);
+      }
+      if (revealTimeoutRef.current !== null) {
+        window.clearTimeout(revealTimeoutRef.current);
       }
     };
   }, []);
@@ -90,7 +120,6 @@ export function useReportPrompt({
       }
     };
 
-    // Wait for result layout (KPI/scrolly unmount + AI blocks mount) before measuring.
     requestAnimationFrame(() => {
       requestAnimationFrame(scrollResultsToTop);
     });
@@ -110,6 +139,8 @@ export function useReportPrompt({
     resultMode,
     resultTitle,
     isQuerying,
+    customizePhase,
+    activeQuery,
     resultSectionRef,
     chatScrollRef,
     runPrompt,

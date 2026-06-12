@@ -426,7 +426,7 @@ export function URLSources() {
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">URL Sources</h2>
+                <h2 className="text-page-title mb-1">URL Sources</h2>
                 <p className="text-sm sm:text-sm text-muted-foreground">
                   Manage web crawling sources for real-time intelligence gathering
                 </p>
@@ -529,7 +529,7 @@ export function URLSources() {
               )}
 
               {/* Table Header */}
-              <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 bg-muted border-b border-border">
+              <div className="hidden min-h-10 lg:grid grid-cols-12 items-center gap-4 px-6 py-3 bg-muted/70 border-b border-border">
                 <div className="col-span-5 flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -537,15 +537,15 @@ export function URLSources() {
                     onChange={toggleSelectAll}
                     className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">URL</span>
+                  <span className="table-header-label">URL</span>
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label">
                   Status
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label">
                   Last Crawled
                 </div>
-                <div className="col-span-3 text-xs font-bold text-muted-foreground uppercase tracking-wider text-right">
+                <div className="col-span-3 table-header-label text-right">
                   Actions
                 </div>
               </div>
@@ -556,7 +556,7 @@ export function URLSources() {
                   <TableSkeleton variant="grid" rows={itemsPerPage} columns={4} />
                 ) : (
                   visibleCurrentSources.map((source) => (
-                  <div key={source.id} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 py-4 hover:bg-muted transition-colors">
+                  <div key={source.id} className="table-row-entity grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6">
                     {/* Checkbox & URL */}
                     <div className="lg:col-span-5 flex items-start gap-3">
                       <input
@@ -568,16 +568,16 @@ export function URLSources() {
                       <div className="flex items-start gap-2 flex-1">
                         <ExternalLink size={16} className="text-text-subtle mt-0.5 shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">URL</div>
+                          <div className="table-header-label mb-1 lg:hidden">URL</div>
                           <a 
                             href={source.url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-sm text-primary hover:underline break-all"
+                            className="table-primary-text text-primary hover:underline break-all"
                           >
                             {source.url}
                           </a>
-                          <div className="text-xs text-muted-foreground mt-1">
+                          <div className="table-metadata-text mt-1">
                             Depth: {source.maxDepth} · Max pages: {source.maxPages}
                           </div>
                         </div>
@@ -586,14 +586,14 @@ export function URLSources() {
 
                     {/* Status */}
                     <div className="lg:col-span-2">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Status</div>
+                      <div className="table-header-label mb-1 lg:hidden">Status</div>
                       {getStatusBadge(source.status)}
                     </div>
 
                     {/* Last Crawled */}
                     <div className="lg:col-span-2">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Last Crawled</div>
-                      <div className="text-sm text-foreground">{source.lastCrawled}</div>
+                      <div className="table-header-label mb-1 lg:hidden">Last Crawled</div>
+                      <div className="table-metadata-text whitespace-nowrap">{source.lastCrawled}</div>
                     </div>
 
                     {/* Actions */}

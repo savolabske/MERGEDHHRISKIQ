@@ -76,7 +76,7 @@ export function SearchResults({ query, onBack, onSourceClick }: SearchResultsPro
                   <line x1="5" y1="8" x2="11" y2="8" stroke="var(--text-subtle)" strokeWidth="1.5" strokeLinecap="round"/>
                   <line x1="5" y1="11" x2="9" y2="11" stroke="var(--text-subtle)" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
-                <h3 className="text-sm font-bold text-text-subtle uppercase tracking-wider">Sources</h3>
+                <h3 className="text-sm font-semibold text-text-subtle">Sources</h3>
               </div>
 
               <div className="space-y-4">

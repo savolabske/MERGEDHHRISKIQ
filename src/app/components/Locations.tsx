@@ -167,7 +167,7 @@ export function Locations() {
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Locations</h2>
+                <h2 className="text-page-title mb-1">Locations</h2>
                 <p className="text-sm sm:text-sm text-muted-foreground">
                   Manage geographic locations for risk tracking and analysis
                 </p>
@@ -198,23 +198,23 @@ export function Locations() {
             {/* Locations Table */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               {/* Table Header - Desktop */}
-              <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 bg-muted border-b border-border">
-                <div className="col-span-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
+                <div className="col-span-3 table-header-label">
                   Location Name
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label">
                   Level
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label text-right">
                   Latitude
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label text-right">
                   Longitude
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label">
                   Date Added
                 </div>
-                <div className="col-span-1 text-xs font-bold text-muted-foreground uppercase tracking-wider text-right">
+                <div className="col-span-1 table-header-label text-right">
                   Actions
                 </div>
               </div>
@@ -222,44 +222,44 @@ export function Locations() {
               {/* Table Rows */}
               <div className="divide-y divide-border">
                 {filteredLocations.map((location) => (
-                  <div key={location.id} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 py-4 hover:bg-muted transition-colors">
+                  <div key={location.id} className="table-row-standard grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors">
                     {/* Location Name */}
                     <div className="lg:col-span-3">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Location Name</div>
+                      <div className="table-header-label mb-1 lg:hidden">Location Name</div>
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-sidebar-accent rounded-lg flex items-center justify-center shrink-0">
                           <MapPin size={20} className="text-primary" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-semibold text-foreground">{location.name}</h3>
+                          <h3 className="table-primary-text">{location.name}</h3>
                         </div>
                       </div>
                     </div>
 
                     {/* Level */}
                     <div className="lg:col-span-2">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Level</div>
-                      <span className="inline-flex items-center px-2.5 py-1 bg-secondary text-muted-foreground text-sm font-medium rounded-md">
+                      <div className="table-header-label mb-1 lg:hidden">Level</div>
+                      <span className="table-status-text inline-flex items-center px-2.5 py-1 bg-secondary text-muted-foreground rounded-md">
                         {location.level}
                       </span>
                     </div>
 
                     {/* Latitude */}
-                    <div className="lg:col-span-2">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Latitude</div>
-                      <span className="text-sm text-foreground font-mono">{location.latitude.toFixed(4)}°</span>
+                    <div className="lg:col-span-2 lg:text-right">
+                      <div className="table-header-label mb-1 lg:hidden">Latitude</div>
+                      <span className="table-numeric-text font-mono">{location.latitude.toFixed(4)}°</span>
                     </div>
 
                     {/* Longitude */}
-                    <div className="lg:col-span-2">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Longitude</div>
-                      <span className="text-sm text-foreground font-mono">{location.longitude.toFixed(4)}°</span>
+                    <div className="lg:col-span-2 lg:text-right">
+                      <div className="table-header-label mb-1 lg:hidden">Longitude</div>
+                      <span className="table-numeric-text font-mono">{location.longitude.toFixed(4)}°</span>
                     </div>
 
                     {/* Date Added */}
                     <div className="lg:col-span-2">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Date Added</div>
-                      <span className="text-sm text-muted-foreground">{location.dateAdded}</span>
+                      <div className="table-header-label mb-1 lg:hidden">Date Added</div>
+                      <span className="table-metadata-text">{location.dateAdded}</span>
                     </div>
 
                     {/* Actions */}

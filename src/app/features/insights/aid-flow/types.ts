@@ -22,6 +22,21 @@ export interface AidFlowDataset {
   humdev: { hum: number; dev: number };
   implementers: Pair[];
   topProjects: [string, string, string, string, number, number, string][];
+  climate: {
+    year: Pair[];
+    donor: Pair[];
+    region: Pair[];
+    projects: number;
+  };
+  fcdo: {
+    sectors: Pair[];
+    year: Pair[];
+    total: number;
+    projects: number;
+  };
+  healthSouthWest: [string, string, string, string, number, number, string][];
+  channelMix: PairWithColor[];
+  southWestSectors: PairWithColor[];
 }
 
 export interface AidFlowKpiCard {
@@ -46,3 +61,41 @@ export interface AidFlowScene {
   cap: string;
   ctitle: string;
 }
+
+export type AidFlowChatMessage =
+  | { role: 'user'; text: string }
+  | { role: 'assistant'; lane: 'dashboard'; title: string; chips?: string[] }
+  | { role: 'assistant'; lane: 'chat'; body: string; chips?: string[] };
+
+export interface AidFlowKeyFinding {
+  value: string;
+  label: string;
+}
+
+export type AidFlowChartKind =
+  | { kind: 'hbars'; rows: PairWithColor[]; color?: string }
+  | { kind: 'treemap'; rows: PairWithColor[] }
+  | { kind: 'donut'; a: number; b: number; labelA: string; labelB: string; colorA?: string; colorB?: string }
+  | { kind: 'trendDual' }
+  | { kind: 'yearBars'; rows: Pair[]; color?: string }
+  | { kind: 'regionBars'; rows: Pair[] }
+  | { kind: 'climateTrend'; rows: Pair[] }
+  | { kind: 'projectsTable'; rows: AidFlowDataset['topProjects'] };
+
+export type AidFlowRecipeSection =
+  | { type: 'full'; title: string; subtitle?: string; chart: AidFlowChartKind }
+  | { type: 'grid'; items: { title: string; subtitle?: string; chart: AidFlowChartKind }[] };
+
+export interface AidFlowRecipeResult {
+  title: string;
+  summaryHtml: string;
+  findings: AidFlowKeyFinding[];
+  sections: AidFlowRecipeSection[];
+  followUps: string[];
+  chips?: string[];
+  isFallback?: boolean;
+}
+
+export type AidFlowPromptResult =
+  | { lane: 'dashboard'; recipe: AidFlowRecipeResult }
+  | { lane: 'chat'; body: string; chips?: string[] };

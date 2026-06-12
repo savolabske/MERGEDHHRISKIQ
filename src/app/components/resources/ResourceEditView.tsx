@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   Plus,
   X,
   Globe,
@@ -17,9 +16,10 @@ import { toast } from 'sonner';
 import type { PlatformResource, ResourceUserGroup } from '../../data/resourcesMock';
 import { INITIAL_RESOURCE_USER_GROUPS } from '../../data/resourcesMock';
 import { Checkbox } from '../ui/checkbox';
-import { inputClass } from './resourceShared';
+import { DetailFieldLabel, DetailSectionTitle, inputClass } from './resourceShared';
 import { ResourceDocumentsList } from './ResourceDocumentsList';
 import { UserGroupModal } from './UserGroupModal';
+import { PageBreadcrumb } from '../ui/page-breadcrumb';
 
 interface ResourceEditViewProps {
   resource: PlatformResource;
@@ -255,14 +255,13 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
 
   return (
     <div className="space-y-6">
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex items-center gap-2 text-base text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft size={18} />
-        Back to Resources
-      </button>
+      <PageBreadcrumb
+        className="mb-4"
+        items={[
+          { label: 'Resources', onClick: onBack },
+          { label: title.trim() || resource.title },
+        ]}
+      />
 
       <div>
         <input
@@ -277,9 +276,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              Description
-            </h3>
+            <DetailSectionTitle>Description</DetailSectionTitle>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -292,9 +289,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
           <ResourceDocumentsList files={files} editable onChange={setFiles} />
 
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              Web Links
-            </h3>
+            <DetailSectionTitle>Web Links</DetailSectionTitle>
             <div className="flex gap-2 mb-4">
               <input
                 type="url"
@@ -344,9 +339,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
         <div className="space-y-6">
           <div className="bg-card rounded-xl border border-border p-6 space-y-6">
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                User Group
-              </h3>
+              <DetailFieldLabel>User Group</DetailFieldLabel>
               <p className="text-xs text-muted-foreground mb-2">
                 Select existing groups to share this resource with
               </p>
@@ -448,9 +441,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
             </div>
 
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Individual Users
-              </h3>
+              <DetailFieldLabel>Individual Users</DetailFieldLabel>
               <input
                 type="text"
                 value={emailInput}
@@ -493,9 +484,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
             </div>
 
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Tags
-              </h3>
+              <DetailFieldLabel>Tags</DetailFieldLabel>
               <div className="relative" ref={tagsDropdownRef}>
                 <div
                   role="presentation"
@@ -571,7 +560,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
                           </div>
                         </button>
                       )}
-                      <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted border-b border-border">
+                      <p className="px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted border-b border-border">
                         Select from existing tags
                       </p>
                       {filteredTags.map((tag) => (
@@ -605,9 +594,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
             </div>
 
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Created
-              </h3>
+              <DetailFieldLabel>Created</DetailFieldLabel>
               <div className="flex items-center gap-2 text-sm text-foreground">
                 <Calendar size={18} className="text-muted-foreground" />
                 {resource.createdAt}
@@ -615,9 +602,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
             </div>
 
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Last Modified
-              </h3>
+              <DetailFieldLabel>Last Modified</DetailFieldLabel>
               <div className="flex items-center gap-2 text-sm text-foreground">
                 <Clock size={18} className="text-muted-foreground" />
                 {resource.lastModified}

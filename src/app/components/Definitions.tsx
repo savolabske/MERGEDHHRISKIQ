@@ -202,7 +202,7 @@ export function Definitions() {
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Context Definitions</h2>
+                <h2 className="text-page-title mb-1">Context Definitions</h2>
                 <p className="text-sm sm:text-sm text-muted-foreground">
                   Manage acronyms and context replacements for AI chat
                 </p>
@@ -249,7 +249,7 @@ export function Definitions() {
               )}
 
               {/* Table Header */}
-              <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 bg-muted border-b border-border">
+              <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
                 <div className="col-span-3 flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -257,12 +257,12 @@ export function Definitions() {
                     onChange={toggleSelectAll}
                     className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Name</span>
+                  <span className="table-header-label">Name</span>
                 </div>
-                <div className="col-span-7 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-7 table-header-label">
                   Description
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider text-right">
+                <div className="col-span-2 table-header-label text-right">
                   Actions
                 </div>
               </div>
@@ -270,7 +270,7 @@ export function Definitions() {
               {/* Table Rows */}
               <div className="divide-y divide-border">
                 {filteredDefinitions.map((definition) => (
-                  <div key={definition.id} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 py-4 hover:bg-muted transition-colors">
+                  <div key={definition.id} className="table-row-narrative grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors">
                     {/* Checkbox & Name */}
                     <div className="lg:col-span-3 flex items-center gap-3">
                       <input
@@ -280,8 +280,8 @@ export function Definitions() {
                         className="hidden lg:block w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                       />
                       <div>
-                        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Name</div>
-                        <span className="text-sm font-semibold text-foreground">
+                        <div className="table-header-label mb-1 lg:hidden">Name</div>
+                        <span className="table-primary-text">
                           {definition.shortForm}
                         </span>
                       </div>
@@ -289,8 +289,8 @@ export function Definitions() {
 
                     {/* Description */}
                     <div className="lg:col-span-7">
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Description</div>
-                      <div className="text-sm text-foreground leading-relaxed">
+                      <div className="table-header-label mb-1 lg:hidden">Description</div>
+                      <div className="table-value-text">
                         {definition.expandedForm}
                       </div>
                     </div>

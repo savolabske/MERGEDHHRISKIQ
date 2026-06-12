@@ -47,7 +47,7 @@ export function ProgrammaticRisksReport({ onBack }: { onBack: () => void }) {
 
   return (
     <ReportShell>
-      <ReportBackButton onBack={onBack} />
+      <ReportBackButton onBack={onBack} title="Programmatic Risks" />
       <ReportHero
         title="Programmatic Risks"
         createdAt={PROGRAMMATIC_REPORT_CREATED}
@@ -123,7 +123,7 @@ export function ProgrammaticRisksReport({ onBack }: { onBack: () => void }) {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-foreground-emphasis">{PROGRAMMATIC_KPIS.totalFlags2025}</span>
+                <span className="text-kpi">{PROGRAMMATIC_KPIS.totalFlags2025}</span>
                 <span className="text-xs text-text-subtle uppercase">flags</span>
               </div>
             </div>

@@ -55,7 +55,7 @@ function TooltipContent({
           variant === "default" &&
             "bg-primary text-primary-foreground",
           variant === "muted" &&
-            "border border-[#D1D5DB] bg-[#F3F4F6] text-[#111827] shadow-sm",
+            "border border-border bg-muted text-foreground shadow-sm",
           className,
         )}
         {...props}
@@ -66,7 +66,7 @@ function TooltipContent({
             className={cn(
               "z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]",
               variant === "default" && "bg-primary fill-primary",
-              variant === "muted" && "bg-[#F3F4F6] fill-[#F3F4F6]",
+              variant === "muted" && "bg-muted fill-muted",
             )}
           />
         )}

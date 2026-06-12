@@ -431,7 +431,7 @@ export function ReportsDashboard() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Risk Intelligence Reports</h2>
+              <h2 className="text-page-title mb-1">Risk Intelligence Reports</h2>
               <p className="text-sm sm:text-sm text-muted-foreground">Comprehensive analysis of operational risk landscape</p>
             </div>
             
@@ -481,7 +481,7 @@ export function ReportsDashboard() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Critical Risks</p>
-                    <p className="text-3xl font-bold text-foreground leading-none mt-1">4</p>
+                    <p className="text-kpi mt-1">4</p>
                   </div>
                 </div>
               </div>
@@ -502,7 +502,7 @@ export function ReportsDashboard() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Mitigation Rate</p>
-                    <p className="text-3xl font-bold text-foreground leading-none mt-1">68%</p>
+                    <p className="text-kpi mt-1">68%</p>
                   </div>
                 </div>
               </div>
@@ -523,7 +523,7 @@ export function ReportsDashboard() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Overall Exposure</p>
-                    <p className="text-3xl font-bold text-foreground leading-none mt-1">High</p>
+                    <p className="text-kpi mt-1">High</p>
                   </div>
                 </div>
               </div>
@@ -544,7 +544,7 @@ export function ReportsDashboard() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Active Monitoring</p>
-                    <p className="text-3xl font-bold text-foreground leading-none mt-1">20</p>
+                    <p className="text-kpi mt-1">20</p>
                   </div>
                 </div>
               </div>
@@ -978,13 +978,13 @@ export function ReportsDashboard() {
 
                 {/* Description */}
                 <div className="bg-background rounded-xl p-4 border border-border">
-                  <h5 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-2">Overview</h5>
+                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Overview</h5>
                   <p className="text-sm text-foreground leading-relaxed">{selectedRisk.description}</p>
                 </div>
 
                 {/* Location */}
                 <div>
-                  <h5 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-2">Location</h5>
+                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Location</h5>
                   <div className="flex items-center gap-2 text-sm text-foreground">
                     <MapPin size={16} className="text-muted-foreground" />
                     <span>{selectedRisk.location}</span>
@@ -993,7 +993,7 @@ export function ReportsDashboard() {
 
                 {/* Trend */}
                 <div>
-                  <h5 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-2">Trend</h5>
+                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Trend</h5>
                   <div className="flex items-center gap-2">
                     {selectedRisk.trend === 'up' && (
                       <>
@@ -1019,7 +1019,7 @@ export function ReportsDashboard() {
                 {/* Recent Incidents */}
                 {selectedRisk.incidents && selectedRisk.incidents.length > 0 && (
                   <div>
-                    <h5 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Recent Incidents</h5>
+                    <h5 className="text-sm font-semibold text-muted-foreground mb-3">Recent Incidents</h5>
                     <div className="space-y-2">
                       {selectedRisk.incidents.map((incident, idx) => (
                         <div key={idx} className="flex gap-3">
@@ -1034,7 +1034,7 @@ export function ReportsDashboard() {
                 {/* Recommendations */}
                 {selectedRisk.recommendations && selectedRisk.recommendations.length > 0 && (
                   <div>
-                    <h5 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-3">Recommended Actions</h5>
+                    <h5 className="text-sm font-semibold text-muted-foreground mb-3">Recommended Actions</h5>
                     <div className="space-y-2">
                       {selectedRisk.recommendations.map((rec, idx) => (
                         <div key={idx} className="flex gap-3 bg-background rounded-lg p-3 border border-border">

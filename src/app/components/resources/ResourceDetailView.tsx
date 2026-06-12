@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   ExternalLink,
   Trash2,
   Calendar,
@@ -16,8 +15,11 @@ import {
   ChatsAvailabilityBadge,
   SidebarTagBadge,
   SidebarUserGroupBadge,
+  DetailSectionTitle,
+  DetailFieldLabel,
 } from './resourceShared';
 import { ResourceDocumentsList } from './ResourceDocumentsList';
+import { PageBreadcrumb } from '../ui/page-breadcrumb';
 
 interface ResourceDetailViewProps {
   resource: PlatformResource;
@@ -64,14 +66,13 @@ export function ResourceDetailView({
 
   return (
     <div className="space-y-6">
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex items-center gap-2 text-base text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft size={18} />
-        Back to Resources
-      </button>
+      <PageBreadcrumb
+        className="mb-4"
+        items={[
+          { label: 'Resources', onClick: onBack },
+          { label: resource.title },
+        ]}
+      />
 
       <div>
         <h1 className="text-xl font-semibold text-foreground">{resource.title}</h1>
@@ -80,9 +81,7 @@ export function ResourceDetailView({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-card rounded-xl border border-border p-6">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              Description
-            </h3>
+            <DetailSectionTitle>Description</DetailSectionTitle>
             <p className="text-sm text-foreground leading-relaxed">{resource.description}</p>
           </div>
 
@@ -90,9 +89,7 @@ export function ResourceDetailView({
 
           {resource.webLinks.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Web Links
-              </h3>
+              <DetailSectionTitle>Web Links</DetailSectionTitle>
               <div className="space-y-4">
                 {resource.webLinks.map((link) => (
                   <div key={link.id}>
@@ -117,26 +114,20 @@ export function ResourceDetailView({
         <div className="space-y-6">
           <div className="bg-card rounded-xl border border-border p-6 space-y-6">
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Available in
-              </h3>
+              <DetailFieldLabel>Available in</DetailFieldLabel>
               <div className="flex flex-wrap gap-1">
                 <ChatsAvailabilityBadge />
               </div>
             </div>
 
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Ownership
-              </h3>
+              <DetailFieldLabel>Ownership</DetailFieldLabel>
               <OwnershipBadge ownership={resource.ownership} />
             </div>
 
             {resource.userGroups.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  User Group
-                </h3>
+                <DetailFieldLabel>User Group</DetailFieldLabel>
                 <div className="flex flex-wrap gap-2">
                   {resource.userGroups.map((group) => (
                     <SidebarUserGroupBadge key={group} group={group} />
@@ -147,9 +138,7 @@ export function ResourceDetailView({
 
             {individualUsers.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Individual Users
-                </h3>
+                <DetailFieldLabel>Individual Users</DetailFieldLabel>
                 <div className="space-y-2">
                   {visibleIndividualUsers.map((email) => (
                     <div key={email} className="flex items-center gap-2 text-sm text-foreground">
@@ -184,9 +173,7 @@ export function ResourceDetailView({
 
             {resource.tags.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Tags
-                </h3>
+                <DetailFieldLabel>Tags</DetailFieldLabel>
                 <div className="flex flex-wrap gap-2">
                   {resource.tags.map((tag) => (
                     <SidebarTagBadge key={tag} tag={tag} />
@@ -196,9 +183,7 @@ export function ResourceDetailView({
             )}
 
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Created
-              </h3>
+              <DetailFieldLabel>Created</DetailFieldLabel>
               <div className="flex items-center gap-2 text-sm text-foreground">
                 <Calendar size={18} className="text-muted-foreground" />
                 {resource.createdAt}
@@ -206,9 +191,7 @@ export function ResourceDetailView({
             </div>
 
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Last Modified
-              </h3>
+              <DetailFieldLabel>Last Modified</DetailFieldLabel>
               <div className="flex items-center gap-2 text-sm text-foreground">
                 <Clock size={18} className="text-muted-foreground" />
                 {resource.lastModified}

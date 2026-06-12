@@ -165,7 +165,7 @@ export function HubSearchRow({ onSearch, onOpenChat }: HubSearchRowProps) {
               }}
               rows={2}
               placeholder="Search displacement, rainfall, access routes, or ask anything…"
-              className="flex-1 min-h-[44px] resize-none border-0 bg-transparent p-0 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 leading-relaxed"
+              className="focus-ring-container-control flex-1 min-h-[44px] resize-none border-0 bg-transparent p-0 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 leading-relaxed"
             />
           </div>
 

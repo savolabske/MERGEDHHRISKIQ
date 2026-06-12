@@ -7,6 +7,15 @@ export type SjfWindow = [string, number, number, string, string];
 export type SjfProgramme = [string, string, string, number, number, string, string, string];
 export type SjfYearly = [number, number, number | null];
 export type SjfAchievement = [string, string];
+export type SjfPbiRow = [string, string, number, number, number];
+export type SjfScenarioProgramme = [string, string, number, number, number, number, number];
+
+export interface SjfPbiData {
+  rows: SjfPbiRow[];
+  transfers2025: SjfPair[];
+  transfers2026: SjfPair[];
+  scenarios: { programmes: SjfScenarioProgramme[] };
+}
 
 export interface SjfTotals {
   portfolio: number;
@@ -40,6 +49,7 @@ export interface SjfDataset {
   programmes: SjfProgramme[];
   yearly: SjfYearly[];
   achievements_H1_2025: SjfAchievement[];
+  pbi: SjfPbiData;
 }
 
 export interface SjfKpiCard {
@@ -63,7 +73,14 @@ export interface SjfScene {
   ask: string;
   cap: string;
   ctitle: string;
+  chart: SjfChartKind;
 }
+
+export type SjfChatMessage =
+  | { role: 'user'; text: string; extended?: boolean }
+  | { role: 'assistant'; lane: 'dashboard'; title: string; chips?: string[]; extended?: boolean }
+  | { role: 'assistant'; lane: 'chat'; body: string; chips?: string[]; extended?: boolean }
+  | { role: 'system'; text: string };
 
 export interface SjfScrollytellingProps {
   onBack?: () => void;
@@ -90,12 +107,18 @@ export interface SjfRecipeResult {
   sections: SjfRecipeSection[];
   followUps: string[];
   chips?: string[];
+  isFallback?: boolean;
 }
+
+export type SjfPromptResult =
+  | { lane: 'dashboard'; recipe: SjfRecipeResult }
+  | { lane: 'chat'; body: string; chips?: string[] };
 
 export type SjfRecipeSection =
   | { type: 'full'; title: string; subtitle?: string; chart: SjfChartKind }
   | { type: 'half'; title: string; subtitle?: string; chart: SjfChartKind }
   | { type: 'grid'; items: { title: string; subtitle?: string; chart: SjfChartKind }[] }
+  | { type: 'chips'; title: string; subtitle?: string; prompts: string[] }
   | { type: 'followups'; prompts: string[] }
   | { type: 'html'; content: string };
 
@@ -107,4 +130,10 @@ export type SjfChartKind =
   | { kind: 'donut'; a: number; b: number; labelA: string; labelB: string; colorA?: string; colorB?: string }
   | { kind: 'achievements'; rows: SjfAchievement[]; limit?: number }
   | { kind: 'programmeTable'; rows: SjfProgramme[] }
-  | { kind: 'gapCallout'; rows: SjfPairWithColor[]; note: string };
+  | { kind: 'gapCallout'; rows: SjfPairWithColor[]; note: string }
+  | { kind: 'planYearBars' }
+  | { kind: 'donorTrend' }
+  | { kind: 'windowYearBars'; donor: string | null; year: '2025' | '2026' | '2027' | null }
+  | { kind: 'projectDonut'; year: 2025 | 2026; label?: string }
+  | { kind: 'scenarioBars' }
+  | { kind: 'scenarioTable' };

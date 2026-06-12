@@ -175,7 +175,7 @@ export function RisksByStatusCard({
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-2xl font-bold text-foreground leading-none tabular-nums">
+            <span className="text-kpi">
               {animatedTotal}
             </span>
             <span className="text-xs font-semibold text-text-subtle uppercase tracking-wider mt-0.5">

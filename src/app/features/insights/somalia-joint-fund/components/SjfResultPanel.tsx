@@ -19,17 +19,17 @@ export function SjfResultPanel({ recipe, resultTitle, onBack, onFollowUp }: SjfR
     <section>
       <AnimatedAIResponse
         messageKey={`sjf-banner-${resultTitle}`}
-        className="mb-4 flex items-center justify-between rounded-[14px] border border-[#b6d4cc] bg-gradient-to-r from-[#e3f0ed] to-[#eaf3f6] px-4 py-3"
+        className="mb-4 flex items-center justify-between rounded-[14px] border border-[#B8D9EE] bg-gradient-to-r from-[#E5F3FB] to-[#FFF4D6] px-4 py-3"
       >
         <div className="flex items-center gap-2.5">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#0b6b5d] to-[#1e3a5f] text-white">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#00689D] to-[#19486A] text-white">
             ✦
           </span>
           <div>
             <div className="text-[13.5px] font-semibold text-[#0b1a2c]">
               {recipe.title}
               {recipe.extended && (
-                <span className="ml-2 rounded-full bg-[#c89b3c] px-2 py-0.5 text-[10px] font-bold text-white">
+                <span className="ml-2 rounded-full bg-[#DDA63A] px-2 py-0.5 text-[10px] font-bold text-white">
                   EXTENDED
                 </span>
               )}
@@ -42,9 +42,9 @@ export function SjfResultPanel({ recipe, resultTitle, onBack, onFollowUp }: SjfR
         </div>
         <button
           onClick={onBack}
-          className="rounded-lg border border-[#b6d4cc] bg-white px-3 py-2 text-[12px] font-semibold text-[#0b6b5d]"
+          className="rounded-lg border border-[#B8D9EE] bg-white px-3 py-2 text-[12px] font-semibold text-[#00689D]"
         >
-          Back to report
+          Back
         </button>
       </AnimatedAIResponse>
 
@@ -61,7 +61,7 @@ export function SjfResultPanel({ recipe, resultTitle, onBack, onFollowUp }: SjfR
           <div className="mt-3.5 grid grid-cols-2 gap-2.5">
             {recipe.findings.map((f) => (
               <div key={f.label} className="rounded-[11px] bg-[#f4f6fa] p-3">
-                <div className="text-[21px] font-semibold text-[#0b6b5d]">{f.value}</div>
+                <div className="text-[21px] font-semibold text-[#00689D]">{f.value}</div>
                 <div className="mt-0.5 text-[11px] text-[#6f8094]">{f.label}</div>
               </div>
             ))}
@@ -103,6 +103,31 @@ export function SjfResultPanel({ recipe, resultTitle, onBack, onFollowUp }: SjfR
               </React.Fragment>
             );
           }
+          if (section.type === 'chips') {
+            return (
+              <AnimatedAIResponse
+                key={`chips-${si}`}
+                messageKey={`sjf-chips-${resultTitle}-${si}`}
+                className="rounded-2xl border border-[#e2e6ee] bg-white p-5 lg:col-span-2"
+              >
+                <h4 className="text-[14px] font-semibold text-[#0b1a2c]">{section.title}</h4>
+                {section.subtitle && (
+                  <p className="mb-3 text-[11.5px] text-[#6f8094]">{section.subtitle}</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {section.prompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => onFollowUp(prompt)}
+                      className="rounded-full border border-[#e2e6ee] px-3 py-1.5 text-[11.5px] text-[#324559] hover:border-[#00689D] hover:text-[#00689D]"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </AnimatedAIResponse>
+            );
+          }
           return null;
         })}
 
@@ -118,7 +143,7 @@ export function SjfResultPanel({ recipe, resultTitle, onBack, onFollowUp }: SjfR
                 <button
                   key={prompt}
                   onClick={() => onFollowUp(prompt)}
-                  className="rounded-full border border-[#e2e6ee] px-3 py-1.5 text-[11.5px] text-[#324559] hover:border-[#0b6b5d] hover:text-[#0b6b5d]"
+                  className="rounded-full border border-[#e2e6ee] px-3 py-1.5 text-[11.5px] text-[#324559] hover:border-[#00689D] hover:text-[#00689D]"
                 >
                   {prompt}
                 </button>

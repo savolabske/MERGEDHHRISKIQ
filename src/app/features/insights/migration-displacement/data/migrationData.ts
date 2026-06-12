@@ -34,6 +34,11 @@ export const MIGRATION_DATA = {
   needs: [['Food', 25746], ['Drinking Water', 5927], ['Shelter', 3355], ['Livelihoods', 2813], ['Water (wash/cook)', 1129], ['Cash', 1083], ['Sanitation & Hygiene', 257], ['NFIs', 176]] as MigrationPair[],
   gap: [['Food', 38627, 2258], ['Shelter', 37426, 1802], ['Health', 35367, 1324], ['Nutrition', 34365, 1244], ['Water', 33069, 913], ['Sanitation', 30201, 1511], ['Protection', 28644, 785], ['Hygiene', 26905, 1071], ['GBV', 12053, 319], ['Child Prot.', 11560, 353], ['Learning', 10739, 293]] as [string, number, number][],
   stay: [['More than 6 months', 21874], ['A week to 6 months', 3804], ['Less than a week', 2723]] as MigrationPair[],
+  causeQ: [['2023Q4', 158780, 26250], ['2024Q1', 77981, 9160], ['2024Q2', 74182, 15431], ['2024Q3', 88030, 40446], ['2024Q4', 6631, 7869], ['2025Q1', 65986, 35193], ['2025Q2', 70478, 80202], ['2025Q3', 29655, 44293], ['2025Q4', 30657, 22383], ['2026Q1', 46580, 14930], ['2026Q2', 9154, 3508]] as [string, number, number][],
+  movement: { Spontaneous: 37164, Organized: 3530 },
+  settlement: { 'IDP camp/site': 31732, 'Host community': 8962 },
+  origin: { Somalia: 39703, Ethiopia: 990, Other: 1 },
+  originReg: [['Bay', 141493], ['Lower Shabelle', 88995], ['Middle Shabelle', 78061], ['Gedo', 56277], ['Bakool', 26024], ['Hiraan', 22064], ['Lower Juba', 12898], ['Middle Juba', 9430]] as MigrationPair[],
 };
 
 export const MIGRATION_SCENES: MigrationScene[] = [
@@ -56,5 +61,12 @@ export const MIGRATION_KPI_BASE = [
   { label: 'Unmet Need', prompt: 'Where are the biggest gaps between needs and response?', icon: Check, iconBg: '#fbe6e3', iconColor: COLORS.conflict, color: COLORS.conflict },
 ];
 
-export const MIGRATION_CHIPS = ['What is driving displacement?', 'Which regions receive the most people?'];
+export const MIGRATION_CHIPS = [
+  'What is driving displacement?',
+  'Which regions receive the most people?',
+  'Break down by age and gender',
+  'Where are the biggest response gaps?',
+  'Show the trend over time',
+  'Are these movements long-term?',
+];
 export const FORWARD_ICONS = [AlertTriangle, TrendingUp, MapPin, AlertTriangle, Users, Calendar] as const;

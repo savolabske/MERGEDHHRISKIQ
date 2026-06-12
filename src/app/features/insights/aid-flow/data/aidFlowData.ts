@@ -43,6 +43,39 @@ export const AID_FLOW_DATA: AidFlowDataset = {
     ['Reducing Malnutrition & Strengthening Sys.', 'China', 'Food Security', 'Puntland', 571.4, 600, 'Closing'],
     ['Internal Risk Facility (SHARP)', 'FCDO', 'Food Security', 'Hirshabelle', 166.6, 210, 'Active'],
     ['Building Resilience: Safety Nets (Baxnaano)', 'World Bank', 'Social Protection', 'Hirshabelle', 160.8, 200, 'Active'],
+    ['Building Resilience: Food-insecure HHs', 'China', 'Social Protection', 'Puntland', 137.6, 160, 'Active'],
+    ['Economic & Financial Reforms', 'African Dev Bank', 'Budget Support', 'FGS', 121.9, 150, 'Active'],
+    ['Health & Nutrition Services', 'EU', 'Health', 'Banadir (BRA)', 98.4, 120, 'Active'],
+    ['Water Supply & Sanitation', 'Germany', 'WASH', 'Puntland', 84.6, 110, 'Active'],
+    ['Education Access & Quality', 'Global Partnership', 'Education', 'Galmudug', 61.7, 80, 'Closing'],
+  ],
+  climate: {
+    year: [[2016, 0.6], [2017, 14.6], [2018, 32.8], [2019, 467.5], [2020, 675.0], [2021, 447.6], [2022, 941.8], [2023, 1189.9]],
+    donor: [['World Bank', 490.4], ['FCDO', 258.6], ['Germany', 251.4], ['USAID (USA)', 208.2], ['Canada', 186.3], ['EU', 165.4]],
+    region: [['Puntland', 834.3], ['Banadir (BRA)', 606.2], ['South West', 604.5], ['Somaliland', 493.9], ['Jubaland', 444.8], ['Hirshabelle', 344.0], ['Galmudug', 262.7]],
+    projects: 146,
+  },
+  fcdo: {
+    sectors: [['Food Security', 427.0], ['Health', 144.2], ['Security (ODA)', 65.3], ['Refugees & Durable Sol.', 55.7], ['Rule of Law', 32.6], ['Inclusive Politics', 31.1]],
+    year: [[2016, 78.9], [2017, 250.4], [2018, 190.9], [2019, 250.2], [2020, 131.2], [2021, 85.6], [2022, 43.0], [2023, 65.0]],
+    total: 1096.7,
+    projects: 246,
+  },
+  healthSouthWest: [
+    ['Health & Nutrition Services', 'EU', 'Health', 'South West', 58.4, 90, 'Active'],
+    ['Essential Health Services (EHSP)', 'World Bank', 'Health', 'South West', 41.2, 55, 'Active'],
+    ['Maternal & Child Health', 'Sweden', 'Health', 'South West', 22.8, 30, 'Active'],
+    ['GAVI Immunisation Support', 'UNICEF', 'Health', 'South West', 15.6, 20, 'Closing'],
+  ],
+  channelMix: [
+    ['WFP', 3148, COLORS.wash], ['Govt ministries', 1424, COLORS.resil], ['UNICEF', 433, COLORS.basic],
+    ['IOM', 168, COLORS.edu], ['INGOs', 389, COLORS.food], ['Adam Smith Intl', 222, COLORS.prot],
+    ['Others', 800, COLORS.other], ['UNHCR', 120, COLORS.health],
+  ],
+  southWestSectors: [
+    ['Food Security', 612, COLORS.food], ['Health', 138, COLORS.health], ['Resilience', 96, COLORS.resil],
+    ['WASH', 72, COLORS.wash], ['Education', 58, COLORS.edu], ['Protection', 44, COLORS.prot],
+    ['Gov.', 52, COLORS.basic], ['Other', 40, COLORS.other],
   ],
 };
 
@@ -69,5 +102,9 @@ export const SCENES: AidFlowScene[] = [
 export const DONOR_OPTIONS = ['FCDO', 'USAID (USA)', 'Germany', 'World Bank', 'EU', 'Sweden', 'Denmark', 'CERF', 'UNICEF', 'WFP'];
 export const SECTOR_OPTIONS = ['Food Security', 'Health', 'Nutrition', 'Social Protection', 'Refugees & Durable Sol.', 'Public Fin. Mgmt', 'Civil Service Reform', 'Budget Support'];
 export const REGION_OPTIONS = ['Banadir (BRA)', 'Puntland', 'Somaliland', 'South West', 'Jubaland', 'Hirshabelle', 'Galmudug', 'FGS (federal)'];
-export const AI_CHIPS = ['Analyze FCDO funding by sector', 'Which regions are underfunded?'];
+export const AI_CHIPS = [
+  'Analyze FCDO funding by sector',
+  'Which regions are underfunded?',
+  'Show climate-related aid flows',
+];
 export const FORWARD_ICONS = [AlertTriangle, TrendingDown, MapPin, Sparkles, Layers, Check] as const;

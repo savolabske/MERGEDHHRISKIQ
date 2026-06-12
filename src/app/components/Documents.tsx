@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { PageFooter } from './PageFooter';
+import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { TableSkeleton } from './ui/table-skeleton';
 
 type DocumentFileProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed';
@@ -146,7 +147,7 @@ function DocumentAvailabilityFields({
 }) {
   const heading =
     variant === 'sidebar' ? (
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
         Availability{' '}
         <span className="font-normal normal-case text-border-muted">(optional)</span>
       </h3>
@@ -2097,18 +2098,21 @@ export function Documents() {
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[1400px] mx-auto space-y-6">
-              <button
-                onClick={() => {
-                  setShowFullView(false);
-                  setSelectedGroup(null);
-                  setIsInlineEditing(false);
-                  setDetailFileMenuAnchor(null);
-                }}
-                className="flex items-center gap-2 text-base text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowLeft size={18} />
-                Back to Resources
-              </button>
+              <PageBreadcrumb
+                className="mb-4"
+                items={[
+                  {
+                    label: 'Resources',
+                    onClick: () => {
+                      setShowFullView(false);
+                      setSelectedGroup(null);
+                      setIsInlineEditing(false);
+                      setDetailFileMenuAnchor(null);
+                    },
+                  },
+                  { label: editTitle.trim() || selectedGroup.title },
+                ]}
+              />
 
               <div>
                 <input
@@ -2123,7 +2127,7 @@ export function Documents() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-card rounded-xl border border-border p-6">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                       Description
                     </h3>
                     <textarea
@@ -2137,7 +2141,7 @@ export function Documents() {
 
                   <div className="bg-card rounded-xl border border-border p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <h3 className="text-xs font-semibold text-muted-foreground">
                         Files
                       </h3>
                       <span className="text-sm text-muted-foreground">
@@ -2169,7 +2173,7 @@ export function Documents() {
                         ) : (
                           <div className="min-w-[min(100%,720px)]">
                             <div
-                              className={`${DETAIL_FILES_TABLE_GRID} py-2 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-surface-subtle`}
+                              className={`${DETAIL_FILES_TABLE_GRID} min-h-10 py-2 border-b border-border table-header-label bg-muted/70`}
                               role="row"
                             >
                               <div className="flex items-center justify-center">
@@ -2193,15 +2197,15 @@ export function Documents() {
                                       ? row.file.id
                                       : `new-${row.index}-${row.file.name}`
                                   }
-                                  className={`${DETAIL_FILES_TABLE_GRID} py-3.5 bg-card hover:bg-surface-subtle transition-colors`}
+                                  className={`${DETAIL_FILES_TABLE_GRID} table-row-entity bg-card transition-colors`}
                                   role="row"
                                 >
                                   <div className="flex items-center justify-center" aria-hidden>
                                     <div className="h-4 w-4 shrink-0" />
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="text-sm font-medium text-foreground truncate">{row.file.name}</p>
-                                    <p className="text-sm text-muted-foreground mt-0.5">
+                                    <p className="table-primary-text truncate">{row.file.name}</p>
+                                    <p className="table-supporting-text mt-0.5">
                                       {row.kind === 'existing'
                                         ? `${row.file.size} · Uploaded ${row.file.uploadedAt}`
                                         : `${formatFileSize(row.file.size)} · New file`}
@@ -2219,10 +2223,10 @@ export function Documents() {
                                           <FileText size={16} strokeWidth={2} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                          <p className="text-sm font-medium leading-snug text-primary">
+                                          <p className="table-primary-text text-primary">
                                             New file
                                           </p>
-                                          <p className="mt-0.5 truncate text-xs leading-snug text-text-subtle">
+                                          <p className="table-metadata-text mt-0.5 truncate">
                                             Added in this edit
                                           </p>
                                         </div>
@@ -2348,7 +2352,7 @@ export function Documents() {
                 <div className="space-y-6">
                   <div className="bg-card rounded-xl border border-border p-6 space-y-6">
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                         User Group
                       </h3>
                       <div className="relative" ref={editUserGroupDropdownRef}>
@@ -2393,7 +2397,7 @@ export function Documents() {
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                         Tags
                       </h3>
                       <div className="relative" ref={editTagsDropdownRef}>
@@ -2470,7 +2474,7 @@ export function Documents() {
                                   </div>
                                 </button>
                               )}
-                              <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted border-b border-border">
+                              <p className="px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted border-b border-border">
                                 Select from existing tags
                               </p>
                               {filteredEditTags.map((tag) => (
@@ -2509,7 +2513,7 @@ export function Documents() {
                     />
 
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                         Created
                       </h3>
                       <div className="flex items-center gap-2 text-sm text-foreground">
@@ -2519,7 +2523,7 @@ export function Documents() {
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                         Last Modified
                       </h3>
                       <div className="flex items-center gap-2 text-sm text-foreground">
@@ -2610,18 +2614,21 @@ export function Documents() {
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[1400px] mx-auto space-y-6">
-              <button
-                onClick={() => {
-                  setShowFullView(false);
-                  setSelectedGroup(null);
-                  setIsInlineEditing(false);
-                  setDetailFileMenuAnchor(null);
-                }}
-                className="flex items-center gap-2 text-base text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowLeft size={18} />
-                Back to Resources
-              </button>
+              <PageBreadcrumb
+                className="mb-4"
+                items={[
+                  {
+                    label: 'Resources',
+                    onClick: () => {
+                      setShowFullView(false);
+                      setSelectedGroup(null);
+                      setIsInlineEditing(false);
+                      setDetailFileMenuAnchor(null);
+                    },
+                  },
+                  { label: selectedGroup.title },
+                ]}
+              />
 
               <div>
                 <h1 className="text-xl font-semibold text-foreground">
@@ -2634,7 +2641,7 @@ export function Documents() {
                 <div className="lg:col-span-2 space-y-6">
                   {/* Description */}
                   <div className="bg-card rounded-xl border border-border p-6">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                       Description
                     </h3>
                     <p className="text-sm text-foreground leading-relaxed">
@@ -2645,7 +2652,7 @@ export function Documents() {
                   {/* Documents */}
                   <div className="bg-card rounded-xl border border-border p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <h3 className="text-xs font-semibold text-muted-foreground">
                         Files
                       </h3>
                       <span className="text-sm text-muted-foreground">
@@ -2714,7 +2721,7 @@ export function Documents() {
                         ) : (
                           <div className="min-w-[min(100%,720px)]">
                             <div
-                              className={`${DETAIL_FILES_TABLE_GRID} py-2 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-surface-subtle`}
+                              className={`${DETAIL_FILES_TABLE_GRID} min-h-10 py-2 border-b border-border table-header-label bg-muted/70`}
                               role="row"
                             >
                               <div className="flex items-center justify-center">
@@ -2734,7 +2741,7 @@ export function Documents() {
                               {visibleDetailFiles.map((file) => (
                                 <div
                                   key={file.id}
-                                  className={`${DETAIL_FILES_TABLE_GRID} py-3.5 bg-card hover:bg-surface-subtle transition-colors`}
+                                  className={`${DETAIL_FILES_TABLE_GRID} table-row-entity bg-card transition-colors`}
                                   role="row"
                                 >
                                   <div className="flex items-center justify-center">
@@ -2747,10 +2754,10 @@ export function Documents() {
                                     />
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="text-sm font-medium text-foreground truncate">
+                                    <p className="table-primary-text truncate">
                                       {file.name}
                                     </p>
-                                    <p className="text-sm text-muted-foreground mt-0.5">
+                                    <p className="table-supporting-text mt-0.5">
                                       {file.size} · Uploaded {file.uploadedAt}
                                     </p>
                                   </div>
@@ -2865,7 +2872,7 @@ export function Documents() {
                   <div className="bg-card rounded-xl border border-border p-6 space-y-6">
                     {/* Availability */}
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                         Available in
                       </h3>
                       <DocumentAvailabilityBadges doc={selectedGroup} size="md" />
@@ -2878,7 +2885,7 @@ export function Documents() {
 
                     {/* User Group */}
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                         User Group
                       </h3>
                       <div className="flex flex-wrap gap-2">
@@ -2896,7 +2903,7 @@ export function Documents() {
                     {/* Tags */}
                     {selectedGroup.tags && selectedGroup.tags.length > 0 && (
                       <div>
-                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                        <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                           Tags
                         </h3>
                         <div className="flex flex-wrap gap-2">
@@ -2914,7 +2921,7 @@ export function Documents() {
 
                     {/* Created */}
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                         Created
                       </h3>
                       <div className="flex items-center gap-2 text-sm text-foreground">
@@ -2925,7 +2932,7 @@ export function Documents() {
 
                     {/* Last Modified */}
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
                         Last Modified
                       </h3>
                       <div className="flex items-center gap-2 text-sm text-foreground">
@@ -3097,13 +3104,13 @@ export function Documents() {
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[900px] mx-auto space-y-6">
-              <button
-                onClick={() => setShowUploadPage(false)}
-                className="flex items-center gap-2 text-base text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowLeft size={18} />
-                Back to Resources
-              </button>
+              <PageBreadcrumb
+                className="mb-4"
+                items={[
+                  { label: 'Resources', onClick: () => setShowUploadPage(false) },
+                  { label: 'Add New Resource' },
+                ]}
+              />
 
               <div>
                 <h1 className="text-xl font-semibold text-foreground leading-tight">Add New Resource</h1>
@@ -3257,7 +3264,7 @@ export function Documents() {
                                 </div>
                               </button>
                             )}
-                            <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted border-b border-border">
+                            <p className="px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted border-b border-border">
                               Select from existing tags
                             </p>
                             {filteredTags.map((tag) => (
@@ -3358,7 +3365,7 @@ export function Documents() {
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Resources</h2>
+                <h2 className="text-page-title mb-1">Resources</h2>
                 <p className="text-sm sm:text-sm text-muted-foreground">
                   Upload and manage knowledge base resources for AI chat
                 </p>
@@ -3609,7 +3616,7 @@ export function Documents() {
               )}
 
               {/* Table Header - Desktop Only */}
-              <div className="hidden lg:grid grid-cols-12 gap-x-6 gap-y-0 px-6 py-4 bg-muted border-b border-border">
+              <div className="hidden min-h-10 lg:grid grid-cols-12 items-center gap-x-6 gap-y-0 px-6 py-3 bg-muted/70 border-b border-border">
                 <div className="col-span-4 flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -3617,18 +3624,18 @@ export function Documents() {
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resource</span>
+                  <span className="table-header-label">Resource</span>
                 </div>
-                <div className="col-span-2 col-start-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 col-start-6 table-header-label">
                   Available in
                 </div>
-                <div className="col-span-2 col-start-8 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  User Group
+                <div className="col-span-2 col-start-8 table-header-label">
+                  User group
                 </div>
-                <div className="col-span-2 col-start-10 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 col-start-10 table-header-label">
                   Status
                 </div>
-                <div className="col-span-1 col-start-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
+                <div className="col-span-1 col-start-12 table-header-label text-right">
                   Actions
                 </div>
               </div>
@@ -3641,7 +3648,7 @@ export function Documents() {
                   visibleCurrentPageDocuments.map((doc) => (
                   <div
                     key={doc.id}
-                    className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-x-6 lg:gap-y-0 px-6 py-4 hover:bg-muted transition-colors lg:items-center cursor-pointer"
+                    className="table-row-entity grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-x-6 lg:gap-y-0 px-6 lg:items-center cursor-pointer"
                     onClick={() => openDocumentGroup(doc)}
                   >
                     {/* Checkbox & Document */}
@@ -3658,13 +3665,13 @@ export function Documents() {
                           <Folder size={20} className="text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Resource</div>
+                          <div className="table-mobile-label mb-1 lg:hidden">Resource</div>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               openDocumentGroup(doc);
                             }}
-                            className="text-sm font-medium text-foreground leading-snug hover:text-primary transition-colors text-left"
+                            className="table-primary-text hover:text-primary transition-colors text-left"
                             title={`Open ${doc.title}`}
                           >
                             {doc.title}
@@ -3688,7 +3695,7 @@ export function Documents() {
                     {/* Availability */}
                     <div className="lg:col-span-2 lg:col-start-6 flex items-center" onClick={(e) => e.stopPropagation()}>
                       <div className="w-full">
-                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">
+                        <div className="table-mobile-label mb-1 lg:hidden">
                           Available in
                         </div>
                         <DocumentAvailabilityBadges doc={doc} />
@@ -3698,7 +3705,7 @@ export function Documents() {
                     {/* User Group */}
                     <div className="lg:col-span-2 lg:col-start-8 flex items-center">
                       <div className="w-full">
-                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">User Group</div>
+                        <div className="table-mobile-label mb-1 lg:hidden">User group</div>
                         <span className="text-sm text-foreground">
                           {doc.userGroup}
                         </span>
@@ -3708,7 +3715,7 @@ export function Documents() {
                     {/* Status */}
                     <div className="lg:col-span-2 lg:col-start-10 flex items-center">
                       <div className="w-full">
-                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 lg:hidden">Status</div>
+                        <div className="table-mobile-label mb-1 lg:hidden">Status</div>
                         <div className="flex items-center gap-2">
                           {doc.uploadStatus === 'uploading' ? (
                             <>

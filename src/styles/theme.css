@@ -5,18 +5,35 @@
   --font-display: 'Inter', -apple-system, sans-serif;
   --font-body: 'Inter', -apple-system, sans-serif;
   --font-size: 16px;
+  --text-page-title-size: 1.5rem;
+  --text-page-title-line: 2rem;
+  --text-section-title-size: 1.125rem;
+  --text-section-title-line: 1.625rem;
+  --text-component-title-size: 1rem;
+  --text-component-title-line: 1.5rem;
+  --text-body-size: 0.875rem;
+  --text-body-line: 1.375rem;
+  --text-label-size: 0.8125rem;
+  --text-label-line: 1.125rem;
+  --text-metadata-size: 0.75rem;
+  --text-metadata-line: 1rem;
+  --text-kpi-hero-size: 2rem;
+  --text-kpi-hero-line: 2.5rem;
+  --text-kpi-size: 1.75rem;
+  --text-kpi-line: 2.125rem;
 
   /* Spacing rhythm (reference — Tailwind default scale) */
   /* page: px-4 sm:px-6 py-6 | card: p-6 | gap: 2–4 | field: px-4 py-2.5 */
 
   /* Colors - Humanity Hub inspired palette */
   --background: #F7F8FA;
-  --foreground: #1e293b;
-  --foreground-emphasis: #0f172a;
+  --foreground: #1a1f2b;
+  --foreground-emphasis: #1a1f2b;
+  --text-description: #334155;
   --card: #ffffff;
-  --card-foreground: #1e293b;
+  --card-foreground: #1a1f2b;
   --popover: #ffffff;
-  --popover-foreground: #1e293b;
+  --popover-foreground: #1a1f2b;
 
   /* Primary — #2463EB scale (Tailwind blue-600 family) */
   --primary: #2463eb;
@@ -32,14 +49,16 @@
 
   /* Secondary */
   --secondary: #f1f5f9;
-  --secondary-foreground: #475569;
+  --secondary-foreground: #334155;
 
   /* Muted */
   --muted: #f8fafc;
   --muted-foreground: #64748b;
-  --text-subtle: #94a3b8;
+  --text-subtle: #8b92a0;
   --surface-subtle: #fafbfc;
   --border-muted: #cbd5e1;
+  --surface-hover: #f1f5f9;
+  --surface-row-hover: #f8fafc;
 
   /* Accent */
   --accent: #2463eb;
@@ -54,7 +73,7 @@
   --warning: #f59e0b;
   --warning-foreground: #ffffff;
   --warning-subtle: #fef3c7;
-  --warning-text: #b45309;
+  --warning-text: #a16207;
   --warning-strong: #f97316;
 
   --info: #0ea5e9;
@@ -65,7 +84,7 @@
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --destructive-subtle: #fee2e2;
-  --destructive-text: #dc2626;
+  --destructive-text: #b91c1c;
 
   /* Borders */
   --border: #e2e8f0;
@@ -115,6 +134,8 @@
   --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
   --shadow-primary: 0 8px 32px rgba(36, 99, 235, 0.12);
   --shadow-overlay: 0 12px 28px rgba(15, 23, 42, 0.18);
+  --transition-control: 150ms;
+  --transition-surface: 200ms;
 
   --font-weight-medium: 500;
   --font-weight-normal: 400;
@@ -123,6 +144,8 @@
 .dark {
   --background: #0f172a;
   --foreground: #f8fafc;
+  --foreground-emphasis: #f8fafc;
+  --text-description: #cbd5e1;
   --card: #1e293b;
   --card-foreground: #f8fafc;
   --popover: #1e293b;
@@ -141,6 +164,9 @@
   --secondary-foreground: #f8fafc;
   --muted: #334155;
   --muted-foreground: #94a3b8;
+  --text-subtle: #64748b;
+  --surface-hover: #334155;
+  --surface-row-hover: #1e293b;
   --accent: #3b82f6;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
@@ -164,6 +190,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-foreground-emphasis: var(--foreground-emphasis);
+  --color-text-description: var(--text-description);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -185,6 +212,8 @@
   --color-text-subtle: var(--text-subtle);
   --color-surface-subtle: var(--surface-subtle);
   --color-border-muted: var(--border-muted);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-row-hover: var(--surface-row-hover);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-success: var(--success);
@@ -242,60 +271,146 @@
     -moz-osx-font-smoothing: grayscale;
     font-optical-sizing: auto;
     font-feature-settings: "cv01", "cv02", "cv03", "cv04", "ss01";
-    line-height: 1.6;
+    font-size: var(--text-body-size);
+    line-height: var(--text-body-line);
   }
 
   html {
     font-size: var(--font-size);
   }
 
-  h1, h2, h3 {
+  h1, h2, h3, h4 {
     font-family: var(--font-display);
+    color: var(--foreground-emphasis);
   }
 
   h1 {
-    font-size: 2rem;
+    font-size: var(--text-page-title-size);
     font-weight: 600;
-    line-height: 1.3;
+    line-height: var(--text-page-title-line);
     letter-spacing: -0.02em;
   }
 
   h2 {
-    font-size: 1.5rem;
+    font-size: var(--text-section-title-size);
     font-weight: 600;
-    line-height: 1.4;
+    line-height: var(--text-section-title-line);
     letter-spacing: -0.01em;
   }
 
   h3 {
-    font-size: 1.25rem;
+    font-size: var(--text-component-title-size);
     font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.01em;
+    line-height: var(--text-component-title-line);
   }
 
   h4 {
-    font-size: 1rem;
+    font-size: var(--text-body-size);
     font-weight: 600;
-    line-height: 1.5;
+    line-height: var(--text-body-line);
   }
 
   label {
-    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    font-size: var(--text-label-size);
     font-weight: 500;
-    line-height: 1.5;
+    line-height: var(--text-label-line);
   }
 
   button {
-    font-size: 0.875rem;
+    font-size: var(--text-body-size);
     font-weight: 500;
-    line-height: 1.5;
+    line-height: 1.25rem;
   }
 
-  input {
-    font-size: 0.9375rem;
+  input, textarea, select {
+    color: var(--foreground);
+    font-size: var(--text-body-size);
     font-weight: 400;
-    line-height: 1.5;
+    line-height: var(--text-body-line);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--text-subtle);
+  }
+
+  .text-page-title {
+    color: var(--foreground-emphasis);
+    font-size: var(--text-page-title-size);
+    font-weight: 600;
+    line-height: var(--text-page-title-line);
+    letter-spacing: -0.02em;
+  }
+
+  .text-section-title {
+    color: var(--foreground-emphasis);
+    font-size: var(--text-section-title-size);
+    font-weight: 600;
+    line-height: var(--text-section-title-line);
+    letter-spacing: -0.01em;
+  }
+
+  .text-component-title {
+    color: var(--foreground-emphasis);
+    font-size: var(--text-component-title-size);
+    font-weight: 600;
+    line-height: var(--text-component-title-line);
+  }
+
+  .text-body {
+    color: var(--foreground);
+    font-size: var(--text-body-size);
+    font-weight: 400;
+    line-height: var(--text-body-line);
+  }
+
+  .text-description {
+    color: var(--text-description);
+    font-size: var(--text-body-size);
+    font-weight: 400;
+    line-height: var(--text-body-line);
+  }
+
+  .text-label {
+    color: var(--muted-foreground);
+    font-size: var(--text-label-size);
+    font-weight: 500;
+    line-height: var(--text-label-line);
+  }
+
+  .text-supporting {
+    color: var(--muted-foreground);
+    font-size: var(--text-label-size);
+    font-weight: 400;
+    line-height: var(--text-label-line);
+  }
+
+  .text-metadata {
+    color: var(--muted-foreground);
+    font-size: var(--text-metadata-size);
+    font-weight: 600;
+    line-height: var(--text-metadata-line);
+  }
+
+  .text-kpi-hero, .text-kpi {
+    color: var(--foreground-emphasis);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .text-kpi-hero {
+    font-size: var(--text-kpi-hero-size);
+    line-height: var(--text-kpi-hero-line);
+  }
+
+  .text-kpi {
+    font-size: var(--text-kpi-size);
+    line-height: var(--text-kpi-line);
+  }
+
+  :where(table, [data-kpi], .tabular-nums) {
+    font-variant-numeric: tabular-nums;
   }
 
   @keyframes shimmer {
@@ -438,7 +553,7 @@
   }
 
   .table-header {
-    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-surface-subtle;
+    @apply text-xs font-semibold text-muted-foreground bg-surface-subtle;
   }
 
   .table-cell-primary {
@@ -471,7 +586,7 @@
     border: none;
     border-radius: 8px;
     font-family: var(--font-body);
-    font-size: 15px;
+    font-size: var(--text-body-size);
     font-weight: 400;
     line-height: 1.2;
     color: var(--text-2);
@@ -536,5 +651,260 @@
 
   .nav-section {
     padding: 12px 10px;
+  }
+}
+
+/*
+ * Platform type contract. These rules intentionally win over legacy one-off
+ * utility sizes so semantic elements stay consistent across every page.
+ */
+:where(h1):not(.auth-display-title):not(.report-display-title) {
+  color: var(--foreground-emphasis) !important;
+  font-size: var(--text-page-title-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--text-page-title-line) !important;
+  letter-spacing: -0.02em !important;
+}
+
+:where(h2):not(.auth-display-title):not(.report-display-title) {
+  color: var(--foreground-emphasis) !important;
+  font-size: var(--text-section-title-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--text-section-title-line) !important;
+  letter-spacing: -0.01em !important;
+}
+
+:where(h2.text-sm, h2.text-base) {
+  font-size: var(--text-component-title-size) !important;
+  line-height: var(--text-component-title-line) !important;
+}
+
+:where(h3):not(.report-display-title) {
+  color: var(--foreground-emphasis) !important;
+  font-size: var(--text-component-title-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--text-component-title-line) !important;
+}
+
+:where(h4) {
+  font-size: var(--text-body-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--text-body-line) !important;
+}
+
+:where(label):not(.visualization-label) {
+  color: var(--muted-foreground) !important;
+  font-size: var(--text-label-size) !important;
+  font-weight: 500 !important;
+  line-height: var(--text-label-line) !important;
+}
+
+:where(input, textarea, select):not(.visualization-control) {
+  color: var(--foreground) !important;
+  font-size: var(--text-body-size) !important;
+  font-weight: 400 !important;
+  line-height: var(--text-body-line) !important;
+}
+
+:where(button):not(.visualization-control) {
+  font-size: var(--text-body-size);
+}
+
+:where(th) {
+  color: var(--muted-foreground);
+  font-size: var(--text-metadata-size);
+  font-weight: 600;
+  line-height: var(--text-metadata-line);
+}
+
+:where(td) {
+  color: var(--foreground);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+  font-variant-numeric: tabular-nums;
+}
+
+:where(a[href]):not(.visualization-link) {
+  text-underline-offset: 3px;
+}
+
+:where(button, a[href], input, textarea, select, [role="button"], [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent);
+}
+
+.focus-ring-container-control:focus,
+.focus-ring-container-control:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+:where([data-slot="button"], [data-slot="input"], [data-slot="textarea"],
+  [data-slot="select-trigger"], [data-slot="checkbox"], [data-slot="switch"],
+  [data-slot="tabs-trigger"], [data-slot="dropdown-menu-item"]) {
+  transition-duration: var(--transition-control);
+}
+
+:where([data-slot="card"], [data-interactive-card]) {
+  transition-duration: var(--transition-surface);
+}
+
+:where([data-interactive-card]):hover {
+  border-color: var(--primary-border);
+  box-shadow: var(--shadow-sm);
+}
+
+:where([data-kpi="hero"], .text-kpi-hero) {
+  font-size: var(--text-kpi-hero-size) !important;
+  line-height: var(--text-kpi-hero-line) !important;
+}
+
+/* Titles and field labels follow the casing authored in the UI copy.
+   Uppercase remains available for badges, statuses, acronyms, and chart annotations. */
+:where(h1, h2, h3, h4, h5, h6, label, [role="columnheader"]).uppercase {
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+
+:where([data-kpi="standard"], .text-kpi) {
+  font-size: var(--text-kpi-size) !important;
+  line-height: var(--text-kpi-line) !important;
+}
+
+:where([data-kpi], .text-kpi, .text-kpi-hero) {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600 !important;
+}
+
+:where(.text-page-title) {
+  color: var(--foreground-emphasis) !important;
+  font-size: var(--text-page-title-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--text-page-title-line) !important;
+  letter-spacing: -0.02em !important;
+}
+
+:where(.text-section-title) {
+  color: var(--foreground-emphasis) !important;
+  font-size: var(--text-section-title-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--text-section-title-line) !important;
+}
+
+:where(.text-component-title) {
+  color: var(--foreground-emphasis) !important;
+  font-size: var(--text-component-title-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--text-component-title-line) !important;
+}
+
+.table-header-label {
+  color: var(--muted-foreground) !important;
+  font-size: var(--text-metadata-size) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  line-height: var(--text-metadata-line) !important;
+  text-transform: none !important;
+}
+
+/* Detail pages — card section headers (Description, Files) */
+.detail-section-title {
+  color: var(--text-description) !important;
+  font-size: var(--text-body-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--text-body-line) !important;
+}
+
+/* Detail pages — sidebar metadata labels (Available in, Tags, Created) */
+.detail-field-label {
+  color: var(--muted-foreground) !important;
+  font-size: var(--text-label-size) !important;
+  font-weight: 500 !important;
+  line-height: var(--text-label-line) !important;
+}
+
+.table-primary-text {
+  color: var(--foreground) !important;
+  font-size: var(--text-body-size) !important;
+  font-weight: 500 !important;
+  line-height: 1.25rem !important;
+}
+
+.table-value-text {
+  color: var(--foreground) !important;
+  font-size: var(--text-body-size) !important;
+  font-weight: 400 !important;
+  line-height: 1.25rem !important;
+}
+
+.table-supporting-text {
+  color: var(--muted-foreground) !important;
+  font-size: var(--text-label-size) !important;
+  font-weight: 400 !important;
+  line-height: var(--text-label-line) !important;
+}
+
+.table-metadata-text {
+  color: var(--text-subtle) !important;
+  font-size: var(--text-metadata-size) !important;
+  font-weight: 400 !important;
+  line-height: var(--text-metadata-line) !important;
+}
+
+.table-numeric-text {
+  color: var(--foreground) !important;
+  font-size: var(--text-body-size) !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500 !important;
+  line-height: 1.25rem !important;
+  white-space: nowrap;
+}
+
+.table-status-text {
+  font-size: var(--text-metadata-size) !important;
+  font-weight: 500 !important;
+  line-height: var(--text-metadata-line) !important;
+}
+
+.table-mobile-label {
+  color: var(--muted-foreground) !important;
+  font-size: var(--text-metadata-size) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: var(--text-metadata-line) !important;
+  text-transform: none !important;
+}
+
+.table-row-standard {
+  min-height: 3rem;
+  padding-block: 0.625rem;
+}
+
+.table-row-entity {
+  min-height: 3.5rem;
+  padding-block: 0.75rem;
+}
+
+.table-row-narrative {
+  min-height: 4.25rem;
+  padding-block: 0.875rem;
+}
+
+.table-row-standard:hover,
+.table-row-entity:hover,
+.table-row-narrative:hover {
+  background: var(--surface-row-hover) !important;
+}
+
+.text-on-emphasis {
+  color: #ffffff !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

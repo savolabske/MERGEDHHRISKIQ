@@ -704,8 +704,8 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
         <div className={compact ? '' : 'max-w-[1400px] mx-auto'}>
         {/* Header */}
         {!compact && (
-          <div className="bg-background border-b border-sidebar-border px-4 sm:px-8 py-6 pt-6">
-            <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Risk Matrix</h2>
+          <div className="bg-background px-4 sm:px-8 py-6 pt-6">
+            <h2 className="text-page-title mb-1">Risk Matrix</h2>
             <p className="text-sm sm:text-sm text-muted-foreground">Interactive 5×5 matrix visualization of risk likelihood and impact</p>
           </div>
         )}
@@ -999,7 +999,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
                 <div className="px-6 py-6 space-y-6">
                   {/* Description */}
                   <div>
-                    <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">Description</h3>
+                    <h3 className="text-xs font-semibold text-text-subtle mb-3">Description</h3>
                     <p className="text-sm text-secondary-foreground leading-relaxed">
                       {selectedRisk.description}
                     </p>
@@ -1007,7 +1007,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
 
                   {/* Risk Cause/Effects */}
                   <div>
-                    <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">Risk Cause/Effects</h3>
+                    <h3 className="text-xs font-semibold text-text-subtle mb-3">Risk Cause/Effects</h3>
                     <p className="text-sm text-secondary-foreground leading-relaxed">
                       {selectedRisk.causeEffects}
                     </p>
@@ -1015,7 +1015,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
 
                   {/* Inherent Risk Ranking */}
                   <div>
-                    <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">Inherent Risk Ranking</h3>
+                    <h3 className="text-xs font-semibold text-text-subtle mb-3">Inherent Risk Ranking</h3>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-base">
                         {selectedRisk.likelihood} × {selectedRisk.impact} =
@@ -1029,7 +1029,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
 
                   {/* Residual Risk Ranking */}
                   <div>
-                    <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">Residual Risk Ranking</h3>
+                    <h3 className="text-xs font-semibold text-text-subtle mb-3">Residual Risk Ranking</h3>
                     {!isEditingResidual ? (
                       <div className="flex items-center justify-between px-5 py-4 rounded-xl border border-border bg-muted">
                         <div>
@@ -1088,7 +1088,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
 
                   {/* Risk Owner */}
                   <div>
-                    <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">Risk Owner</h3>
+                    <h3 className="text-xs font-semibold text-text-subtle mb-3">Risk Owner</h3>
                     <p className="text-sm font-medium text-secondary-foreground">
                       {selectedRisk.owner}
                     </p>
@@ -1097,7 +1097,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
                   {/* Mitigation Measures */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide">
+                      <h3 className="text-xs font-semibold text-text-subtle">
                         MITIGATION MEASURES
                       </h3>
                       <div className="flex items-center gap-1 bg-secondary rounded-lg p-0.5">
@@ -1342,7 +1342,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
 
                   {/* Notes Section */}
                   <div>
-                    <h3 className="text-xs font-bold text-text-subtle uppercase tracking-wide mb-3">
+                    <h3 className="text-xs font-semibold text-text-subtle mb-3">
                       Notes
                     </h3>
                     <div className="space-y-3">

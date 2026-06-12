@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import {
-  ArrowLeft,
   ExternalLink,
   Eye,
   File,
@@ -13,6 +12,8 @@ import {
 import { hubCard } from './home-dashboard/hubStyles';
 import { PageFooter } from './PageFooter';
 import { Button } from './ui/button';
+import { BackLink } from './ui/back-link';
+import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { getDocumentContent, type DocumentContent } from '../data/documentDetailData';
 import type { AppView } from '../types/navigation';
 
@@ -26,7 +27,7 @@ interface DocumentDetailProps {
   documentId: string;
   onBack: () => void;
   onOpenDocument?: (documentId: string) => void;
-  backLabel?: string;
+  breadcrumbParent?: { label: string; onClick: () => void };
 }
 
 function generateDocumentResponse(query: string, content: DocumentContent): string {
@@ -153,7 +154,7 @@ export function DocumentDetail({
   documentId,
   onBack,
   onOpenDocument,
-  backLabel = 'Back',
+  breadcrumbParent,
 }: DocumentDetailProps) {
   const content = getDocumentContent(documentId);
   const [chatQuery, setChatQuery] = useState('');
@@ -209,11 +210,11 @@ export function DocumentDetail({
           ) : (
             <div className="max-w-full">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span className="text-metadata uppercase tracking-wide">
                   System sent
                 </span>
-                <span className="text-[11px] text-muted-foreground">•</span>
-                <span className="text-[11px] text-muted-foreground">Just now</span>
+                <span className="text-xs text-muted-foreground">•</span>
+                <span className="text-xs text-muted-foreground">Just now</span>
               </div>
               <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-secondary-foreground whitespace-pre-wrap leading-relaxed">
                 {message.isThinking ? (
@@ -232,7 +233,7 @@ export function DocumentDetail({
       {isTyping && (
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="text-metadata uppercase tracking-wide">
               System sent
             </span>
           </div>
@@ -271,14 +272,17 @@ export function DocumentDetail({
         <div className={`flex-1 overflow-y-auto min-h-0 ${isChatExpanded ? '' : 'pb-4'}`}>
           <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[900px] mx-auto w-full space-y-6">
-              <button
-                type="button"
-                onClick={onBack}
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              >
-                <ArrowLeft size={16} strokeWidth={2} />
-                {backLabel}
-              </button>
+              {breadcrumbParent ? (
+                <PageBreadcrumb
+                  className="mb-4"
+                  items={[
+                    { label: breadcrumbParent.label, onClick: breadcrumbParent.onClick },
+                    { label: content.title },
+                  ]}
+                />
+              ) : (
+                <BackLink onClick={onBack} className="mb-4" />
+              )}
 
               <div className={`${hubCard} p-6 sm:p-8`}>
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">

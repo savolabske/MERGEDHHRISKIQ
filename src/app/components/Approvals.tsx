@@ -174,7 +174,7 @@ export function Approvals() {
     <PageScrollShell innerClassName="space-y-6">
             {/* Header */}
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Pending Approvals</h2>
+              <h2 className="text-page-title mb-1">Pending Approvals</h2>
               <p className="text-sm sm:text-sm text-muted-foreground">
                 Review registration requests below
               </p>
@@ -222,8 +222,8 @@ export function Approvals() {
               )}
 
               {/* Table Header - Desktop Only */}
-              <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 bg-muted border-b border-border">
-                <div className="col-span-3 text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-3">
+              <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
+                <div className="col-span-3 table-header-label flex items-center gap-3">
                   <input
                     type="checkbox"
                     checked={selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0}
@@ -232,16 +232,16 @@ export function Approvals() {
                   />
                   Applicant
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label">
                   Organization
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label">
                   Submitted
                 </div>
-                <div className="col-span-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="col-span-2 table-header-label">
                   Waiting
                 </div>
-                <div className="col-span-3 text-xs font-bold text-muted-foreground uppercase tracking-wider text-right">
+                <div className="col-span-3 table-header-label text-right">
                   Actions
                 </div>
               </div>
@@ -249,7 +249,7 @@ export function Approvals() {
               {/* Table Rows */}
               <div className="divide-y divide-border">
                 {filteredUsers.map((user) => (
-                  <div key={user.id} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-4 sm:px-6 py-4 hover:bg-muted transition-colors">
+                  <div key={user.id} className="table-row-entity grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-4 sm:px-6 transition-colors">
                     {/* Mobile & Desktop Layout */}
                     <div className="lg:col-span-3 flex items-center gap-3">
                       <input
@@ -265,25 +265,25 @@ export function Approvals() {
                         {user.avatar}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-foreground truncate">{user.name}</div>
-                        <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+                        <div className="table-primary-text truncate">{user.name}</div>
+                        <div className="table-supporting-text truncate">{user.email}</div>
                         {/* Mobile: Show org inline */}
                         <div className="text-sm text-muted-foreground mt-0.5 lg:hidden">{user.organization}</div>
                       </div>
                     </div>
                     {/* Desktop: Organization */}
                     <div className="hidden lg:flex lg:col-span-2 items-center">
-                      <span className="text-sm text-foreground">{user.organization}</span>
+                      <span className="table-value-text">{user.organization}</span>
                     </div>
                     {/* Desktop: Submitted */}
                     <div className="hidden lg:flex lg:col-span-2 items-center">
-                      <span className="text-sm text-muted-foreground">{user.submitted}</span>
+                      <span className="table-metadata-text">{user.submitted}</span>
                     </div>
                     {/* Mobile & Desktop: Waiting */}
                     <div className="lg:col-span-2 flex items-center">
                       <div className="flex items-center gap-1.5 text-warning">
                         <Clock size={16} />
-                        <span className="text-sm font-medium">{user.waitingDays} days ago</span>
+                        <span className="table-status-text">{user.waitingDays} days ago</span>
                         {/* Mobile: Show submitted date */}
                         <span className="lg:hidden text-sm text-text-subtle ml-1">• {user.submitted}</span>
                       </div>

@@ -172,7 +172,7 @@ function PendingVerification({ email, onBackToLogin }: { email: string; onBackTo
           <AnimatedIntelligenceBackgroundLayer />
         </div>
         <div className="absolute top-8 left-8 z-10">
-          <h3 className="text-xs font-bold text-secondary-foreground mb-1 uppercase tracking-wider">
+          <h3 className="text-xs font-bold text-secondary-foreground mb-1">
             Risk iQ
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
@@ -183,7 +183,7 @@ function PendingVerification({ email, onBackToLogin }: { email: string; onBackTo
         <div className="absolute bottom-8 right-8 z-10 text-right">
           <div className="flex items-center justify-end gap-2 mb-1">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <h3 className="text-xs font-bold text-secondary-foreground uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-secondary-foreground">
               TERRITORIAL SCAN ACTIVE
             </h3>
           </div>
@@ -377,7 +377,7 @@ export function Auth({ onLogin }: AuthProps) {
             <AnimatedIntelligenceBackgroundLayer />
           </div>
           <div className="absolute top-8 left-8 z-10">
-            <h3 className="text-xs font-bold text-secondary-foreground mb-1 uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-secondary-foreground mb-1">
               AREA ANALYSIS
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -388,7 +388,7 @@ export function Auth({ onLogin }: AuthProps) {
           <div className="absolute bottom-8 right-8 z-10 text-right">
             <div className="flex items-center justify-end gap-2 mb-1">
               <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-              <h3 className="text-xs font-bold text-secondary-foreground uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-secondary-foreground">
                 TERRITORIAL SCAN ACTIVE
               </h3>
             </div>
@@ -428,7 +428,7 @@ export function Auth({ onLogin }: AuthProps) {
 
             {/* Name Field */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+              <label className="block text-xs font-semibold text-muted-foreground mb-2">
                 FULL NAME
               </label>
               <input
@@ -443,7 +443,7 @@ export function Auth({ onLogin }: AuthProps) {
 
             {/* Email Field */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+              <label className="block text-xs font-semibold text-muted-foreground mb-2">
                 EMAIL ADDRESS
               </label>
               <input
@@ -458,7 +458,7 @@ export function Auth({ onLogin }: AuthProps) {
 
             {/* Organisation Field */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+              <label className="block text-xs font-semibold text-muted-foreground mb-2">
                 ORGANISATION
               </label>
               <OrganisationDropdown 
@@ -469,7 +469,7 @@ export function Auth({ onLogin }: AuthProps) {
 
             {/* Password Field */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+              <label className="block text-xs font-semibold text-muted-foreground mb-2">
                 PASSWORD
               </label>
               <div className="relative">
@@ -501,7 +501,7 @@ export function Auth({ onLogin }: AuthProps) {
 
             {/* Confirm Password Field */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+              <label className="block text-xs font-semibold text-muted-foreground mb-2">
                 CONFIRM PASSWORD
               </label>
               <div className="relative">
@@ -563,7 +563,7 @@ export function Auth({ onLogin }: AuthProps) {
 
             {/* Email Field */}
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+              <label className="block text-xs font-semibold text-muted-foreground mb-2">
                 EMAIL ADDRESS
               </label>
               <input
@@ -621,7 +621,7 @@ export function Auth({ onLogin }: AuthProps) {
 
         {/* Top Left Text */}
         <div className="absolute top-8 left-8 z-10">
-          <h3 className="font-bold text-secondary-foreground mb-1 uppercase tracking-wider text-sm">
+          <h3 className="font-bold text-secondary-foreground mb-1 text-sm">
             Risk iQ
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
@@ -634,7 +634,7 @@ export function Auth({ onLogin }: AuthProps) {
         <div className="absolute bottom-8 right-8 z-10 text-right">
           <div className="flex items-center justify-end gap-2 mb-1">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <h3 className="font-bold text-secondary-foreground uppercase tracking-wider text-sm">UN Somalia</h3>
+            <h3 className="font-bold text-secondary-foreground text-sm">UN Somalia</h3>
           </div>
           <p className="text-xs text-muted-foreground">AI-Powered Risk Intelligence</p>
         </div>

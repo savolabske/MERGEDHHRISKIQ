@@ -42,7 +42,7 @@ export function AdtStorySection({
         </div>
 
         <h2
-          className="text-2xl sm:text-3xl font-semibold leading-[1.15] tracking-tight text-foreground-emphasis mb-3"
+          className="report-display-title text-2xl sm:text-3xl font-semibold leading-[1.15] tracking-tight text-foreground-emphasis mb-3"
           style={REPORT_FONT_STYLE}
         >
           {narrative.headline}

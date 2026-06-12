@@ -346,7 +346,7 @@ export function Chats({
     >
             {!embedded && (
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">Chats</h2>
+                <h2 className="text-page-title mb-1">Chats</h2>
                 <p className="text-sm sm:text-sm text-muted-foreground">
                   {subtitle}
                 </p>
@@ -437,7 +437,7 @@ export function Chats({
 
               {/* Table Header - Desktop Only */}
               <div
-                className={`hidden sm:grid grid-cols-[auto_1fr_140px_auto] gap-4 px-4 sm:px-6 py-4 border-b border-sidebar-border bg-muted ${
+                className={`hidden min-h-10 sm:grid grid-cols-[auto_1fr_140px_auto] items-center gap-4 px-4 sm:px-6 py-3 border-b border-border bg-muted/70 ${
                   selectedChatIds.size === 0 ? 'rounded-t-xl' : ''
                 }`}
               >
@@ -453,8 +453,8 @@ export function Chats({
                     aria-label="Select all on this page"
                   />
                 </div>
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Topic</div>
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Shared</div>
+                <div className="table-header-label">Topic</div>
+                <div className="table-header-label text-right">Shared</div>
                 <div className="w-8"></div>
               </div>
 
@@ -474,7 +474,7 @@ export function Chats({
                   visiblePaginatedHistory.map((chat) => (
                     <div
                       key={chat.id}
-                      className="relative sm:grid sm:grid-cols-[auto_1fr_140px_auto] sm:items-center gap-4 px-4 sm:px-6 py-4 hover:bg-muted transition-colors group"
+                      className="table-row-entity relative sm:grid sm:grid-cols-[auto_1fr_140px_auto] sm:items-center gap-4 px-4 sm:px-6 transition-colors group"
                     >
                   <div className="flex gap-3 items-center sm:contents">
                     <label
@@ -500,7 +500,7 @@ export function Chats({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-foreground leading-snug group-hover:text-primary transition-colors">
+                          <p className="table-primary-text group-hover:text-primary-text transition-colors">
                             {chat.query}
                           </p>
                           {chat.unread && (
@@ -512,7 +512,7 @@ export function Chats({
                         </div>
                         {/* Timestamp/meta below query */}
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <p className="text-xs text-text-subtle">
+                          <p className="table-metadata-text">
                             Last message {getRelativeDayLabel(chat.date)} at {chat.timestamp}
                           </p>
                           {chat.shareMode && (chat.sharedWith?.length || 0) > 0 && (

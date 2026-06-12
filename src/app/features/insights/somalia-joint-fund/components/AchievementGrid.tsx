@@ -28,7 +28,7 @@ export function AchievementGrid({
             transitionDelay: `${i * 50}ms`,
           }}
         >
-          <div className="text-[18px] font-semibold text-[#0b6b5d]">{stat}</div>
+          <div className="text-[18px] font-semibold text-[#00689D]">{stat}</div>
           <div className="mt-0.5 text-[11.5px] leading-snug text-[#324559]">{desc}</div>
         </div>
       ))}

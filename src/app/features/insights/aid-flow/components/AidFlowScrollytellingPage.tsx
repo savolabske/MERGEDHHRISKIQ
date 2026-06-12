@@ -1,22 +1,30 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Calendar, ChevronDown, Send, Sparkles, X } from 'lucide-react';
-import { AI_CHIPS, DONOR_OPTIONS, FORWARD_ICONS, REGION_OPTIONS, SCENES, SECTOR_OPTIONS } from '../data/aidFlowData';
+import { DONOR_OPTIONS, FORWARD_ICONS, REGION_OPTIONS, SCENES, SECTOR_OPTIONS } from '../data/aidFlowData';
 import { useAidFlowFilters } from '../hooks/useAidFlowFilters';
-import { AidFlowSceneChart, HBars, ProjectsTable, RegionBars } from './AidFlowCharts';
+import { useAidFlowReportPrompt } from '../hooks/useAidFlowReportPrompt';
+import { AidFlowChatFeed } from './AidFlowChatFeed';
+import { AidFlowResultPanel } from './AidFlowResultPanel';
+import { AidFlowSceneChart } from './AidFlowCharts';
 import { MultiSelectMenu } from './MultiSelectMenu';
 import {
-  AnimatedAIResponse,
   AnimatedNarrative,
   AnimatedStat,
+  AID_FLOW_CUSTOMIZE_THEME,
+  ReportChatHeaderCollapse,
   ReportChatLayout,
+  ReportDashboardCustomizeOverlay,
   ReportLoadDeferred,
+  AID_FLOW_FILTER_THEME,
+  ReportFilterBar,
   ReportLoadItem,
   REPORT_LOAD_ORDER,
-  ReportThinkingIndicator,
   reportChatAsideClassName,
-  useReportPrompt,
+  reportHeaderClassName,
+  useReportFilterMode,
 } from '../../shared';
 import { cn } from '../../../../components/ui/utils';
+import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
 interface AidFlowScrollytellingProps {
   onBack?: () => void;
@@ -50,7 +58,6 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
     trendRows,
     filteredImplementers,
     filteredMarkers,
-    projectsForTable,
     kpiCards,
     sceneStats,
     forwardCards,
@@ -65,15 +72,19 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
     messages,
     resultMode,
     resultTitle,
+    activeRecipe,
     isQuerying,
+    queryingMode,
+    customizePhase,
+    activeQuery,
     resultSectionRef,
+    kpiSectionRef,
     chatScrollRef,
     runPrompt,
     backToReport,
-  } = useReportPrompt({
-    assistantReply: "I've built a summary, charts and a project table on the left.",
-    defaultResultTitle: 'Aid flow overview',
-  });
+  } = useAidFlowReportPrompt();
+
+  const { mode: filterMode, filtersInteractive } = useReportFilterMode(resultMode, customizePhase);
 
   useEffect(() => {
     const onScroll = () => {
@@ -106,6 +117,10 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
   }, []);
 
   useEffect(() => {
+    if (!filtersInteractive) setOpenMenu(null);
+  }, [filtersInteractive]);
+
+  useEffect(() => {
     setIsApplyingFilters(true);
     const applyTimer = window.setTimeout(() => {
       setIsApplyingFilters(false);
@@ -119,8 +134,6 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
       window.clearTimeout(pulseTimer);
     };
   }, [selectedDonors, selectedSectors, selectedRegions, startYear, endYear]);
-
-  const chips = useMemo(() => AI_CHIPS, []);
 
   const toggleItem = (value: string, setState: React.Dispatch<React.SetStateAction<string[]>>) => {
     setState((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
@@ -145,6 +158,8 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
     setOpenMenu(null);
   };
 
+  const isDashboardLocked = isQuerying || customizePhase !== 'idle';
+
   const handleBreadcrumbBack = () => {
     if (onBack) {
       onBack();
@@ -158,22 +173,29 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#f6f7f9]">
       <div className="mx-auto flex h-full min-h-0 w-full max-w-[1780px] flex-col">
-        <header className="shrink-0 border-b border-[#e6e9ef] bg-[#f6f7f9]/95 px-[30px] py-[16px] backdrop-blur">
+        <header
+          className={cn(
+            reportHeaderClassName,
+            'shrink-0 border-b border-[#e6e9ef] bg-[#f6f7f9]/95 px-[30px] py-[16px] backdrop-blur',
+          )}
+        >
           <ReportLoadItem order={REPORT_LOAD_ORDER.breadcrumb}>
-            <div className="mb-2 flex items-center gap-2 text-[12.5px] text-[#6b7a8d]">
-              <button onClick={handleBreadcrumbBack} className="text-[#3a4a5c] hover:text-[#1f6feb]">
-                Insights
-              </button>
-              <span>/</span>
-              <b className="font-semibold text-[#3a4a5c]">Aid Flow Intelligence</b>
-              <span className="rounded-full bg-[#eafaf0] px-2 py-1 text-[11px] font-semibold text-[#3fa85a]">
-                AIMS + SSF - synced nightly
-              </span>
-            </div>
+            <PageBreadcrumb
+              className="mb-4"
+              items={[
+                { label: 'Reports', onClick: handleBreadcrumbBack },
+                { label: 'Aid Flow Intelligence' },
+              ]}
+              suffix={
+                <span className="rounded-full bg-[#eafaf0] px-2 py-1 text-[11px] font-semibold text-[#3fa85a]">
+                  AIMS + SSF - synced nightly
+                </span>
+              }
+            />
           </ReportLoadItem>
           <div className="flex items-end justify-between gap-4">
             <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="min-w-0 flex-1">
-              <h1 className="text-[30px] leading-[1.05] font-semibold text-[#0d1b2a]">
+              <h1 className="report-display-title text-[30px] leading-[1.05] font-semibold text-[#0d1b2a]">
                 Aid Flow Intelligence
               </h1>
               <p className="mt-1 max-w-[560px] text-[13.5px] text-[#6b7a8d]">
@@ -181,18 +203,25 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
               </p>
             </ReportLoadItem>
             <ReportLoadItem order={REPORT_LOAD_ORDER.filters}>
-              <div className="relative flex shrink-0 flex-wrap justify-end gap-2" ref={filterRef}>
+              <ReportFilterBar
+                filterRef={filterRef}
+                mode={filterMode}
+                theme={AID_FLOW_FILTER_THEME}
+                onBackToReport={backToReport}
+              >
               <div className="relative">
                 <button
+                  type="button"
+                  disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'time' ? null : 'time'))}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] ${openMenu === 'time' || startYear !== 2014 || endYear !== 2026 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'time' || startYear !== 2014 || endYear !== 2026 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
                 >
                   <Calendar size={13} />
                   {yearLabel}
                   <ChevronDown size={13} />
                 </button>
                 {openMenu === 'time' && (
-                  <div className="absolute right-0 top-[44px] z-40 w-[320px] rounded-xl border border-[#e6e9ef] bg-white p-3 shadow-lg">
+                  <div className="absolute right-0 top-[44px] z-50 w-[320px] rounded-xl border border-[#e6e9ef] bg-white p-3 shadow-lg">
                     <div className="mb-2 flex items-center justify-between border-b border-[#eef1f6] pb-2">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#6b7a8d]">
                         Year Range
@@ -239,8 +268,10 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
 
               <div className="relative">
                 <button
+                  type="button"
+                  disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'donors' ? null : 'donors'))}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] ${openMenu === 'donors' || selectedDonors.length > 0 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
+                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'donors' || selectedDonors.length > 0 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
                 >
                   {selectedDonors.length > 0 ? `Donors (${selectedDonors.length})` : 'All Donors'}
                   <ChevronDown size={13} />
@@ -257,8 +288,10 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
               </div>
               <div className="relative">
                 <button
+                  type="button"
+                  disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'sectors' ? null : 'sectors'))}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] ${openMenu === 'sectors' || selectedSectors.length > 0 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
+                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'sectors' || selectedSectors.length > 0 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
                 >
                   {selectedSectors.length > 0 ? `Sectors (${selectedSectors.length})` : 'All Sectors'}
                   <ChevronDown size={13} />
@@ -275,8 +308,10 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
               </div>
               <div className="relative">
                 <button
+                  type="button"
+                  disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'regions' ? null : 'regions'))}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] ${openMenu === 'regions' || selectedRegions.length > 0 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
+                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'regions' || selectedRegions.length > 0 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
                 >
                   {selectedRegions.length > 0 ? `Regions (${selectedRegions.length})` : 'All Regions'}
                   <ChevronDown size={13} />
@@ -292,8 +327,9 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                 )}
               </div>
               <div className="flex items-center">
-                {hasAnyFilter ? (
+                {hasAnyFilter && filtersInteractive ? (
                   <button
+                    type="button"
                     onClick={clearAllFilters}
                     className={`inline-flex items-center text-[11px] font-medium transition ${isApplyingFilters ? 'text-[#1550b3]' : filtersAppliedPulse ? 'text-[#2d8a4c]' : 'text-[#6b7a8d] hover:text-[#1550b3]'}`}
                   >
@@ -302,7 +338,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   </button>
                 ) : null}
               </div>
-            </div>
+              </ReportFilterBar>
             </ReportLoadItem>
           </div>
         </header>
@@ -310,6 +346,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
         <ReportChatLayout
           className="min-h-0 flex-1"
           mainClassName="px-[30px] pb-20 pt-6"
+          chatLabel="Ask Aid Flow"
           chatPanel={
             <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className={cn(reportChatAsideClassName, 'border-l border-[#e6e9ef] bg-white')}>
             <aside className="flex h-full min-h-0 flex-col">
@@ -319,50 +356,31 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                     <Sparkles size={14} />
                   </span>
                   <h3 className="text-[15px] font-semibold text-[#0d1b2a]">Ask Aid Flow</h3>
+                  <ReportChatHeaderCollapse className="border-[#e6e9ef] hover:text-[#1f6feb]" />
                 </div>
                 <p className="mt-1 text-[11.5px] text-[#6b7a8d]">
                   Ask about donors, sectors, regions or trends. Answers reshape the dashboard on the left.
                 </p>
               </div>
-              <div
-                ref={chatScrollRef}
-                className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4"
-              >
-                {messages.map((m, i) => (
-                  <AnimatedAIResponse
-                    key={`${m}-${i}`}
-                    messageKey={`${i}-${m}`}
-                    animate={i > 0}
-                    className={`rounded-xl px-3 py-2 text-[12.5px] ${i % 2 ? 'ml-8 bg-[#eaf1fe] text-[#1550b3]' : 'mr-6 border border-[#e6e9ef] bg-[#f8f9fb] text-[#3a4a5c]'}`}
-                  >
-                    {m}
-                  </AnimatedAIResponse>
-                ))}
-                {isQuerying && (
-                  <ReportThinkingIndicator
-                    accentColor="#1f6feb"
-                    className="ml-8 bg-[#eaf1fe]"
-                  />
-                )}
-                {messages.length === 0 && !isQuerying && (
-                  <div className="flex flex-wrap gap-2">
-                    {chips.map((chip) => (
-                      <button
-                        key={chip}
-                        onClick={() => runPrompt(chip)}
-                        className="rounded-full border border-[#e6e9ef] px-3 py-1.5 text-[11.5px] text-[#3a4a5c] hover:border-[#1f6feb] hover:text-[#1f6feb]"
-                      >
-                        {chip}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto p-4">
+                <AidFlowChatFeed
+                  messages={messages}
+                  isQuerying={isQuerying}
+                  queryingMode={queryingMode}
+                  onChipClick={runPrompt}
+                />
               </div>
               <div className="border-t border-[#e6e9ef] p-3">
                 <div className="flex items-end gap-2 rounded-xl border border-[#e6e9ef] bg-[#f6f7f9] px-3 py-2">
                   <textarea
                     value={promptInput}
                     onChange={(e) => setPromptInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        runPrompt();
+                      }
+                    }}
                     disabled={isQuerying}
                     placeholder="Ask anything about aid flows..."
                     className="min-h-[36px] max-h-[90px] flex-1 resize-none bg-transparent text-[12.8px] text-[#0d1b2a] outline-none disabled:opacity-50"
@@ -383,23 +401,35 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
             </ReportLoadItem>
           }
         >
-          {isQuerying && !resultMode && (
-            <div className="mb-4 xl:hidden">
-              <ReportThinkingIndicator
-                accentColor="#1f6feb"
-                className="border border-[#cfe0fd] bg-[#eaf1fe]"
+          <div
+            className={cn(
+              'relative',
+              customizePhase !== 'idle' && 'pointer-events-none min-h-[min(70vh,640px)]',
+            )}
+          >
+            {customizePhase !== 'idle' && activeQuery ? (
+              <ReportDashboardCustomizeOverlay
+                query={activeQuery}
+                phase={customizePhase}
+                theme={AID_FLOW_CUSTOMIZE_THEME}
               />
-            </div>
-          )}
+            ) : null}
 
+            <div
+              className={cn(
+                'transition-[filter,opacity] duration-300',
+                customizePhase === 'customizing' && 'scale-[0.995] opacity-50 blur-[2px]',
+                customizePhase === 'revealing' && 'opacity-90 blur-0',
+              )}
+            >
           {!resultMode && (
             <ReportLoadItem order={REPORT_LOAD_ORDER.kpis}>
-            <section className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <section ref={kpiSectionRef} className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
               {kpiCards.map((k) => (
                 <button
                   key={k.label}
                   onClick={() => runPrompt(k.prompt)}
-                  disabled={isQuerying}
+                  disabled={isDashboardLocked}
                   className="relative rounded-[14px] border border-[#e6e9ef] bg-white px-[18px] pb-[16px] pt-[14px] text-left transition hover:-translate-y-0.5 hover:border-[#d4def0] hover:shadow-lg disabled:opacity-50"
                 >
                   <div
@@ -486,7 +516,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                     </ul>
                     <button
                       onClick={() => runPrompt(s.ask)}
-                      disabled={isQuerying}
+                      disabled={isDashboardLocked}
                       className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[#cfe0fd] bg-[#eaf1fe] px-3 py-2 text-[12.5px] font-semibold text-[#1550b3] disabled:opacity-50"
                     >
                       <Sparkles size={13} /> Ask: &quot;{s.ask}&quot;
@@ -497,50 +527,21 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
             </section>
           )}
 
-          {resultMode && (
-            <section ref={resultSectionRef}>
-              <AnimatedAIResponse messageKey={`result-banner-${resultTitle}`} className="mb-4 flex items-center justify-between rounded-[14px] border border-[#cfe0fd] bg-gradient-to-r from-[#eaf1fe] to-[#e6f7f4] px-4 py-3">
-                <div className="text-[13.5px] font-semibold text-[#0d1b2a]">
-                  AI-generated from AIMS + SSF data: {resultTitle}
-                </div>
-                <button
-                  onClick={backToReport}
-                  className="rounded-lg border border-[#cfe0fd] bg-white px-3 py-2 text-[12px] font-semibold text-[#1f6feb]"
-                >
-                  Back to report
-                </button>
-              </AnimatedAIResponse>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <AnimatedAIResponse messageKey={`result-summary-${resultTitle}`} className="rounded-2xl border border-[#e6e9ef] bg-white p-5 lg:col-span-2">
-                  <h4 className="mb-2 text-[14px] font-semibold text-[#0d1b2a]">Summary</h4>
-                  <p className="text-[14px] text-[#3a4a5c]">
-                    Somalia aid flows remain concentrated by donor, sector, and delivery channel. Food
-                    Security dominates allocation, WFP dominates delivery, and planned 2025 commitments
-                    imply notable pipeline risk if conversion lags.
-                  </p>
-                </AnimatedAIResponse>
-                <AnimatedAIResponse messageKey={`result-donors-${resultTitle}`} className="rounded-2xl border border-[#e6e9ef] bg-white p-5">
-                  <h4 className="mb-2 text-[14px] font-semibold text-[#0d1b2a]">Top donors</h4>
-                  <HBars rows={filteredDonors.slice(0, 6)} />
-                </AnimatedAIResponse>
-                <AnimatedAIResponse messageKey={`result-regions-${resultTitle}`} className="rounded-2xl border border-[#e6e9ef] bg-white p-5">
-                  <h4 className="mb-2 text-[14px] font-semibold text-[#0d1b2a]">
-                    Regional distribution
-                  </h4>
-                  <RegionBars regions={filteredRegions.filter((l) => l[0] !== 'FGS (federal)')} />
-                </AnimatedAIResponse>
-                <AnimatedAIResponse messageKey={`result-projects-${resultTitle}`} className="rounded-2xl border border-[#e6e9ef] bg-white p-5 lg:col-span-2">
-                  <h4 className="mb-2 text-[14px] font-semibold text-[#0d1b2a]">Top projects</h4>
-                  <ProjectsTable rows={projectsForTable} />
-                </AnimatedAIResponse>
-              </div>
-            </section>
+          {resultMode && activeRecipe && (
+            <div ref={resultSectionRef}>
+              <AidFlowResultPanel
+                recipe={activeRecipe}
+                resultTitle={resultTitle}
+                onBack={backToReport}
+                onFollowUp={runPrompt}
+              />
+            </div>
           )}
 
           {!resultMode && (
             <ReportLoadDeferred order={REPORT_LOAD_ORDER.forwardLook(SCENES.length)}>
             <section className="mt-8 rounded-[18px] bg-gradient-to-br from-[#0d1b2a] to-[#16263a] p-6 text-white">
-              <h2 className="text-[20px] font-semibold">Forward Look - Predictive Insights</h2>
+              <h2 className="report-display-title text-[20px] font-semibold">Forward Look - Predictive Insights</h2>
               <p className="mb-5 mt-1 text-[13px] text-[#9fb3c8]">
                 Modelled from AIMS commitments + Somalia Stabilization Fund pipeline. Directional, not
                 guaranteed.
@@ -569,6 +570,8 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
             </section>
             </ReportLoadDeferred>
           )}
+            </div>
+          </div>
         </ReportChatLayout>
       </div>
     </div>
