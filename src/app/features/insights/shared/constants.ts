@@ -8,12 +8,19 @@ export const REPORT_STICKY_HEADER_OFFSET = 0;
 /** Header layer so filter dropdowns stack above scrollable report content. */
 export const reportHeaderClassName = 'relative z-30';
 
+/** Compact header on mobile/tablet — scrolls with page (no sticky trap). */
+export const reportMobileHeaderClassName = 'relative z-20';
+
 export const reportTitleFilterRowClassName =
   'flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between';
 
 export const reportHeaderPaddingClassName = 'px-4 sm:px-[30px] py-[16px]';
 
-export const reportMainPaddingClassName = 'px-4 sm:px-[30px] pb-28 pt-6 xl:pb-20';
+export const reportMainPaddingClassName =
+  'px-4 sm:px-[30px] pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-20';
+
+/** Below lg the page shell scrolls; chat layout only fills remaining height on lg+. */
+export const reportChatLayoutShellClassName = 'max-lg:flex-none lg:min-h-0 lg:flex-1';
 
 /** Scrollytelling scene — stacked on mobile; side-by-side with sticky chart on lg+ */
 export const reportSceneSectionClassName =

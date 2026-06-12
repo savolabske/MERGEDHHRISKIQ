@@ -4,6 +4,7 @@ export {
   REPORT_REVEAL_DELAY_MS,
   REPORT_STICKY_HEADER_OFFSET,
   reportHeaderClassName,
+  reportMobileHeaderClassName,
   reportTitleFilterRowClassName,
   reportHeaderPaddingClassName,
   reportMainPaddingClassName,
@@ -13,7 +14,10 @@ export {
   reportSceneTitleClassName,
   reportSceneStatClassName,
   reportSceneAskButtonClassName,
+  reportChatLayoutShellClassName,
 } from './constants';
+export { ReportPageShell } from './ReportPageShell';
+export { ReportDetailShell } from './ReportDetailShell';
 export {
   getChatOnlyAnswer,
   isChatOnlyPrompt,

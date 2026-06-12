@@ -138,8 +138,8 @@ export function ReportFilterBar({
         </p>
       ) : null}
 
-      {/* Mobile: single Filters control */}
-      <div className="w-full sm:hidden">
+      {/* Mobile/tablet: single Filters control */}
+      <div className="w-full lg:hidden">
         <button
           type="button"
           disabled={paused}
@@ -192,7 +192,7 @@ export function ReportFilterBar({
       {/* Desktop: inline filter chips */}
       <div
         className={cn(
-          'hidden w-full sm:flex sm:flex-wrap sm:justify-end sm:gap-2 sm:rounded-xl',
+          'hidden w-full lg:flex lg:flex-wrap lg:justify-end lg:gap-2 lg:rounded-xl',
           filterControlsClass,
         )}
         aria-disabled={paused}

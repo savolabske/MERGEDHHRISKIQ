@@ -63,13 +63,27 @@ export function ReportChatPromptInput({
   placeholder,
   theme,
 }: ReportChatPromptInputProps) {
-  const { variant, closeMobileChat } = useReportChatPanel();
-  const showMinimize = variant === 'sheet';
+  const { variant, mobileChatOpen, openMobileChat, closeMobileChat } = useReportChatPanel();
+  const showMinimize = variant === 'sheet' && mobileChatOpen;
+  const showDisclaimer = variant !== 'sheet' || mobileChatOpen;
+
+  const handleFocus = () => {
+    if (variant === 'sheet' && !mobileChatOpen) {
+      openMobileChat();
+    }
+  };
+
+  const handleSubmit = () => {
+    if (variant === 'sheet' && !mobileChatOpen) {
+      openMobileChat();
+    }
+    onSubmit();
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSubmit();
+      handleSubmit();
     }
   };
 
@@ -82,9 +96,9 @@ export function ReportChatPromptInput({
             onClick={closeMobileChat}
             aria-label="Minimize chat and show report"
             title="Show report"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-hover hover:text-primary-text"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <ChevronDown size={16} strokeWidth={2} />
+            <ChevronDown size={18} strokeWidth={2} />
           </button>
         )}
         <div
@@ -100,6 +114,7 @@ export function ReportChatPromptInput({
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onFocus={handleFocus}
             onKeyDown={handleKeyDown}
             disabled={disabled}
             placeholder={placeholder}
@@ -110,7 +125,7 @@ export function ReportChatPromptInput({
           />
           <button
             type="button"
-            onClick={onSubmit}
+            onClick={handleSubmit}
             disabled={disabled}
             className={cn(
               'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white disabled:opacity-50',
@@ -122,9 +137,11 @@ export function ReportChatPromptInput({
           </button>
         </div>
       </div>
-      <div className={cn('mt-2 text-center text-[10px]', theme.disclaimer)}>
-        AI can make mistakes. Verify critical insights.
-      </div>
+      {showDisclaimer && (
+        <div className={cn('mt-2 text-center text-[10px]', theme.disclaimer)}>
+          AI can make mistakes. Verify critical insights.
+        </div>
+      )}
     </>
   );
 }

@@ -29,8 +29,10 @@ import {
   ReportLoadItem,
   REPORT_LOAD_ORDER,
   MIGRATION_FILTER_THEME,
-  reportChatAsideClassName,
+  ReportPageShell,
+  reportChatLayoutShellClassName,
   reportHeaderClassName,
+  reportMobileHeaderClassName,
   reportHeaderPaddingClassName,
   reportMainPaddingClassName,
   reportSceneAskButtonClassName,
@@ -200,18 +202,18 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
   ] as const;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#f7f4ef]">
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-[1780px] flex-col">
+    <ReportPageShell className="bg-[#f7f4ef]">
         <header
           className={cn(
             reportHeaderClassName,
-            'shrink-0 border-b border-[#ece6df] bg-[#f7f4ef]/95 backdrop-blur',
+            reportMobileHeaderClassName,
+            'shrink-0 border-b border-[#ece6df] bg-[#f7f4ef]/95',
             reportHeaderPaddingClassName,
           )}
         >
           <ReportLoadItem order={REPORT_LOAD_ORDER.breadcrumb}>
             <PageBreadcrumb
-              className="mb-4"
+              className="mb-3 lg:mb-4"
               items={[
                 { label: 'Reports', onClick: handleBreadcrumbBack },
                 { label: MIGRATION_THEME.title },
@@ -225,10 +227,10 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
           </ReportLoadItem>
           <div className={reportTitleFilterRowClassName}>
             <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="lg:min-w-0 lg:flex-1">
-              <h1 className="report-display-title text-[24px] leading-[1.05] font-semibold text-[#1a1410] sm:text-[30px]">
+              <h1 className="report-display-title truncate text-[22px] leading-[1.05] font-semibold text-[#1a1410] sm:text-[30px]">
                 {MIGRATION_THEME.title}
               </h1>
-              <p className="mt-1 max-w-[580px] text-[13.5px] text-[#8a7d72]">{MIGRATION_THEME.subtitle}</p>
+              <p className="mt-1 hidden max-w-[580px] text-[13.5px] text-[#8a7d72] lg:block">{MIGRATION_THEME.subtitle}</p>
             </ReportLoadItem>
             <ReportLoadItem order={REPORT_LOAD_ORDER.filters}>
               <ReportFilterBar
@@ -343,45 +345,45 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
 
         <ReportChatLayout
           ref={chatLayoutRef}
-          className="min-h-0 flex-1"
+          className={reportChatLayoutShellClassName}
           mainClassName={reportMainPaddingClassName}
           chatLabel="Ask Displacement"
-          chatPanel={
-            <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className={cn(reportChatAsideClassName, 'border-l border-[#ece6df] bg-white')}>
-            <aside className="flex h-full min-h-0 flex-col">
+          messageCount={messages.length}
+          sidebarClassName="border-l border-[#ece6df] bg-white"
+          chatHeader={
+            <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className="shrink-0 border-b border-[#ece6df] bg-white px-4 py-3">
               <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
-              <div className="shrink-0 border-b border-[#ece6df] px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#c2562a] to-[#d99a21] text-white">
-                    <Sparkles size={14} />
-                  </span>
-                  <h3 className="text-[15px] font-semibold text-[#1a1410]">Ask Displacement</h3>
-                  <ReportChatHeaderCollapse className="border-[#ece6df] hover:text-[#c2562a]" />
-                </div>
-                <p className="mt-1 text-[11.5px] text-[#8a7d72]">
-                  Ask about causes, regions, demographics, needs, or trends.
-                </p>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#c2562a] to-[#d99a21] text-white">
+                  <Sparkles size={14} />
+                </span>
+                <h3 className="text-[15px] font-semibold text-[#1a1410]">Ask Displacement</h3>
+                <ReportChatHeaderCollapse className="border-[#ece6df] hover:text-[#c2562a]" />
               </div>
-              <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
-                <MigrationChatFeed
-                  messages={messages}
-                  isQuerying={isQuerying}
-                  queryingMode={queryingMode}
-                  onChipClick={runPrompt}
-                />
-              </div>
-              <div className="shrink-0 border-t border-[#ece6df] bg-white p-3">
-                <ReportChatPromptInput
-                  value={promptInput}
-                  onChange={setPromptInput}
-                  onSubmit={runPrompt}
-                  disabled={isQuerying}
-                  placeholder="Ask anything about displacement..."
-                  theme={MIGRATION_CHAT_PROMPT_THEME}
-                />
-              </div>
-            </aside>
+              <p className="mt-1 text-[11.5px] text-[#8a7d72]">
+                Ask about causes, regions, demographics, needs, or trends.
+              </p>
             </ReportLoadItem>
+          }
+          chatFeed={
+            <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white p-4">
+              <MigrationChatFeed
+                messages={messages}
+                isQuerying={isQuerying}
+                queryingMode={queryingMode}
+                onChipClick={runPrompt}
+              />
+            </div>
+          }
+          promptInput={
+            <ReportChatPromptInput
+              value={promptInput}
+              onChange={setPromptInput}
+              onSubmit={runPrompt}
+              disabled={isQuerying}
+              placeholder="Ask anything about displacement..."
+              theme={MIGRATION_CHAT_PROMPT_THEME}
+            />
           }
         >
           <div
@@ -557,7 +559,6 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
             </div>
           </div>
         </ReportChatLayout>
-      </div>
-    </div>
+    </ReportPageShell>
   );
 }

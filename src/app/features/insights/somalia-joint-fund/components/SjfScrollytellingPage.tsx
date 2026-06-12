@@ -33,8 +33,10 @@ import {
   ReportLoadItem,
   REPORT_LOAD_ORDER,
   SJF_FILTER_THEME,
-  reportChatAsideClassName,
+  ReportPageShell,
+  reportChatLayoutShellClassName,
   reportHeaderClassName,
+  reportMobileHeaderClassName,
   reportHeaderPaddingClassName,
   reportMainPaddingClassName,
   reportSceneAskButtonClassName,
@@ -199,18 +201,18 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#f4f6fa]">
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-[1780px] flex-col">
+    <ReportPageShell className="bg-[#f4f6fa]">
         <header
           className={cn(
             reportHeaderClassName,
-            'shrink-0 border-b border-[#e2e6ee] bg-[#f4f6fa]/95 backdrop-blur',
+            reportMobileHeaderClassName,
+            'shrink-0 border-b border-[#e2e6ee] bg-[#f4f6fa]/95',
             reportHeaderPaddingClassName,
           )}
         >
           <ReportLoadItem order={REPORT_LOAD_ORDER.breadcrumb}>
             <PageBreadcrumb
-              className="mb-4"
+              className="mb-3 lg:mb-4"
               items={[
                 { label: 'Reports', onClick: handleBreadcrumbBack },
                 { label: 'Somalia Joint Fund' },
@@ -225,7 +227,7 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
           </ReportLoadItem>
           <div className={reportTitleFilterRowClassName}>
             <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="lg:min-w-0 lg:flex-1">
-              <h1 className="report-display-title sjf-title-underline text-[24px] leading-[1.05] font-semibold text-[#0b1a2c] sm:text-[30px]">
+              <h1 className="report-display-title sjf-title-underline truncate text-[22px] leading-[1.05] font-semibold text-[#0b1a2c] sm:text-[30px]">
                 {SJF_THEME.title}
               </h1>
             </ReportLoadItem>
@@ -382,80 +384,77 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
 
         <ReportChatLayout
           ref={chatLayoutRef}
-          className="min-h-0 flex-1"
+          className={reportChatLayoutShellClassName}
           mainClassName={reportMainPaddingClassName}
           chatLabel="Ask SJF"
-          chatPanel={
-            <ReportLoadItem
-              order={REPORT_LOAD_ORDER.chat}
-              className={cn(reportChatAsideClassName, 'border-l border-[#e2e6ee] bg-white')}
-            >
-              <aside className="flex h-full min-h-0 flex-col">
-                <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
-                <div className="shrink-0 border-b border-[#e2e6ee] px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#00689D] to-[#19486A] text-white">
-                      <Sparkles size={14} />
-                    </span>
-                    <h3 className="text-[15px] font-semibold text-[#0b1a2c]">Ask SJF</h3>
-                    <span className="rounded-md bg-[#E5F3FB] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[#00689D]">
-                      BETA
-                    </span>
-                    <ReportChatHeaderCollapse className="border-[#e2e6ee] hover:text-[#00689D]" />
+          messageCount={messages.length}
+          sidebarClassName="border-l border-[#e2e6ee] bg-white"
+          chatHeader={
+            <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className="shrink-0 border-b border-[#e2e6ee] bg-white px-4 py-3">
+              <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#00689D] to-[#19486A] text-white">
+                  <Sparkles size={14} />
+                </span>
+                <h3 className="text-[15px] font-semibold text-[#0b1a2c]">Ask SJF</h3>
+                <span className="rounded-md bg-[#E5F3FB] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[#00689D]">
+                  BETA
+                </span>
+                <ReportChatHeaderCollapse className="border-[#e2e6ee] hover:text-[#00689D]" />
+              </div>
+              <p className="mt-1 text-[11.5px] text-[#6f8094]">
+                Ask about donors, windows, programmes, results or financials.
+              </p>
+              <button
+                type="button"
+                onClick={toggleExtendedKnowledge}
+                className="mt-2.5 flex w-full items-center justify-between gap-2 rounded-lg border border-[#e2e6ee] bg-[#f4f6fa] px-2.5 py-2 text-left"
+              >
+                <div>
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#324559]">
+                    <Shield size={13} className="text-[#00689D]" />
+                    Extended Knowledge
                   </div>
-                  <p className="mt-1 text-[11.5px] text-[#6f8094]">
-                    Ask about donors, windows, programmes, results or financials.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={toggleExtendedKnowledge}
-                    className="mt-2.5 flex w-full items-center justify-between gap-2 rounded-lg border border-[#e2e6ee] bg-[#f4f6fa] px-2.5 py-2 text-left"
-                  >
-                    <div>
-                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#324559]">
-                        <Shield size={13} className="text-[#00689D]" />
-                        Extended Knowledge
-                      </div>
-                      <div className="text-[10px] text-[#6f8094]">
-                        Compare across Aid Flow, Migration &amp; more
-                      </div>
-                    </div>
-                    <span
-                      className={cn(
-                        'relative h-[18px] w-8 shrink-0 rounded-full transition',
-                        extendedKnowledge ? 'bg-[#00689D]' : 'bg-[#cfd6e0]',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition',
-                          extendedKnowledge ? 'left-4' : 'left-0.5',
-                        )}
-                      />
-                    </span>
-                  </button>
+                  <div className="text-[10px] text-[#6f8094]">
+                    Compare across Aid Flow, Migration &amp; more
+                  </div>
                 </div>
-                <div ref={chatScrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-4">
-                  <SjfChatFeed
-                    messages={messages}
-                    isQuerying={isQuerying}
-                    queryingMode={queryingMode}
-                    extendedKnowledge={extendedKnowledge}
-                    onChipClick={runPrompt}
+                <span
+                  className={cn(
+                    'relative h-[18px] w-8 shrink-0 rounded-full transition',
+                    extendedKnowledge ? 'bg-[#00689D]' : 'bg-[#cfd6e0]',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition',
+                      extendedKnowledge ? 'left-4' : 'left-0.5',
+                    )}
                   />
-                </div>
-                <div className="shrink-0 border-t border-[#e2e6ee] bg-white p-3">
-                  <ReportChatPromptInput
-                    value={promptInput}
-                    onChange={setPromptInput}
-                    onSubmit={runPrompt}
-                    disabled={isQuerying}
-                    placeholder="Ask about the SJF…"
-                    theme={SJF_CHAT_PROMPT_THEME}
-                  />
-                </div>
-              </aside>
+                </span>
+              </button>
             </ReportLoadItem>
+          }
+          chatFeed={
+            <div ref={chatScrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-white p-4">
+              <SjfChatFeed
+                messages={messages}
+                isQuerying={isQuerying}
+                queryingMode={queryingMode}
+                extendedKnowledge={extendedKnowledge}
+                onChipClick={runPrompt}
+              />
+            </div>
+          }
+          promptInput={
+            <ReportChatPromptInput
+              value={promptInput}
+              onChange={setPromptInput}
+              onSubmit={runPrompt}
+              disabled={isQuerying}
+              placeholder="Ask about the SJF…"
+              theme={SJF_CHAT_PROMPT_THEME}
+            />
           }
         >
           <div
@@ -669,7 +668,6 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
             </div>
           </div>
         </ReportChatLayout>
-      </div>
-    </div>
+    </ReportPageShell>
   );
 }

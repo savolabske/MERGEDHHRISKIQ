@@ -7,26 +7,11 @@ import React, {
   useImperativeHandle,
   useState,
 } from 'react';
-import { MessageSquareText, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
+import { useIsBelowLg } from './useIsBelowLg';
 
 export const reportChatAsideClassName = 'flex h-full min-h-0 w-full flex-col overflow-hidden';
-
-const XL_BREAKPOINT = 1280;
-
-function useIsBelowXl() {
-  const [isBelowXl, setIsBelowXl] = useState(false);
-
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${XL_BREAKPOINT - 1}px)`);
-    const onChange = () => setIsBelowXl(window.innerWidth < XL_BREAKPOINT);
-    mql.addEventListener('change', onChange);
-    onChange();
-    return () => mql.removeEventListener('change', onChange);
-  }, []);
-
-  return isBelowXl;
-}
 
 interface ReportChatPanelContextValue {
   collapse: () => void;
@@ -34,6 +19,7 @@ interface ReportChatPanelContextValue {
   collapsed: boolean;
   variant: 'sidebar' | 'sheet';
   mobileChatOpen: boolean;
+  openMobileChat: () => void;
   closeMobileChat: () => void;
 }
 
@@ -53,11 +39,17 @@ export interface ReportChatLayoutHandle {
 
 interface ReportChatLayoutProps {
   children: React.ReactNode;
-  chatPanel: React.ReactNode;
+  chatHeader: React.ReactNode;
+  chatFeed: React.ReactNode;
+  promptInput: React.ReactNode;
   /** Shown vertically on the expand rail when the panel is collapsed (desktop). */
   chatLabel?: string;
+  /** Chevron label when sheet is closed; defaults from messageCount. */
+  dockHint?: string;
+  messageCount?: number;
   mainClassName?: string;
   className?: string;
+  sidebarClassName?: string;
 }
 
 export function ReportChatHeaderCollapse({
@@ -115,112 +107,164 @@ function ReportChatExpandRail({
   );
 }
 
+function DesktopChatSidebar({
+  chatHeader,
+  chatFeed,
+  promptInput,
+  className,
+}: {
+  chatHeader: React.ReactNode;
+  chatFeed: React.ReactNode;
+  promptInput: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <aside className={cn('flex h-full min-h-0 flex-col', className)}>
+      {chatHeader}
+      {chatFeed}
+      <div className="shrink-0 border-t border-border bg-card p-3">{promptInput}</div>
+    </aside>
+  );
+}
+
 export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLayoutProps>(
   function ReportChatLayout(
-    { children, chatPanel, chatLabel = 'Ask', mainClassName, className },
+    {
+      children,
+      chatHeader,
+      chatFeed,
+      promptInput,
+      chatLabel = 'Ask',
+      dockHint,
+      messageCount = 0,
+      mainClassName,
+      className,
+      sidebarClassName,
+    },
     ref,
   ) {
     const [chatCollapsed, setChatCollapsed] = useState(false);
     const [mobileChatOpen, setMobileChatOpen] = useState(false);
-    const isBelowXl = useIsBelowXl();
+    const isBelowLg = useIsBelowLg();
+
+    const openMobileChat = useCallback(() => setMobileChatOpen(true), []);
+    const closeMobileChat = useCallback(() => setMobileChatOpen(false), []);
 
     const openChat = useCallback(() => {
-      if (isBelowXl) {
+      if (isBelowLg) {
         setMobileChatOpen(true);
       } else {
         setChatCollapsed(false);
       }
-    }, [isBelowXl]);
+    }, [isBelowLg]);
 
     useImperativeHandle(ref, () => ({ openChat }), [openChat]);
 
     useEffect(() => {
-      if (!isBelowXl) {
+      if (!isBelowLg) {
         setMobileChatOpen(false);
       }
-    }, [isBelowXl]);
+    }, [isBelowLg]);
+
+    const resolvedDockHint =
+      dockHint ??
+      (messageCount > 0
+        ? `View analysis · ${messageCount} message${messageCount === 1 ? '' : 's'}`
+        : 'Suggested prompts');
 
     const panelContext: ReportChatPanelContextValue = {
       collapsed: chatCollapsed,
       collapse: () => setChatCollapsed(true),
       expand: () => setChatCollapsed(false),
-      variant: isBelowXl ? 'sheet' : 'sidebar',
+      variant: isBelowLg ? 'sheet' : 'sidebar',
       mobileChatOpen,
-      closeMobileChat: () => setMobileChatOpen(false),
+      openMobileChat,
+      closeMobileChat,
     };
 
     return (
       <ReportChatPanelContext.Provider value={panelContext}>
-        <div className={cn('relative flex min-h-0 flex-1 flex-col xl:flex-row', className)}>
+        <div className={cn('relative flex min-h-0 flex-1 flex-col lg:flex-row', className)}>
           <main
             className={cn(
-              'min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain',
+              'min-w-0 overscroll-contain',
+              isBelowLg ? 'overflow-visible' : 'min-h-0 flex-1 overflow-y-auto',
               mainClassName,
             )}
-            data-report-scroll
+            {...(!isBelowLg ? { 'data-report-scroll': '' } : {})}
           >
             {children}
           </main>
 
-          {/* Desktop sidebar (xl+) */}
+          {/* Desktop sidebar (lg+) */}
           <div
             className={cn(
-              'hidden shrink-0 self-stretch overflow-hidden transition-[width] duration-200 ease-out xl:block',
+              'hidden shrink-0 self-stretch overflow-hidden transition-[width] duration-200 ease-out lg:block',
               chatCollapsed ? 'w-10' : 'w-[320px]',
             )}
           >
             {chatCollapsed ? (
               <ReportChatExpandRail label={chatLabel} onClick={() => setChatCollapsed(false)} />
             ) : (
-              <div className="relative h-full w-[320px]">{chatPanel}</div>
+              <div className="relative h-full w-[320px]">
+                <DesktopChatSidebar
+                  chatHeader={chatHeader}
+                  chatFeed={chatFeed}
+                  promptInput={promptInput}
+                  className={sidebarClassName}
+                />
+              </div>
             )}
           </div>
 
-          {/* Mobile/tablet FAB + bottom sheet (below xl) */}
-          {isBelowXl && (
+          {/* Mobile/tablet: bottom dock + sheet (below lg) */}
+          {isBelowLg && (
             <>
-              {mobileChatOpen && (
-                <button
-                  type="button"
-                  aria-label="Close chat overlay"
-                  className="fixed inset-0 z-[1210] bg-black/40"
-                  onClick={() => setMobileChatOpen(false)}
-                />
-              )}
-
               <div
                 className={cn(
-                  'fixed inset-x-0 bottom-0 z-[1220] flex h-[min(70dvh,600px)] max-h-[min(70dvh,600px)] flex-col rounded-t-2xl border-t border-border bg-card shadow-2xl transition-transform duration-300 ease-out xl:hidden',
+                  'fixed inset-x-0 bottom-0 z-[1220] flex h-[min(68dvh,560px)] max-h-[min(68dvh,560px)] flex-col rounded-t-2xl border-t border-border bg-card shadow-2xl transition-transform duration-300 ease-out lg:hidden',
                   mobileChatOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full',
                 )}
                 aria-hidden={!mobileChatOpen}
               >
                 {mobileChatOpen && (
-                  <div className="flex shrink-0 flex-col items-center border-b border-border px-4 pb-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setMobileChatOpen(false)}
-                      aria-label="Minimize chat and show report"
-                      className="flex flex-col items-center gap-1 py-0.5"
-                    >
-                      <span className="h-1 w-10 rounded-full bg-border" />
-                      <span className="text-[10px] font-medium text-muted-foreground">Show report</span>
-                    </button>
-                  </div>
+                  <>
+                    <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-2">
+                      <button
+                        type="button"
+                        onClick={closeMobileChat}
+                        aria-label="Minimize chat and show report"
+                        className="flex flex-1 flex-col items-center gap-1 py-0.5"
+                      >
+                        <span className="h-1 w-10 rounded-full bg-border" />
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                          <ChevronDown size={14} />
+                          Show report
+                        </span>
+                      </button>
+                    </div>
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                      {chatHeader}
+                      {chatFeed}
+                      <div className="shrink-0 border-t border-border bg-card p-3">{promptInput}</div>
+                    </div>
+                  </>
                 )}
-                <div className="min-h-0 flex-1 overflow-hidden">{chatPanel}</div>
               </div>
 
               {!mobileChatOpen && (
-                <button
-                  type="button"
-                  onClick={() => setMobileChatOpen(true)}
-                  aria-label={chatLabel}
-                  className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-4 z-[1230] inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary/30 xl:hidden"
-                >
-                  <MessageSquareText size={16} />
-                  {chatLabel}
-                </button>
+                <div className="fixed inset-x-0 bottom-0 z-[1215] border-t border-border bg-card/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_32px_rgba(15,23,42,0.12)] backdrop-blur-sm lg:hidden">
+                  <button
+                    type="button"
+                    onClick={openMobileChat}
+                    aria-label={`Open ${chatLabel}`}
+                    className="mb-2 flex w-full items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground"
+                  >
+                    <ChevronUp size={14} />
+                    {resolvedDockHint}
+                  </button>
+                  {promptInput}
+                </div>
               )}
             </>
           )}

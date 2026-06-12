@@ -2046,16 +2046,6 @@ export function MapView() {
         </div>
       </div>
 
-      {/* Mobile: backdrop when sheet is open */}
-      {isMobileViewport && isMobilePanelOpen && (
-        <button
-          type="button"
-          aria-label="Close assistant and view map"
-          className="fixed inset-0 z-[1210] bg-black/40 lg:hidden"
-          onClick={closeMobilePanel}
-        />
-      )}
-
       {/* ════ Intelligence Hub Panel ════ */}
       {(showDesktopPanel || isMobileViewport) && (
         <div

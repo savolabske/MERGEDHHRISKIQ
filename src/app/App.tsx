@@ -580,8 +580,6 @@ export default function App() {
   });
   const sidebarCollapsedBeforeReportRef = useRef<boolean | null>(null);
   const [pendingHubReport, setPendingHubReport] = useState<ActiveReport>(null);
-  const hideMobileMenuButton =
-    currentView === 'aiSearch' && !!currentChatId && (cameFromHistory || cameFromPlatformChats || cameFromHome);
   const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
 
   const openThreadInView = useCallback((thread: ChatHistoryItem) => {
@@ -1043,7 +1041,6 @@ export default function App() {
         onLogout={handleLogout}
         onOpenSharedThread={handleOpenSharedThread}
         onOpenInvitePreview={handleOpenInvitePreview}
-        hideMobileMenuButton={hideMobileMenuButton}
         showFixedMobileMenuButton={currentView === 'mapAI'}
         isRiskIqActive={currentView === 'riskIQ' || (currentView === 'aiSearch' && cameFromRiskIq)}
         riskIqUnreadCount={chatHistory.filter((c) => c.unread).length}
@@ -1061,7 +1058,6 @@ export default function App() {
             notifications={notifications}
             onNotificationClick={handleNotificationClick}
             onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
-            showMobileMenuButton={!hideMobileMenuButton}
             isMobileMenuOpen={isMobileSidebarOpen}
             onMobileMenuToggle={() => setIsMobileSidebarOpen((open) => !open)}
           />

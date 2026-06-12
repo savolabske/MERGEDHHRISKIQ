@@ -22,8 +22,10 @@ import {
   ReportFilterBar,
   ReportLoadItem,
   REPORT_LOAD_ORDER,
-  reportChatAsideClassName,
+  ReportPageShell,
+  reportChatLayoutShellClassName,
   reportHeaderClassName,
+  reportMobileHeaderClassName,
   reportHeaderPaddingClassName,
   reportMainPaddingClassName,
   reportSceneAskButtonClassName,
@@ -187,18 +189,18 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#f6f7f9]">
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-[1780px] flex-col">
+    <ReportPageShell className="bg-[#f6f7f9]">
         <header
           className={cn(
             reportHeaderClassName,
-            'shrink-0 border-b border-[#e6e9ef] bg-[#f6f7f9]/95 backdrop-blur',
+            reportMobileHeaderClassName,
+            'shrink-0 border-b border-[#e6e9ef] bg-[#f6f7f9]/95',
             reportHeaderPaddingClassName,
           )}
         >
           <ReportLoadItem order={REPORT_LOAD_ORDER.breadcrumb}>
             <PageBreadcrumb
-              className="mb-4"
+              className="mb-3 lg:mb-4"
               items={[
                 { label: 'Reports', onClick: handleBreadcrumbBack },
                 { label: 'Aid Flow Intelligence' },
@@ -212,10 +214,10 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
           </ReportLoadItem>
           <div className={reportTitleFilterRowClassName}>
             <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="lg:min-w-0 lg:flex-1">
-              <h1 className="report-display-title text-[24px] leading-[1.05] font-semibold text-[#0d1b2a] sm:text-[30px]">
+              <h1 className="report-display-title truncate text-[22px] leading-[1.05] font-semibold text-[#0d1b2a] sm:text-[30px]">
                 Aid Flow Intelligence
               </h1>
-              <p className="mt-1 max-w-[560px] text-[13.5px] text-[#6b7a8d]">
+              <p className="mt-1 hidden max-w-[560px] text-[13.5px] text-[#6b7a8d] lg:block">
                 Explore how development and humanitarian funding is flowing across Somalia.
               </p>
             </ReportLoadItem>
@@ -354,45 +356,45 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
 
         <ReportChatLayout
           ref={chatLayoutRef}
-          className="min-h-0 flex-1"
+          className={reportChatLayoutShellClassName}
           mainClassName={reportMainPaddingClassName}
           chatLabel="Ask Aid Flow"
-          chatPanel={
-            <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className={cn(reportChatAsideClassName, 'border-l border-[#e6e9ef] bg-white')}>
-            <aside className="flex h-full min-h-0 flex-col">
+          messageCount={messages.length}
+          sidebarClassName="border-l border-[#e6e9ef] bg-white"
+          chatHeader={
+            <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className="shrink-0 border-b border-[#e6e9ef] bg-white px-4 py-3">
               <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
-              <div className="shrink-0 border-b border-[#e6e9ef] px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1f6feb] to-[#16a39a] text-white">
-                    <Sparkles size={14} />
-                  </span>
-                  <h3 className="text-[15px] font-semibold text-[#0d1b2a]">Ask Aid Flow</h3>
-                  <ReportChatHeaderCollapse className="border-[#e6e9ef] hover:text-[#1f6feb]" />
-                </div>
-                <p className="mt-1 text-[11.5px] text-[#6b7a8d]">
-                  Ask about donors, sectors, regions or trends. Answers reshape the dashboard on the left.
-                </p>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1f6feb] to-[#16a39a] text-white">
+                  <Sparkles size={14} />
+                </span>
+                <h3 className="text-[15px] font-semibold text-[#0d1b2a]">Ask Aid Flow</h3>
+                <ReportChatHeaderCollapse className="border-[#e6e9ef] hover:text-[#1f6feb]" />
               </div>
-              <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
-                <AidFlowChatFeed
-                  messages={messages}
-                  isQuerying={isQuerying}
-                  queryingMode={queryingMode}
-                  onChipClick={runPrompt}
-                />
-              </div>
-              <div className="shrink-0 border-t border-[#e6e9ef] bg-white p-3">
-                <ReportChatPromptInput
-                  value={promptInput}
-                  onChange={setPromptInput}
-                  onSubmit={runPrompt}
-                  disabled={isQuerying}
-                  placeholder="Ask anything about aid flows..."
-                  theme={AID_FLOW_CHAT_PROMPT_THEME}
-                />
-              </div>
-            </aside>
+              <p className="mt-1 text-[11.5px] text-[#6b7a8d]">
+                Ask about donors, sectors, regions or trends. Answers reshape the dashboard on the left.
+              </p>
             </ReportLoadItem>
+          }
+          chatFeed={
+            <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white p-4">
+              <AidFlowChatFeed
+                messages={messages}
+                isQuerying={isQuerying}
+                queryingMode={queryingMode}
+                onChipClick={runPrompt}
+              />
+            </div>
+          }
+          promptInput={
+            <ReportChatPromptInput
+              value={promptInput}
+              onChange={setPromptInput}
+              onSubmit={runPrompt}
+              disabled={isQuerying}
+              placeholder="Ask anything about aid flows..."
+              theme={AID_FLOW_CHAT_PROMPT_THEME}
+            />
           }
         >
           <div
@@ -575,7 +577,6 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
             </div>
           </div>
         </ReportChatLayout>
-      </div>
-    </div>
+    </ReportPageShell>
   );
 }

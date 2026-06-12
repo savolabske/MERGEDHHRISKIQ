@@ -4,6 +4,7 @@ import { AidFlowScrollytelling } from '../features/insights/aid-flow';
 import { MigrationDataScrollytelling } from './MigrationDataScrollytelling';
 import { SomaliaJointFundScrollytelling } from './SomaliaJointFundScrollytelling';
 import { PageScrollShell } from './PageScrollShell';
+import { ReportDetailShell } from '../features/insights/shared/ReportDetailShell';
 
 interface ReportCard {
   id: string;
@@ -100,25 +101,25 @@ export function Reports({
 
   if (activeReport === 'aid-flow') {
     return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <ReportDetailShell>
         <AidFlowScrollytelling onBack={handleReportBack} />
-      </div>
+      </ReportDetailShell>
     );
   }
 
   if (activeReport === 'migration-data') {
     return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <ReportDetailShell>
         <MigrationDataScrollytelling onBack={handleReportBack} />
-      </div>
+      </ReportDetailShell>
     );
   }
 
   if (activeReport === 'somalia-joint-fund') {
     return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <ReportDetailShell>
         <SomaliaJointFundScrollytelling onBack={handleReportBack} />
-      </div>
+      </ReportDetailShell>
     );
   }
 
