@@ -120,24 +120,24 @@ export function ResourcesList({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
           <h2 className="text-page-title mb-1">My Resources</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground max-w-prose">
             Manage and discover operational documents, research, and technical links.
           </p>
         </div>
         <button
           onClick={onAdd}
-          className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0"
+          className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shrink-0"
         >
           <Plus size={18} />
           Add Resource
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3">
+        <div className="relative w-full">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
             size={18}
@@ -151,43 +151,44 @@ export function ResourcesList({
           />
         </div>
 
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowFilterMenu((v) => !v)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors min-w-[180px] justify-between"
-          >
-            <span>{filterLabel}</span>
-            <ChevronDown size={16} className="text-text-subtle shrink-0" />
-          </button>
-          {showFilterMenu && (
-            <div className="absolute z-20 mt-1 w-full min-w-[200px] bg-card border border-border rounded-lg shadow-lg py-1">
-              {(
-                [
-                  ['all', 'All Resources'],
-                  ['created_by_me', 'Created by me'],
-                  ['shared_with_me', 'Shared with me'],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => {
-                    setFilter(value);
-                    setShowFilterMenu(false);
-                  }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors ${
-                    filter === value ? 'text-primary font-medium' : 'text-foreground'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <div className="flex items-stretch gap-3">
+          <div className="relative flex-1 min-w-0">
+            <button
+              type="button"
+              onClick={() => setShowFilterMenu((v) => !v)}
+              className="flex w-full items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors justify-between min-w-0"
+            >
+              <span className="truncate">{filterLabel}</span>
+              <ChevronDown size={16} className="text-text-subtle shrink-0" />
+            </button>
+            {showFilterMenu && (
+              <div className="absolute z-20 mt-1 w-full min-w-[200px] bg-card border border-border rounded-lg shadow-lg py-1">
+                {(
+                  [
+                    ['all', 'All Resources'],
+                    ['created_by_me', 'Created by me'],
+                    ['shared_with_me', 'Shared with me'],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setFilter(value);
+                      setShowFilterMenu(false);
+                    }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors ${
+                      filter === value ? 'text-primary font-medium' : 'text-foreground'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-        <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 shrink-0">
+          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 shrink-0">
           <button
             type="button"
             onClick={() => setViewMode('list')}
@@ -209,11 +210,12 @@ export function ResourcesList({
             <Grid2X2 size={16} />
           </button>
         </div>
+        </div>
       </div>
 
       {viewMode === 'list' ? (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="hidden min-h-10 md:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
+          <div className="hidden min-h-10 md:grid grid-cols-12 gap-4 px-4 sm:px-6 py-3 bg-muted/70 border-b border-border">
             <div className="col-span-7 table-header-label">
               Name
             </div>
@@ -229,14 +231,14 @@ export function ResourcesList({
             {paginatedResources.map((resource) => (
               <div
                 key={resource.id}
-                className="table-row-entity grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-6 transition-colors"
+                className="table-row-entity relative px-4 sm:px-6 py-4 md:py-0 md:grid md:grid-cols-12 md:gap-4 md:items-center transition-colors"
               >
                 <button
                   type="button"
                   onClick={() => onSelect(resource.id)}
-                  className="md:col-span-7 text-left min-w-0"
+                  className="md:col-span-7 text-left min-w-0 w-full pr-12 md:pr-0"
                 >
-                  <h3 className="table-primary-text mb-2 hover:text-primary-text transition-colors">
+                  <h3 className="table-primary-text mb-2 break-words hover:text-primary-text transition-colors">
                     {resource.title}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2">
@@ -247,11 +249,15 @@ export function ResourcesList({
                   </div>
                 </button>
 
-                <div className="md:col-span-3 flex items-center">
-                  <span className="table-metadata-text">{resource.lastModified}</span>
+                <div className="md:col-span-3 flex items-center mt-2 md:mt-0">
+                  <span className="table-metadata-text">
+                    <span className="table-header-label mr-2 md:hidden">Last Modified</span>
+                    {resource.lastModified}
+                  </span>
                 </div>
 
-                <div className="md:col-span-2 flex items-center justify-start md:justify-end relative">
+                <div className="absolute top-4 right-4 sm:right-6 md:relative md:top-auto md:right-auto md:col-span-2 flex items-center justify-end">
+                  <div className="relative">
                   <button
                     type="button"
                     onClick={() => setOpenMenuId(openMenuId === resource.id ? null : resource.id)}
@@ -305,6 +311,7 @@ export function ResourcesList({
                       </div>
                     </>
                   )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -325,7 +332,7 @@ export function ResourcesList({
               onClick={() => onSelect(resource.id)}
               className="text-left p-5 bg-card border border-border rounded-xl hover:border-primary hover:shadow-sm transition-all group"
             >
-              <h3 className="table-primary-text mb-2 group-hover:text-primary transition-colors">
+              <h3 className="table-primary-text mb-2 break-words group-hover:text-primary transition-colors">
                 {resource.title}
               </h3>
               <div className="flex flex-wrap gap-2 mb-3">

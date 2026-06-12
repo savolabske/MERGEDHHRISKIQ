@@ -11,7 +11,7 @@ import type { SjfChatMessage, SjfRecipeResult } from '../types';
 
 export type SjfCustomizePhase = ReportCustomizePhase;
 
-export function useSjfReportPrompt() {
+export function useSjfReportPrompt(options?: { onChatLaneReady?: () => void }) {
   const [promptInput, setPromptInput] = useState('');
   const [messages, setMessages] = useState<SjfChatMessage[]>([]);
   const [resultMode, setResultMode] = useState(false);
@@ -119,10 +119,11 @@ export function useSjfReportPrompt() {
               extended: ext || undefined,
             },
           ]);
+          options?.onChatLaneReady?.();
         },
       });
     },
-    [promptInput],
+    [promptInput, options?.onChatLaneReady],
   );
 
   const toggleExtendedKnowledge = useCallback(() => {
@@ -166,12 +167,6 @@ export function useSjfReportPrompt() {
     const frame = requestAnimationFrame(scrollResultsToTop);
     return () => cancelAnimationFrame(frame);
   }, [resultMode]);
-
-  useEffect(() => {
-    const el = chatScrollRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [messages, isQuerying]);
 
   return {
     promptInput,

@@ -4,9 +4,13 @@ import { getPrefersReducedMotion } from './motionPrefs';
 const LOAD_IN_VIEW_DELAY_MS = 300;
 const DEFAULT_THRESHOLD = 0.12;
 
-function isInViewport(el: HTMLElement): boolean {
+function isInViewport(el: HTMLElement, scrollRoot?: HTMLElement | null): boolean {
   const rect = el.getBoundingClientRect();
-  return rect.top < window.innerHeight && rect.bottom > 0;
+  if (!scrollRoot) {
+    return rect.top < window.innerHeight && rect.bottom > 0;
+  }
+  const rootRect = scrollRoot.getBoundingClientRect();
+  return rect.top < rootRect.bottom && rect.bottom > rootRect.top;
 }
 
 export function useAnimateOnView(options?: {
@@ -55,7 +59,9 @@ export function useAnimateOnView(options?: {
       return;
     }
 
-    if (isInViewport(element)) {
+    const scrollRoot = element.closest('[data-report-scroll]') as HTMLElement | null;
+
+    if (isInViewport(element, scrollRoot)) {
       const loadTimer = window.setTimeout(trigger, LOAD_IN_VIEW_DELAY_MS);
       return () => window.clearTimeout(loadTimer);
     }
@@ -67,10 +73,25 @@ export function useAnimateOnView(options?: {
           observer.disconnect();
         }
       },
-      { threshold, rootMargin }
+      { threshold, rootMargin, root: scrollRoot },
     );
     observer.observe(element);
-    return () => observer.disconnect();
+
+    const onScroll = () => {
+      if (triggeredRef.current) return;
+      if (isInViewport(element, scrollRoot)) {
+        trigger();
+        observer.disconnect();
+      }
+    };
+
+    const scrollTarget = scrollRoot ?? window;
+    scrollTarget.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      scrollTarget.removeEventListener('scroll', onScroll);
+    };
   }, [disabled, element, threshold, rootMargin, trigger]);
 
   return { ref, inView, trigger };

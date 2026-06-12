@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Calendar, ChevronDown, Send, Sparkles, X } from 'lucide-react';
+import { Calendar, ChevronDown, Sparkles } from 'lucide-react';
 import { DONOR_OPTIONS, FORWARD_ICONS, REGION_OPTIONS, SCENES, SECTOR_OPTIONS } from '../data/aidFlowData';
 import { useAidFlowFilters } from '../hooks/useAidFlowFilters';
 import { useAidFlowReportPrompt } from '../hooks/useAidFlowReportPrompt';
@@ -13,6 +13,9 @@ import {
   AID_FLOW_CUSTOMIZE_THEME,
   ReportChatHeaderCollapse,
   ReportChatLayout,
+  ReportChatPromptInput,
+  ReportChatScrollSync,
+  AID_FLOW_CHAT_PROMPT_THEME,
   ReportDashboardCustomizeOverlay,
   ReportLoadDeferred,
   AID_FLOW_FILTER_THEME,
@@ -21,6 +24,16 @@ import {
   REPORT_LOAD_ORDER,
   reportChatAsideClassName,
   reportHeaderClassName,
+  reportHeaderPaddingClassName,
+  reportMainPaddingClassName,
+  reportSceneAskButtonClassName,
+  reportSceneChartCardClassName,
+  reportSceneNarrativeClassName,
+  reportSceneSectionClassName,
+  reportSceneStatClassName,
+  reportSceneTitleClassName,
+  reportTitleFilterRowClassName,
+  type ReportChatLayoutHandle,
   useReportFilterMode,
 } from '../../shared';
 import { cn } from '../../../../components/ui/utils';
@@ -36,6 +49,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
   const [filtersAppliedPulse, setFiltersAppliedPulse] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
 
   const {
     selectedDonors,
@@ -82,7 +96,9 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
     chatScrollRef,
     runPrompt,
     backToReport,
-  } = useAidFlowReportPrompt();
+  } = useAidFlowReportPrompt({
+    onChatLaneReady: () => chatLayoutRef.current?.openChat(),
+  });
 
   const { mode: filterMode, filtersInteractive } = useReportFilterMode(resultMode, customizePhase);
 
@@ -176,7 +192,8 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
         <header
           className={cn(
             reportHeaderClassName,
-            'shrink-0 border-b border-[#e6e9ef] bg-[#f6f7f9]/95 px-[30px] py-[16px] backdrop-blur',
+            'shrink-0 border-b border-[#e6e9ef] bg-[#f6f7f9]/95 backdrop-blur',
+            reportHeaderPaddingClassName,
           )}
         >
           <ReportLoadItem order={REPORT_LOAD_ORDER.breadcrumb}>
@@ -193,9 +210,9 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
               }
             />
           </ReportLoadItem>
-          <div className="flex items-end justify-between gap-4">
-            <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="min-w-0 flex-1">
-              <h1 className="report-display-title text-[30px] leading-[1.05] font-semibold text-[#0d1b2a]">
+          <div className={reportTitleFilterRowClassName}>
+            <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="lg:min-w-0 lg:flex-1">
+              <h1 className="report-display-title text-[24px] leading-[1.05] font-semibold text-[#0d1b2a] sm:text-[30px]">
                 Aid Flow Intelligence
               </h1>
               <p className="mt-1 max-w-[560px] text-[13.5px] text-[#6b7a8d]">
@@ -208,6 +225,10 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                 mode={filterMode}
                 theme={AID_FLOW_FILTER_THEME}
                 onBackToReport={backToReport}
+                hasAppliedFilters={hasAnyFilter && filtersInteractive}
+                onClearAll={clearAllFilters}
+                isApplyingFilters={isApplyingFilters}
+                filtersAppliedPulse={filtersAppliedPulse}
               >
               <div className="relative">
                 <button
@@ -221,7 +242,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   <ChevronDown size={13} />
                 </button>
                 {openMenu === 'time' && (
-                  <div className="absolute right-0 top-[44px] z-50 w-[320px] rounded-xl border border-[#e6e9ef] bg-white p-3 shadow-lg">
+                  <div className="absolute left-0 right-0 top-[44px] z-50 w-auto rounded-xl border border-[#e6e9ef] bg-white p-3 shadow-lg sm:left-auto sm:right-0 sm:w-[320px]">
                     <div className="mb-2 flex items-center justify-between border-b border-[#eef1f6] pb-2">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#6b7a8d]">
                         Year Range
@@ -326,31 +347,21 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   />
                 )}
               </div>
-              <div className="flex items-center">
-                {hasAnyFilter && filtersInteractive ? (
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className={`inline-flex items-center text-[11px] font-medium transition ${isApplyingFilters ? 'text-[#1550b3]' : filtersAppliedPulse ? 'text-[#2d8a4c]' : 'text-[#6b7a8d] hover:text-[#1550b3]'}`}
-                  >
-                    <X size={11} className="mr-1" />
-                    {isApplyingFilters ? 'Applying filters...' : 'Clear All Filters'}
-                  </button>
-                ) : null}
-              </div>
               </ReportFilterBar>
             </ReportLoadItem>
           </div>
         </header>
 
         <ReportChatLayout
+          ref={chatLayoutRef}
           className="min-h-0 flex-1"
-          mainClassName="px-[30px] pb-20 pt-6"
+          mainClassName={reportMainPaddingClassName}
           chatLabel="Ask Aid Flow"
           chatPanel={
             <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className={cn(reportChatAsideClassName, 'border-l border-[#e6e9ef] bg-white')}>
             <aside className="flex h-full min-h-0 flex-col">
-              <div className="border-b border-[#e6e9ef] px-4 py-3">
+              <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
+              <div className="shrink-0 border-b border-[#e6e9ef] px-4 py-3">
                 <div className="flex items-center gap-2">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1f6feb] to-[#16a39a] text-white">
                     <Sparkles size={14} />
@@ -362,7 +373,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   Ask about donors, sectors, regions or trends. Answers reshape the dashboard on the left.
                 </p>
               </div>
-              <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto p-4">
+              <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
                 <AidFlowChatFeed
                   messages={messages}
                   isQuerying={isQuerying}
@@ -370,32 +381,15 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   onChipClick={runPrompt}
                 />
               </div>
-              <div className="border-t border-[#e6e9ef] p-3">
-                <div className="flex items-end gap-2 rounded-xl border border-[#e6e9ef] bg-[#f6f7f9] px-3 py-2">
-                  <textarea
-                    value={promptInput}
-                    onChange={(e) => setPromptInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        runPrompt();
-                      }
-                    }}
-                    disabled={isQuerying}
-                    placeholder="Ask anything about aid flows..."
-                    className="min-h-[36px] max-h-[90px] flex-1 resize-none bg-transparent text-[12.8px] text-[#0d1b2a] outline-none disabled:opacity-50"
-                  />
-                  <button
-                    onClick={() => runPrompt()}
-                    disabled={isQuerying}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#1f6feb] text-white hover:bg-[#1550b3] disabled:opacity-50"
-                  >
-                    <Send size={14} />
-                  </button>
-                </div>
-                <div className="mt-2 text-center text-[10px] text-[#6b7a8d]">
-                  AI can make mistakes. Verify critical insights.
-                </div>
+              <div className="shrink-0 border-t border-[#e6e9ef] bg-white p-3">
+                <ReportChatPromptInput
+                  value={promptInput}
+                  onChange={setPromptInput}
+                  onSubmit={runPrompt}
+                  disabled={isQuerying}
+                  placeholder="Ask anything about aid flows..."
+                  theme={AID_FLOW_CHAT_PROMPT_THEME}
+                />
               </div>
             </aside>
             </ReportLoadItem>
@@ -460,14 +454,19 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   key={s.num}
                   data-scene-index={i}
                   order={REPORT_LOAD_ORDER.scene(i)}
-                  minHeight="72vh"
-                  className={`grid min-h-[72vh] grid-cols-1 items-center gap-[26px] border-t border-dashed border-[#e6e9ef] py-[30px] lg:grid-cols-[minmax(0,1.25fr)_360px] ${i === 0 ? 'border-t-0' : ''}`}
+                  minHeight="280px"
+                  className={cn(reportSceneSectionClassName, 'border-[#e6e9ef]')}
                 >
-                  <div data-chart-root className="sticky top-6 flex min-h-[430px] w-full flex-col justify-center rounded-[18px] border border-[#e6e9ef] bg-white p-6 shadow-sm">
+                  <div
+                    data-chart-root
+                    className={cn(reportSceneChartCardClassName, 'border-[#e6e9ef]')}
+                  >
                     <div className="text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#6b7a8d]">
                       {s.cap}
                     </div>
-                    <div className="mb-5 text-[18px] font-semibold text-[#0d1b2a]">{s.ctitle}</div>
+                    <div className="mb-4 text-base font-semibold text-[#0d1b2a] sm:mb-5 sm:text-[18px]">
+                      {s.ctitle}
+                    </div>
                     <AidFlowSceneChart
                       index={i}
                       totals={{
@@ -485,16 +484,16 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                       markers={filteredMarkers}
                     />
                   </div>
-                  <AnimatedNarrative className={activeScene === i ? 'opacity-100' : 'opacity-70'}>
+                  <AnimatedNarrative
+                    className={cn(reportSceneNarrativeClassName, activeScene === i ? 'opacity-100' : 'opacity-70')}
+                  >
                     <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1f6feb]">
                       {s.num}
                     </div>
-                    <h3 className="mt-2 text-[20px] font-semibold leading-[1.12] text-[#0d1b2a]">
-                      {s.title}
-                    </h3>
+                    <h3 className={cn(reportSceneTitleClassName, 'text-[#0d1b2a]')}>{s.title}</h3>
                     <AnimatedStat
                       value={sceneStats[i]?.stat ?? s.stat}
-                      className="mt-3 block text-[38px] font-semibold leading-none text-[#1f6feb]"
+                      className={cn(reportSceneStatClassName, 'text-[#1f6feb]')}
                     />
                     <p className="mt-1 text-[12.5px] text-[#6b7a8d]">
                       {sceneStats[i]?.statLbl ?? s.statLbl}
@@ -517,7 +516,10 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                     <button
                       onClick={() => runPrompt(s.ask)}
                       disabled={isDashboardLocked}
-                      className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[#cfe0fd] bg-[#eaf1fe] px-3 py-2 text-[12.5px] font-semibold text-[#1550b3] disabled:opacity-50"
+                      className={cn(
+                        reportSceneAskButtonClassName,
+                        'border-[#cfe0fd] bg-[#eaf1fe] text-[#1550b3]',
+                      )}
                     >
                       <Sparkles size={13} /> Ask: &quot;{s.ask}&quot;
                     </button>

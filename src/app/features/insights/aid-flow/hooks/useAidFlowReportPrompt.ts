@@ -9,7 +9,7 @@ import type { ReportCustomizePhase } from '../../shared/ReportDashboardCustomize
 import { resolveAidFlowPrompt } from '../data/aidFlowPromptRecipes';
 import type { AidFlowChatMessage, AidFlowRecipeResult } from '../types';
 
-export function useAidFlowReportPrompt() {
+export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void }) {
   const [promptInput, setPromptInput] = useState('');
   const [messages, setMessages] = useState<AidFlowChatMessage[]>([]);
   const [resultMode, setResultMode] = useState(false);
@@ -108,10 +108,11 @@ export function useAidFlowReportPrompt() {
               chips: pending.chips,
             },
           ]);
+          options?.onChatLaneReady?.();
         },
       });
     },
-    [promptInput],
+    [promptInput, options?.onChatLaneReady],
   );
 
   useEffect(() => {
@@ -137,12 +138,6 @@ export function useAidFlowReportPrompt() {
     const frame = requestAnimationFrame(scrollResultsToTop);
     return () => cancelAnimationFrame(frame);
   }, [resultMode]);
-
-  useEffect(() => {
-    const el = chatScrollRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [messages, isQuerying]);
 
   return {
     promptInput,

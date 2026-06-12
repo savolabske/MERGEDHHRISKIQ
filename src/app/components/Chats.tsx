@@ -1,4 +1,4 @@
-import { Search, Trash2, MoreVertical, Pin, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, Trash2, MoreVertical, Pin, ChevronLeft, ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState, useRef, useEffect } from 'react';
 import { useProgressiveList } from '../hooks/useProgressiveList';
@@ -67,6 +67,7 @@ interface ChatsProps {
   embedded?: boolean;
   subtitle?: string;
   onChatSelect?: (id: string) => void;
+  onNewChat?: () => void;
   chatHistory?: ChatHistoryItem[];
   onDeleteChat?: (id: string) => void;
   onBulkDeleteChats?: (ids: string[]) => void;
@@ -141,6 +142,7 @@ export function Chats({
   embedded = false,
   subtitle = 'Review and revisit your previous Risk IQ chats',
   onChatSelect,
+  onNewChat,
   chatHistory = [],
   onDeleteChat,
   onBulkDeleteChats,
@@ -355,7 +357,8 @@ export function Chats({
 
             {/* Search and scope filter */}
             <div className="flex flex-col sm:flex-row gap-3 sm:items-stretch">
-              <div className="relative flex-1 min-w-0">
+              <div className="flex gap-3 items-stretch min-w-0 flex-1">
+                <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" size={20} />
                 <input
                   type="text"
@@ -364,6 +367,17 @@ export function Chats({
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
                 />
+                </div>
+                {embedded && onNewChat && (
+                  <button
+                    type="button"
+                    onClick={onNewChat}
+                    className="sm:hidden shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-hover transition-colors"
+                  >
+                    <Plus size={18} strokeWidth={2} />
+                    New chat
+                  </button>
+                )}
               </div>
               <div className="relative shrink-0 w-full sm:w-auto" ref={chatFilterDropdownRef}>
                 <button
@@ -498,9 +512,9 @@ export function Chats({
                       <div className="w-8 h-8 rounded-lg bg-sidebar-accent flex items-center justify-center shrink-0">
                         <Search size={16} strokeWidth={2} className="text-primary" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="table-primary-text group-hover:text-primary-text transition-colors">
+                      <div className="flex-1 min-w-0 pr-12 sm:pr-0">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <p className="table-primary-text group-hover:text-primary-text transition-colors min-w-0 flex-1 break-words">
                             {chat.query}
                           </p>
                           {chat.unread && (

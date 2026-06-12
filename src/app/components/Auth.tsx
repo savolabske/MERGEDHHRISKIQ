@@ -1,90 +1,14 @@
-import { useState, useRef, useEffect } from 'react';
-import { Eye, EyeOff, ArrowRight, Check, ChevronDown, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Check, Clock } from 'lucide-react';
 import AnimatedIntelligenceBackgroundLayer from '../../imports/AnimatedIntelligenceBackgroundLayer';
 import logoImage from '../../assets/un-somalia-logo.png';
 import { LoginPage } from './LoginPage';
+import { SignUpPage } from './SignUpPage';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
 
 interface AuthProps {
   onLogin: () => void;
-}
-
-// Organisation Dropdown Component
-function OrganisationDropdown({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const organisations = [
-    'United Nations Somalia',
-    'UNICEF Somalia',
-    'WFP Somalia',
-    'WHO Somalia',
-    'UNHCR Somalia',
-    'IOM Somalia',
-    'FAO Somalia',
-    'UNDP Somalia',
-    'OCHA Somalia',
-    'UNFPA Somalia',
-    'UN Women Somalia',
-    'International NGO',
-    'Local NGO',
-    'Government Agency',
-    'Other'
-  ];
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-[48px] px-4 bg-muted border border-border rounded-lg text-sm outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-ring/10 transition-all flex items-center justify-between ${
-          value ? 'text-foreground' : 'text-text-subtle'
-        }`}
-      >
-        <span>{value || 'Select your organisation'}</span>
-        <ChevronDown size={16} className={`text-text-subtle transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg z-50 max-h-[280px] overflow-y-auto">
-          {organisations.map((org) => (
-            <button
-              key={org}
-              type="button"
-              onClick={() => {
-                onChange(org);
-                setIsOpen(false);
-              }}
-              className={`w-full px-4 py-3 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                org === value ? 'bg-primary-subtle text-primary font-semibold' : 'text-foreground'
-              }`}
-            >
-              {org}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // Pending Verification Screen
@@ -202,15 +126,7 @@ function PendingVerification({ email, onBackToLogin }: { email: string; onBackTo
 
 export function Auth({ onLogin }: AuthProps) {
   const [mode, setMode] = useState<'login' | 'signup' | 'pending' | 'forgot' | 'reset-sent'>('login');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Signup fields
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupOrganisation, setSignupOrganisation] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
   const [registeredEmail, setRegisteredEmail] = useState('');
 
   // Forgot password fields
@@ -222,46 +138,19 @@ export function Auth({ onLogin }: AuthProps) {
     onLogin();
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validation
-    if (!signupName.trim()) {
-      toast.error('Please enter your name');
-      return;
-    }
-    if (!signupEmail.trim()) {
-      toast.error('Please enter your email address');
-      return;
-    }
-    if (!signupOrganisation) {
-      toast.error('Please select your organisation');
-      return;
-    }
-    if (signupPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
-      return;
-    }
-    if (signupPassword !== signupConfirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    // Success - show pending screen
-    setRegisteredEmail(signupEmail);
+  const handleSignupSubmit = (data: {
+    name: string;
+    email: string;
+    organisation: string;
+    password: string;
+  }) => {
+    setRegisteredEmail(data.email);
     setMode('pending');
     toast.success('Registration submitted successfully');
   };
 
   const handleBackToLogin = () => {
     setMode('login');
-    // Reset signup fields
-    setSignupName('');
-    setSignupEmail('');
-    setSignupOrganisation('');
-    setSignupPassword('');
-    setSignupConfirmPassword('');
-    // Reset forgot password fields
     setForgotEmail('');
   };
 
@@ -285,6 +174,15 @@ export function Auth({ onLogin }: AuthProps) {
         onLogin={handleLogin}
         onNavigateToSignUp={() => setMode('signup')}
         onNavigateToForgotPassword={() => setMode('forgot')}
+      />
+    );
+  }
+
+  if (mode === 'signup') {
+    return (
+      <SignUpPage
+        onSubmit={handleSignupSubmit}
+        onNavigateToSignIn={() => setMode('login')}
       />
     );
   }
@@ -417,137 +315,6 @@ export function Auth({ onLogin }: AuthProps) {
             className="w-44 h-auto mx-[-6px] my-[0px]"
           />
         </div>
-
-        {/* Signup Form */}
-        {mode === 'signup' && (
-          <form onSubmit={handleSignupSubmit} className="space-y-5 max-w-[460px] mx-auto w-full">
-            {/* Sign Up Title */}
-            <h1 className="text-3xl lg:text-4xl font-semibold text-foreground mb-8">
-              Sign Up
-            </h1>
-
-            {/* Name Field */}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2">
-                FULL NAME
-              </label>
-              <input
-                type="text"
-                value={signupName}
-                onChange={(e) => setSignupName(e.target.value)}
-                placeholder="John Smith"
-                className="w-full h-[48px] px-4 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-ring/10 transition-all"
-                required
-              />
-            </div>
-
-            {/* Email Field */}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2">
-                EMAIL ADDRESS
-              </label>
-              <input
-                type="email"
-                value={signupEmail}
-                onChange={(e) => setSignupEmail(e.target.value)}
-                placeholder="name@undp.org"
-                className="w-full h-[48px] px-4 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-ring/10 transition-all"
-                required
-              />
-            </div>
-
-            {/* Organisation Field */}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2">
-                ORGANISATION
-              </label>
-              <OrganisationDropdown 
-                value={signupOrganisation}
-                onChange={setSignupOrganisation}
-              />
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2">
-                PASSWORD
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full h-[48px] px-4 pr-12 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-ring/10 transition-all"
-                  required
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle hover:text-primary transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff size={18} strokeWidth={2} />
-                  ) : (
-                    <Eye size={18} strokeWidth={2} />
-                  )}
-                </button>
-              </div>
-              <p className="text-xs text-text-subtle mt-1.5">
-                Must be at least 8 characters
-              </p>
-            </div>
-
-            {/* Confirm Password Field */}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2">
-                CONFIRM PASSWORD
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={signupConfirmPassword}
-                  onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full h-[48px] px-4 pr-12 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-ring/10 transition-all"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle hover:text-primary transition-colors"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff size={18} strokeWidth={2} />
-                  ) : (
-                    <Eye size={18} strokeWidth={2} />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <Button type="submit" className="w-full h-[52px] mt-6 gap-2">
-              Create Account
-              <ArrowRight size={18} strokeWidth={2} />
-            </Button>
-
-            {/* Back to Login Link */}
-            <div className="text-center pt-4">
-              <p className="text-sm text-muted-foreground">
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => setMode('login')}
-                  className="font-medium text-primary hover:text-primary-text transition-colors"
-                >
-                  Log in
-                </button>
-              </p>
-            </div>
-          </form>
-        )}
 
         {/* Forgot Password Form */}
         {mode === 'forgot' && (

@@ -210,3 +210,19 @@
     width: var(--bar-target-width, auto) !important;
   }
 }
+
+/* Mobile consolidated report filters — stack controls and inline dropdown panels */
+.report-mobile-filters > div > .relative > button {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.report-mobile-filters > div > .relative > .absolute {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: 100% !important;
+  margin-top: 0.375rem;
+  box-shadow: none;
+}

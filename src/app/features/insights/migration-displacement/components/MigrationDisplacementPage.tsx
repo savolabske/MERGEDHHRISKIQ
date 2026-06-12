@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Send, Sparkles, X } from 'lucide-react';
+import { ChevronDown, Sparkles } from 'lucide-react';
 import {
   FORWARD_ICONS,
   MIGRATION_DATA,
@@ -20,6 +20,9 @@ import {
   MIGRATION_CUSTOMIZE_THEME,
   ReportChatHeaderCollapse,
   ReportChatLayout,
+  ReportChatPromptInput,
+  ReportChatScrollSync,
+  MIGRATION_CHAT_PROMPT_THEME,
   ReportDashboardCustomizeOverlay,
   ReportLoadDeferred,
   ReportFilterBar,
@@ -28,6 +31,16 @@ import {
   MIGRATION_FILTER_THEME,
   reportChatAsideClassName,
   reportHeaderClassName,
+  reportHeaderPaddingClassName,
+  reportMainPaddingClassName,
+  reportSceneAskButtonClassName,
+  reportSceneChartCardClassName,
+  reportSceneNarrativeClassName,
+  reportSceneSectionClassName,
+  reportSceneStatClassName,
+  reportSceneTitleClassName,
+  reportTitleFilterRowClassName,
+  type ReportChatLayoutHandle,
   useReportFilterMode,
 } from '../../shared';
 import { cn } from '../../../../components/ui/utils';
@@ -39,6 +52,7 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
   const [filtersAppliedPulse, setFiltersAppliedPulse] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
 
   const {
     startYear,
@@ -81,7 +95,9 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
     chatScrollRef,
     runPrompt,
     backToReport,
-  } = useMigrationReportPrompt();
+  } = useMigrationReportPrompt({
+    onChatLaneReady: () => chatLayoutRef.current?.openChat(),
+  });
   const regionOptions = useMemo(() => MIGRATION_DATA.regions.map(([name]) => name), []);
   const causeOptions = useMemo(() => MIGRATION_DATA.cause.map(([name]) => name), []);
 
@@ -189,7 +205,8 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
         <header
           className={cn(
             reportHeaderClassName,
-            'shrink-0 border-b border-[#ece6df] bg-[#f7f4ef]/95 px-[30px] py-[16px] backdrop-blur',
+            'shrink-0 border-b border-[#ece6df] bg-[#f7f4ef]/95 backdrop-blur',
+            reportHeaderPaddingClassName,
           )}
         >
           <ReportLoadItem order={REPORT_LOAD_ORDER.breadcrumb}>
@@ -206,9 +223,9 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
               }
             />
           </ReportLoadItem>
-          <div className="flex items-end justify-between gap-4">
-            <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="min-w-0 flex-1">
-              <h1 className="report-display-title text-[30px] leading-[1.05] font-semibold text-[#1a1410]">
+          <div className={reportTitleFilterRowClassName}>
+            <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="lg:min-w-0 lg:flex-1">
+              <h1 className="report-display-title text-[24px] leading-[1.05] font-semibold text-[#1a1410] sm:text-[30px]">
                 {MIGRATION_THEME.title}
               </h1>
               <p className="mt-1 max-w-[580px] text-[13.5px] text-[#8a7d72]">{MIGRATION_THEME.subtitle}</p>
@@ -219,6 +236,10 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                 mode={filterMode}
                 theme={MIGRATION_FILTER_THEME}
                 onBackToReport={backToReport}
+                hasAppliedFilters={hasAnyFilter && filtersInteractive}
+                onClearAll={clearAllFilters}
+                isApplyingFilters={isApplyingFilters}
+                filtersAppliedPulse={filtersAppliedPulse}
               >
               <div className="relative">
                 <button
@@ -231,7 +252,7 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                   <ChevronDown size={13} />
                 </button>
                 {openMenu === 'time' && (
-                  <div className="absolute right-0 top-[44px] z-50 w-[320px] rounded-xl border border-[#ece6df] bg-white p-3 shadow-lg">
+                  <div className="absolute left-0 right-0 top-[44px] z-50 w-auto rounded-xl border border-[#ece6df] bg-white p-3 shadow-lg sm:left-auto sm:right-0 sm:w-[320px]">
                     <div className="mb-2 flex items-center justify-between border-b border-[#f3efe9] pb-2">
                       <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#8a7d72]">
                         Year Range
@@ -315,31 +336,21 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                   />
                 )}
               </div>
-              <div className="flex items-center">
-                {hasAnyFilter && filtersInteractive ? (
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className={`inline-flex items-center text-[11px] font-medium transition ${isApplyingFilters ? 'text-[#a3461f]' : filtersAppliedPulse ? 'text-[#1f7a6e]' : 'text-[#8a7d72] hover:text-[#a3461f]'}`}
-                  >
-                    <X size={11} className="mr-1" />
-                    {isApplyingFilters ? 'Applying filters...' : 'Clear All Filters'}
-                  </button>
-                ) : null}
-              </div>
               </ReportFilterBar>
             </ReportLoadItem>
           </div>
         </header>
 
         <ReportChatLayout
+          ref={chatLayoutRef}
           className="min-h-0 flex-1"
-          mainClassName="px-[30px] pb-20 pt-6"
+          mainClassName={reportMainPaddingClassName}
           chatLabel="Ask Displacement"
           chatPanel={
             <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className={cn(reportChatAsideClassName, 'border-l border-[#ece6df] bg-white')}>
             <aside className="flex h-full min-h-0 flex-col">
-              <div className="border-b border-[#ece6df] px-4 py-3">
+              <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
+              <div className="shrink-0 border-b border-[#ece6df] px-4 py-3">
                 <div className="flex items-center gap-2">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#c2562a] to-[#d99a21] text-white">
                     <Sparkles size={14} />
@@ -351,7 +362,7 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                   Ask about causes, regions, demographics, needs, or trends.
                 </p>
               </div>
-              <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto p-4">
+              <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
                 <MigrationChatFeed
                   messages={messages}
                   isQuerying={isQuerying}
@@ -359,32 +370,15 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                   onChipClick={runPrompt}
                 />
               </div>
-              <div className="border-t border-[#ece6df] p-3">
-                <div className="flex items-end gap-2 rounded-xl border border-[#ece6df] bg-[#f7f4ef] px-3 py-2">
-                  <textarea
-                    value={promptInput}
-                    onChange={(e) => setPromptInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        runPrompt();
-                      }
-                    }}
-                    disabled={isQuerying}
-                    placeholder="Ask anything about displacement..."
-                    className="min-h-[36px] max-h-[90px] flex-1 resize-none bg-transparent text-[12.8px] text-[#1a1410] outline-none disabled:opacity-50"
-                  />
-                  <button
-                    onClick={() => runPrompt()}
-                    disabled={isQuerying}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#c2562a] text-white hover:bg-[#a3461f] disabled:opacity-50"
-                  >
-                    <Send size={14} />
-                  </button>
-                </div>
-                <div className="mt-2 text-center text-[10px] text-[#8a7d72]">
-                  AI can make mistakes. Verify critical insights.
-                </div>
+              <div className="shrink-0 border-t border-[#ece6df] bg-white p-3">
+                <ReportChatPromptInput
+                  value={promptInput}
+                  onChange={setPromptInput}
+                  onSubmit={runPrompt}
+                  disabled={isQuerying}
+                  placeholder="Ask anything about displacement..."
+                  theme={MIGRATION_CHAT_PROMPT_THEME}
+                />
               </div>
             </aside>
             </ReportLoadItem>
@@ -449,14 +443,19 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                   key={s.num}
                   data-scene-index={i}
                   order={REPORT_LOAD_ORDER.scene(i)}
-                  minHeight="72vh"
-                  className={`grid min-h-[72vh] grid-cols-1 items-center gap-[26px] border-t border-dashed border-[#ece6df] py-[30px] lg:grid-cols-[minmax(0,1.25fr)_360px] ${i === 0 ? 'border-t-0' : ''}`}
+                  minHeight="280px"
+                  className={cn(reportSceneSectionClassName, 'border-[#ece6df]')}
                 >
-                  <div data-chart-root className="sticky top-6 flex min-h-[430px] w-full flex-col justify-center rounded-[18px] border border-[#ece6df] bg-white p-6 shadow-sm">
+                  <div
+                    data-chart-root
+                    className={cn(reportSceneChartCardClassName, 'border-[#ece6df]')}
+                  >
                     <div className="text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#8a7d72]">
                       {s.cap}
                     </div>
-                    <div className="mb-5 text-[18px] font-semibold text-[#1a1410]">{s.ctitle}</div>
+                    <div className="mb-4 text-base font-semibold text-[#1a1410] sm:mb-5 sm:text-[18px]">
+                      {s.ctitle}
+                    </div>
                     <MigrationSceneChart
                       index={i}
                       K={K}
@@ -474,16 +473,16 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                       stay={MIGRATION_DATA.stay}
                     />
                   </div>
-                  <AnimatedNarrative className={activeScene === i ? 'opacity-100' : 'opacity-70'}>
+                  <AnimatedNarrative
+                    className={cn(reportSceneNarrativeClassName, activeScene === i ? 'opacity-100' : 'opacity-70')}
+                  >
                     <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#c2562a]">
                       {s.num}
                     </div>
-                    <h3 className="mt-2 text-[20px] font-semibold leading-[1.12] text-[#1a1410]">
-                      {s.title}
-                    </h3>
+                    <h3 className={cn(reportSceneTitleClassName, 'text-[#1a1410]')}>{s.title}</h3>
                     <AnimatedStat
                       value={sceneStats[i]?.stat ?? s.stat}
-                      className="mt-3 block text-[38px] font-semibold leading-none text-[#c2562a]"
+                      className={cn(reportSceneStatClassName, 'text-[#c2562a]')}
                     />
                     <p className="mt-1 text-[12.5px] text-[#8a7d72]">
                       {sceneStats[i]?.statLbl ?? s.statLbl}
@@ -503,7 +502,10 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                     <button
                       onClick={() => runPrompt(s.ask)}
                       disabled={isDashboardLocked}
-                      className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[#f0d8c5] bg-[#fbeee5] px-3 py-2 text-[12.5px] font-semibold text-[#a3461f] disabled:opacity-50"
+                      className={cn(
+                        reportSceneAskButtonClassName,
+                        'border-[#f0d8c5] bg-[#fbeee5] text-[#a3461f]',
+                      )}
                     >
                       <Sparkles size={13} /> Ask: &quot;{s.ask}&quot;
                     </button>

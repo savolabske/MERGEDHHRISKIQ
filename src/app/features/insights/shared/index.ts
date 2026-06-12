@@ -4,6 +4,15 @@ export {
   REPORT_REVEAL_DELAY_MS,
   REPORT_STICKY_HEADER_OFFSET,
   reportHeaderClassName,
+  reportTitleFilterRowClassName,
+  reportHeaderPaddingClassName,
+  reportMainPaddingClassName,
+  reportSceneSectionClassName,
+  reportSceneChartCardClassName,
+  reportSceneNarrativeClassName,
+  reportSceneTitleClassName,
+  reportSceneStatClassName,
+  reportSceneAskButtonClassName,
 } from './constants';
 export {
   getChatOnlyAnswer,
@@ -42,8 +51,17 @@ export {
   ReportChatHeaderCollapse,
   reportChatAsideClassName,
   useReportChatPanel,
+  type ReportChatLayoutHandle,
 } from './ReportChatLayout';
+export {
+  ReportChatPromptInput,
+  AID_FLOW_CHAT_PROMPT_THEME,
+  MIGRATION_CHAT_PROMPT_THEME,
+  SJF_CHAT_PROMPT_THEME,
+  type ReportChatPromptTheme,
+} from './ReportChatPromptInput';
 export { ReportChipButton } from './ReportChipButton';
 export { ReportThinkingIndicator } from './ReportThinkingIndicator';
+export { useReportChatAutoScroll, ReportChatScrollSync } from './useReportChatAutoScroll';
 export { useReportPrompt } from './useReportPrompt';
 export * from './animations';

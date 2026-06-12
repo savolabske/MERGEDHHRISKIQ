@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Calendar, ChevronDown, Copy, Send, Shield, Sparkles, X } from 'lucide-react';
+import { AlertTriangle, Calendar, ChevronDown, Copy, Shield, Sparkles } from 'lucide-react';
 import {
   DONOR_OPTIONS,
   FORWARD_CARDS,
@@ -23,6 +23,9 @@ import {
   AnimatedStat,
   ReportChatHeaderCollapse,
   ReportChatLayout,
+  ReportChatPromptInput,
+  ReportChatScrollSync,
+  SJF_CHAT_PROMPT_THEME,
   ReportDashboardCustomizeOverlay,
   SJF_CUSTOMIZE_THEME,
   ReportLoadDeferred,
@@ -32,6 +35,16 @@ import {
   SJF_FILTER_THEME,
   reportChatAsideClassName,
   reportHeaderClassName,
+  reportHeaderPaddingClassName,
+  reportMainPaddingClassName,
+  reportSceneAskButtonClassName,
+  reportSceneChartCardClassName,
+  reportSceneNarrativeClassName,
+  reportSceneSectionClassName,
+  reportSceneStatClassName,
+  reportSceneTitleClassName,
+  reportTitleFilterRowClassName,
+  type ReportChatLayoutHandle,
   useReportFilterMode,
 } from '../../shared';
 import { cn } from '../../../../components/ui/utils';
@@ -45,6 +58,7 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
   const [filtersAppliedPulse, setFiltersAppliedPulse] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
 
   const {
     startYear,
@@ -82,7 +96,9 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
     backToReport,
     extendedKnowledge,
     toggleExtendedKnowledge,
-  } = useSjfReportPrompt();
+  } = useSjfReportPrompt({
+    onChatLaneReady: () => chatLayoutRef.current?.openChat(),
+  });
 
   const [copiedKpi, setCopiedKpi] = useState<string | null>(null);
 
@@ -188,7 +204,8 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
         <header
           className={cn(
             reportHeaderClassName,
-            'shrink-0 border-b border-[#e2e6ee] bg-[#f4f6fa]/95 px-[30px] py-[16px] backdrop-blur',
+            'shrink-0 border-b border-[#e2e6ee] bg-[#f4f6fa]/95 backdrop-blur',
+            reportHeaderPaddingClassName,
           )}
         >
           <ReportLoadItem order={REPORT_LOAD_ORDER.breadcrumb}>
@@ -206,9 +223,9 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
               }
             />
           </ReportLoadItem>
-          <div className="flex items-end justify-between gap-4">
-            <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="min-w-0 flex-1">
-              <h1 className="report-display-title sjf-title-underline text-[30px] leading-[1.05] font-semibold text-[#0b1a2c]">
+          <div className={reportTitleFilterRowClassName}>
+            <ReportLoadItem order={REPORT_LOAD_ORDER.title} className="lg:min-w-0 lg:flex-1">
+              <h1 className="report-display-title sjf-title-underline text-[24px] leading-[1.05] font-semibold text-[#0b1a2c] sm:text-[30px]">
                 {SJF_THEME.title}
               </h1>
             </ReportLoadItem>
@@ -218,6 +235,10 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                 mode={filterMode}
                 theme={SJF_FILTER_THEME}
                 onBackToReport={backToReport}
+                hasAppliedFilters={hasAnyFilter && filtersInteractive}
+                onClearAll={clearAllFilters}
+                isApplyingFilters={isApplyingFilters}
+                filtersAppliedPulse={filtersAppliedPulse}
               >
                 <div className="relative">
                   <button
@@ -236,7 +257,7 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     <ChevronDown size={13} />
                   </button>
                   {openMenu === 'time' && (
-                    <div className="absolute right-0 top-[44px] z-50 w-[320px] rounded-xl border border-[#e2e6ee] bg-white p-3 shadow-lg">
+                    <div className="absolute left-0 right-0 top-[44px] z-50 w-auto rounded-xl border border-[#e2e6ee] bg-white p-3 shadow-lg sm:left-auto sm:right-0 sm:w-[320px]">
                       <div className="mb-2 flex items-center justify-between border-b border-[#eef1f7] pb-2">
                         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#6f8094]">
                           Year Range
@@ -354,32 +375,15 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     />
                   )}
                 </div>
-
-                {hasAnyFilter && filtersInteractive ? (
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className={cn(
-                      'inline-flex items-center text-[11px] font-medium transition',
-                      isApplyingFilters
-                        ? 'text-[#19486A]'
-                        : filtersAppliedPulse
-                          ? 'text-[#00689D]'
-                          : 'text-[#6f8094] hover:text-[#19486A]',
-                    )}
-                  >
-                    <X size={11} className="mr-1" />
-                    {isApplyingFilters ? 'Applying filters...' : 'Clear All Filters'}
-                  </button>
-                ) : null}
               </ReportFilterBar>
             </ReportLoadItem>
           </div>
         </header>
 
         <ReportChatLayout
+          ref={chatLayoutRef}
           className="min-h-0 flex-1"
-          mainClassName="px-[30px] pb-20 pt-6"
+          mainClassName={reportMainPaddingClassName}
           chatLabel="Ask SJF"
           chatPanel={
             <ReportLoadItem
@@ -387,7 +391,8 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
               className={cn(reportChatAsideClassName, 'border-l border-[#e2e6ee] bg-white')}
             >
               <aside className="flex h-full min-h-0 flex-col">
-                <div className="border-b border-[#e2e6ee] px-4 py-3">
+                <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
+                <div className="shrink-0 border-b border-[#e2e6ee] px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#00689D] to-[#19486A] text-white">
                       <Sparkles size={14} />
@@ -430,7 +435,7 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     </span>
                   </button>
                 </div>
-                <div ref={chatScrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+                <div ref={chatScrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-4">
                   <SjfChatFeed
                     messages={messages}
                     isQuerying={isQuerying}
@@ -439,32 +444,15 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     onChipClick={runPrompt}
                   />
                 </div>
-                <div className="border-t border-[#e2e6ee] p-3">
-                  <div className="flex items-end gap-2 rounded-xl border border-[#e2e6ee] bg-[#f4f6fa] px-3 py-2 focus-within:border-[#00689D] focus-within:ring-2 focus-within:ring-[#E5F3FB]">
-                    <textarea
-                      value={promptInput}
-                      onChange={(e) => setPromptInput(e.target.value)}
-                      disabled={isQuerying}
-                      placeholder="Ask about the SJF…"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          runPrompt();
-                        }
-                      }}
-                      className="min-h-[36px] max-h-[90px] flex-1 resize-none bg-transparent text-[12.8px] text-[#0b1a2c] outline-none disabled:opacity-50"
-                    />
-                    <button
-                      onClick={() => runPrompt()}
-                      disabled={isQuerying}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#00689D] text-white hover:bg-[#19486A] disabled:opacity-50"
-                    >
-                      <Send size={14} />
-                    </button>
-                  </div>
-                  <div className="mt-2 text-center text-[10px] text-[#6f8094]">
-                    AI can make mistakes. Verify critical insights.
-                  </div>
+                <div className="shrink-0 border-t border-[#e2e6ee] bg-white p-3">
+                  <ReportChatPromptInput
+                    value={promptInput}
+                    onChange={setPromptInput}
+                    onSubmit={runPrompt}
+                    disabled={isQuerying}
+                    placeholder="Ask about the SJF…"
+                    theme={SJF_CHAT_PROMPT_THEME}
+                  />
                 </div>
               </aside>
             </ReportLoadItem>
@@ -560,17 +548,20 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                   key={s.num}
                   data-scene-index={i}
                   order={REPORT_LOAD_ORDER.scene(i)}
-                  minHeight="72vh"
-                  className="grid grid-cols-1 items-center gap-6 border-t border-dashed border-[#e2e6ee] py-8 first:border-t-0 lg:grid-cols-[1fr_360px]"
+                  minHeight="280px"
+                  className={cn(reportSceneSectionClassName, 'border-[#e2e6ee]')}
                 >
                   <div
                     data-chart-root
-                    className="sticky top-[120px] flex min-h-[440px] flex-col justify-center rounded-[18px] border border-[#e2e6ee] bg-white px-6 py-6 shadow-[0_1px_2px_rgba(11,26,44,0.04),0_4px_16px_rgba(11,26,44,0.06)]"
+                    className={cn(
+                      reportSceneChartCardClassName,
+                      'border-[#e2e6ee] shadow-[0_1px_2px_rgba(11,26,44,0.04),0_4px_16px_rgba(11,26,44,0.06)]',
+                    )}
                   >
                     <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#6f8094]">
                       {s.cap}
                     </div>
-                    <div className="mb-5 text-[18px] font-semibold text-[#0b1a2c]">
+                    <div className="mb-4 text-base font-semibold text-[#0b1a2c] sm:mb-5 sm:text-[18px]">
                       {s.ctitle}
                     </div>
                     <div className="w-full min-w-0">
@@ -578,17 +569,21 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     </div>
                   </div>
                   <AnimatedNarrative
-                    className={cn('transition-opacity duration-300', activeScene === i ? 'opacity-100' : 'opacity-70')}
+                    className={cn(
+                      reportSceneNarrativeClassName,
+                      'transition-opacity duration-300',
+                      activeScene === i ? 'opacity-100' : 'opacity-70',
+                    )}
                   >
                     <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#00689D]">
                       {s.num}
                     </div>
-                    <h3 className="mt-2 text-[25px] leading-[1.12] font-semibold text-[#0b1a2c]">
+                    <h3 className={cn(reportSceneTitleClassName, 'text-[#0b1a2c] lg:text-[25px]')}>
                       {s.title}
                     </h3>
                     <AnimatedStat
                       value={sceneStats[i]?.stat ?? s.stat}
-                      className="mt-2 block text-[42px] leading-none font-semibold text-[#00689D]"
+                      className={cn(reportSceneStatClassName, 'text-[#00689D] lg:text-[42px]')}
                     />
                     <p className="mt-1 text-[12.5px] text-[#6f8094]">
                       {sceneStats[i]?.statLbl ?? s.statLbl}
@@ -611,7 +606,10 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     <button
                       onClick={() => runPrompt(s.ask)}
                       disabled={isQuerying}
-                      className="mt-4 inline-flex items-center gap-2 rounded-[10px] border border-[#B8D9EE] bg-[#E5F3FB] px-3 py-2 text-[12.5px] font-semibold text-[#19486A] hover:bg-[#D7ECF8] disabled:opacity-50"
+                      className={cn(
+                        reportSceneAskButtonClassName,
+                        'rounded-[10px] border-[#B8D9EE] bg-[#E5F3FB] text-[#19486A] hover:bg-[#D7ECF8]',
+                      )}
                     >
                       <Sparkles size={13} /> Ask: &quot;{s.ask}&quot;
                     </button>

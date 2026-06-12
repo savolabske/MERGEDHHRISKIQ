@@ -9,7 +9,7 @@ import type { ReportCustomizePhase } from '../../shared/ReportDashboardCustomize
 import { resolveMigrationPrompt } from '../data/migrationPromptRecipes';
 import type { MigrationChatMessage, MigrationRecipeResult } from '../types';
 
-export function useMigrationReportPrompt() {
+export function useMigrationReportPrompt(options?: { onChatLaneReady?: () => void }) {
   const [promptInput, setPromptInput] = useState('');
   const [messages, setMessages] = useState<MigrationChatMessage[]>([]);
   const [resultMode, setResultMode] = useState(false);
@@ -108,10 +108,11 @@ export function useMigrationReportPrompt() {
               chips: pending.chips,
             },
           ]);
+          options?.onChatLaneReady?.();
         },
       });
     },
-    [promptInput],
+    [promptInput, options?.onChatLaneReady],
   );
 
   useEffect(() => {
@@ -137,12 +138,6 @@ export function useMigrationReportPrompt() {
     const frame = requestAnimationFrame(scrollResultsToTop);
     return () => cancelAnimationFrame(frame);
   }, [resultMode]);
-
-  useEffect(() => {
-    const el = chatScrollRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [messages, isQuerying]);
 
   return {
     promptInput,

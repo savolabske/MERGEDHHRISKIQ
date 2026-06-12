@@ -91,21 +91,18 @@ function SidebarDivider() {
   );
 }
 
-function NavUnreadBadge({ count, collapsed }: { count: number; collapsed: boolean }) {
-  const label = count > 99 ? '99+' : String(count);
-
+function NavUnreadDot({ collapsed }: { collapsed: boolean }) {
   if (collapsed) {
     return (
-      <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-xs font-semibold flex items-center justify-center leading-none tabular-nums">
-        {label}
-      </span>
+      <span
+        className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary"
+        aria-hidden
+      />
     );
   }
 
   return (
-    <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-white text-xs font-semibold flex items-center justify-center tabular-nums">
-      {label}
-    </span>
+    <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden />
   );
 }
 
@@ -138,7 +135,7 @@ function SidebarNavItem({
         <Icon size={NAV_ICON_SIZE} strokeWidth={NAV_ICON_STROKE} className="shrink-0" />
         {!collapsed && <span className="truncate">{label}</span>}
         {!collapsed && trailing}
-        {badge != null && badge > 0 && <NavUnreadBadge count={badge} collapsed={collapsed} />}
+        {badge != null && badge > 0 && <NavUnreadDot collapsed={collapsed} />}
       </button>
     </NavTooltip>
   );
@@ -176,6 +173,23 @@ function persistSidebarCollapsedPreference(collapsed: boolean) {
   }
 }
 
+function useIsLgUp() {
+  const [isLgUp, setIsLgUp] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(min-width: 1024px)').matches
+      : true,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const onChange = () => setIsLgUp(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  return isLgUp;
+}
+
 export function Sidebar({
   currentView,
   onNavigate,
@@ -191,6 +205,8 @@ export function Sidebar({
 }: SidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(readSidebarCollapsedPreference);
   const isCollapsed = controlledCollapsed ?? internalCollapsed;
+  const isLgUp = useIsLgUp();
+  const displayCollapsed = isCollapsed && isLgUp;
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [internalMobileMenuOpen, setInternalMobileMenuOpen] = useState(false);
   const isMobileMenuControlled = controlledMobileMenuOpen !== undefined;
@@ -314,16 +330,16 @@ export function Sidebar({
           <div
             className={cn(
               'bg-[var(--sidebar-bg)] shrink-0',
-              isCollapsed ? 'px-3 pt-4 pb-3' : 'px-3 pt-4 pb-3',
+              displayCollapsed ? 'px-3 pt-4 pb-3' : 'px-3 pt-4 pb-3',
             )}
           >
             <div
               className={cn(
                 'flex items-center',
-                isCollapsed ? 'justify-center' : 'justify-between gap-2',
+                displayCollapsed ? 'justify-center' : 'justify-between gap-2',
               )}
             >
-              {!isCollapsed && (
+              {!displayCollapsed && (
                 <img
                   src={logoImage}
                   alt="United Nations Somalia"
@@ -336,7 +352,7 @@ export function Sidebar({
                 className={cn(
                   'hidden lg:flex size-9 items-center justify-center rounded-lg transition-colors',
                   'text-[var(--sidebar-nav-text)] hover:bg-[var(--sidebar-nav-hover-bg)] hover:text-[var(--sidebar-nav-text-hover)]',
-                  isCollapsed ? '' : 'ml-auto shrink-0',
+                  displayCollapsed ? '' : 'ml-auto shrink-0',
                 )}
                 aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
@@ -352,14 +368,14 @@ export function Sidebar({
                   label="Home"
                   icon={Home}
                   isActive={currentView === 'home'}
-                  collapsed={isCollapsed}
+                  collapsed={displayCollapsed}
                   onClick={() => handleNavigate('home')}
                 />
                 <SidebarNavItem
                   label="Chats"
                   icon={MessagesSquare}
                   isActive={currentView === 'platformChats'}
-                  collapsed={isCollapsed}
+                  collapsed={displayCollapsed}
                   onClick={() => handleNavigate('platformChats')}
                 />
               </SidebarNavGroup>
@@ -371,21 +387,21 @@ export function Sidebar({
                   label="Resources"
                   icon={BookOpen}
                   isActive={currentView === 'resourcesHub'}
-                  collapsed={isCollapsed}
+                  collapsed={displayCollapsed}
                   onClick={() => handleNavigate('resourcesHub')}
                 />
                 <SidebarNavItem
                   label="Maps"
                   icon={Navigation}
                   isActive={currentView === 'mapAI'}
-                  collapsed={isCollapsed}
+                  collapsed={displayCollapsed}
                   onClick={() => handleNavigate('mapAI')}
                 />
                 <SidebarNavItem
                   label="Reports"
                   icon={FileText}
                   isActive={currentView === 'reports'}
-                  collapsed={isCollapsed}
+                  collapsed={displayCollapsed}
                   onClick={() => handleNavigate('reports')}
                 />
               </SidebarNavGroup>
@@ -397,7 +413,7 @@ export function Sidebar({
                   label="Risk iQ"
                   icon={Shield}
                   isActive={isRiskIqActive}
-                  collapsed={isCollapsed}
+                  collapsed={displayCollapsed}
                   onClick={() => handleNavigate('riskIQ')}
                   badge={riskIqUnreadCount}
                 />
@@ -407,20 +423,20 @@ export function Sidebar({
 
               <SidebarNavGroup>
                 <div ref={adminMenuRef}>
-                <NavTooltip label="Admin" show={isCollapsed && !isAdminExpanded}>
+                <NavTooltip label="Admin" show={displayCollapsed && !isAdminExpanded}>
                   <button
                     type="button"
                     onClick={() => setIsAdminExpanded(!isAdminExpanded)}
-                    className={navItemClass(isAdminView, isCollapsed)}
+                    className={navItemClass(isAdminView, displayCollapsed)}
                   >
                     <Settings size={NAV_ICON_SIZE} strokeWidth={NAV_ICON_STROKE} className="shrink-0" />
-                    {!isCollapsed && <span className="truncate">Admin</span>}
+                    {!displayCollapsed && <span className="truncate">Admin</span>}
                     <ChevronDown
-                      size={isCollapsed ? 13 : 17}
+                      size={displayCollapsed ? 13 : 17}
                       strokeWidth={1.75}
                       className={cn(
                         'shrink-0 text-[var(--text-3)] transition-transform',
-                        !isCollapsed && 'ml-auto',
+                        !displayCollapsed && 'ml-auto',
                         isAdminExpanded && 'rotate-180',
                       )}
                     />
@@ -431,24 +447,24 @@ export function Sidebar({
                   <div
                     className={cn(
                       'nav-list',
-                      isCollapsed ? 'mt-0.5' : 'mt-0.5 ml-2 pl-2 border-l border-[var(--sidebar-divider)]',
+                      displayCollapsed ? 'mt-0.5' : 'mt-0.5 ml-2 pl-2 border-l border-[var(--sidebar-divider)]',
                     )}
                   >
                     {ADMIN_NAV_ITEMS.map(({ view, label, icon: Icon, badge }) => (
-                      <NavTooltip key={view} label={label} show={isCollapsed}>
+                      <NavTooltip key={view} label={label} show={displayCollapsed}>
                         <button
                           type="button"
                           onClick={() => handleNavigate(view)}
-                          className={cn(navItemClass(currentView === view, isCollapsed), 'relative')}
+                          className={cn(navItemClass(currentView === view, displayCollapsed), 'relative')}
                         >
                           <Icon size={NAV_ICON_SIZE} strokeWidth={NAV_ICON_STROKE} className="shrink-0" />
-                          {!isCollapsed && <span className="truncate">{label}</span>}
-                          {badge != null && !isCollapsed && (
+                          {!displayCollapsed && <span className="truncate">{label}</span>}
+                          {badge != null && !displayCollapsed && (
                             <span className="ml-auto min-w-5 h-5 px-1 rounded-full bg-destructive text-white text-xs font-bold flex items-center justify-center">
                               {badge}
                             </span>
                           )}
-                          {badge != null && isCollapsed && (
+                          {badge != null && displayCollapsed && (
                             <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-xs font-semibold flex items-center justify-center leading-none tabular-nums">
                               {badge}
                             </span>
@@ -473,7 +489,7 @@ export function Sidebar({
               <div
                 className={cn(
                   'absolute mb-2 bg-[var(--sidebar-bg)] border rounded-xl shadow-xl overflow-hidden z-50',
-                  isCollapsed
+                  displayCollapsed
                     ? 'left-full bottom-0 ml-2 w-[var(--sidebar-w)]'
                     : 'bottom-full left-2.5 right-2.5',
                 )}
@@ -509,14 +525,14 @@ export function Sidebar({
               </div>
             )}
 
-            <NavTooltip label="Amina Mohamed" show={isCollapsed && !isProfileMenuOpen}>
+            <NavTooltip label="Amina Mohamed" show={displayCollapsed && !isProfileMenuOpen}>
               <button
                 type="button"
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className={cn(
                   'w-full flex items-center rounded-[8px] transition-colors',
                   'hover:bg-[var(--sidebar-nav-hover-bg)]',
-                  isCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-2',
+                  displayCollapsed ? 'justify-center p-2' : 'gap-2.5 px-3 py-2',
                 )}
               >
                 <div
@@ -527,7 +543,7 @@ export function Sidebar({
                 >
                   AM
                 </div>
-                {!isCollapsed && (
+                {!displayCollapsed && (
                   <>
                     <div className="flex-1 min-w-0 text-left">
                       <div className="text-label text-foreground truncate">

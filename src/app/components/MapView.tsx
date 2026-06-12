@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, PanelRightClose, MessageSquare, Send, Sparkles, AlertTriangle, Utensils, Tent, ShieldAlert, ChevronRight, Users, X, Zap, TrendingDown, Package, Route, Crosshair, Calendar, Filter as FilterIcon, History, Clock } from 'lucide-react';
+import { MapPin, PanelRightClose, MessageSquare, Send, Sparkles, AlertTriangle, Utensils, Tent, ShieldAlert, ChevronRight, ChevronUp, ChevronDown, Users, X, Zap, TrendingDown, Package, Route, Crosshair, Calendar, Filter as FilterIcon, History, Clock } from 'lucide-react';
+import { cn } from './ui/utils';
 import { hasMapboxAccessToken, mapboxgl } from '../config/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -979,6 +980,8 @@ Filtering to show **4 health and nutrition programs** serving **204,500 benefici
   },
 ];
 
+const LG_BREAKPOINT = 1024;
+
 // ══════════════════════════════════════════════════════════════
 // ── MAIN COMPONENT ──
 // ══════════════════════════════════════════════════════════════
@@ -987,6 +990,8 @@ export function MapView() {
   const [activeFlowId, setActiveFlowId] = useState<string | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPanelMinimized, setIsPanelMinimized] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [mapQuery, setMapQuery] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
@@ -1002,11 +1007,37 @@ export function MapView() {
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const pinnedPopupRef = useRef<mapboxgl.Popup | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
   const typingIntervalRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
   const activeFlow = activeFlowId ? CONVERSATION_FLOWS.find(f => f.id === activeFlowId) : null;
   const currentStep = activeFlow ? activeFlow.steps[currentStepIndex] : null;
+
+  useEffect(() => {
+    const syncViewport = () => setIsMobileViewport(window.innerWidth < LG_BREAKPOINT);
+    syncViewport();
+    window.addEventListener('resize', syncViewport);
+    return () => window.removeEventListener('resize', syncViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      setIsMobilePanelOpen(false);
+    }
+  }, [isMobileViewport]);
+
+  const openMobilePanel = useCallback(() => setIsMobilePanelOpen(true), []);
+  const closeMobilePanel = useCallback(() => setIsMobilePanelOpen(false), []);
+
+  const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    const el = chatScrollRef.current;
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior });
+      return;
+    }
+    chatEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+  }, []);
 
   // Initialize map
   useEffect(() => {
@@ -1093,12 +1124,20 @@ export function MapView() {
     }, 320);
 
     return () => window.clearTimeout(resizeTimer);
-  }, [isPanelMinimized]);
+  }, [isPanelMinimized, isMobilePanelOpen, isMobileViewport]);
 
-  // Scroll chat to bottom
+  // Scroll chat to bottom on new messages
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+    scrollChatToBottom('smooth');
+  }, [chatMessages, scrollChatToBottom]);
+
+  // Resume at most recent message when reopening the mobile sheet or desktop panel
+  useEffect(() => {
+    if (isMobileViewport && !isMobilePanelOpen) return;
+    if (!isMobileViewport && isPanelMinimized) return;
+    const timer = window.setTimeout(() => scrollChatToBottom('auto'), isMobileViewport ? 320 : 0);
+    return () => window.clearTimeout(timer);
+  }, [isMobilePanelOpen, isPanelMinimized, isMobileViewport, scrollChatToBottom]);
 
   // Clean up
   const clearMapLayers = useCallback(() => {
@@ -1692,6 +1731,7 @@ export function MapView() {
     }, 10);
 
     renderMapForStep(flowId, 0);
+    setIsMobilePanelOpen(true);
   }, [renderMapForStep]);
 
   // ── Advance to next step in flow ──
@@ -1761,6 +1801,7 @@ export function MapView() {
   const handleCustomQuery = (e: React.FormEvent) => {
     e.preventDefault();
     if (!mapQuery.trim()) return;
+    setIsMobilePanelOpen(true);
     const q = mapQuery.toLowerCase();
     if (q.includes('refugee') || q.includes('camp') || q.includes('idp') || q.includes('mogadishu')) {
       startFlow('refugees');
@@ -1820,8 +1861,75 @@ export function MapView() {
   // Check if last message is done typing
   const isLastMessageDone = chatMessages.length > 0 && !chatMessages[chatMessages.length - 1]?.isTyping;
 
+  const promptPlaceholder = activeFlow
+    ? 'Ask a follow-up question...'
+    : 'Ask a question about Somalia...';
+
+  const renderPromptInput = ({
+    compact = false,
+    showMinimize = false,
+  }: {
+    compact?: boolean;
+    showMinimize?: boolean;
+  } = {}) => (
+    <form onSubmit={handleCustomQuery}>
+      <div className={cn('flex items-center', showMinimize ? 'gap-2' : '')}>
+        {showMinimize && (
+          <button
+            type="button"
+            onClick={closeMobilePanel}
+            aria-label="Minimize to map"
+            title="Show map"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]"
+          >
+            <ChevronDown size={18} />
+          </button>
+        )}
+        <div
+          data-composite-field
+          className={cn(
+            'relative flex flex-1 items-center focus-within:ring-2 focus-within:ring-[#1D4ED8]/20',
+            showMinimize && 'min-w-0',
+          )}
+        >
+          <div className="absolute left-4 pointer-events-none">
+            <Sparkles size={compact ? 14 : 16} className="text-[#9CA3AF]" />
+          </div>
+          <input
+            type="text"
+            value={mapQuery}
+            onChange={(e) => setMapQuery(e.target.value)}
+            onFocus={() => {
+              if (isMobileViewport && !isMobilePanelOpen) {
+                openMobilePanel();
+              }
+            }}
+            placeholder={promptPlaceholder}
+            className={cn(
+              'focus-ring-container-control w-full rounded-[16px] border border-[#E5E7EB] bg-[#F9FAFB] text-[0.8125rem] transition-all placeholder:text-[#9CA3AF] focus:border-[#1D4ED8]',
+              compact ? 'pl-9 pr-11 py-2.5' : 'pl-10 pr-12 py-3',
+            )}
+          />
+          <button
+            type="submit"
+            disabled={!mapQuery.trim()}
+            className={cn(
+              'absolute right-2 rounded-full flex items-center justify-center transition-all',
+              compact ? 'w-7 h-7' : 'w-8 h-8',
+              mapQuery.trim() ? 'bg-[#2463EB] text-white cursor-pointer' : 'text-[#D1D5DB] cursor-not-allowed',
+            )}
+          >
+            <Send size={compact ? 12 : 14} />
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+
+  const showDesktopPanel = !isMobileViewport && !isPanelMinimized;
+
   return (
-    <div className="flex h-full min-h-0 relative">
+    <div className="flex h-full min-h-0 relative overflow-hidden">
       <style>{`
         @keyframes pulse-ring {
           0% { transform: scale(1); opacity: 0.6; }
@@ -1863,7 +1971,13 @@ export function MapView() {
       `}</style>
 
       {/* ════ Map Container ════ */}
-      <div ref={mapContainerRef} className="flex-1 relative min-w-0 h-full min-h-0">
+      <div
+        ref={mapContainerRef}
+        className={cn(
+          'flex-1 relative min-w-0 h-full min-h-0 w-full',
+          isMobileViewport && !isMobilePanelOpen && 'pb-[calc(5.5rem+env(safe-area-inset-bottom))]',
+        )}
+      >
         <div ref={mapRef} className="w-full h-full bg-[#0F172A]" />
         {!hasMapboxAccessToken() && (
           <div className="absolute inset-0 flex items-center justify-center bg-[#0F172A] z-20 px-6">
@@ -1927,95 +2041,114 @@ export function MapView() {
         )}
 
         {/* Coordinates display */}
-        <div className="absolute bottom-2 left-[170px] z-10 text-[10px] text-[#94A3B8] bg-[#0F172A]/80 px-2.5 py-1 rounded border border-[#1E293B]">
+        <div className="absolute bottom-2 left-2 lg:left-[170px] z-10 text-[10px] text-[#94A3B8] bg-[#0F172A]/80 px-2.5 py-1 rounded border border-[#1E293B]">
           Somalia · EPSG:4326
         </div>
       </div>
 
+      {/* Mobile: backdrop when sheet is open */}
+      {isMobileViewport && isMobilePanelOpen && (
+        <button
+          type="button"
+          aria-label="Close assistant and view map"
+          className="fixed inset-0 z-[1210] bg-black/40 lg:hidden"
+          onClick={closeMobilePanel}
+        />
+      )}
+
       {/* ════ Intelligence Hub Panel ════ */}
-      {!isPanelMinimized ? (
-        <div className="w-full lg:w-[420px] bg-white border-l border-[#E5E7EB] flex flex-col relative h-full absolute lg:relative inset-0 lg:inset-auto z-20 lg:z-auto">
+      {(showDesktopPanel || isMobileViewport) && (
+        <div
+          className={cn(
+            'bg-white flex flex-col overflow-hidden',
+            isMobileViewport
+              ? cn(
+                  'fixed inset-x-0 bottom-0 z-[1220] flex h-[min(68dvh,560px)] max-h-[min(68dvh,560px)] flex-col rounded-t-2xl border-t border-[#E5E7EB] shadow-2xl transition-transform duration-300 ease-out',
+                  isMobilePanelOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full',
+                )
+              : 'relative flex h-full w-[420px] shrink-0 flex-col border-l border-[#E5E7EB]',
+          )}
+        >
+          {isMobileViewport && (
+            <div className="sticky top-0 z-10 flex shrink-0 flex-col items-center border-b border-[#F3F4F6] bg-white px-4 pb-2 pt-2">
+              <button
+                type="button"
+                onClick={closeMobilePanel}
+                aria-label="Collapse assistant to map"
+                className="flex flex-col items-center gap-1 py-0.5"
+              >
+                <span className="h-1 w-10 rounded-full bg-[#E5E7EB]" />
+                <span className="text-[0.625rem] font-medium text-[#9CA3AF]">Show map</span>
+              </button>
+            </div>
+          )}
+
+          {!isMobileViewport && (
+            <div className="absolute right-4 top-4 z-10">
+              <button
+                type="button"
+                onClick={() => setIsPanelMinimized(true)}
+                aria-label="Collapse assistant panel"
+                title="Collapse panel"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]"
+              >
+                <PanelRightClose size={16} />
+              </button>
+            </div>
+          )}
+
           {!activeFlow ? (
             /* ── Default State: Suggested Prompts ── */
-            <div className="flex flex-col h-full">
-              <div className="px-8 pt-8 pb-4">
-                <div className="flex items-center justify-between mb-6">
-                  
-                  <button
-                    onClick={() => setIsHistoryOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E7EB] hover:border-[#1D4ED8] hover:bg-[#F9FAFB] transition-all group"
-                    title="View query history"
-                  >
-                    <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
-                    <span className="text-[0.75rem] text-[#6B7280] group-hover:text-[#2463EB] font-medium">History</span>
-                  </button>
-                </div>
-                
-                <div className="text-center mb-6">
-                  
-                  
-                </div>
-              </div>
-
-              {/* Spacer to push content down */}
-              <div className="flex-1"></div>
-
-              {/* Suggested Prompts - positioned near input */}
-              <div className="px-6 pb-4">
-                <p className="text-[0.6875rem] font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3 px-2">
-                  SUGGESTED PROMPTS
-                </p>
-                <div className="space-y-2.5">
-                  {CONVERSATION_FLOWS.map(flow => (
+            <div className={cn('flex flex-col', isMobileViewport ? 'min-h-0 flex-1' : 'h-full')}>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <div className="px-8 pt-8 pb-4">
+                  <div className="flex items-center justify-between mb-6">
                     <button
-                      key={flow.id}
-                      onClick={() => startFlow(flow.id)}
-                      className="w-full flex items-start gap-3 p-4 rounded-xl border border-[#E5E7EB] hover:border-[#1D4ED8] hover:shadow-md transition-all text-left group"
+                      onClick={() => setIsHistoryOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E7EB] hover:border-[#1D4ED8] hover:bg-[#F9FAFB] transition-all group"
+                      title="View query history"
                     >
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: flow.bgColor, color: flow.color }}>
-                        {flow.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[0.8125rem] text-[#374151] leading-snug group-hover:text-[#2463EB] transition-colors">
-                          {flow.label}
-                        </p>
-                      </div>
-                      <ChevronRight size={16} className="text-[#D1D5DB] group-hover:text-[#1D4ED8] mt-1 flex-shrink-0 transition-colors" />
+                      <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
+                      <span className="text-[0.75rem] text-[#6B7280] group-hover:text-[#2463EB] font-medium">History</span>
                     </button>
-                  ))}
+                  </div>
+                </div>
+
+                {/* Suggested Prompts */}
+                <div className="px-6 pb-4">
+                  <p className="text-[0.6875rem] font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3 px-2">
+                    SUGGESTED PROMPTS
+                  </p>
+                  <div className="space-y-2.5">
+                    {CONVERSATION_FLOWS.map(flow => (
+                      <button
+                        key={flow.id}
+                        onClick={() => startFlow(flow.id)}
+                        className="w-full flex items-start gap-3 p-4 rounded-xl border border-[#E5E7EB] hover:border-[#1D4ED8] hover:shadow-md transition-all text-left group"
+                      >
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: flow.bgColor, color: flow.color }}>
+                          {flow.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[0.8125rem] text-[#374151] leading-snug group-hover:text-[#2463EB] transition-colors">
+                            {flow.label}
+                          </p>
+                        </div>
+                        <ChevronRight size={16} className="text-[#D1D5DB] group-hover:text-[#1D4ED8] mt-1 flex-shrink-0 transition-colors" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Input Area */}
-              <div className="px-6 pb-6 pt-4">
-                <form onSubmit={handleCustomQuery}>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-4 pointer-events-none">
-                      <Sparkles size={16} className="text-[#9CA3AF]" />
-                    </div>
-                    <input
-                      type="text"
-                      value={mapQuery}
-                      onChange={(e) => setMapQuery(e.target.value)}
-                      placeholder="Ask a question about Somalia..."
-                      className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-[16px] focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/20 focus:border-[#1D4ED8] transition-all text-[0.8125rem] placeholder:text-[#9CA3AF] pl-10 pr-12 py-3"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!mapQuery.trim()}
-                      className={`absolute right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                        mapQuery.trim() ? 'bg-[#2463EB] text-white cursor-pointer' : 'text-[#D1D5DB] cursor-not-allowed'
-                      }`}
-                    >
-                      <Send size={14} />
-                    </button>
-                  </div>
-                </form>
+              <div className="shrink-0 border-t border-[#F3F4F6] bg-white px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+                {renderPromptInput({ compact: true, showMinimize: isMobileViewport })}
               </div>
             </div>
           ) : (
             /* ── Active Flow: Chat + Data Panel ── */
-            <div className="flex flex-col h-full">
+            <div className={cn('flex flex-col', isMobileViewport ? 'min-h-0 flex-1' : 'h-full')}>
               {/* Header */}
               <div className="px-6 pt-6 pb-4 border-b border-[#E5E7EB] flex-shrink-0">
                 <div className="flex items-center gap-3">
@@ -2043,7 +2176,7 @@ export function MapView() {
               </div>
 
               {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
                 {chatMessages.map((msg, idx) => (
                   <div key={idx}>
                     {msg.role === 'user' ? (
@@ -2131,35 +2264,16 @@ export function MapView() {
               </div>
 
               {/* Bottom Input */}
-              <div className="px-6 pb-6 pt-3 border-t border-[#F3F4F6] flex-shrink-0">
-                <form onSubmit={handleCustomQuery}>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-4 pointer-events-none">
-                      <Sparkles size={14} className="text-[#9CA3AF]" />
-                    </div>
-                    <input
-                      type="text"
-                      value={mapQuery}
-                      onChange={(e) => setMapQuery(e.target.value)}
-                      placeholder="Ask a follow-up question..."
-                      className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-[16px] focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/20 focus:border-[#1D4ED8] transition-all text-[0.8125rem] placeholder:text-[#9CA3AF] pl-9 pr-11 py-2.5"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!mapQuery.trim()}
-                      className={`absolute right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                        mapQuery.trim() ? 'bg-[#2463EB] text-white cursor-pointer' : 'text-[#D1D5DB] cursor-not-allowed'
-                      }`}
-                    >
-                      <Send size={12} />
-                    </button>
-                  </div>
-                </form>
+              <div className="shrink-0 border-t border-[#F3F4F6] bg-white px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+                {renderPromptInput({ compact: true, showMinimize: true })}
               </div>
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {/* Desktop: collapsed panel FAB */}
+      {!isMobileViewport && isPanelMinimized && (
         <div className="absolute top-4 right-4 z-[1000]">
           <button
             onClick={() => setIsPanelMinimized(false)}
@@ -2168,6 +2282,26 @@ export function MapView() {
           >
             <MessageSquare size={20} className="text-white" />
           </button>
+        </div>
+      )}
+
+      {/* Mobile: persistent prompt dock — single entry point when sheet is collapsed */}
+      {isMobileViewport && !isMobilePanelOpen && (
+        <div className="fixed inset-x-0 bottom-0 z-[1215] border-t border-[#E5E7EB] bg-white/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_32px_rgba(15,23,42,0.12)] backdrop-blur-sm lg:hidden">
+          <button
+            type="button"
+            onClick={openMobilePanel}
+            aria-label="Open analysis panel"
+            className="mb-2 flex w-full items-center justify-center gap-1.5 text-[0.6875rem] font-medium text-[#9CA3AF]"
+          >
+            <ChevronUp size={14} />
+            {activeFlow
+              ? chatMessages.length > 0
+                ? `View analysis · ${chatMessages.length} messages`
+                : 'View analysis'
+              : 'Suggested prompts'}
+          </button>
+          {renderPromptInput({ compact: true })}
         </div>
       )}
 

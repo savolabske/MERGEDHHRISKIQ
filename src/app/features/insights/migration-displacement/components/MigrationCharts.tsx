@@ -25,9 +25,9 @@ export function HBars({
       formatter={formatter}
       color={color}
       emptyClassName="rounded-lg border border-dashed border-[#d7cec4] p-4 text-[12px] text-[#8a7d72]"
-      labelClassName="w-[126px] text-right text-[12px] font-medium text-[#4a3f38]"
-      trackClassName="h-[22px] flex-1 overflow-hidden rounded-md bg-[#f3efe9]"
-      valueClassName="w-[66px] text-[12px] font-semibold text-[#1a1410]"
+      labelClassName="min-w-0 max-w-[38%] shrink-0 truncate text-right text-[11px] font-medium text-[#4a3f38] sm:max-w-none sm:w-[126px] sm:text-[12px]"
+      trackClassName="h-[22px] flex-1 min-w-0 overflow-hidden rounded-md bg-[#f3efe9]"
+      valueClassName="shrink-0 w-[56px] text-right text-[11px] font-semibold tabular-nums text-[#1a1410] sm:w-[66px] sm:text-[12px]"
     />
   );
 }
