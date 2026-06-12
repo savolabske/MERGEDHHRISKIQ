@@ -1046,6 +1046,7 @@ export default function App() {
         hideMobileMenuButton={hideMobileMenuButton}
         showFixedMobileMenuButton={currentView === 'mapAI'}
         isRiskIqActive={currentView === 'riskIQ' || (currentView === 'aiSearch' && cameFromRiskIq)}
+        riskIqUnreadCount={chatHistory.filter((c) => c.unread).length}
         mobileMenuOpen={isMobileSidebarOpen}
         onMobileMenuOpenChange={setIsMobileSidebarOpen}
         isCollapsed={isSidebarCollapsed}

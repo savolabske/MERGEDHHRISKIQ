@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ReportQueryingMode } from '../../shared';
+import { ReportChipButton, type ReportQueryingMode } from '../../shared';
 import { AI_CHIPS } from '../data/sjfData';
 import type { SjfChatMessage } from '../types';
 
@@ -17,17 +17,8 @@ function AnalystIcon() {
   );
 }
 
-function ChipButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-full border border-[#e2e6ee] bg-white px-3 py-1.5 text-[11.5px] font-medium text-[#324559] transition hover:border-[#00689D] hover:text-[#00689D]"
-    >
-      {label}
-    </button>
-  );
-}
+const sjfChipClassName =
+  'border-[#e2e6ee] text-[#324559] hover:border-[#00689D] hover:!text-[#00689D]';
 
 function SjfThinkingIndicator({
   queryingMode,
@@ -83,7 +74,12 @@ export function SjfChatFeed({
           </div>
           <div className="flex flex-wrap gap-1.5">
             {AI_CHIPS.map((chip) => (
-              <ChipButton key={chip} label={chip} onClick={() => onChipClick(chip)} />
+              <ReportChipButton
+                key={chip}
+                label={chip}
+                onClick={() => onChipClick(chip)}
+                className={sjfChipClassName}
+              />
             ))}
           </div>
         </div>
@@ -141,7 +137,12 @@ export function SjfChatFeed({
                     </div>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {msg.chips.map((chip) => (
-                        <ChipButton key={chip} label={chip} onClick={() => onChipClick(chip)} />
+                        <ReportChipButton
+                key={chip}
+                label={chip}
+                onClick={() => onChipClick(chip)}
+                className={sjfChipClassName}
+              />
                       ))}
                     </div>
                   </>
@@ -168,7 +169,12 @@ export function SjfChatFeed({
               {msg.chips?.length ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {msg.chips.map((chip) => (
-                    <ChipButton key={chip} label={chip} onClick={() => onChipClick(chip)} />
+                    <ReportChipButton
+                key={chip}
+                label={chip}
+                onClick={() => onChipClick(chip)}
+                className={sjfChipClassName}
+              />
                   ))}
                 </div>
               ) : null}

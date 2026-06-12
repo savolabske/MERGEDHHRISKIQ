@@ -43,6 +43,7 @@ export {
   reportChatAsideClassName,
   useReportChatPanel,
 } from './ReportChatLayout';
+export { ReportChipButton } from './ReportChipButton';
 export { ReportThinkingIndicator } from './ReportThinkingIndicator';
 export { useReportPrompt } from './useReportPrompt';
 export * from './animations';

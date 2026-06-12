@@ -115,11 +115,11 @@ export function AppTopBar({
                 />
                 {badge && (
                   <span
-                    className="pointer-events-none absolute -top-2 -right-1.5 flex size-5 items-center justify-center"
+                    className="pointer-events-none absolute -top-1.5 -right-1 flex size-4 items-center justify-center"
                     aria-hidden
                   >
-                    <span className="absolute inset-0 scale-125 rounded-full bg-destructive/30 animate-pulse" />
-                    <span className="relative flex size-5 items-center justify-center rounded-full bg-destructive text-xs font-semibold leading-none text-destructive-foreground shadow-sm ring-2 ring-card tabular-nums">
+                    <span className="absolute inset-0 scale-110 rounded-full bg-destructive/30 animate-pulse" />
+                    <span className="relative flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-semibold leading-none text-destructive-foreground shadow-sm ring-1 ring-card tabular-nums">
                       {badge}
                     </span>
                   </span>

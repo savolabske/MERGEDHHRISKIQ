@@ -668,7 +668,7 @@
   letter-spacing: -0.02em !important;
 }
 
-:where(h2):not(.auth-display-title):not(.report-display-title) {
+:where(h2):not(.auth-display-title):not(.report-display-title):not(.text-page-title) {
   color: var(--foreground-emphasis) !important;
   font-size: var(--text-section-title-size) !important;
   font-weight: 600 !important;

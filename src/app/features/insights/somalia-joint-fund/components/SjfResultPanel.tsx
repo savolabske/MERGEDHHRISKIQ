@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnimatedAIResponse } from '../../shared';
+import { AnimatedAIResponse, ReportChipButton } from '../../shared';
 import type { SjfRecipeResult } from '../types';
 import { SjfChartRenderer } from './SjfCharts';
 
@@ -140,13 +140,12 @@ export function SjfResultPanel({ recipe, resultTitle, onBack, onFollowUp }: SjfR
             <p className="mb-3 text-[11.5px] text-[#6f8094]">Keep exploring</p>
             <div className="flex flex-wrap gap-2">
               {recipe.followUps.map((prompt) => (
-                <button
+                <ReportChipButton
                   key={prompt}
+                  label={prompt}
                   onClick={() => onFollowUp(prompt)}
-                  className="rounded-full border border-[#e2e6ee] px-3 py-1.5 text-[11.5px] text-[#324559] hover:border-[#00689D] hover:text-[#00689D]"
-                >
-                  {prompt}
-                </button>
+                  className="border-[#e2e6ee] text-[#324559] hover:border-[#00689D] hover:!text-[#00689D]"
+                />
               ))}
             </div>
           </AnimatedAIResponse>

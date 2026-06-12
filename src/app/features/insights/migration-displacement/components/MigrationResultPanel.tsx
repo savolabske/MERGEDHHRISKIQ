@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
-import { AnimatedAIResponse } from '../../shared';
+import { AnimatedAIResponse, ReportChipButton } from '../../shared';
 import type { MigrationRecipeResult } from '../types';
 import { MigrationChartRenderer } from './MigrationCharts';
 
@@ -108,13 +108,12 @@ export function MigrationResultPanel({
             <p className="mb-3 text-[11.5px] text-[#8a7d72]">Keep exploring</p>
             <div className="flex flex-wrap gap-2">
               {recipe.followUps.map((prompt) => (
-                <button
+                <ReportChipButton
                   key={prompt}
+                  label={prompt}
                   onClick={() => onFollowUp(prompt)}
-                  className="rounded-full border border-[#ece6df] px-3 py-1.5 text-[11.5px] text-[#4a3f38] hover:border-[#c2562a] hover:text-[#c2562a]"
-                >
-                  {prompt}
-                </button>
+                  className="border-[#ece6df] text-[#4a3f38] hover:border-[#c2562a] hover:!text-[#c2562a]"
+                />
               ))}
             </div>
           </AnimatedAIResponse>

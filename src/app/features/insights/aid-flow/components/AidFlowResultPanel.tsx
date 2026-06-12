@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
-import { AnimatedAIResponse } from '../../shared';
+import { AnimatedAIResponse, ReportChipButton } from '../../shared';
 import type { AidFlowRecipeResult } from '../types';
 import { AidFlowChartRenderer } from './AidFlowCharts';
 
@@ -108,13 +108,12 @@ export function AidFlowResultPanel({
             <p className="mb-3 text-[11.5px] text-[#6b7a8d]">Keep exploring</p>
             <div className="flex flex-wrap gap-2">
               {recipe.followUps.map((prompt) => (
-                <button
+                <ReportChipButton
                   key={prompt}
+                  label={prompt}
                   onClick={() => onFollowUp(prompt)}
-                  className="rounded-full border border-[#e6e9ef] px-3 py-1.5 text-[11.5px] text-[#3a4a5c] hover:border-[#1f6feb] hover:text-[#1f6feb]"
-                >
-                  {prompt}
-                </button>
+                  className="border-[#e6e9ef] text-[#3a4a5c] hover:border-[#1f6feb] hover:!text-[#1f6feb]"
+                />
               ))}
             </div>
           </AnimatedAIResponse>

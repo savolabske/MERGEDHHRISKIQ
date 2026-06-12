@@ -91,6 +91,24 @@ function SidebarDivider() {
   );
 }
 
+function NavUnreadBadge({ count, collapsed }: { count: number; collapsed: boolean }) {
+  const label = count > 99 ? '99+' : String(count);
+
+  if (collapsed) {
+    return (
+      <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-xs font-semibold flex items-center justify-center leading-none tabular-nums">
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-white text-xs font-semibold flex items-center justify-center tabular-nums">
+      {label}
+    </span>
+  );
+}
+
 function SidebarNavItem({
   label,
   icon: Icon,
@@ -98,6 +116,7 @@ function SidebarNavItem({
   collapsed,
   onClick,
   trailing,
+  badge,
   className,
 }: {
   label: string;
@@ -106,6 +125,7 @@ function SidebarNavItem({
   collapsed: boolean;
   onClick: () => void;
   trailing?: ReactNode;
+  badge?: number;
   className?: string;
 }) {
   return (
@@ -118,6 +138,7 @@ function SidebarNavItem({
         <Icon size={NAV_ICON_SIZE} strokeWidth={NAV_ICON_STROKE} className="shrink-0" />
         {!collapsed && <span className="truncate">{label}</span>}
         {!collapsed && trailing}
+        {badge != null && badge > 0 && <NavUnreadBadge count={badge} collapsed={collapsed} />}
       </button>
     </NavTooltip>
   );
@@ -132,6 +153,7 @@ interface SidebarProps {
   hideMobileMenuButton?: boolean;
   showFixedMobileMenuButton?: boolean;
   isRiskIqActive?: boolean;
+  riskIqUnreadCount?: number;
   mobileMenuOpen?: boolean;
   onMobileMenuOpenChange?: (open: boolean) => void;
   isCollapsed?: boolean;
@@ -161,6 +183,7 @@ export function Sidebar({
   hideMobileMenuButton = false,
   showFixedMobileMenuButton = false,
   isRiskIqActive = false,
+  riskIqUnreadCount = 0,
   mobileMenuOpen: controlledMobileMenuOpen,
   onMobileMenuOpenChange,
   isCollapsed: controlledCollapsed,
@@ -376,6 +399,7 @@ export function Sidebar({
                   isActive={isRiskIqActive}
                   collapsed={isCollapsed}
                   onClick={() => handleNavigate('riskIQ')}
+                  badge={riskIqUnreadCount}
                 />
               </SidebarNavGroup>
 

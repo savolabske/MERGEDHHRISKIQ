@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { User, Mail, Lock, MapPin, Briefcase, Phone, Save, Eye, EyeOff, Camera, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -15,6 +15,7 @@ export function Profile() {
     confirmPassword: ''
   });
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -120,14 +121,16 @@ export function Profile() {
                 }
               </p>
               <div className="flex items-center gap-2 flex-wrap">
-                <label
-                  htmlFor="profileImage"
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
                   className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-base font-medium hover:bg-primary-hover transition-colors cursor-pointer"
                 >
                   <Camera size={18} />
                   <span>Upload Image</span>
-                </label>
+                </button>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   id="profileImage"
                   accept="image/*"

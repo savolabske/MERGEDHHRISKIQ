@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ReportQueryingMode } from '../../shared';
+import { ReportChipButton, type ReportQueryingMode } from '../../shared';
 import { AI_CHIPS } from '../data/aidFlowData';
 import type { AidFlowChatMessage } from '../types';
 
@@ -16,17 +16,8 @@ function AnalystIcon() {
   );
 }
 
-function ChipButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-full border border-[#e6e9ef] bg-white px-3 py-1.5 text-[11.5px] font-medium text-[#3a4a5c] transition hover:border-[#1f6feb] hover:text-[#1f6feb]"
-    >
-      {label}
-    </button>
-  );
-}
+const aidFlowChipClassName =
+  'border-[#e6e9ef] text-[#3a4a5c] hover:border-[#1f6feb] hover:!text-[#1f6feb]';
 
 function AidFlowThinkingIndicator({ queryingMode }: { queryingMode: ReportQueryingMode }) {
   const isChat = queryingMode === 'chat';
@@ -71,7 +62,12 @@ export function AidFlowChatFeed({
           </div>
           <div className="flex flex-wrap gap-1.5">
             {AI_CHIPS.map((chip) => (
-              <ChipButton key={chip} label={chip} onClick={() => onChipClick(chip)} />
+              <ReportChipButton
+                key={chip}
+                label={chip}
+                onClick={() => onChipClick(chip)}
+                className={aidFlowChipClassName}
+              />
             ))}
           </div>
         </div>
@@ -104,7 +100,12 @@ export function AidFlowChatFeed({
                     </div>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {msg.chips.map((chip) => (
-                        <ChipButton key={chip} label={chip} onClick={() => onChipClick(chip)} />
+                        <ReportChipButton
+                key={chip}
+                label={chip}
+                onClick={() => onChipClick(chip)}
+                className={aidFlowChipClassName}
+              />
                       ))}
                     </div>
                   </>
@@ -126,7 +127,12 @@ export function AidFlowChatFeed({
               {msg.chips?.length ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {msg.chips.map((chip) => (
-                    <ChipButton key={chip} label={chip} onClick={() => onChipClick(chip)} />
+                    <ReportChipButton
+                key={chip}
+                label={chip}
+                onClick={() => onChipClick(chip)}
+                className={aidFlowChipClassName}
+              />
                   ))}
                 </div>
               ) : null}

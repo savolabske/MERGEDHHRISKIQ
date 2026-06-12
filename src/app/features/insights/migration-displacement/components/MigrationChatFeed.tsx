@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ReportQueryingMode } from '../../shared';
+import { ReportChipButton, type ReportQueryingMode } from '../../shared';
 import { MIGRATION_CHIPS } from '../data/migrationData';
 import type { MigrationChatMessage } from '../types';
 
@@ -16,17 +16,8 @@ function AnalystIcon() {
   );
 }
 
-function ChipButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-full border border-[#ece6df] bg-white px-3 py-1.5 text-[11.5px] font-medium text-[#4a3f38] transition hover:border-[#c2562a] hover:text-[#c2562a]"
-    >
-      {label}
-    </button>
-  );
-}
+const migrationChipClassName =
+  'border-[#ece6df] text-[#4a3f38] hover:border-[#c2562a] hover:!text-[#c2562a]';
 
 function MigrationThinkingIndicator({ queryingMode }: { queryingMode: ReportQueryingMode }) {
   const isChat = queryingMode === 'chat';
@@ -71,7 +62,12 @@ export function MigrationChatFeed({
           </div>
           <div className="flex flex-wrap gap-1.5">
             {MIGRATION_CHIPS.map((chip) => (
-              <ChipButton key={chip} label={chip} onClick={() => onChipClick(chip)} />
+              <ReportChipButton
+                key={chip}
+                label={chip}
+                onClick={() => onChipClick(chip)}
+                className={migrationChipClassName}
+              />
             ))}
           </div>
         </div>
@@ -104,7 +100,12 @@ export function MigrationChatFeed({
                     </div>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {msg.chips.map((chip) => (
-                        <ChipButton key={chip} label={chip} onClick={() => onChipClick(chip)} />
+                        <ReportChipButton
+                key={chip}
+                label={chip}
+                onClick={() => onChipClick(chip)}
+                className={migrationChipClassName}
+              />
                       ))}
                     </div>
                   </>
@@ -126,7 +127,12 @@ export function MigrationChatFeed({
               {msg.chips?.length ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {msg.chips.map((chip) => (
-                    <ChipButton key={chip} label={chip} onClick={() => onChipClick(chip)} />
+                    <ReportChipButton
+                key={chip}
+                label={chip}
+                onClick={() => onChipClick(chip)}
+                className={migrationChipClassName}
+              />
                   ))}
                 </div>
               ) : null}
