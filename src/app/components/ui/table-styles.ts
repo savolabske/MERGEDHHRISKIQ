@@ -1,5 +1,8 @@
 export type GridTableDensity = 'compact' | 'standard' | 'entity' | 'narrative';
 
+export const checkboxInputClass =
+  'size-4 shrink-0 rounded border-checkbox-unchecked text-primary focus:ring-ring focus:ring-offset-0 cursor-pointer';
+
 export const gridTableHeaderClass =
   'data-grid-header bg-muted/70 border-b border-border text-xs leading-4 font-semibold text-muted-foreground';
 

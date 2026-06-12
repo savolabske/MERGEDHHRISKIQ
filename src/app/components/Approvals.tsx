@@ -228,7 +228,7 @@ export function Approvals() {
                     type="checkbox"
                     checked={selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0}
                     onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-border-muted text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                    className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                   />
                   Applicant
                 </div>
@@ -256,7 +256,7 @@ export function Approvals() {
                         type="checkbox"
                         checked={selectedUserIds.includes(user.id)}
                         onChange={() => toggleSelectUser(user.id)}
-                        className="w-4 h-4 rounded border-border-muted text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                        className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                       />
                       <div 
                         className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"

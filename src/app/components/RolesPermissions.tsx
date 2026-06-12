@@ -436,7 +436,7 @@ export function RolesPermissions() {
                                       checked={perm.view && perm.create && perm.edit && perm.delete}
                                       onChange={() => toggleModuleRow(item.module)}
                                       disabled={item.disabled}
-                                      className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                     <span className={`table-value-text ${item.disabled ? 'text-text-subtle' : ''}`}>
                                       {getModuleLabel(item)}
@@ -450,7 +450,7 @@ export function RolesPermissions() {
                                       checked={perm.view}
                                       onChange={() => togglePermission(item.module, 'view')}
                                       disabled={item.disabled}
-                                      className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                   ) : (
                                     <span className="text-border-muted text-sm">—</span>
@@ -463,7 +463,7 @@ export function RolesPermissions() {
                                       checked={perm.create}
                                       onChange={() => togglePermission(item.module, 'create')}
                                       disabled={item.disabled}
-                                      className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                   ) : (
                                     <span className="text-border-muted text-sm">—</span>
@@ -476,7 +476,7 @@ export function RolesPermissions() {
                                       checked={perm.edit}
                                       onChange={() => togglePermission(item.module, 'edit')}
                                       disabled={item.disabled}
-                                      className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                   ) : (
                                     <span className="text-border-muted text-sm">—</span>
@@ -489,7 +489,7 @@ export function RolesPermissions() {
                                       checked={perm.delete}
                                       onChange={() => togglePermission(item.module, 'delete')}
                                       disabled={item.disabled}
-                                      className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                   ) : (
                                     <span className="text-border-muted text-sm">—</span>
@@ -527,7 +527,7 @@ export function RolesPermissions() {
                                   checked={perm.view && perm.create && perm.edit && perm.delete}
                                   onChange={() => toggleModuleRow(item.module)}
                                   disabled={item.disabled}
-                                  className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                                  className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                                 />
                                 <span className={`text-sm font-medium ${item.disabled ? 'text-text-subtle' : 'text-foreground'}`}>
                                   {getModuleLabel(item)}
@@ -544,7 +544,7 @@ export function RolesPermissions() {
                                           checked={perm[field]}
                                           onChange={() => togglePermission(item.module, field)}
                                           disabled={item.disabled}
-                                          className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                                          className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                                         />
                                       ) : (
                                         <span className="w-4 h-4 text-border-muted text-xs flex items-center justify-center">—</span>

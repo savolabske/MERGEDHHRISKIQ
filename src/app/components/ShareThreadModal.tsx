@@ -306,7 +306,7 @@ export function ShareThreadModal({ open, threadTitle, threadId, initialSelectedU
                           type="checkbox"
                           checked={selectedUserIds.includes(u.id)}
                           onChange={() => {}}
-                          className="w-4 h-4 rounded border-border-muted text-primary focus:ring-ring focus:ring-offset-0"
+                          className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-ring focus:ring-offset-0"
                         />
                       </button>
                     ))}

@@ -10,26 +10,11 @@ import {
 } from 'lucide-react';
 import type { ResourceFile, ResourceFileType, ResourceOwnership } from '../../data/resourcesMock';
 
-/** Main-column card headings — Description, Files, Web Links (14px / semibold) */
-export function DetailSectionTitle({
-  children,
-  className = 'mb-3',
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return <p className={`detail-section-title ${className}`}>{children}</p>;
-}
-
-/** Sidebar metadata labels — Available in, Tags, Created (13px / medium) */
-export function DetailFieldLabel({ children }: { children: ReactNode }) {
-  return <p className="detail-field-label mb-2">{children}</p>;
-}
-
-/** @deprecated Use DetailSectionTitle or DetailFieldLabel */
-export function SectionLabel({ children }: { children: ReactNode }) {
-  return <DetailSectionTitle>{children}</DetailSectionTitle>;
-}
+export {
+  DetailFieldLabel,
+  DetailSectionTitle,
+  SectionLabel,
+} from '../ui/detail-labels';
 
 export function OwnershipBadge({ ownership }: { ownership: ResourceOwnership }) {
   if (ownership === 'created_by_me') {

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { PageFooter } from './PageFooter';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
+import { DetailSectionTitle } from './ui/detail-labels';
 
 interface CustomDropdownProps {
   label?: string;
@@ -1090,7 +1091,7 @@ export function RiskRegister() {
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {/* Description */}
             <div>
-              <h3 className="table-header-label mb-3">Description</h3>
+              <DetailSectionTitle as="h3">Description</DetailSectionTitle>
               <p className="text-sm text-secondary-foreground leading-relaxed">
                 {selectedRisk.description}
               </p>
@@ -1098,7 +1099,7 @@ export function RiskRegister() {
 
             {/* Risk Cause/Effects */}
             <div>
-              <h3 className="table-header-label mb-3">Risk Cause/Effects</h3>
+              <DetailSectionTitle as="h3">Risk Cause/Effects</DetailSectionTitle>
               <p className="text-sm text-secondary-foreground leading-relaxed">
                 {selectedRisk.causeEffects}
               </p>
@@ -1106,7 +1107,7 @@ export function RiskRegister() {
 
             {/* Inherent Risk Ranking */}
             <div>
-              <h3 className="table-header-label mb-3">Inherent Risk Ranking</h3>
+              <DetailSectionTitle as="h3">Inherent Risk Ranking</DetailSectionTitle>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground text-base">
                   {selectedRisk.likelihood} × {selectedRisk.impact} =
@@ -1123,7 +1124,7 @@ export function RiskRegister() {
 
             {/* Residual Risk Ranking */}
             <div>
-              <h3 className="table-header-label mb-3">Residual Risk Ranking</h3>
+              <DetailSectionTitle as="h3">Residual Risk Ranking</DetailSectionTitle>
               {!isEditingResidual ? (
                 <div className="flex items-center justify-between px-5 py-4 rounded-xl border border-border bg-muted">
                   <div>
@@ -1182,7 +1183,7 @@ export function RiskRegister() {
 
             {/* Risk Owner */}
             <div>
-              <h3 className="table-header-label mb-3">Risk Owner</h3>
+              <DetailSectionTitle as="h3">Risk Owner</DetailSectionTitle>
               <p className="text-sm font-medium text-secondary-foreground">
                 {selectedRisk.owner}
               </p>
@@ -1192,7 +1193,9 @@ export function RiskRegister() {
             {/* Mitigation Measures */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="table-header-label">MITIGATION MEASURES</h3>
+                <DetailSectionTitle as="h3" className="mb-0">
+                  Mitigation measures
+                </DetailSectionTitle>
                 <div className="flex items-center gap-1 bg-secondary rounded-lg p-0.5">
                   <button
                     onClick={() => setMitigationTab('active')}
@@ -1434,7 +1437,7 @@ export function RiskRegister() {
 
             {/* Notes Section */}
             <div>
-              <h3 className="table-header-label mb-3">Notes</h3>
+              <DetailSectionTitle as="h3">Notes</DetailSectionTitle>
               <div className="space-y-3">
                 {notes[selectedRisk.id]?.map((note, idx) => (
                   <div key={idx} className="p-4 border border-warning-subtle rounded-xl bg-warning-subtle">

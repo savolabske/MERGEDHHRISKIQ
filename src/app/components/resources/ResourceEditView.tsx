@@ -488,9 +488,10 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
               <div className="relative" ref={tagsDropdownRef}>
                 <div
                   role="presentation"
+                  data-composite-field
                   className={`flex w-full cursor-text flex-wrap items-center gap-1.5 min-h-[42px] rounded-lg border bg-card px-2 py-1.5 transition-colors ${
                     showTagsDropdown ? 'border-primary' : 'border-border'
-                  } focus-within:border-primary`}
+                  } focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10`}
                   onClick={() => {
                     setShowTagsDropdown(true);
                     setShowGroupMenu(false);
@@ -530,7 +531,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
                       if (!showTagsDropdown) setShowTagsDropdown(true);
                     }}
                     placeholder={tags.length === 0 ? 'Search or create tags...' : 'Add more tags...'}
-                    className="min-w-[140px] flex-1 border-0 bg-transparent py-1.5 text-sm text-foreground outline-none placeholder:text-text-subtle focus:outline-none focus:ring-0"
+                    className="focus-ring-container-control min-w-[140px] flex-1 border-0 bg-transparent py-1.5 text-sm text-foreground outline-none placeholder:text-text-subtle focus:outline-none focus:ring-0"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && canCreateTag) {
                         e.preventDefault();

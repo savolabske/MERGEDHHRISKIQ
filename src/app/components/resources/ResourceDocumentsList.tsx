@@ -202,7 +202,7 @@ export function ResourceDocumentsList({
               type="checkbox"
               checked={allOnPageSelected}
               onChange={(e) => handleSelectAllOnPage(e.target.checked)}
-              className="w-4 h-4 rounded border-border-muted text-primary focus:ring-ring"
+              className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-ring"
             />
             Select all on this page
           </label>
@@ -276,7 +276,7 @@ export function ResourceDocumentsList({
                       type="checkbox"
                       checked={selectedIds.has(file.id)}
                       onChange={() => toggleSelect(file.id)}
-                      className="h-4 w-4 shrink-0 rounded border-border-muted text-primary focus:ring-ring"
+                      className="h-4 w-4 shrink-0 rounded border-checkbox-unchecked text-primary focus:ring-ring"
                       aria-label={`Select ${file.name}`}
                     />
                   </div>

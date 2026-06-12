@@ -305,7 +305,8 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
           <h3 className="text-sm font-medium text-foreground mb-2">Tags</h3>
           <div className="relative">
             <div
-              className="min-h-[44px] flex flex-wrap items-center gap-2 px-3 py-2 border border-border rounded-lg bg-card cursor-text"
+              data-composite-field
+              className="min-h-[44px] flex flex-wrap items-center gap-2 px-3 py-2 border border-border rounded-lg bg-card cursor-text focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10"
               onClick={() => tagInputRef.current?.focus()}
             >
               {tags.map((tag) => (
@@ -335,7 +336,7 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
                 }}
                 onFocus={() => setShowTagMenu(true)}
                 placeholder={tags.length === 0 ? 'Type to search or add tags...' : ''}
-                className="flex-1 min-w-[120px] border-0 p-0 text-sm focus:outline-none focus:ring-0 bg-transparent"
+                className="focus-ring-container-control flex-1 min-w-[120px] border-0 p-0 text-sm focus:outline-none focus:ring-0 bg-transparent"
               />
               <button
                 type="button"

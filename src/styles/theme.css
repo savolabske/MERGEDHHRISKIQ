@@ -88,6 +88,7 @@
 
   /* Borders */
   --border: #e2e8f0;
+  --checkbox-unchecked: #d1d5db;
   --input: #e2e8f0;
   --input-background: #ffffff;
   --ring: #2463eb;
@@ -233,6 +234,7 @@
   --color-destructive-subtle: var(--destructive-subtle);
   --color-destructive-text: var(--destructive-text);
   --color-border: var(--border);
+  --color-checkbox-unchecked: var(--checkbox-unchecked);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
   --color-ring: var(--ring);
@@ -734,7 +736,9 @@
 }
 
 .focus-ring-container-control:focus,
-.focus-ring-container-control:focus-visible {
+.focus-ring-container-control:focus-visible,
+:where([data-composite-field]) :where(input, textarea):focus,
+:where([data-composite-field]) :where(input, textarea):focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
@@ -743,6 +747,11 @@
   [data-slot="select-trigger"], [data-slot="checkbox"], [data-slot="switch"],
   [data-slot="tabs-trigger"], [data-slot="dropdown-menu-item"]) {
   transition-duration: var(--transition-control);
+}
+
+:where(input[type="checkbox"]:not(:checked)),
+:where([data-slot="checkbox"]:not([data-state="checked"])) {
+  border-color: var(--checkbox-unchecked);
 }
 
 :where([data-slot="card"], [data-interactive-card]) {
@@ -798,6 +807,7 @@
   line-height: var(--text-component-title-line) !important;
 }
 
+/* Table column headers and mobile stacked row labels only — not detail-panel section titles. */
 .table-header-label {
   color: var(--muted-foreground) !important;
   font-size: var(--text-metadata-size) !important;
@@ -807,7 +817,7 @@
   text-transform: none !important;
 }
 
-/* Detail pages — card section headers (Description, Files) */
+/* Detail pages — main-column section headings (Description, Files, Causes/Effects). */
 .detail-section-title {
   color: var(--text-description) !important;
   font-size: var(--text-body-size) !important;
@@ -815,12 +825,12 @@
   line-height: var(--text-body-line) !important;
 }
 
-/* Detail pages — sidebar metadata labels (Available in, Tags, Created) */
+/* Detail pages — sidebar metadata labels (Available in, Tags, Created). Matches section title spec. */
 .detail-field-label {
-  color: var(--muted-foreground) !important;
-  font-size: var(--text-label-size) !important;
-  font-weight: 500 !important;
-  line-height: var(--text-label-line) !important;
+  color: var(--text-description) !important;
+  font-size: var(--text-body-size) !important;
+  font-weight: 600 !important;
+  line-height: var(--text-body-line) !important;
 }
 
 .table-primary-text {

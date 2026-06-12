@@ -1169,44 +1169,9 @@ export default function App() {
               showThreadHeader={!!currentChatId}
               showRiskIqContext={cameFromRiskIq && !cameFromHistory}
               navigation={
-                cameFromHistory || cameFromPlatformChats
-                  ? 'breadcrumb'
-                  : cameFromHome || cameFromRiskIq
-                    ? 'back'
-                    : 'none'
-              }
-              breadcrumbItems={
-                cameFromHistory || cameFromPlatformChats
-                  ? [
-                      {
-                        label: 'Chats',
-                        onClick: () => {
-                          if (cameFromPlatformChats) {
-                            setCurrentView('platformChats');
-                          } else if (cameFromHistory || cameFromRiskIq) {
-                            returnToRiskIq('chats');
-                          }
-                          setSearchQuery('');
-                          setLoadDemoConversation(false);
-                          setSelectedHistoryMessages(null);
-                          setSelectedHistoryTitle('');
-                          setCurrentChatId(null);
-                          setCameFromHistory(false);
-                          setCameFromPlatformChats(false);
-                          setCameFromRiskIq(false);
-                          setCameFromHome(false);
-                        },
-                      },
-                      {
-                        label:
-                          selectedHistoryTitle ||
-                          (loadDemoConversation
-                            ? 'Summarize the top operational risks'
-                            : searchQuery) ||
-                          'Conversation',
-                      },
-                    ]
-                  : undefined
+                cameFromHistory || cameFromPlatformChats || cameFromHome || cameFromRiskIq
+                  ? 'back'
+                  : 'none'
               }
               onBack={() => {
                 if (cameFromPlatformChats) {

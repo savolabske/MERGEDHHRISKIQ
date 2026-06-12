@@ -255,7 +255,7 @@ export function Definitions() {
                     type="checkbox"
                     checked={selectedDefinitions.size === filteredDefinitions.length && filteredDefinitions.length > 0}
                     onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
+                    className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
                   <span className="table-header-label">Name</span>
                 </div>
@@ -277,7 +277,7 @@ export function Definitions() {
                         type="checkbox"
                         checked={selectedDefinitions.has(definition.id)}
                         onChange={() => toggleSelectDefinition(definition.id)}
-                        className="hidden lg:block w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
+                        className="hidden lg:block w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                       />
                       <div>
                         <div className="table-header-label mb-1 lg:hidden">Name</div>

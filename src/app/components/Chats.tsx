@@ -449,7 +449,7 @@ export function Chats({
                       paginatedHistory.every((c) => selectedChatIds.has(c.id))
                     }
                     onChange={toggleSelectAllOnPage}
-                    className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
+                    className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                     aria-label="Select all on this page"
                   />
                 </div>
@@ -485,7 +485,7 @@ export function Chats({
                         type="checkbox"
                         checked={selectedChatIds.has(chat.id)}
                         onChange={() => toggleSelectChat(chat.id)}
-                        className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
+                        className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                         aria-label={`Select conversation: ${chat.query}`}
                       />
                     </label>

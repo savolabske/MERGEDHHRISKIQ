@@ -230,7 +230,7 @@ export function AllUsers() {
                 type="checkbox"
                 checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
                 onChange={toggleAllUsers}
-                className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring cursor-pointer"
+                className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring cursor-pointer"
               />
               <span className="table-header-label">User</span>
             </div>
@@ -257,7 +257,7 @@ export function AllUsers() {
                     type="checkbox"
                     checked={selectedUsers.has(user.id)}
                     onChange={() => toggleUserSelection(user.id)}
-                    className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring cursor-pointer"
+                    className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring cursor-pointer"
                   />
                   <div 
                     className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"

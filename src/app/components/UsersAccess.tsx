@@ -742,7 +742,7 @@ export function UsersAccess() {
                         type="checkbox"
                         checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
                         onChange={toggleAllUsers}
-                        className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                        className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                       />
                       <span className="table-header-label">User</span>
                     </div>
@@ -784,7 +784,7 @@ export function UsersAccess() {
                               toggleUserSelection(user.id);
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="hidden lg:block w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                            className="hidden lg:block w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                           />
                           <div className="flex items-center gap-3">
                             <div 
@@ -990,7 +990,7 @@ export function UsersAccess() {
                         type="checkbox"
                         checked={selectedGroups.length === filteredGroups.length && filteredGroups.length > 0}
                         onChange={toggleAllGroups}
-                        className="w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                        className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                       />
                       <span className="table-header-label">Group Name</span>
                     </div>
@@ -1024,7 +1024,7 @@ export function UsersAccess() {
                               toggleGroupSelection(group.id);
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="hidden lg:block w-4 h-4 rounded border-border text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                            className="hidden lg:block w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                           />
                           <div className="flex-1">
                             <div className="table-header-label mb-1 lg:hidden">Group Name</div>
@@ -1182,7 +1182,7 @@ export function UsersAccess() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => {}}
-                            className="w-4 h-4 rounded border-border-muted text-primary focus:ring-ring focus:ring-offset-0"
+                            className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-ring focus:ring-offset-0"
                           />
                         </div>
                       </div>

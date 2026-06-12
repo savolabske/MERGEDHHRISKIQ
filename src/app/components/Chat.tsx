@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, UserPlus, Sparkles, CircleHelp, Check } from 'lucide-react';
 import { RiskIQChatHeader } from './RiskIQChatHeader';
 import { BackLink } from './ui/back-link';
-import { PageBreadcrumb, type PageBreadcrumbItem } from './ui/page-breadcrumb';
 import { RiskMatrix } from './RiskMatrix';
 import { BriefingContent } from './BriefingContent';
 import { SomaliaMap } from './SomaliaMap';
@@ -63,6 +62,8 @@ interface Message {
   data?: any;
   isTyping?: boolean;
   displayedContent?: string;
+  displayedWebIntelligence?: string;
+  isWebIntelTyping?: boolean;
   sources?: Source[];
   webIntelligenceSummary?: string; // AI-synthesized answer from web sources
   originatingQuery?: string;
@@ -82,8 +83,7 @@ interface ChatProps {
   sharedWithUserIds?: string[];
   onShareUpdate?: (threadId: string, userIds: string[]) => void;
   showThreadHeader?: boolean;
-  navigation?: 'none' | 'breadcrumb' | 'back';
-  breadcrumbItems?: PageBreadcrumbItem[];
+  navigation?: 'none' | 'back';
   showRiskIqContext?: boolean;
   createdByName?: string;
   isSharedThread?: boolean;
@@ -107,7 +107,6 @@ export function Chat({
   onShareUpdate,
   showThreadHeader = false,
   navigation = 'none',
-  breadcrumbItems,
   showRiskIqContext = false,
   createdByName = CURRENT_USER.name,
   isSharedThread = false,
@@ -158,6 +157,14 @@ export function Chat({
   const [isMentionMenuOpen, setIsMentionMenuOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sharedPopoverRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   const initialUserMessageCount =
     preloadedMessages && preloadedMessages.length > 0
       ? preloadedMessages.filter((message) => message.type === 'user').length
@@ -222,6 +229,36 @@ export function Chat({
     return (sharedWithUserIds || []).map(getUserById).filter(Boolean);
   }, [sharedWithUserIds]);
   const showNavigation = navigation !== 'none';
+
+  const streamTextOntoMessage = async (
+    messageId: string,
+    fullText: string,
+    applyPartial: (partialText: string) => Partial<Message>
+  ) => {
+    const cleanedText = fullText.replace(/\\n/g, '\n');
+    const CHUNK_SIZE = 3;
+    const BASE_DELAY_MS = 14;
+
+    for (let charIndex = CHUNK_SIZE; charIndex <= cleanedText.length + CHUNK_SIZE; charIndex += CHUNK_SIZE) {
+      if (!isMountedRef.current) return cleanedText;
+
+      const partialText = cleanedText.slice(0, Math.min(charIndex, cleanedText.length));
+      setMessages(prev => prev.map(msg =>
+        msg.id === messageId ? { ...msg, ...applyPartial(partialText) } : msg
+      ));
+
+      if (charIndex >= cleanedText.length) break;
+
+      const lastChar = cleanedText[Math.min(charIndex, cleanedText.length) - 1];
+      let delay = BASE_DELAY_MS;
+      if (lastChar === '\n') delay = 35;
+      else if (lastChar === '.' || lastChar === '!' || lastChar === '?') delay = 55;
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    return cleanedText;
+  };
 
   // Initial AI response - only if not loading from history
   useEffect(() => {
@@ -368,35 +405,45 @@ export function Chat({
 
     setMessages(prev => [...prev, assistantMessage]);
 
-    // Typing effect - character by character with formatting applied in real-time
-    const fullText = responseContent;
-    const cleanedText = fullText.replace(/\\n/g, '\n'); // Convert escaped newlines immediately
-    
-    // Reveal line by line for semantic typing
-    const lines = cleanedText.split('\n');
-    for (let lineIdx = 0; lineIdx <= lines.length; lineIdx++) {
-      const partialText = lines.slice(0, lineIdx).join('\n');
-      setMessages(prev => prev.map(msg => 
-        msg.id === responseId
-          ? { ...msg, displayedContent: partialText }
-          : msg
-      ));
-      
-      const currentLine = lines[lineIdx] || '';
-      let delay = 50;
-      if (!currentLine.trim()) delay = 20;
-      else if (currentLine.includes('|')) delay = 150;
-      else if (currentLine.match(/^[🔴🟠🟡🟢⚪📍🚧⚠️🤝]/)) delay = 70;
-      else if (currentLine.startsWith('**') && currentLine.endsWith('**')) delay = 90;
-      else if (currentLine.trim().startsWith('•')) delay = 50;
-      
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-    
-    // Mark typing as complete
-    setMessages(prev => prev.map(msg => 
+    const cleanedText = await streamTextOntoMessage(
+      responseId,
+      responseContent,
+      (partialText) => ({ displayedContent: partialText })
+    );
+
+    if (!isMountedRef.current) return;
+
+    setMessages(prev => prev.map(msg =>
       msg.id === responseId ? { ...msg, isTyping: false, displayedContent: cleanedText } : msg
     ));
+
+    const webIntelText = isExtendedRefinement
+      ? formattedRefinedWebIntelligenceContent
+      : useExtendedKnowledge && trigger !== 'extend'
+        ? webIntelligenceContent
+        : undefined;
+
+    if (webIntelText) {
+      setMessages(prev => prev.map(msg =>
+        msg.id === responseId
+          ? { ...msg, isWebIntelTyping: true, displayedWebIntelligence: '' }
+          : msg
+      ));
+
+      const cleanedWebIntel = await streamTextOntoMessage(
+        responseId,
+        webIntelText,
+        (partialText) => ({ displayedWebIntelligence: partialText })
+      );
+
+      if (!isMountedRef.current) return;
+
+      setMessages(prev => prev.map(msg =>
+        msg.id === responseId
+          ? { ...msg, isWebIntelTyping: false, displayedWebIntelligence: cleanedWebIntel }
+          : msg
+      ));
+    }
 
     // Set follow-up suggestions if provided
     if (responseConfig.followUps && responseConfig.followUps.length > 0) {
@@ -859,7 +906,7 @@ export function Chat({
         </div>
 
         {/* Web Intelligence Card - AI Synthesized Answer */}
-        {message.webIntelligenceSummary && (
+        {message.webIntelligenceSummary && !message.isTyping && (
           <div className="border border-border rounded-xl bg-card overflow-hidden">
             <button
               onClick={() => setIsWebIntelExpanded(!isWebIntelExpanded)}
@@ -894,7 +941,12 @@ export function Chat({
                 <div className="px-6 py-5">
                   <div className="text-base text-foreground leading-[1.7]">
                     <div className="space-y-4">
-                      {parseMarkdownText(message.webIntelligenceSummary || '', sources)}
+                      {parseMarkdownText(
+                        message.isWebIntelTyping && message.displayedWebIntelligence !== undefined
+                          ? (message.displayedWebIntelligence || '')
+                          : (message.webIntelligenceSummary || ''),
+                        sources
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1282,7 +1334,6 @@ export function Chat({
         <div className="space-y-3">
           <div className="text-base text-foreground leading-relaxed">
             {displayContent}
-            {message.isTyping && <span className="inline-block w-1 h-4 bg-foreground ml-1 animate-pulse"></span>}
           </div>
           {!message.isTyping && (
             <div className="rounded-2xl overflow-hidden border border-border bg-card">
@@ -1337,7 +1388,6 @@ export function Chat({
         <div className="space-y-4">
           <div className="text-base text-foreground leading-relaxed">
             {displayContent}
-            {message.isTyping && <span className="inline-block w-1 h-4 bg-foreground ml-1 animate-pulse"></span>}
           </div>
           {!message.isTyping && (
             <div className="bg-card rounded-2xl border border-border p-6">
@@ -1356,7 +1406,6 @@ export function Chat({
           {/* Type the text content */}
           <div className="text-base text-foreground leading-relaxed">
             {parseMarkdownText(displayContent || '', message.sources)}
-            {message.isTyping && <span className="inline-block w-1 h-4 bg-foreground ml-1 animate-pulse"></span>}
           </div>
           
           {/* After typing completes, show matrix and SET suggestions */}
@@ -1380,7 +1429,6 @@ export function Chat({
           {/* Type the text content */}
           <div className="text-base text-foreground leading-relaxed">
             {parseMarkdownText(displayContent || '', message.sources)}
-            {message.isTyping && <span className="inline-block w-1 h-4 bg-foreground ml-1 animate-pulse"></span>}
           </div>
           
           {/* After typing completes, SET suggestions */}
@@ -1405,7 +1453,6 @@ export function Chat({
           {/* Type the text content */}
           <div className="text-base text-foreground leading-relaxed">
             {parseMarkdownText(displayContent || '', message.sources)}
-            {message.isTyping && <span className="inline-block w-1 h-4 bg-foreground ml-1 animate-pulse"></span>}
           </div>
           
           {/* After typing completes, show map */}
@@ -1426,7 +1473,6 @@ export function Chat({
           {/* Type the text content */}
           <div className="text-base text-foreground leading-relaxed">
             {parseMarkdownText(displayContent || '', message.sources)}
-            {message.isTyping && <span className="inline-block w-1 h-4 bg-foreground ml-1 animate-pulse"></span>}
           </div>
           
           {/* After typing completes, show map */}
@@ -1443,7 +1489,6 @@ export function Chat({
     return (
       <div className="text-base text-foreground leading-relaxed">
         {parseMarkdownText(displayContent || '', message.sources)}
-        {message.isTyping && <span className="inline-block w-1 h-4 bg-foreground ml-1 animate-pulse"></span>}
       </div>
     );
   };
@@ -1480,30 +1525,17 @@ export function Chat({
           </div>
         </div>
       )}
-      {navigation === 'breadcrumb' && !showThreadHeader && breadcrumbItems && breadcrumbItems.length > 0 && (
-        <div className="bg-background sticky top-0 z-20">
-          <div className="px-4 sm:px-8 lg:px-10 pt-6 pb-4">
-            <PageBreadcrumb className="mb-0" items={breadcrumbItems} />
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       {showThreadHeader && (
         <div className="bg-background sticky top-0 z-20">
           <div className="px-4 sm:px-8 lg:px-10 py-4 pt-5 lg:pt-4">
-            {navigation === 'breadcrumb' && breadcrumbItems && breadcrumbItems.length > 0 && (
-              <PageBreadcrumb className="mb-4" items={breadcrumbItems} />
-            )}
-            <div className={`w-full flex items-center justify-between gap-3 ${showNavigation && navigation === 'back' ? '' : 'pl-14 sm:pl-0'}`}>
+            <div className={`w-full flex items-center justify-between gap-3 ${showNavigation ? '' : 'pl-14 sm:pl-0'}`}>
               {navigation === 'back' ? (
                 <BackLink onClick={onBack} />
-              ) : navigation === 'breadcrumb' ? (
-                <div className="w-0 sm:w-0" />
               ) : (
-                <div className="w-10 sm:w-0" />
+                <div className="w-10 sm:w-0 shrink-0" />
               )}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 shrink-0">
                 {sharedUsers.length > 0 && (
                   <div ref={sharedPopoverRef} className="relative">
                     <button

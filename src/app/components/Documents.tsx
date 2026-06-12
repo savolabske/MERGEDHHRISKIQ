@@ -30,6 +30,7 @@ import { useProgressiveList } from '../hooks/useProgressiveList';
 import { PageFooter } from './PageFooter';
 import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { TableSkeleton } from './ui/table-skeleton';
+import { DetailFieldLabel, DetailSectionTitle } from './ui/detail-labels';
 
 type DocumentFileProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -147,10 +148,10 @@ function DocumentAvailabilityFields({
 }) {
   const heading =
     variant === 'sidebar' ? (
-      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
+      <DetailFieldLabel as="h3">
         Availability{' '}
         <span className="font-normal normal-case text-border-muted">(optional)</span>
-      </h3>
+      </DetailFieldLabel>
     ) : (
       <label className="block text-sm font-medium text-foreground mb-1.5">
         Availability <span className="font-normal text-text-subtle">(optional)</span>
@@ -2127,9 +2128,7 @@ export function Documents() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-card rounded-xl border border-border p-6">
-                    <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                      Description
-                    </h3>
+                    <DetailSectionTitle as="h3">Description</DetailSectionTitle>
                     <textarea
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
@@ -2141,9 +2140,9 @@ export function Documents() {
 
                   <div className="bg-card rounded-xl border border-border p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xs font-semibold text-muted-foreground">
+                      <DetailSectionTitle as="h3" className="mb-0">
                         Files
-                      </h3>
+                      </DetailSectionTitle>
                       <span className="text-sm text-muted-foreground">
                         {editFiles.length + newEditFiles.length} file{editFiles.length + newEditFiles.length !== 1 ? 's' : ''}
                       </span>
@@ -2352,9 +2351,7 @@ export function Documents() {
                 <div className="space-y-6">
                   <div className="bg-card rounded-xl border border-border p-6 space-y-6">
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                        User Group
-                      </h3>
+                      <DetailFieldLabel as="h3">User Group</DetailFieldLabel>
                       <div className="relative" ref={editUserGroupDropdownRef}>
                         <button
                           onClick={() => {
@@ -2397,15 +2394,14 @@ export function Documents() {
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                        Tags
-                      </h3>
+                      <DetailFieldLabel as="h3">Tags</DetailFieldLabel>
                       <div className="relative" ref={editTagsDropdownRef}>
                         <div
                           role="presentation"
+                          data-composite-field
                           className={`flex w-full cursor-text flex-wrap items-center gap-1.5 min-h-[42px] rounded-lg border bg-card px-2 py-1.5 transition-colors ${
                             showEditTagsDropdown ? 'border-primary' : 'border-border'
-                          } focus-within:border-primary`}
+                          } focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10`}
                           onClick={() => {
                             setShowEditTagsDropdown(true);
                             setShowEditUserGroupDropdown(false);
@@ -2446,7 +2442,7 @@ export function Documents() {
                               if (!showEditTagsDropdown) setShowEditTagsDropdown(true);
                             }}
                             placeholder={editTags.length === 0 ? 'Search or create tags...' : 'Add more tags...'}
-                            className="min-w-[140px] flex-1 border-0 bg-transparent py-1.5 text-sm text-foreground outline-none placeholder:text-text-subtle focus:outline-none focus:ring-0"
+                            className="focus-ring-container-control min-w-[140px] flex-1 border-0 bg-transparent py-1.5 text-sm text-foreground outline-none placeholder:text-text-subtle focus:outline-none focus:ring-0"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && canCreateEditTag) {
                                 e.preventDefault();
@@ -2513,9 +2509,7 @@ export function Documents() {
                     />
 
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                        Created
-                      </h3>
+                      <DetailFieldLabel as="h3">Created</DetailFieldLabel>
                       <div className="flex items-center gap-2 text-sm text-foreground">
                         <Calendar size={18} className="text-muted-foreground" />
                         {selectedGroup.dateAdded}
@@ -2523,9 +2517,7 @@ export function Documents() {
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                        Last Modified
-                      </h3>
+                      <DetailFieldLabel as="h3">Last Modified</DetailFieldLabel>
                       <div className="flex items-center gap-2 text-sm text-foreground">
                         <Clock size={18} className="text-muted-foreground" />
                         {selectedGroup.lastModified}
@@ -2641,9 +2633,7 @@ export function Documents() {
                 <div className="lg:col-span-2 space-y-6">
                   {/* Description */}
                   <div className="bg-card rounded-xl border border-border p-6">
-                    <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                      Description
-                    </h3>
+                    <DetailSectionTitle as="h3">Description</DetailSectionTitle>
                     <p className="text-sm text-foreground leading-relaxed">
                       {selectedGroup.description}
                     </p>
@@ -2652,9 +2642,9 @@ export function Documents() {
                   {/* Documents */}
                   <div className="bg-card rounded-xl border border-border p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xs font-semibold text-muted-foreground">
+                      <DetailSectionTitle as="h3" className="mb-0">
                         Files
-                      </h3>
+                      </DetailSectionTitle>
                       <span className="text-sm text-muted-foreground">
                         {selectedGroup.files.length} file{selectedGroup.files.length > 1 ? 's' : ''}
                       </span>
@@ -2678,7 +2668,7 @@ export function Documents() {
                           type="checkbox"
                           checked={currentDetailFiles.length > 0 && currentDetailFiles.every((file) => selectedDetailFiles.has(file.id))}
                           onChange={(e) => handleSelectAllDetailFiles(e.target.checked)}
-                          className="w-4 h-4 rounded border-border-muted text-primary focus:ring-ring"
+                          className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-ring"
                         />
                         Select all on this page
                       </label>
@@ -2749,7 +2739,7 @@ export function Documents() {
                                       type="checkbox"
                                       checked={selectedDetailFiles.has(file.id)}
                                       onChange={() => toggleDetailFileSelection(file.id)}
-                                      className="h-4 w-4 shrink-0 rounded border-border-muted text-primary focus:ring-ring"
+                                      className="h-4 w-4 shrink-0 rounded border-checkbox-unchecked text-primary focus:ring-ring"
                                       aria-label={`Select ${file.name}`}
                                     />
                                   </div>
@@ -2872,9 +2862,7 @@ export function Documents() {
                   <div className="bg-card rounded-xl border border-border p-6 space-y-6">
                     {/* Availability */}
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                        Available in
-                      </h3>
+                      <DetailFieldLabel as="h3">Available in</DetailFieldLabel>
                       <DocumentAvailabilityBadges doc={selectedGroup} size="md" />
                       {selectedGroup.availabilityTarget === 'reports' && (selectedGroup.reportTypes?.length ?? 0) > 0 && (
                         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
@@ -2885,9 +2873,7 @@ export function Documents() {
 
                     {/* User Group */}
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                        User Group
-                      </h3>
+                      <DetailFieldLabel as="h3">User Group</DetailFieldLabel>
                       <div className="flex flex-wrap gap-2">
                         {selectedGroup.userGroup.split(', ').map((group, index) => (
                           <span
@@ -2903,9 +2889,7 @@ export function Documents() {
                     {/* Tags */}
                     {selectedGroup.tags && selectedGroup.tags.length > 0 && (
                       <div>
-                        <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                          Tags
-                        </h3>
+                        <DetailFieldLabel as="h3">Tags</DetailFieldLabel>
                         <div className="flex flex-wrap gap-2">
                           {selectedGroup.tags.map((tag, index) => (
                             <span
@@ -2921,9 +2905,7 @@ export function Documents() {
 
                     {/* Created */}
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                        Created
-                      </h3>
+                      <DetailFieldLabel as="h3">Created</DetailFieldLabel>
                       <div className="flex items-center gap-2 text-sm text-foreground">
                         <Calendar size={18} className="text-muted-foreground" />
                         {selectedGroup.dateAdded}
@@ -2932,9 +2914,7 @@ export function Documents() {
 
                     {/* Last Modified */}
                     <div>
-                      <h3 className="text-xs font-semibold text-muted-foreground mb-3">
-                        Last Modified
-                      </h3>
+                      <DetailFieldLabel as="h3">Last Modified</DetailFieldLabel>
                       <div className="flex items-center gap-2 text-sm text-foreground">
                         <Clock size={18} className="text-muted-foreground" />
                         {selectedGroup.lastModified}
@@ -3200,9 +3180,10 @@ export function Documents() {
                     <div className="relative" ref={tagsDropdownRef}>
                       <div
                         role="presentation"
+                        data-composite-field
                         className={`flex w-full cursor-text flex-wrap items-center gap-1.5 min-h-[42px] rounded-lg border bg-card px-2 py-1.5 transition-colors ${
                           showTagsDropdown ? 'border-primary' : 'border-border'
-                        } focus-within:border-primary`}
+                        } focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10`}
                         onClick={() => {
                           setShowTagsDropdown(true);
                           setShowUserGroupDropdown(false);
@@ -3249,7 +3230,7 @@ export function Documents() {
                             }
                           }}
                           placeholder={tags.length === 0 ? 'Search or create tags...' : 'Add more tags...'}
-                          className="min-w-[140px] flex-1 border-0 bg-transparent py-1.5 text-sm text-foreground outline-none placeholder:text-text-subtle focus:outline-none focus:ring-0"
+                          className="focus-ring-container-control min-w-[140px] flex-1 border-0 bg-transparent py-1.5 text-sm text-foreground outline-none placeholder:text-text-subtle focus:outline-none focus:ring-0"
                         />
                       </div>
                       {showTagsDropdown && (
@@ -3622,7 +3603,7 @@ export function Documents() {
                     type="checkbox"
                     checked={selectedDocuments.size === currentPageDocuments.length && currentPageDocuments.length > 0}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
+                    className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
                   <span className="table-header-label">Resource</span>
                 </div>
@@ -3658,7 +3639,7 @@ export function Documents() {
                         checked={selectedDocuments.has(doc.id)}
                         onChange={() => toggleDocumentSelection(doc.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="hidden lg:block w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer shrink-0"
+                        className="hidden lg:block w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer shrink-0"
                       />
                       <div className="flex items-center gap-3 flex-1">
                         <div className="p-2 bg-secondary rounded-lg shrink-0">

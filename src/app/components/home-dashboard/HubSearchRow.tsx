@@ -140,6 +140,7 @@ export function HubSearchRow({ onSearch, onOpenChat }: HubSearchRowProps) {
         {/* Tall prompt bar — hover/focus matches add-resource form fields */}
         <div
           role="presentation"
+          data-composite-field
           onClick={() => textareaRef.current?.focus()}
           className={cn(
             'mt-5 rounded-2xl border border-border bg-background p-4 min-h-[132px] flex flex-col cursor-text',

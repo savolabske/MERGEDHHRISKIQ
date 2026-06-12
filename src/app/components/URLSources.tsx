@@ -535,7 +535,7 @@ export function URLSources() {
                     type="checkbox"
                     checked={selectedSources.size === currentSources.length && currentSources.length > 0}
                     onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
+                    className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
                   <span className="table-header-label">URL</span>
                 </div>
@@ -563,7 +563,7 @@ export function URLSources() {
                         type="checkbox"
                         checked={selectedSources.has(source.id)}
                         onChange={() => toggleSelectSource(source.id)}
-                        className="hidden lg:block w-4 h-4 mt-1 rounded border-border-muted text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
+                        className="hidden lg:block w-4 h-4 mt-1 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                       />
                       <div className="flex items-start gap-2 flex-1">
                         <ExternalLink size={16} className="text-text-subtle mt-0.5 shrink-0" />
