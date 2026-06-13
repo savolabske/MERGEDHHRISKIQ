@@ -84,6 +84,17 @@ export function buildDashboardThreadMessages(payload: DashboardChatPayload) {
   ];
 }
 
+/** Assistant config for live streaming when opening chat from dashboard/home cards. */
+export function getDashboardStreamingResponse(payload: DashboardChatPayload) {
+  const assistant = buildDashboardThreadMessages(payload)[1];
+  return {
+    content: assistant.content,
+    contentType: assistant.contentType as DashboardResponseContentType,
+    data: assistant.data,
+    sources: assistant.sources ?? DASHBOARD_KNOWLEDGE_SOURCES,
+  };
+}
+
 export function buildHubInsightChatPayload(): DashboardChatPayload {
   const { body } = HUB_MAIN_INSIGHT;
   return {

@@ -29,7 +29,6 @@ import {
   saveRiskIqTab,
 } from "./types/navigation";
 import {
-  buildDashboardThreadMessages,
   type DashboardChatPayload,
 } from "./utils/dashboardChatContext";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -109,6 +108,7 @@ export default function App() {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [aiSearchInput, setAiSearchInput] = useState('');
   const [dashboardChatKey, setDashboardChatKey] = useState(0);
+  const [dashboardChatPayload, setDashboardChatPayload] = useState<DashboardChatPayload | null>(null);
   const [cameFromRiskIq, setCameFromRiskIq] = useState(false);
   const [cameFromHome, setCameFromHome] = useState(false);
   const [riskIqReturnTab, setRiskIqReturnTab] = useState<RiskIqTab>('dashboard');
@@ -118,7 +118,8 @@ export default function App() {
   const openRiskIqChat = useCallback((payload: DashboardChatPayload) => {
     setSelectedHistoryTitle(payload.title);
     setSearchQuery(payload.prompt);
-    setSelectedHistoryMessages(buildDashboardThreadMessages(payload));
+    setSelectedHistoryMessages(null);
+    setDashboardChatPayload(payload);
     setCurrentChatId(null);
     setCameFromHistory(false);
     setCameFromHome(false);
@@ -133,7 +134,8 @@ export default function App() {
   const openHomeChat = useCallback((payload: DashboardChatPayload) => {
     setSelectedHistoryTitle(payload.title);
     setSearchQuery(payload.prompt);
-    setSelectedHistoryMessages(buildDashboardThreadMessages(payload));
+    setSelectedHistoryMessages(null);
+    setDashboardChatPayload(payload);
     setCurrentChatId(null);
     setCameFromHistory(false);
     setCameFromRiskIq(false);
@@ -770,6 +772,7 @@ export default function App() {
     setCurrentChatMessages([]);
     setSelectedHistoryMessages(null);
     setSelectedHistoryTitle('');
+    setDashboardChatPayload(null);
     setCameFromHistory(false);
     setCameFromHome(options?.fromHome ?? false);
     setCameFromRiskIq(options?.fromRiskIq ?? false);
@@ -843,6 +846,7 @@ export default function App() {
     setCurrentChatId(null);
     setSelectedHistoryMessages(null);
     setSelectedHistoryTitle('');
+    setDashboardChatPayload(null);
     setCameFromHistory(false);
     setCameFromHome(false);
     setCameFromRiskIq(true);
@@ -856,6 +860,7 @@ export default function App() {
     setCurrentChatId(null);
     setSelectedHistoryMessages(null);
     setSelectedHistoryTitle('');
+    setDashboardChatPayload(null);
     setCameFromHistory(false);
     setCameFromHome(false);
     setCameFromRiskIq(true);
@@ -875,6 +880,7 @@ export default function App() {
     } else {
       setSelectedHistoryMessages(null);
     }
+    setDashboardChatPayload(null);
     setSelectedHistoryTitle(historyItem?.query || '');
     setSearchQuery(historyItem?.query || '');
     setCurrentChatId(historyItem?.id || null);
@@ -1156,6 +1162,7 @@ export default function App() {
               key={`${dashboardChatKey}-${searchQuery}`}
               initialQuery={loadDemoConversation ? "Summarize the top operational risks" : searchQuery} 
               preloadedMessages={selectedHistoryMessages}
+              dashboardChatPayload={dashboardChatPayload}
               threadId={currentChatId || undefined}
               threadTitle={selectedHistoryTitle || (loadDemoConversation ? "Summarize the top operational risks" : searchQuery)}
               sharedWithUserIds={chatHistory.find(c => c.id === currentChatId)?.sharedWith || []}

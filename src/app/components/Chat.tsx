@@ -19,6 +19,10 @@ import {
   getWebIntelligenceSummary,
   normalizePreloadedMessages,
 } from '../data/chatAiResponses';
+import {
+  getDashboardStreamingResponse,
+  type DashboardChatPayload,
+} from '../utils/dashboardChatContext';
 
 // Utility function to clean markdown from content for better typing display
 const cleanMarkdown = (text: string) => text.replace(/\*\*/g, '');
@@ -78,6 +82,7 @@ interface ChatProps {
   onNewChat?: (currentQuery: string, messages: any[]) => void;
   onMessagesChange?: (messages: any[], query: string) => void;
   preloadedMessages?: any[] | null; // Pre-loaded conversation history
+  dashboardChatPayload?: DashboardChatPayload | null;
   threadId?: string;
   threadTitle?: string;
   sharedWithUserIds?: string[];
@@ -101,6 +106,7 @@ export function Chat({
   onNewChat,
   onMessagesChange,
   preloadedMessages,
+  dashboardChatPayload,
   threadId,
   threadTitle,
   sharedWithUserIds = [],
@@ -262,6 +268,12 @@ export function Chat({
 
   // Initial AI response - only if not loading from history
   useEffect(() => {
+    if (dashboardChatPayload) {
+      const streamingResponse = getDashboardStreamingResponse(dashboardChatPayload);
+      processAIResponse(dashboardChatPayload.prompt, true, 'default', false, streamingResponse);
+      return;
+    }
+
     if (!preloadedMessages || preloadedMessages.length === 0) {
       processAIResponse(initialQuery, true);
     }
@@ -271,13 +283,21 @@ export function Chat({
     query: string,
     useExtendedKnowledge: boolean = true,
     trigger: 'default' | 'extend' = 'default',
-    useExtendedPrimaryResponse: boolean = false
+    useExtendedPrimaryResponse: boolean = false,
+    prebuiltResponse?: {
+      content: string;
+      contentType: Message['contentType'];
+      data?: Message['data'];
+      sources: Source[];
+    }
   ) => {
     setIsProcessing(true);
-    const responseConfig = getAIResponse(query, messageCountRef.current);
+    const responseConfig = prebuiltResponse ? null : getAIResponse(query, messageCountRef.current);
     
     // Special handling for briefing content type
-    const isBriefing = responseConfig.response.contentType === 'briefing';
+    const isBriefing = prebuiltResponse
+      ? prebuiltResponse.contentType === 'briefing'
+      : responseConfig!.response.contentType === 'briefing';
     
     // Generate unique IDs upfront to avoid collision
     const timestamp = Date.now();
@@ -365,21 +385,29 @@ export function Chat({
       }
     ];
     const isExtendedRefinement = trigger === 'extend' || useExtendedPrimaryResponse;
-    const sources: Source[] = useExtendedKnowledge
-      ? [...knowledgeBaseSources, ...webSources]
-      : knowledgeBaseSources;
+    const sources: Source[] = prebuiltResponse
+      ? prebuiltResponse.sources
+      : useExtendedKnowledge
+        ? [...knowledgeBaseSources, ...webSources]
+        : knowledgeBaseSources;
 
     const webIntelligenceContent = getWebIntelligenceSummary(query);
     const formattedRefinedWebIntelligenceContent = buildRefinedWebIntelligence(query);
-    const responseContent = isExtendedRefinement
-      ? buildRefinedKnowledgeResponse(responseConfig.response.content, query)
-      : responseConfig.response.content;
-    const responseContentType = isExtendedRefinement
-      ? 'text'
-      : responseConfig.response.contentType;
-    const responseData = isExtendedRefinement
-      ? undefined
-      : responseConfig.response.data;
+    const responseContent = prebuiltResponse
+      ? prebuiltResponse.content
+      : isExtendedRefinement
+        ? buildRefinedKnowledgeResponse(responseConfig!.response.content, query)
+        : responseConfig!.response.content;
+    const responseContentType = prebuiltResponse
+      ? prebuiltResponse.contentType
+      : isExtendedRefinement
+        ? 'text'
+        : responseConfig!.response.contentType;
+    const responseData = prebuiltResponse
+      ? prebuiltResponse.data
+      : isExtendedRefinement
+        ? undefined
+        : responseConfig!.response.data;
 
     // Step 3: Add AI response with typing effect
     const assistantMessage: Message = {
@@ -417,11 +445,13 @@ export function Chat({
       msg.id === responseId ? { ...msg, isTyping: false, displayedContent: cleanedText } : msg
     ));
 
-    const webIntelText = isExtendedRefinement
-      ? formattedRefinedWebIntelligenceContent
-      : useExtendedKnowledge && trigger !== 'extend'
-        ? webIntelligenceContent
-        : undefined;
+    const webIntelText = prebuiltResponse
+      ? undefined
+      : isExtendedRefinement
+        ? formattedRefinedWebIntelligenceContent
+        : useExtendedKnowledge && trigger !== 'extend'
+          ? webIntelligenceContent
+          : undefined;
 
     if (webIntelText) {
       setMessages(prev => prev.map(msg =>
@@ -446,7 +476,7 @@ export function Chat({
     }
 
     // Set follow-up suggestions if provided
-    if (responseConfig.followUps && responseConfig.followUps.length > 0) {
+    if (responseConfig?.followUps && responseConfig.followUps.length > 0) {
       setSuggestedFollowUps(responseConfig.followUps);
     }
 
