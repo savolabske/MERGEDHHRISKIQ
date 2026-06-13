@@ -4,6 +4,7 @@ import AnimatedIntelligenceBackgroundLayer from '../../imports/AnimatedIntellige
 import logoImage from '../../assets/un-somalia-logo.png';
 import { LoginPage } from './LoginPage';
 import { SignUpPage } from './SignUpPage';
+import { ForgotPasswordPage } from './ForgotPasswordPage';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 
@@ -130,7 +131,6 @@ export function Auth({ onLogin }: AuthProps) {
   const [registeredEmail, setRegisteredEmail] = useState('');
 
   // Forgot password fields
-  const [forgotEmail, setForgotEmail] = useState('');
   const [resetEmail, setResetEmail] = useState('');
 
   const handleLogin = () => {
@@ -151,19 +151,15 @@ export function Auth({ onLogin }: AuthProps) {
 
   const handleBackToLogin = () => {
     setMode('login');
-    setForgotEmail('');
   };
 
-  const handleForgotPasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!forgotEmail.trim()) {
+  const handleForgotPasswordSubmit = (email: string) => {
+    if (!email.trim()) {
       toast.error('Please enter your email address');
       return;
     }
 
-    // Success - show reset sent screen
-    setResetEmail(forgotEmail);
+    setResetEmail(email);
     setMode('reset-sent');
     toast.success('Password reset instructions sent');
   };
@@ -190,6 +186,16 @@ export function Auth({ onLogin }: AuthProps) {
   // Show pending verification screen
   if (mode === 'pending') {
     return <PendingVerification email={registeredEmail} onBackToLogin={handleBackToLogin} />;
+  }
+
+  // Forgot password — matches login/sign-up layout
+  if (mode === 'forgot') {
+    return (
+      <ForgotPasswordPage
+        onSubmit={handleForgotPasswordSubmit}
+        onNavigateToSignIn={handleBackToLogin}
+      />
+    );
   }
 
   // Show reset sent confirmation screen
@@ -303,115 +309,5 @@ export function Auth({ onLogin }: AuthProps) {
     );
   }
 
-  return (
-    <div className="min-h-screen w-full bg-card flex flex-col lg:flex-row overflow-hidden">
-      {/* Left Side - Form */}
-      <div className="flex-1 bg-card flex flex-col justify-center px-8 sm:px-12 lg:px-16 py-12">
-        {/* Logo */}
-        <div className="mb-8 lg:mb-10 max-w-[460px] mx-auto w-full">
-          <img 
-            src={logoImage} 
-            alt="United Nations Somalia" 
-            className="w-44 h-auto mx-[-6px] my-[0px]"
-          />
-        </div>
-
-        {/* Forgot Password Form */}
-        {mode === 'forgot' && (
-          <form onSubmit={handleForgotPasswordSubmit} className="space-y-5 max-w-[460px] mx-auto w-full">
-            {/* Reset Password Title */}
-            <h1 className="text-3xl lg:text-4xl font-semibold text-foreground mb-3">
-              Reset Password
-            </h1>
-            
-            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              Enter your email address and we'll send you instructions to reset your password.
-            </p>
-
-            {/* Email Field */}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-2">
-                EMAIL ADDRESS
-              </label>
-              <input
-                type="email"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                placeholder="name@undp.org"
-                className="w-full h-[48px] px-4 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-ring/10 transition-all"
-                required
-              />
-            </div>
-
-            {/* Submit Button */}
-            <Button type="submit" className="w-full h-[52px] mt-6 gap-2">
-              Send Reset Instructions
-              <ArrowRight size={18} strokeWidth={2} />
-            </Button>
-
-            {/* Back to Login Link */}
-            <div className="text-center pt-4">
-              <p className="text-sm text-muted-foreground">
-                Remember your password?{' '}
-                <button
-                  type="button"
-                  onClick={handleBackToLogin}
-                  className="font-medium text-primary hover:text-primary-text transition-colors"
-                >
-                  Back to login
-                </button>
-              </p>
-            </div>
-          </form>
-        )}
-      </div>
-
-      {/* Right Side - Animated Background */}
-      <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-info-subtle via-info-subtle to-info-subtle">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-20"
-          style={{ 
-            backgroundImage: `url(https://images.unsplash.com/photo-1759661966728-4a02e3c6ed91?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXRhJTIwdmlzdWFsaXphdGlvbiUyMGRhc2hib2FyZCUyMHRlY2hub2xvZ3l8ZW58MXx8fHwxNzcyMTg1ODE3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral)`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
-        />
-
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/20"></div>
-
-        {/* Animated Background Layer */}
-        <div className="absolute inset-0 opacity-20">
-          <AnimatedIntelligenceBackgroundLayer />
-        </div>
-
-        {/* Top Left Text */}
-        <div className="absolute top-8 left-8 z-10">
-          <h3 className="font-bold text-secondary-foreground mb-1 text-sm">
-            Risk iQ
-          </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Intelligence-powered risk management<br />
-            for humanitarian operations
-          </p>
-        </div>
-
-        {/* Bottom Right Text */}
-        <div className="absolute bottom-8 right-8 z-10 text-right">
-          <div className="flex items-center justify-end gap-2 mb-1">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <h3 className="font-bold text-secondary-foreground text-sm">UN Somalia</h3>
-          </div>
-          <p className="text-xs text-muted-foreground">AI-Powered Risk Intelligence</p>
-        </div>
-
-        {/* Floating Dots */}
-        <div className="absolute top-[20%] right-[15%] w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-        <div className="absolute top-[35%] right-[45%] w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-[40%] right-[25%] w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-[25%] right-[60%] w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-      </div>
-    </div>
-  );
+  return null;
 }
