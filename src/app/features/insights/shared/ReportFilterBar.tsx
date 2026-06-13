@@ -11,19 +11,19 @@ export interface ReportFilterTheme {
 
 export const AID_FLOW_FILTER_THEME: ReportFilterTheme = {
   statusTextClass: 'text-muted-foreground',
-  linkClass: 'text-primary-text hover:text-primary-text-hover hover:underline',
+  linkClass: 'text-primary-text hover:text-primary-text-hover',
   pausedPanelClass: 'border-border bg-muted/80',
 };
 
 export const MIGRATION_FILTER_THEME: ReportFilterTheme = {
   statusTextClass: 'text-muted-foreground',
-  linkClass: 'text-primary-text hover:text-primary-text-hover hover:underline',
+  linkClass: 'text-primary-text hover:text-primary-text-hover',
   pausedPanelClass: 'border-border bg-muted/80',
 };
 
 export const SJF_FILTER_THEME: ReportFilterTheme = {
   statusTextClass: 'text-muted-foreground',
-  linkClass: 'text-primary-text hover:text-primary-text-hover hover:underline',
+  linkClass: 'text-primary-text hover:text-primary-text-hover',
   pausedPanelClass: 'border-border bg-muted/80',
 };
 
@@ -59,13 +59,13 @@ function ReportFilterStatus({
         type="button"
         onClick={onBackToReport}
         className={cn(
-          'inline border-0 bg-transparent p-0 text-xs font-normal leading-4 underline-offset-2',
+          'inline border-0 bg-transparent p-0 text-xs font-normal leading-4 underline-offset-2 hover:underline',
           theme.linkClass,
         )}
       >
-        go back to the main report
+        go back
       </button>{' '}
-      to filter.
+      to the main report to filter.
     </>
   );
 }

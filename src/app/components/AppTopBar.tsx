@@ -95,8 +95,9 @@ export function AppTopBar({
               type="button"
               className={cn(
                 topBarIconButtonClass,
-                'relative text-primary hover:text-primary-text hover:bg-muted',
+                'relative text-muted-foreground hover:text-foreground hover:bg-muted',
                 panelOpen && 'bg-muted text-foreground',
+                badge && 'text-primary',
               )}
               aria-label={
                 badge
@@ -106,22 +107,14 @@ export function AppTopBar({
               aria-expanded={panelOpen}
               onClick={() => setPanelOpen(true)}
             >
-              <span className="relative inline-flex shrink-0">
-                <Bell
-                  size={24}
-                  strokeWidth={badge ? 2.25 : 2}
-                  className={badge ? 'fill-white' : undefined}
-                  aria-hidden
-                />
+              <span className="relative inline-flex shrink-0 items-center justify-center">
+                <Bell size={22} strokeWidth={1.75} aria-hidden />
                 {badge && (
                   <span
-                    className="pointer-events-none absolute -top-1.5 -right-1 flex size-4 items-center justify-center"
+                    className="pointer-events-none absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[9px] font-semibold leading-none text-destructive-foreground ring-2 ring-card tabular-nums"
                     aria-hidden
                   >
-                    <span className="absolute inset-0 scale-110 rounded-full bg-destructive/30 animate-pulse" />
-                    <span className="relative flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-semibold leading-none text-destructive-foreground shadow-sm ring-1 ring-card tabular-nums">
-                      {badge}
-                    </span>
+                    {badge}
                   </span>
                 )}
               </span>
