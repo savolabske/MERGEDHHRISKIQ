@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { ShareThreadModal } from './ShareThreadModal';
 import { CURRENT_USER, RISK_IQ_USER, getUserById } from '../utils/mockUsers';
 import { toast } from 'sonner';
+import { cn } from './ui/utils';
 import { isChatEligibleKnowledgeSource } from '../data/documentDetailData';
 import {
   buildRefinedKnowledgeResponse,
@@ -1733,6 +1734,17 @@ export function Chat({
                 </button>
               </div>
             )}
+            <div
+              role="presentation"
+              data-composite-field
+              onClick={() => inputRef.current?.focus()}
+              className={cn(
+                'relative w-full rounded-2xl border border-border bg-card transition-colors cursor-text',
+                'hover:border-primary',
+                'focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10',
+                sharedComposerCompact ? 'min-h-12' : 'min-h-[96px]',
+              )}
+            >
             {(!isSharedThread || invokesAiInComposer) && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -1812,11 +1824,12 @@ export function Chat({
                     ? "Ask in Extended Knowledge mode..."
                     : "Ask a follow-up question..."
               }
-              className={`w-full bg-card border-2 border-border rounded-lg text-base text-foreground placeholder:text-text-subtle outline-none focus:border-primary transition-colors ${
+              className={cn(
+                'focus-ring-container-control w-full border-0 bg-transparent text-base text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors',
                 sharedComposerCompact
                   ? 'h-12 min-h-12 pl-4 pr-14 py-2.5'
-                  : 'h-[96px] pl-6 pr-16 pt-4 pb-12'
-              }`}
+                  : 'h-[96px] pl-6 pr-16 pt-4 pb-12',
+              )}
             />
             <button
               onClick={handleSend}
@@ -1833,6 +1846,7 @@ export function Chat({
                 <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke={inputValue.trim() && !isProcessing ? "white" : "var(--text-subtle)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
+            </div>
           </div>
           {isExtendedInputActive && (
             <p className="mt-2 text-center text-xs text-muted-foreground">
