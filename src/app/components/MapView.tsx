@@ -2090,44 +2090,44 @@ export function MapView() {
           {!activeFlow ? (
             /* ── Default State: Suggested Prompts ── */
             <div className={cn('flex flex-col', isMobileViewport ? 'min-h-0 flex-1' : 'h-full')}>
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                <div className="px-8 pt-8 pb-4">
-                  <div className="flex items-center justify-between mb-6">
-                    <button
-                      onClick={() => setIsHistoryOpen(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E7EB] hover:border-[#1D4ED8] hover:bg-[#F9FAFB] transition-all group"
-                      title="View query history"
-                    >
-                      <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
-                      <span className="text-[0.75rem] text-[#6B7280] group-hover:text-[#2463EB] font-medium">History</span>
-                    </button>
-                  </div>
+              <div className="shrink-0 px-8 pt-8 pb-4">
+                <div className="flex items-center justify-between mb-6">
+                  <button
+                    onClick={() => setIsHistoryOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E7EB] hover:border-[#1D4ED8] hover:bg-[#F9FAFB] transition-all group"
+                    title="View query history"
+                  >
+                    <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
+                    <span className="text-[0.75rem] text-[#6B7280] group-hover:text-[#2463EB] font-medium">History</span>
+                  </button>
                 </div>
+              </div>
 
-                {/* Suggested Prompts */}
-                <div className="px-6 pb-4">
-                  <p className="text-[0.6875rem] font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3 px-2">
-                    SUGGESTED PROMPTS
-                  </p>
-                  <div className="space-y-2.5">
-                    {CONVERSATION_FLOWS.map(flow => (
-                      <button
-                        key={flow.id}
-                        onClick={() => startFlow(flow.id)}
-                        className="w-full flex items-start gap-3 p-4 rounded-xl border border-[#E5E7EB] hover:border-[#1D4ED8] hover:shadow-md transition-all text-left group"
-                      >
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: flow.bgColor, color: flow.color }}>
-                          {flow.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[0.8125rem] text-[#374151] leading-snug group-hover:text-[#2463EB] transition-colors">
-                            {flow.label}
-                          </p>
-                        </div>
-                        <ChevronRight size={16} className="text-[#D1D5DB] group-hover:text-[#1D4ED8] mt-1 flex-shrink-0 transition-colors" />
-                      </button>
-                    ))}
-                  </div>
+              <div className="min-h-0 flex-1" />
+
+              {/* Suggested Prompts — anchored above the input */}
+              <div className="shrink-0 px-6 pb-4">
+                <p className="text-[0.6875rem] font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3 px-2">
+                  SUGGESTED PROMPTS
+                </p>
+                <div className="space-y-2.5">
+                  {CONVERSATION_FLOWS.map(flow => (
+                    <button
+                      key={flow.id}
+                      onClick={() => startFlow(flow.id)}
+                      className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#E5E7EB] hover:border-[#1D4ED8] hover:shadow-md transition-all text-left group"
+                    >
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: flow.bgColor, color: flow.color }}>
+                        {flow.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[0.8125rem] text-[#374151] leading-snug group-hover:text-[#2463EB] transition-colors">
+                          {flow.label}
+                        </p>
+                      </div>
+                      <ChevronRight size={16} className="text-[#D1D5DB] group-hover:text-[#1D4ED8] flex-shrink-0 transition-colors" />
+                    </button>
+                  ))}
                 </div>
               </div>
 
