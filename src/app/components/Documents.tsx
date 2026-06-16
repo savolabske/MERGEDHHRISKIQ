@@ -73,10 +73,9 @@ interface DocumentGroup {
 type AvailabilityTarget = 'map' | 'reports';
 
 const REPORT_AVAILABILITY_OPTIONS = [
-  'Security Incidents',
-  'Aid Diversion Tracker',
-  'Climate Risks',
-  'Programmatic Risks',
+  'Aid Flow Intelligence',
+  'Migration & Displacement Intelligence',
+  'Somalia Joint Fund Intelligence',
 ] as const;
 
 type DocumentAvailabilitySurface = 'chats' | 'map' | 'reports';
@@ -647,7 +646,7 @@ const mockDocuments: DocumentGroup[] = [
     addedBy: 'Mohamed Ali',
     lastModified: 'Mar 12, 2026',
     availabilityTarget: 'reports',
-    reportTypes: ['Security Incidents', 'Climate Risks'],
+    reportTypes: ['Migration & Displacement Intelligence', 'Somalia Joint Fund Intelligence'],
   },
   {
     id: '3',
@@ -727,7 +726,7 @@ const mockDocuments: DocumentGroup[] = [
     addedBy: 'David Kumar',
     lastModified: 'Mar 5, 2026',
     availabilityTarget: 'reports',
-    reportTypes: ['Security Incidents'],
+    reportTypes: ['Aid Flow Intelligence'],
   },
   {
     id: '6',
