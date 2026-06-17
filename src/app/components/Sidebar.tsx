@@ -151,6 +151,7 @@ interface SidebarProps {
   showFixedMobileMenuButton?: boolean;
   isRiskIqActive?: boolean;
   riskIqUnreadCount?: number;
+  chatsUnreadCount?: number;
   mobileMenuOpen?: boolean;
   onMobileMenuOpenChange?: (open: boolean) => void;
   isCollapsed?: boolean;
@@ -198,6 +199,7 @@ export function Sidebar({
   showFixedMobileMenuButton = false,
   isRiskIqActive = false,
   riskIqUnreadCount = 0,
+  chatsUnreadCount = 0,
   mobileMenuOpen: controlledMobileMenuOpen,
   onMobileMenuOpenChange,
   isCollapsed: controlledCollapsed,
@@ -377,6 +379,7 @@ export function Sidebar({
                   isActive={currentView === 'platformChats'}
                   collapsed={displayCollapsed}
                   onClick={() => handleNavigate('platformChats')}
+                  badge={chatsUnreadCount}
                 />
               </SidebarNavGroup>
 

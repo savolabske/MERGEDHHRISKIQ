@@ -587,12 +587,16 @@ export function Chats({
                       <ChatSourceIcon source={chatSource} />
                       <div className="flex-1 min-w-0 pr-12 sm:pr-0">
                         <div className="flex items-start gap-2 min-w-0">
-                          <p className="table-primary-text group-hover:text-primary-text transition-colors min-w-0 flex-1 break-words">
+                          <p className="table-primary-text group-hover:text-primary-text transition-colors min-w-0 break-words">
                             {chat.query}
+                            {chat.unread && (
+                              <span
+                                className="inline-block w-2 h-2 rounded-full bg-primary ml-1.5 align-middle shrink-0"
+                                title="Unread updates"
+                                aria-label="Unread updates"
+                              />
+                            )}
                           </p>
-                          {chat.unread && (
-                            <span className="w-2 h-2 rounded-full bg-primary shrink-0" title="Unread updates" />
-                          )}
                           {pinnedChats.has(chat.id) && (
                             <Pin size={14} className="text-primary shrink-0" fill="var(--primary)" />
                           )}
@@ -613,7 +617,6 @@ export function Chats({
                               </span>
                             </>
                           )}
-                          <span className="text-border-muted">•</span>
                           <p className="table-metadata-text">
                             Last message {getRelativeDayLabel(chat.date)} at {chat.timestamp}
                           </p>

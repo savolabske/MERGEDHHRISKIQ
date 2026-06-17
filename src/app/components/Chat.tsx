@@ -24,6 +24,7 @@ import {
   getDashboardStreamingResponse,
   type DashboardChatPayload,
 } from '../utils/dashboardChatContext';
+import { ChatSourceBadge } from './chats/chatSource';
 
 // Utility function to clean markdown from content for better typing display
 const cleanMarkdown = (text: string) => text.replace(/\*\*/g, '');
@@ -91,6 +92,7 @@ interface ChatProps {
   showThreadHeader?: boolean;
   navigation?: 'none' | 'back';
   showRiskIqContext?: boolean;
+  initialExtendedKnowledge?: boolean;
   createdByName?: string;
   isSharedThread?: boolean;
   joinActivities?: { id: string; userName: string; timestampLabel: string; afterMessageCount: number }[];
@@ -171,6 +173,7 @@ export function Chat({
   showThreadHeader = false,
   navigation = 'none',
   showRiskIqContext = false,
+  initialExtendedKnowledge = false,
   createdByName = CURRENT_USER.name,
   isSharedThread = false,
   joinActivities = [],
@@ -218,7 +221,7 @@ export function Chat({
   });
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isExtendedKnowledgeMode, setIsExtendedKnowledgeMode] = useState(() => showRiskIqContext);
+  const [isExtendedKnowledgeMode, setIsExtendedKnowledgeMode] = useState(initialExtendedKnowledge);
   const [isSharedExtendedPillVisible, setIsSharedExtendedPillVisible] = useState(false);
   const [suggestedFollowUps, setSuggestedFollowUps] = useState<string[]>([]);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -341,7 +344,7 @@ export function Chat({
     }
 
     if (!preloadedMessages || preloadedMessages.length === 0) {
-      processAIResponse(initialQuery, true);
+      processAIResponse(initialQuery, initialExtendedKnowledge, 'default', initialExtendedKnowledge);
     }
   }, []);
 
@@ -781,10 +784,10 @@ export function Chat({
                   <button
                     type="button"
                     onClick={() => onKnowledgeSourceClick(source)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground-emphasis hover:bg-muted transition-colors w-full text-left"
+                    className="inline-flex w-fit items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground-emphasis hover:bg-muted transition-colors"
                   >
                     <FileText size={14} className="text-muted-foreground shrink-0" />
-                    <span className="truncate">Chat with this document</span>
+                    <span>Chat with this document</span>
                   </button>
                 </div>
               )}
@@ -1649,15 +1652,10 @@ export function Chat({
                   <div className="w-10 sm:w-0 shrink-0" />
                 )}
                 {chatContextLabel && (
-                  <span
-                    className={`inline-flex items-center rounded-xs px-2.5 py-1 text-xs font-medium ${
-                      chatContextLabel === 'Risk iQ'
-                        ? 'bg-destructive-subtle text-destructive-text'
-                        : 'bg-primary-subtle text-primary-text'
-                    }`}
-                  >
-                    {chatContextLabel}
-                  </span>
+                  <ChatSourceBadge
+                    source={chatContextLabel === 'Risk iQ' ? 'risk-iq' : 'humanity-hub'}
+                    size="md"
+                  />
                 )}
               </div>
               <div className="flex items-center gap-3 shrink-0">

@@ -11,7 +11,6 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { hubCard } from './home-dashboard/hubStyles';
-import { PageFooter } from './PageFooter';
 import { Button } from './ui/button';
 import { BackLink } from './ui/back-link';
 import { PageBreadcrumb } from './ui/page-breadcrumb';
@@ -127,7 +126,6 @@ function generateDocumentResponse(query: string, content: DocumentContent): stri
 function DocumentChatComposer({
   chatQuery,
   isTyping,
-  isExpandedLayout,
   isConnectedToPanel,
   onChange,
   onFocus,
@@ -136,7 +134,6 @@ function DocumentChatComposer({
   chatQuery: string;
   isTyping: boolean;
   isChatOpen: boolean;
-  isExpandedLayout?: boolean;
   isConnectedToPanel?: boolean;
   onChange: (value: string) => void;
   onFocus: () => void;
@@ -147,16 +144,14 @@ function DocumentChatComposer({
   return (
     <form
       onSubmit={onSubmit}
-      className={isExpandedLayout && isConnectedToPanel ? 'px-4 sm:px-6 py-3' : undefined}
+      className={isConnectedToPanel ? 'px-4 sm:px-6 py-3' : undefined}
     >
       <div
         data-composite-field
         className={cn(
           'flex min-w-0 items-center gap-2 border px-3 py-2 transition-colors focus-within:ring-2',
           'border-border bg-card hover:border-primary focus-within:border-primary focus-within:ring-ring/10',
-          isConnectedToPanel && !isExpandedLayout
-            ? 'rounded-b-[20px] rounded-t-none'
-            : 'rounded-xl',
+          'rounded-xl',
         )}
       >
         <Sparkles size={18} className="shrink-0 text-muted-foreground" aria-hidden />
@@ -352,9 +347,7 @@ export function DocumentDetail({
               </div>
 
               <section>
-                <h2 className="mb-3 text-sm font-semibold leading-5 text-[#334155]">
-                  Document Summary
-                </h2>
+                <h2 className="mb-3 text-sm">Document Summary</h2>
                 <p className="text-sm text-foreground leading-relaxed">
                   {content.summary}
                 </p>
@@ -362,11 +355,9 @@ export function DocumentDetail({
 
               {content.relatedDocs.length > 0 && (
                 <section>
-                  <div className="pb-2">
-                    <h2 className="mb-0 text-sm font-semibold leading-5 text-[#334155]">
-                      Related Documents ({content.relatedDocs.length})
-                    </h2>
-                  </div>
+                  <h2 className="mb-0 pb-2 text-sm">
+                    Related Documents ({content.relatedDocs.length})
+                  </h2>
                   <ul className="divide-y divide-border">
                     {content.relatedDocs.map((doc) => {
                       const RelIcon = doc.fileType === 'pdf' ? FileText : File;
@@ -396,15 +387,25 @@ export function DocumentDetail({
                 </section>
               )}
             </div>
-            <PageFooter />
           </div>
         </div>
 
         {!isChatExpanded && (
           <div className="shrink-0 px-4 sm:px-8 pb-4 pt-2">
-            <div className="max-w-[900px] mx-auto w-full relative pointer-events-none">
-              {isChatOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-0 flex flex-col h-[420px] overflow-hidden rounded-t-[20px] border border-b-0 border-border bg-card shadow-xl pointer-events-auto">
+            <div className="max-w-[900px] mx-auto w-full">
+              {!isChatOpen && messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(true)}
+                  className="mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-muted transition-colors"
+                >
+                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  Resume chat ({messages.length})
+                </button>
+              )}
+
+              {isChatOpen ? (
+                <div className="overflow-hidden rounded-[20px] border border-border bg-card shadow-xl">
                   <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border bg-muted/40 shrink-0">
                     <span className="text-sm font-medium text-foreground truncate pr-2">Chat</span>
                     <div className="flex items-center gap-1 shrink-0">
@@ -433,35 +434,30 @@ export function DocumentDetail({
                   </div>
                   <div
                     ref={chatScrollRef}
-                    className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-5 min-h-0"
+                    className="h-[420px] overflow-y-auto px-4 sm:px-6 py-5 space-y-5"
                   >
                     {messages.length === 0 ? renderEmptyChat() : renderChatMessages()}
                   </div>
+                  <DocumentChatComposer
+                    chatQuery={chatQuery}
+                    isTyping={isTyping}
+                    isChatOpen={isChatOpen}
+                    isConnectedToPanel
+                    onChange={setChatQuery}
+                    onFocus={() => setIsChatOpen(true)}
+                    onSubmit={handleSendMessage}
+                  />
                 </div>
-              )}
-
-              {!isChatOpen && messages.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setIsChatOpen(true)}
-                  className="absolute bottom-full left-2 mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-muted transition-colors pointer-events-auto"
-                >
-                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                  Resume chat ({messages.length})
-                </button>
-              )}
-
-              <div className="pointer-events-auto">
+              ) : (
                 <DocumentChatComposer
                   chatQuery={chatQuery}
                   isTyping={isTyping}
                   isChatOpen={isChatOpen}
-                  isConnectedToPanel={isChatOpen}
                   onChange={setChatQuery}
                   onFocus={() => setIsChatOpen(true)}
                   onSubmit={handleSendMessage}
                 />
-              </div>
+              )}
             </div>
           </div>
         )}
@@ -490,12 +486,11 @@ export function DocumentDetail({
           >
             {messages.length === 0 ? renderEmptyChat() : renderChatMessages()}
           </div>
-          <div className="shrink-0 border-t border-border bg-card">
+          <div className="shrink-0 bg-card">
             <DocumentChatComposer
               chatQuery={chatQuery}
               isTyping={isTyping}
               isChatOpen
-              isExpandedLayout
               isConnectedToPanel
               onChange={setChatQuery}
               onFocus={() => setIsChatOpen(true)}

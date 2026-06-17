@@ -286,8 +286,6 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
             />
           </div>
 
-          <ResourceDocumentsList files={files} editable onChange={setFiles} />
-
           <div className="bg-card rounded-xl border border-border p-6">
             <DetailSectionTitle>Web Links</DetailSectionTitle>
             <div className="flex gap-2 mb-4">
@@ -334,6 +332,8 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
               ))}
             </div>
           </div>
+
+          <ResourceDocumentsList files={files} editable onChange={setFiles} />
         </div>
 
         <div className="space-y-6">

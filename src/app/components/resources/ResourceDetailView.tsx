@@ -99,8 +99,6 @@ export function ResourceDetailView({
             <p className="text-sm text-foreground leading-relaxed">{resource.description}</p>
           </div>
 
-          <ResourceDocumentsList files={resource.files} onChange={onFilesChange} />
-
           {resource.webLinks.length > 0 && (
             <div className="bg-card rounded-xl border border-border p-6">
               <DetailSectionTitle>Web Links</DetailSectionTitle>
@@ -123,6 +121,8 @@ export function ResourceDetailView({
               </div>
             </div>
           )}
+
+          <ResourceDocumentsList files={resource.files} onChange={onFilesChange} />
         </div>
 
         <div className="space-y-6">
