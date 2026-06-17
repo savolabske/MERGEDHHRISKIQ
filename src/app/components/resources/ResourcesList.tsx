@@ -13,9 +13,15 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PlatformResource, ResourceOwnership } from '../../data/resourcesMock';
-import { OwnershipBadge, TagPill } from './resourceShared';
+import {
+  OwnershipBadge,
+  PlatformResourceStatusCell,
+  PlatformResourceStatusCompact,
+  TagPill,
+} from './resourceShared';
 
 type FilterOption = 'all' | ResourceOwnership;
+type StatusFilterOption = 'all' | 'uploading' | 'completed';
 
 const PAGE_SIZE_OPTIONS = [9, 12, 18, 24] as const;
 
@@ -37,25 +43,31 @@ export function ResourcesList({
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [filter, setFilter] = useState<FilterOption>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilterOption>('all');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showStatusFilterMenu, setShowStatusFilterMenu] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(PAGE_SIZE_OPTIONS[0]);
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
   const itemsPerPageDropdownRef = useRef<HTMLDivElement>(null);
+  const filterMenuRef = useRef<HTMLDivElement>(null);
+  const statusFilterMenuRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
     return resources.filter((r) => {
       const matchesFilter = filter === 'all' || r.ownership === filter;
+      const resourceStatus = r.status?.state ?? 'completed';
+      const matchesStatusFilter = statusFilter === 'all' || resourceStatus === statusFilter;
       const q = searchQuery.toLowerCase();
       const matchesSearch =
         !q ||
         r.title.toLowerCase().includes(q) ||
         r.description.toLowerCase().includes(q) ||
         r.tags.some((t) => t.toLowerCase().includes(q));
-      return matchesFilter && matchesSearch;
+      return matchesFilter && matchesStatusFilter && matchesSearch;
     });
-  }, [resources, filter, searchQuery]);
+  }, [resources, filter, searchQuery, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -65,7 +77,7 @@ export function ResourcesList({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, searchQuery, itemsPerPage]);
+  }, [filter, searchQuery, statusFilter, itemsPerPage]);
 
   useEffect(() => {
     setCurrentPage((prev) => Math.min(prev, totalPages));
@@ -73,10 +85,14 @@ export function ResourcesList({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        itemsPerPageDropdownRef.current &&
-        !itemsPerPageDropdownRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      if (filterMenuRef.current && !filterMenuRef.current.contains(target)) {
+        setShowFilterMenu(false);
+      }
+      if (statusFilterMenuRef.current && !statusFilterMenuRef.current.contains(target)) {
+        setShowStatusFilterMenu(false);
+      }
+      if (itemsPerPageDropdownRef.current && !itemsPerPageDropdownRef.current.contains(target)) {
         setShowItemsPerPageDropdown(false);
       }
     };
@@ -118,6 +134,13 @@ export function ResourcesList({
         ? `Created by me (${filtered.length})`
         : `Shared with me (${filtered.length})`;
 
+  const statusFilterLabel =
+    statusFilter === 'all'
+      ? `All Status (${filtered.length})`
+      : statusFilter === 'uploading'
+        ? `Uploading (${filtered.length})`
+        : `Completed (${filtered.length})`;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -136,8 +159,8 @@ export function ResourcesList({
         </button>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="relative w-full">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 min-w-0">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
             size={18}
@@ -147,48 +170,97 @@ export function ResourcesList({
             placeholder="Search resources..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm bg-card focus:outline-none focus:border-primary transition-colors"
+            className="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm bg-card focus:outline-none focus:border-primary transition-colors"
           />
         </div>
 
-        <div className="flex items-stretch gap-3">
-          <div className="relative flex-1 min-w-0">
-            <button
-              type="button"
-              onClick={() => setShowFilterMenu((v) => !v)}
-              className="flex w-full items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors justify-between min-w-0"
-            >
-              <span className="truncate">{filterLabel}</span>
-              <ChevronDown size={16} className="text-text-subtle shrink-0" />
-            </button>
-            {showFilterMenu && (
-              <div className="absolute z-20 mt-1 w-full min-w-[200px] bg-card border border-border rounded-lg shadow-lg py-1">
-                {(
-                  [
-                    ['all', 'All Resources'],
-                    ['created_by_me', 'Created by me'],
-                    ['shared_with_me', 'Shared with me'],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => {
-                      setFilter(value);
-                      setShowFilterMenu(false);
-                    }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors ${
-                      filter === value ? 'text-primary font-medium' : 'text-foreground'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        <div className="relative shrink-0" ref={filterMenuRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowStatusFilterMenu(false);
+              setShowFilterMenu((v) => !v);
+            }}
+            className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center gap-2 whitespace-nowrap"
+            aria-expanded={showFilterMenu}
+          >
+            <span>{filterLabel}</span>
+            <ChevronDown
+              size={16}
+              className={`text-text-subtle shrink-0 transition-transform ${showFilterMenu ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {showFilterMenu && (
+            <div className="absolute right-0 z-20 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg py-1">
+              {(
+                [
+                  ['all', 'All Resources'],
+                  ['created_by_me', 'Created by me'],
+                  ['shared_with_me', 'Shared with me'],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setFilter(value);
+                    setShowFilterMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors ${
+                    filter === value ? 'text-primary font-medium' : 'text-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 shrink-0">
+        <div className="relative shrink-0" ref={statusFilterMenuRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowFilterMenu(false);
+              setShowStatusFilterMenu((v) => !v);
+            }}
+            className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center gap-2 whitespace-nowrap"
+            aria-expanded={showStatusFilterMenu}
+          >
+            <span>{statusFilterLabel}</span>
+            <ChevronDown
+              size={16}
+              className={`text-text-subtle shrink-0 transition-transform ${showStatusFilterMenu ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {showStatusFilterMenu && (
+            <div className="absolute right-0 z-20 mt-1 w-44 bg-card border border-border rounded-lg shadow-lg py-1">
+              {(
+                [
+                  ['all', 'All Status'],
+                  ['uploading', 'Uploading'],
+                  ['completed', 'Completed'],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter(value);
+                    setShowStatusFilterMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors ${
+                    statusFilter === value ? 'text-primary font-medium' : 'text-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 shrink-0">
           <button
             type="button"
             onClick={() => setViewMode('list')}
@@ -210,16 +282,18 @@ export function ResourcesList({
             <Grid2X2 size={16} />
           </button>
         </div>
-        </div>
       </div>
 
       {viewMode === 'list' ? (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="hidden min-h-10 md:grid grid-cols-12 gap-4 px-4 sm:px-6 py-3 bg-muted/70 border-b border-border">
-            <div className="col-span-7 table-header-label">
+            <div className="col-span-5 table-header-label">
               Name
             </div>
             <div className="col-span-3 table-header-label">
+              Status
+            </div>
+            <div className="col-span-2 table-header-label">
               Last Modified
             </div>
             <div className="col-span-2 table-header-label text-right">
@@ -236,7 +310,7 @@ export function ResourcesList({
                 <button
                   type="button"
                   onClick={() => onSelect(resource.id)}
-                  className="md:col-span-7 text-left min-w-0 w-full pr-12 md:pr-0"
+                  className="md:col-span-5 text-left min-w-0 w-full pr-12 md:pr-0"
                 >
                   <h3 className="table-primary-text mb-2 break-words hover:text-primary-text transition-colors">
                     {resource.title}
@@ -250,6 +324,16 @@ export function ResourcesList({
                 </button>
 
                 <div className="md:col-span-3 flex items-center mt-2 md:mt-0">
+                  <div className="w-full">
+                    <span className="table-header-label mr-2 md:hidden">Status</span>
+                    <PlatformResourceStatusCell
+                      status={resource.status}
+                      fallbackDate={resource.lastModified}
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 flex items-center mt-2 md:mt-0">
                   <span className="table-metadata-text">
                     <span className="table-header-label mr-2 md:hidden">Last Modified</span>
                     {resource.lastModified}
@@ -337,6 +421,10 @@ export function ResourcesList({
               </h3>
               <div className="flex flex-wrap gap-2 mb-3">
                 <OwnershipBadge ownership={resource.ownership} />
+                <PlatformResourceStatusCompact
+                  status={resource.status}
+                  fallbackDate={resource.lastModified}
+                />
               </div>
               <p className="table-supporting-text line-clamp-2 mb-3">{resource.description}</p>
               <p className="table-metadata-text">{resource.lastModified}</p>

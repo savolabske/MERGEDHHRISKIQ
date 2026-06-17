@@ -26,7 +26,9 @@ import {
   ReportChatPromptInput,
   ReportChatScrollSync,
   SJF_CHAT_PROMPT_THEME,
+  SJF_EXTENDED_KNOWLEDGE_THEME,
   ReportDashboardCustomizeOverlay,
+  ReportExtendedKnowledgeToggle,
   SJF_CUSTOMIZE_THEME,
   ReportLoadDeferred,
   ReportFilterBar,
@@ -405,34 +407,11 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
               <p className="mt-1 text-[11.5px] text-[#6f8094]">
                 Ask about donors, windows, programmes, results or financials.
               </p>
-              <button
-                type="button"
-                onClick={toggleExtendedKnowledge}
-                className="mt-2.5 flex w-full items-center justify-between gap-2 rounded-lg border border-[#e2e6ee] bg-[#f4f6fa] px-2.5 py-2 text-left"
-              >
-                <div>
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#324559]">
-                    <Shield size={13} className="text-[#00689D]" />
-                    Extended Knowledge
-                  </div>
-                  <div className="text-[10px] text-[#6f8094]">
-                    Compare across Aid Flow, Migration &amp; more
-                  </div>
-                </div>
-                <span
-                  className={cn(
-                    'relative h-[18px] w-8 shrink-0 rounded-full transition',
-                    extendedKnowledge ? 'bg-[#00689D]' : 'bg-[#cfd6e0]',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition',
-                      extendedKnowledge ? 'left-4' : 'left-0.5',
-                    )}
-                  />
-                </span>
-              </button>
+              <ReportExtendedKnowledgeToggle
+                enabled={extendedKnowledge}
+                onToggle={toggleExtendedKnowledge}
+                theme={SJF_EXTENDED_KNOWLEDGE_THEME}
+              />
             </ReportLoadItem>
           }
           chatFeed={

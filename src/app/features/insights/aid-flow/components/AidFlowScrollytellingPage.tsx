@@ -16,7 +16,9 @@ import {
   ReportChatPromptInput,
   ReportChatScrollSync,
   AID_FLOW_CHAT_PROMPT_THEME,
+  AID_FLOW_EXTENDED_KNOWLEDGE_THEME,
   ReportDashboardCustomizeOverlay,
+  ReportExtendedKnowledgeToggle,
   ReportLoadDeferred,
   AID_FLOW_FILTER_THEME,
   ReportFilterBar,
@@ -98,6 +100,8 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
     chatScrollRef,
     runPrompt,
     backToReport,
+    extendedKnowledge,
+    toggleExtendedKnowledge,
   } = useAidFlowReportPrompt({
     onChatLaneReady: () => chatLayoutRef.current?.openChat(),
   });
@@ -374,6 +378,11 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
               <p className="mt-1 text-[11.5px] text-[#6b7a8d]">
                 Ask about donors, sectors, regions or trends. Answers reshape the dashboard on the left.
               </p>
+              <ReportExtendedKnowledgeToggle
+                enabled={extendedKnowledge}
+                onToggle={toggleExtendedKnowledge}
+                theme={AID_FLOW_EXTENDED_KNOWLEDGE_THEME}
+              />
             </ReportLoadItem>
           }
           chatFeed={
@@ -382,6 +391,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                 messages={messages}
                 isQuerying={isQuerying}
                 queryingMode={queryingMode}
+                extendedKnowledge={extendedKnowledge}
                 onChipClick={runPrompt}
               />
             </div>
@@ -408,6 +418,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                 query={activeQuery}
                 phase={customizePhase}
                 theme={AID_FLOW_CUSTOMIZE_THEME}
+                extendedKnowledge={extendedKnowledge}
               />
             ) : null}
 

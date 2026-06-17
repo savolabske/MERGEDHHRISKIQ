@@ -95,9 +95,65 @@ interface ChatProps {
   isSharedThread?: boolean;
   joinActivities?: { id: string; userName: string; timestampLabel: string; afterMessageCount: number }[];
   onKnowledgeSourceClick?: (source: Source) => void;
+  startEmpty?: boolean;
+  chatContextLabel?: 'Risk iQ' | 'Humanity Hub';
 }
 
 const getAIResponse = getChatAiResponse;
+
+const HUB_NEW_CHAT_SUGGESTIONS = [
+  {
+    title: 'Climate & Rains',
+    prompt: 'How are late Gu rains affecting drought risk in Bay and Bakool?',
+    icon: '🌧️',
+    iconClass: 'bg-warning-subtle',
+  },
+  {
+    title: 'Aid Delivery',
+    prompt: 'Where are the largest aid delivery gaps in Galguduud and Lower Shabelle?',
+    icon: '📦',
+    iconClass: 'bg-primary-subtle',
+  },
+  {
+    title: 'Displacement',
+    prompt: 'What are arrival trends in Baidoa and Mogadishu IDP camps?',
+    icon: '🏕️',
+    iconClass: 'bg-sidebar-accent',
+  },
+  {
+    title: "Today's Picture",
+    prompt: 'Summarize the key humanitarian signals across climate, aid, and displacement',
+    icon: '📊',
+    iconClass: 'bg-destructive-subtle',
+  },
+] as const;
+
+const RISK_IQ_NEW_CHAT_SUGGESTIONS = [
+  {
+    title: "Today's Risk Overview",
+    prompt: 'What should I be worried about today?',
+    icon: '⚡',
+    iconClass: 'bg-sidebar-accent',
+  },
+  {
+    title: 'Security Incidents',
+    prompt: 'What security incidents happened in Lower Shabelle recently?',
+    icon: '🛡',
+    iconClass: 'bg-destructive-subtle',
+  },
+  {
+    title: 'Vendor Red Flags',
+    prompt: 'Are any of our active contractors flagged?',
+    icon: '📋',
+    iconClass: 'bg-warning-subtle',
+  },
+  {
+    title: 'Access Constraints',
+    prompt: 'Which areas are off-limits for field teams?',
+    icon: '⚠️',
+    iconClass: 'bg-primary-subtle',
+  },
+] as const;
 
 
 export function Chat({
@@ -119,9 +175,15 @@ export function Chat({
   isSharedThread = false,
   joinActivities = [],
   onKnowledgeSourceClick,
+  startEmpty = false,
+  chatContextLabel,
 }: ChatProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [messages, setMessages] = useState<Message[]>(() => {
+    if (startEmpty) {
+      return [];
+    }
+
     // If we have preloaded messages (from history), use those
     if (preloadedMessages && preloadedMessages.length > 0) {
       return normalizePreloadedMessages(preloadedMessages).map((message) => {
@@ -156,7 +218,7 @@ export function Chat({
   });
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isExtendedKnowledgeMode, setIsExtendedKnowledgeMode] = useState(false);
+  const [isExtendedKnowledgeMode, setIsExtendedKnowledgeMode] = useState(() => showRiskIqContext);
   const [isSharedExtendedPillVisible, setIsSharedExtendedPillVisible] = useState(false);
   const [suggestedFollowUps, setSuggestedFollowUps] = useState<string[]>([]);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -172,8 +234,9 @@ export function Chat({
       isMountedRef.current = false;
     };
   }, []);
-  const initialUserMessageCount =
-    preloadedMessages && preloadedMessages.length > 0
+  const initialUserMessageCount = startEmpty
+    ? 0
+    : preloadedMessages && preloadedMessages.length > 0
       ? preloadedMessages.filter((message) => message.type === 'user').length
       : 1;
   const messageCountRef = useRef(initialUserMessageCount);
@@ -269,6 +332,8 @@ export function Chat({
 
   // Initial AI response - only if not loading from history
   useEffect(() => {
+    if (startEmpty) return;
+
     if (dashboardChatPayload) {
       const streamingResponse = getDashboardStreamingResponse(dashboardChatPayload);
       processAIResponse(dashboardChatPayload.prompt, true, 'default', false, streamingResponse);
@@ -486,7 +551,13 @@ export function Chat({
 
   const handleSend = () => {
     if (!inputValue.trim() || isProcessing) return;
-    const trimmedValue = inputValue.trim();
+    submitQuery(inputValue.trim());
+    setInputValue('');
+  };
+
+  const submitQuery = (rawValue: string) => {
+    if (!rawValue.trim() || isProcessing) return;
+    const trimmedValue = rawValue.trim();
     const invokesAi = /@humanity\s*hub/i.test(trimmedValue);
 
     const newUserMessage: Message = {
@@ -495,18 +566,16 @@ export function Chat({
       content: trimmedValue,
       senderId: CURRENT_USER.id,
       senderName: CURRENT_USER.name,
-      contentType: 'text'
+      contentType: 'text',
     };
 
-    setMessages(prev => [...prev, newUserMessage]);
+    setMessages((prev) => [...prev, newUserMessage]);
     messageCountRef.current += 1;
-    
+
     const currentQuery = trimmedValue.replace(/@humanity\s*hub/ig, '').trim() || trimmedValue;
-    setInputValue('');
 
     if (isSharedThread) {
       if (!invokesAi) {
-        // Normal group chat flow when AI is not mentioned.
         setIsSharedExtendedPillVisible(false);
         return;
       }
@@ -1539,6 +1608,8 @@ export function Chat({
   const isExtendedInputActive = isSharedThread
     ? invokesAiInComposer && isSharedExtendedPillVisible
     : isExtendedKnowledgeMode;
+  const isHubEmptyState = startEmpty && messages.length === 0;
+  const composerMaxWidthClass = isHubEmptyState ? 'max-w-[680px]' : 'max-w-[750px]';
 
   /** Group chats hide the AI toolbar until @humanityhub is present — keep the composer short until then. */
   const sharedComposerCompact = isSharedThread && !invokesAiInComposer;
@@ -1547,12 +1618,22 @@ export function Chat({
     <div className="h-full flex flex-col bg-background">
       {/* Risk IQ context + back navigation */}
       {showRiskIqContext && !showThreadHeader && (
-        <RiskIQChatHeader onBack={onBack} />
+        <RiskIQChatHeader onBack={onBack} onInvite={() => setIsShareOpen(true)} />
       )}
       {navigation === 'back' && !showRiskIqContext && !showThreadHeader && (
-        <div className="bg-background sticky top-0 z-20">
+        <div className="sticky top-0 z-20">
           <div className="px-4 sm:px-8 lg:px-10 pt-6 pb-4">
-            <BackLink onClick={onBack} />
+            <div className="flex items-center justify-between gap-3">
+              <BackLink onClick={onBack} />
+              <button
+                type="button"
+                onClick={() => setIsShareOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground-emphasis text-sm font-medium transition-colors"
+              >
+                <UserPlus size={16} className="text-muted-foreground" />
+                <span>Invite</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1561,11 +1642,24 @@ export function Chat({
         <div className="bg-background sticky top-0 z-20">
           <div className="px-4 sm:px-8 lg:px-10 py-4 pt-5 lg:pt-4">
             <div className={`w-full flex items-center justify-between gap-3 ${showNavigation ? '' : 'pl-14 sm:pl-0'}`}>
-              {navigation === 'back' ? (
-                <BackLink onClick={onBack} />
-              ) : (
-                <div className="w-10 sm:w-0 shrink-0" />
-              )}
+              <div className="flex items-center gap-3 min-w-0">
+                {navigation === 'back' ? (
+                  <BackLink onClick={onBack} />
+                ) : (
+                  <div className="w-10 sm:w-0 shrink-0" />
+                )}
+                {chatContextLabel && (
+                  <span
+                    className={`inline-flex items-center rounded-xs px-2.5 py-1 text-xs font-medium ${
+                      chatContextLabel === 'Risk iQ'
+                        ? 'bg-destructive-subtle text-destructive-text'
+                        : 'bg-primary-subtle text-primary-text'
+                    }`}
+                  >
+                    {chatContextLabel}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-3 shrink-0">
                 {sharedUsers.length > 0 && (
                   <div ref={sharedPopoverRef} className="relative">
@@ -1634,6 +1728,58 @@ export function Chat({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-32 py-8">
         <div className="max-w-[750px] mx-auto space-y-6">
+          {startEmpty && messages.length === 0 && (
+            <div className="flex flex-col items-center py-2 sm:py-6">
+              <div className="w-full max-w-[680px]">
+                <div className="flex justify-center mb-6">
+                  <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-sm">
+                    <Sparkles className="w-7 h-7 text-white" fill="white" />
+                  </div>
+                </div>
+
+                <h1 className="text-2xl sm:text-3xl text-center mb-2 text-foreground">
+                  Ask{' '}
+                  <span className="italic text-primary">
+                    {showRiskIqContext ? 'Risk IQ' : 'Humanity Hub'}
+                  </span>
+                </h1>
+
+                <p className="text-sm text-muted-foreground text-center mb-8 leading-relaxed max-w-[460px] mx-auto">
+                  {showRiskIqContext
+                    ? 'Your AI risk analyst for Somalia field operations — available around the clock.'
+                    : 'A decision support tool built for humanitarian and development operations'}
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(showRiskIqContext ? RISK_IQ_NEW_CHAT_SUGGESTIONS : HUB_NEW_CHAT_SUGGESTIONS).map(
+                    (suggestion) => (
+                    <button
+                      key={suggestion.title}
+                      type="button"
+                      onClick={() => submitQuery(suggestion.prompt)}
+                      disabled={isProcessing}
+                      className="bg-card border border-border rounded-xl p-4 text-left hover:border-primary hover:shadow-sm transition-all group flex items-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      <div
+                        className={`w-9 h-9 ${suggestion.iconClass} rounded-lg flex items-center justify-center shrink-0`}
+                      >
+                        <span className="text-lg">{suggestion.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-foreground mb-0.5 group-hover:text-primary">
+                          {suggestion.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground leading-snug line-clamp-2">
+                          {suggestion.prompt}
+                        </p>
+                      </div>
+                    </button>
+                  ),
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           {isSharedThread && (
             <div className="flex justify-center">
               <div className="text-sm text-muted-foreground">
@@ -1708,7 +1854,7 @@ export function Chat({
 
       {/* Input */}
       <div className="bg-background px-4 sm:px-8 lg:px-32 pt-[4px] pb-[24px]">
-        <div className="max-w-[750px] mx-auto">
+        <div className={cn(composerMaxWidthClass, 'mx-auto')}>
           {/* Suggested Follow-Ups - appear above input */}
           {suggestedFollowUps.length > 0 && (
             null
@@ -1820,6 +1966,10 @@ export function Chat({
                     : invokesAiInComposer
                       ? "Ask Humanity Hub AI..."
                       : "Send a message or mention @humanityhub for AI"
+                  : isHubEmptyState
+                    ? showRiskIqContext
+                      ? 'Ask anything about operational risks, security threats, or field conditions...'
+                      : 'Ask about humanitarian data or field conditions...'
                   : isExtendedInputActive
                     ? "Ask in Extended Knowledge mode..."
                     : "Ask a follow-up question..."

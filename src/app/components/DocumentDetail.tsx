@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import {
+  Calendar,
   ExternalLink,
   Eye,
   File,
@@ -23,11 +24,71 @@ interface ChatMessage {
   isThinking?: boolean;
 }
 
+export type DocumentChatMessage = ChatMessage;
+
 interface DocumentDetailProps {
   documentId: string;
   onBack: () => void;
   onOpenDocument?: (documentId: string) => void;
   breadcrumbParent?: { label: string; onClick: () => void };
+  breadcrumbCurrentOnClick?: () => void;
+  breadcrumbChildLabel?: string;
+  initialChatOpen?: boolean;
+  initialMessages?: DocumentChatMessage[];
+  onMessagesChange?: (messages: DocumentChatMessage[], resourceTitle: string) => void;
+}
+
+function renderInlineBold(text: string): Array<string | JSX.Element> {
+  const parts = text.split(/(\*\*.*?\*\*)/g).filter(Boolean);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={`bold-${index}`} className="font-semibold text-foreground">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
+function renderFormattedAssistantText(content: string): JSX.Element[] {
+  const lines = content.replace(/\\n/g, '\n').split('\n');
+  const elements: JSX.Element[] = [];
+  let key = 0;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      elements.push(<div key={`spacer-${key++}`} className="h-2" />);
+      continue;
+    }
+
+    const bulletMatch = line.match(/^(?:•|-)\s+(.*)$/);
+    if (bulletMatch) {
+      elements.push(
+        <div key={`bullet-${key++}`} className="flex gap-2 text-sm leading-7 mb-1">
+          <span className="text-primary shrink-0">-</span>
+          <span className="text-secondary-foreground">{renderInlineBold(bulletMatch[1])}</span>
+        </div>,
+      );
+      continue;
+    }
+
+    const isSectionTitle = line.endsWith(':');
+    elements.push(
+      <p
+        key={`line-${key++}`}
+        className={`text-sm leading-7 ${
+          isSectionTitle ? 'font-semibold text-foreground mt-1' : 'text-secondary-foreground'
+        }`}
+      >
+        {renderInlineBold(line)}
+      </p>,
+    );
+  }
+
+  return elements;
 }
 
 function generateDocumentResponse(query: string, content: DocumentContent): string {
@@ -85,10 +146,10 @@ function DocumentChatComposer({
 
   if (isExpandedLayout) {
     return (
-      <form
-        onSubmit={onSubmit}
-        className={`relative ${isConnectedToPanel ? 'px-4 sm:px-6 py-3' : ''}`}
-      >
+      <form onSubmit={onSubmit} className={`relative ${isConnectedToPanel ? 'px-4 sm:px-6 py-3' : ''}`}>
+        <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none">
+          <Sparkles size={18} className="text-muted-foreground" />
+        </div>
         <input
           type="text"
           value={chatQuery}
@@ -96,21 +157,17 @@ function DocumentChatComposer({
           onFocus={onFocus}
           placeholder="Ask about this document…"
           disabled={isTyping}
-          className={`w-full h-11 bg-muted/50 text-sm text-foreground placeholder:text-muted-foreground pl-4 pr-12 focus:outline-none focus:ring-1 focus:ring-primary/10 disabled:opacity-60 ${
-            isConnectedToPanel
-              ? 'border-0 rounded-none'
-              : 'border border-border rounded-lg focus:border-border'
-          }`}
+          className="focus-ring-container-control w-full bg-card text-sm text-foreground placeholder:text-muted-foreground pl-12 pr-14 focus:outline-none focus:ring-0 transition-all disabled:opacity-60 border border-border rounded-[22px] py-[18px] hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/10"
         />
         <button
           type="submit"
           disabled={!canSend}
-          className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+          className={`absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
             canSend ? 'text-primary hover:bg-primary-subtle' : 'text-muted-foreground cursor-not-allowed'
           }`}
           aria-label="Send message"
         >
-          <Send size={16} />
+          <Send size={18} />
         </button>
       </form>
     );
@@ -128,10 +185,10 @@ function DocumentChatComposer({
         onFocus={onFocus}
         placeholder="Ask about this document…"
         disabled={isTyping}
-        className={`w-full bg-card text-sm text-foreground placeholder:text-muted-foreground pl-12 pr-14 focus:outline-none focus:ring-1 focus:ring-primary/10 transition-all disabled:opacity-60 ${
+        className={`focus-ring-container-control w-full bg-card text-sm text-foreground placeholder:text-muted-foreground pl-12 pr-14 focus:outline-none focus:ring-0 transition-all disabled:opacity-60 ${
           isConnectedToPanel
-            ? 'border border-border border-t shadow-sm rounded-b-[20px] rounded-t-none py-[18px] focus:border-border'
-            : 'border border-border shadow-sm rounded-full py-[18px] focus:border-border'
+            ? 'border border-border rounded-b-[20px] rounded-t-none py-[18px] hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/10'
+            : 'border border-border rounded-full py-[18px] hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/10'
         }`}
       />
       <button
@@ -155,21 +212,29 @@ export function DocumentDetail({
   onBack,
   onOpenDocument,
   breadcrumbParent,
+  breadcrumbCurrentOnClick,
+  breadcrumbChildLabel,
+  initialChatOpen = false,
+  initialMessages,
+  onMessagesChange,
 }: DocumentDetailProps) {
   const content = getDocumentContent(documentId);
   const [chatQuery, setChatQuery] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [isTyping, setIsTyping] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(initialChatOpen);
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Keep chat collapsed when opening a document detail view, even if history exists.
     setIsChatOpen(false);
     setIsChatExpanded(false);
-    setMessages([]);
+    setMessages(initialMessages ?? []);
     setChatQuery('');
+    // Remount via `key` handles thread switches; only sync when the document id changes in-place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
 
   useEffect(() => {
@@ -177,6 +242,11 @@ export function DocumentDetail({
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
   }, [messages, isTyping, isChatOpen, isChatExpanded]);
+
+  useEffect(() => {
+    if (!onMessagesChange || messages.length === 0) return;
+    onMessagesChange(messages, content.title);
+  }, [messages, content.title, onMessagesChange]);
 
   const handleSendMessage = (e: FormEvent) => {
     e.preventDefault();
@@ -203,27 +273,20 @@ export function DocumentDetail({
         <div key={index}>
           {message.role === 'user' ? (
             <div className="flex justify-end">
-              <div className="max-w-[80%] rounded-2xl bg-muted px-4 py-2.5 text-sm text-foreground">
+              <div className="max-w-[80%] rounded-2xl bg-primary text-primary-foreground px-4 py-2.5 text-sm leading-relaxed shadow-sm">
                 {message.content}
               </div>
             </div>
           ) : (
             <div className="max-w-full">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-metadata uppercase tracking-wide">
-                  System sent
-                </span>
-                <span className="text-xs text-muted-foreground">•</span>
-                <span className="text-xs text-muted-foreground">Just now</span>
-              </div>
-              <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-secondary-foreground whitespace-pre-wrap leading-relaxed">
+              <div className="px-1 text-sm text-secondary-foreground whitespace-pre-wrap leading-relaxed">
                 {message.isThinking ? (
                   <span className="inline-flex items-center gap-2 text-primary">
                     <Sparkles size={14} className="animate-pulse" />
                     Thinking…
                   </span>
                 ) : (
-                  message.content
+                  <div className="space-y-0.5">{renderFormattedAssistantText(message.content)}</div>
                 )}
               </div>
             </div>
@@ -232,12 +295,7 @@ export function DocumentDetail({
       ))}
       {isTyping && (
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-metadata uppercase tracking-wide">
-              System sent
-            </span>
-          </div>
-          <div className="rounded-xl border border-border bg-muted/40 px-4 py-3">
+          <div className="px-1">
             <div className="flex gap-1">
               {[0, 150, 300].map((delay) => (
                 <span
@@ -271,23 +329,23 @@ export function DocumentDetail({
       >
         <div className={`flex-1 overflow-y-auto min-h-0 ${isChatExpanded ? '' : 'pb-4'}`}>
           <div className="px-4 sm:px-8 pt-6">
-            <div className="max-w-[900px] mx-auto w-full space-y-6">
-              {breadcrumbParent ? (
-                <PageBreadcrumb
-                  className="mb-4"
-                  items={[
-                    { label: breadcrumbParent.label, onClick: breadcrumbParent.onClick },
-                    { label: content.title },
-                  ]}
-                />
-              ) : (
-                <BackLink onClick={onBack} className="mb-4" />
-              )}
+            {!breadcrumbParent && <BackLink onClick={onBack} className="mb-4" />}
+            {breadcrumbParent ? (
+              <PageBreadcrumb
+                className="mb-6"
+                items={[
+                  { label: breadcrumbParent.label, onClick: breadcrumbParent.onClick },
+                  { label: content.title, onClick: breadcrumbCurrentOnClick },
+                  ...(breadcrumbChildLabel ? [{ label: breadcrumbChildLabel }] : []),
+                ]}
+              />
+            ) : null}
 
+            <div className="max-w-[900px] mx-auto w-full space-y-6">
               <div className={`${hubCard} p-6 sm:p-8`}>
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h1 className="text-xl sm:text-2xl font-semibold text-foreground leading-tight mb-4">
+                    <h1 className="text-xl font-semibold text-foreground leading-tight mb-4">
                       {content.title}
                     </h1>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -302,26 +360,32 @@ export function DocumentDetail({
                       <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-subtle text-primary-text">
                         {content.tag}
                       </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Calendar size={15} />
+                        Added {content.createdAt}
+                      </span>
                     </div>
                   </div>
                   <Button type="button" className="shrink-0 gap-2">
-                    Open Document
+                    Open Resource
                     <ExternalLink size={16} />
                   </Button>
                 </div>
               </div>
 
-              <div className={`${hubCard} p-6 sm:p-8`}>
-                <h2 className="text-sm font-semibold text-foreground mb-3">Document Summary</h2>
-                <p className="text-sm sm:text-base text-secondary-foreground leading-relaxed">
+              <section>
+                <h2 className="mb-3 text-sm font-semibold leading-5 text-[#334155]">
+                  Document Summary
+                </h2>
+                <p className="text-sm text-foreground leading-relaxed">
                   {content.summary}
                 </p>
-              </div>
+              </section>
 
               {content.relatedDocs.length > 0 && (
-                <div className={`${hubCard} overflow-hidden`}>
-                  <div className="px-6 sm:px-8 pt-6 pb-2">
-                    <h2 className="text-sm font-semibold text-foreground">
+                <section>
+                  <div className="pb-2">
+                    <h2 className="mb-0 text-sm font-semibold leading-5 text-[#334155]">
                       Related Documents ({content.relatedDocs.length})
                     </h2>
                   </div>
@@ -333,16 +397,16 @@ export function DocumentDetail({
                           <button
                             type="button"
                             onClick={() => onOpenDocument?.(doc.id)}
-                            className="w-full flex items-start gap-4 px-6 sm:px-8 py-4 text-left hover:bg-muted/50 transition-colors group"
+                            className="w-full flex items-start gap-4 pr-5 sm:pr-6 py-4 text-left hover:bg-muted/50 transition-colors group"
                           >
                             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-subtle border border-border">
                               <RelIcon size={18} className="text-primary" />
                             </span>
                             <span className="flex-1 min-w-0">
-                              <span className="block text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                              <span className="block text-sm font-medium leading-6 text-foreground group-hover:text-primary transition-colors">
                                 {doc.title}
                               </span>
-                              <span className="block text-xs text-muted-foreground mt-0.5">
+                              <span className="block text-sm text-muted-foreground mt-0.5">
                                 {doc.type} • {doc.size}
                               </span>
                             </span>
@@ -351,7 +415,7 @@ export function DocumentDetail({
                       );
                     })}
                   </ul>
-                </div>
+                </section>
               )}
             </div>
             <PageFooter />
@@ -359,14 +423,12 @@ export function DocumentDetail({
         </div>
 
         {!isChatExpanded && (
-          <div className="shrink-0 bg-background border-t border-border px-4 sm:px-8 py-4">
-            <div className="max-w-[900px] mx-auto w-full relative">
+          <div className="shrink-0 px-4 sm:px-8 pb-4 pt-2">
+            <div className="max-w-[900px] mx-auto w-full relative pointer-events-none">
               {isChatOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-0 flex flex-col h-[420px] overflow-hidden rounded-t-[20px] border border-b-0 border-border bg-card shadow-xl">
+                <div className="absolute bottom-full left-0 right-0 mb-0 flex flex-col h-[420px] overflow-hidden rounded-t-[20px] border border-b-0 border-border bg-card shadow-xl pointer-events-auto">
                   <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border bg-muted/40 shrink-0">
-                    <span className="text-sm font-medium text-foreground truncate pr-2">
-                      {content.title}
-                    </span>
+                    <span className="text-sm font-medium text-foreground truncate pr-2">Chat</span>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
@@ -400,15 +462,28 @@ export function DocumentDetail({
                 </div>
               )}
 
-              <DocumentChatComposer
-                chatQuery={chatQuery}
-                isTyping={isTyping}
-                isChatOpen={isChatOpen}
-                isConnectedToPanel={isChatOpen}
-                onChange={setChatQuery}
-                onFocus={() => setIsChatOpen(true)}
-                onSubmit={handleSendMessage}
-              />
+              {!isChatOpen && messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(true)}
+                  className="absolute bottom-full left-2 mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-muted transition-colors pointer-events-auto"
+                >
+                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  Resume chat ({messages.length})
+                </button>
+              )}
+
+              <div className="pointer-events-auto">
+                <DocumentChatComposer
+                  chatQuery={chatQuery}
+                  isTyping={isTyping}
+                  isChatOpen={isChatOpen}
+                  isConnectedToPanel={isChatOpen}
+                  onChange={setChatQuery}
+                  onFocus={() => setIsChatOpen(true)}
+                  onSubmit={handleSendMessage}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -417,7 +492,7 @@ export function DocumentDetail({
       {isChatExpanded && (
         <div className="fixed inset-y-0 right-0 z-50 flex flex-col w-full lg:w-[420px] bg-card border-l border-border shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border bg-muted/40 shrink-0 pt-4">
-            <span className="text-sm font-medium text-foreground truncate pr-2">{content.title}</span>
+            <span className="text-sm font-medium text-foreground truncate pr-2">Chat</span>
             <button
               type="button"
               onClick={() => {

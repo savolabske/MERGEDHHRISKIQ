@@ -17,6 +17,10 @@ export function MigrationResultPanel({
   onBack,
   onFollowUp,
 }: MigrationResultPanelProps) {
+  const sourceLabel = recipe.extended
+    ? 'IOM DTM ETT + linked reports'
+    : 'IOM DTM ETT data';
+
   return (
     <section>
       <AnimatedAIResponse
@@ -28,9 +32,16 @@ export function MigrationResultPanel({
             <Sparkles size={14} />
           </span>
           <div>
-            <div className="text-[13.5px] font-semibold text-[#1a1410]">{recipe.title}</div>
+            <div className="text-[13.5px] font-semibold text-[#1a1410]">
+              {recipe.title}
+              {recipe.extended && (
+                <span className="ml-2 rounded-full bg-[#DDA63A] px-2 py-0.5 text-[10px] font-bold text-white">
+                  EXTENDED
+                </span>
+              )}
+            </div>
             <div className="text-[11px] text-[#8a7d72]">
-              AI-generated from IOM DTM ETT data ·{' '}
+              AI-generated from {sourceLabel} ·{' '}
               {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
             </div>
           </div>

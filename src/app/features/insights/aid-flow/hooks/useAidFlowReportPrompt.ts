@@ -19,6 +19,7 @@ export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void 
   const [queryingMode, setQueryingMode] = useState<ReportQueryingMode>(null);
   const [customizePhase, setCustomizePhase] = useState<ReportCustomizePhase>('idle');
   const [activeQuery, setActiveQuery] = useState('');
+  const [extendedKnowledge, setExtendedKnowledge] = useState(false);
 
   const resultSectionRef = useRef<HTMLElement>(null);
   const kpiSectionRef = useRef<HTMLElement>(null);
@@ -26,9 +27,14 @@ export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void 
   const queryTimeoutRef = useRef<number | null>(null);
   const revealTimeoutRef = useRef<number | null>(null);
   const isQueryingRef = useRef(false);
+  const extendedRef = useRef(extendedKnowledge);
   const pendingResolutionRef = useRef<ReturnType<typeof resolveAidFlowPrompt> | null>(null);
 
   const timers = { queryTimeoutRef, revealTimeoutRef, isQueryingRef };
+
+  useEffect(() => {
+    extendedRef.current = extendedKnowledge;
+  }, [extendedKnowledge]);
 
   const cancelQuery = useCallback(() => {
     clearReportPromptTimers(timers);
@@ -65,9 +71,10 @@ export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void 
       const q = (query ?? promptInput).trim();
       if (!q || isQueryingRef.current) return;
 
-      const resolution = resolveAidFlowPrompt(q);
+      const ext = extendedRef.current;
+      const resolution = resolveAidFlowPrompt(q, ext);
       pendingResolutionRef.current = resolution;
-      setMessages((prev) => [...prev, { role: 'user', text: q }]);
+      setMessages((prev) => [...prev, { role: 'user', text: q, extended: ext || undefined }]);
       setActiveQuery(q);
       setPromptInput('');
 
@@ -93,6 +100,7 @@ export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void 
               lane: 'dashboard',
               title: pending.recipe.title,
               chips: pending.recipe.chips,
+              extended: pending.recipe.extended,
             },
           ]);
         },
@@ -106,6 +114,7 @@ export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void 
               lane: 'chat',
               body: pending.body,
               chips: pending.chips,
+              extended: ext || undefined,
             },
           ]);
           options?.onChatLaneReady?.();
@@ -114,6 +123,24 @@ export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void 
     },
     [promptInput, options?.onChatLaneReady],
   );
+
+  const toggleExtendedKnowledge = useCallback(() => {
+    setExtendedKnowledge((prev) => {
+      const next = !prev;
+      setMessages((msgs) => [
+        ...msgs,
+        {
+          role: 'system',
+          text: `Extended Knowledge is now <b>${next ? 'ON' : 'OFF'}</b>. ${
+            next
+              ? 'I can compare Aid Flow against SJF, Migration & other reports.'
+              : 'I will only answer from the Aid Flow dataset.'
+          }`,
+        },
+      ]);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     return () => clearReportPromptTimers(timers);
@@ -155,5 +182,7 @@ export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void 
     chatScrollRef,
     runPrompt,
     backToReport,
+    extendedKnowledge,
+    toggleExtendedKnowledge,
   };
 }

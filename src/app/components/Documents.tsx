@@ -4,6 +4,9 @@ import {
   Plus,
   X,
   Search,
+  Link as LinkIcon,
+  Globe,
+  ExternalLink,
   FileText,
   Folder,
   Upload,
@@ -57,6 +60,7 @@ interface DocumentGroup {
   id: string;
   title: string;
   description: string;
+  webLinks?: string[];
   tags?: string[];
   userGroup: string;
   files: DocumentFile[];
@@ -246,11 +250,11 @@ function DocumentAvailabilityFields({
                     }`}
                   >
                     <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                        selected ? 'bg-primary border-primary' : 'border-border-muted bg-card'
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                        selected ? 'border-primary' : 'border-border-muted'
                       }`}
                     >
-                      {selected && <Check size={12} className="text-white" />}
+                      {selected && <span className="h-2 w-2 rounded-full bg-primary" />}
                     </span>
                     <span className="font-medium leading-snug">{reportType}</span>
                   </button>
@@ -646,7 +650,7 @@ const mockDocuments: DocumentGroup[] = [
     addedBy: 'Mohamed Ali',
     lastModified: 'Mar 12, 2026',
     availabilityTarget: 'reports',
-    reportTypes: ['Migration & Displacement Intelligence', 'Somalia Joint Fund Intelligence'],
+    reportTypes: ['Migration & Displacement Intelligence'],
   },
   {
     id: '3',
@@ -1371,6 +1375,8 @@ export function Documents() {
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [webLinks, setWebLinks] = useState<string[]>([]);
+  const [linkInput, setLinkInput] = useState('');
   const [userGroup, setUserGroup] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>(getInitialAvailableTags);
@@ -1386,6 +1392,8 @@ export function Documents() {
   const [editReportAvailabilityTypes, setEditReportAvailabilityTypes] = useState<string[]>([]);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editWebLinks, setEditWebLinks] = useState<string[]>([]);
+  const [editLinkInput, setEditLinkInput] = useState('');
   const [editUserGroup, setEditUserGroup] = useState<string[]>([]);
   const [editTags, setEditTags] = useState<string[]>([]);
   const [editFiles, setEditFiles] = useState<DocumentFile[]>([]);
@@ -1632,9 +1640,7 @@ export function Documents() {
   };
 
   const toggleReportAvailabilityType = (reportType: string) => {
-    setReportAvailabilityTypes((prev) =>
-      prev.includes(reportType) ? prev.filter((r) => r !== reportType) : [...prev, reportType],
-    );
+    setReportAvailabilityTypes([reportType]);
   };
 
   const toggleEditAvailabilityTarget = (target: AvailabilityTarget) => {
@@ -1649,9 +1655,37 @@ export function Documents() {
   };
 
   const toggleEditReportAvailabilityType = (reportType: string) => {
-    setEditReportAvailabilityTypes((prev) =>
-      prev.includes(reportType) ? prev.filter((r) => r !== reportType) : [...prev, reportType],
-    );
+    setEditReportAvailabilityTypes([reportType]);
+  };
+
+  const addWebLink = () => {
+    const url = linkInput.trim();
+    if (!url || webLinks.includes(url)) return;
+    setWebLinks((prev) => [...prev, url]);
+    setLinkInput('');
+  };
+
+  const resolveWebLinksForCreate = () => {
+    const pending = linkInput.trim();
+    if (!pending || webLinks.includes(pending)) {
+      return webLinks;
+    }
+    return [...webLinks, pending];
+  };
+
+  const addEditWebLink = () => {
+    const url = editLinkInput.trim();
+    if (!url || editWebLinks.includes(url)) return;
+    setEditWebLinks((prev) => [...prev, url]);
+    setEditLinkInput('');
+  };
+
+  const resolveWebLinksForEdit = () => {
+    const pending = editLinkInput.trim();
+    if (!pending || editWebLinks.includes(pending)) {
+      return editWebLinks;
+    }
+    return [...editWebLinks, pending];
   };
 
   const handleUploadDocument = () => {
@@ -1663,7 +1697,9 @@ export function Documents() {
     const newDocument: DocumentGroup = {
       id: docId,
       title: trimmedTitle,
-      description: description.trim(),      tags,
+      description: description.trim(),
+      webLinks: resolveWebLinksForCreate(),
+      tags,
       userGroup: userGroup.join(', '),
       files: selectedFiles.map((file, idx) => ({
         id: `${docId}-${idx}`,
@@ -1743,6 +1779,8 @@ export function Documents() {
     // Reset form
     setTitle('');
     setDescription('');
+    setWebLinks([]);
+    setLinkInput('');
     setTags([]);
     setTagSearchQuery('');
     setUserGroup([]);
@@ -1846,6 +1884,8 @@ export function Documents() {
     setDetailFileMenuAnchor(null);
     setEditTitle(doc.title);
     setEditDescription(doc.description);
+    setEditWebLinks([...(doc.webLinks ?? [])]);
+    setEditLinkInput('');
     setEditUserGroup(doc.userGroup.split(', ').filter(group => userGroups.includes(group)));
     setEditTags((doc.tags ?? []).map((tag) => normalizeTagValue(tag)).filter(Boolean));
     setEditFiles(doc.files);
@@ -2135,6 +2175,63 @@ export function Documents() {
                       rows={4}
                       className="w-full px-4 py-2.5 border border-border rounded-lg text-base text-foreground focus:outline-none focus:border-primary transition-colors resize-none"
                     />
+                  </div>
+
+                  <div className="bg-card rounded-xl border border-border p-6">
+                    <DetailSectionTitle as="h3">Web Links</DetailSectionTitle>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Use + or Enter to add multiple links. A link left in the field is saved when you submit.
+                    </p>
+                    <div className="flex gap-2 mb-4">
+                      <div className="relative flex-1 min-w-0">
+                        <LinkIcon
+                          size={16}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
+                        />
+                        <input
+                          type="url"
+                          value={editLinkInput}
+                          onChange={(e) => setEditLinkInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addEditWebLink())}
+                          placeholder="https://example.com/document"
+                          className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary transition-colors"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addEditWebLink}
+                        aria-label="Add link"
+                        className="w-11 h-11 flex items-center justify-center bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors shrink-0"
+                      >
+                        <Plus size={18} />
+                      </button>
+                    </div>
+                    {editWebLinks.length > 0 && (
+                      <ul className="space-y-2">
+                        {editWebLinks.map((link) => (
+                          <li key={link} className="flex items-center justify-between gap-2">
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex min-w-0 items-center gap-1.5 text-sm text-primary hover:underline"
+                            >
+                              <Globe size={14} className="shrink-0" />
+                              <span className="truncate">{link}</span>
+                              <ExternalLink size={12} className="shrink-0" />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => setEditWebLinks((prev) => prev.filter((item) => item !== link))}
+                              className="text-muted-foreground hover:text-destructive-text p-1 shrink-0"
+                              aria-label={`Remove ${link}`}
+                            >
+                              <X size={14} />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
 
                   <div className="bg-card rounded-xl border border-border p-6">
@@ -2533,6 +2630,7 @@ export function Documents() {
                           ...docRest,
                           title: editTitle.trim(),
                           description: editDescription.trim(),
+                          webLinks: resolveWebLinksForEdit(),
                           userGroup: editUserGroup.join(', '),
                           tags: editTags,
                           files: [
@@ -2637,6 +2735,27 @@ export function Documents() {
                       {selectedGroup.description}
                     </p>
                   </div>
+
+                  {(selectedGroup.webLinks?.length ?? 0) > 0 && (
+                    <div className="bg-card rounded-xl border border-border p-6">
+                      <DetailSectionTitle as="h3">Web Links</DetailSectionTitle>
+                      <div className="space-y-3">
+                        {selectedGroup.webLinks?.map((link) => (
+                          <a
+                            key={link}
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex min-w-0 items-center gap-1.5 text-sm text-primary hover:underline"
+                          >
+                            <Globe size={14} className="shrink-0" />
+                            <span className="truncate">{link}</span>
+                            <ExternalLink size={12} className="shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Documents */}
                   <div className="bg-card rounded-xl border border-border p-6">
@@ -3126,6 +3245,56 @@ export function Documents() {
                       rows={3}
                       className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary transition-colors resize-none"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Web Links
+                    </label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Use + or Enter to add multiple links. A link left in the field is saved when you submit.
+                    </p>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1 min-w-0">
+                        <LinkIcon
+                          size={16}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
+                        />
+                        <input
+                          type="url"
+                          value={linkInput}
+                          onChange={(e) => setLinkInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addWebLink())}
+                          placeholder="https://example.com/document"
+                          className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary transition-colors"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addWebLink}
+                        aria-label="Add link"
+                        className="w-11 h-11 flex items-center justify-center bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors shrink-0"
+                      >
+                        <Plus size={18} />
+                      </button>
+                    </div>
+                    {webLinks.length > 0 && (
+                      <ul className="mt-3 space-y-1">
+                        {webLinks.map((link) => (
+                          <li key={link} className="flex items-center justify-between text-sm text-primary gap-2">
+                            <span className="truncate">{link}</span>
+                            <button
+                              type="button"
+                              onClick={() => setWebLinks((prev) => prev.filter((item) => item !== link))}
+                              className="shrink-0"
+                              aria-label={`Remove ${link}`}
+                            >
+                              <X size={14} className="text-muted-foreground" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
 
                   {/* User Group */}

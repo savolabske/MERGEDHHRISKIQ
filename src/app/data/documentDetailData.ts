@@ -25,6 +25,7 @@ export interface DocumentContent {
   id: string;
   title: string;
   summary: string;
+  createdAt: string;
   tag: string;
   views: string;
   size: string;
@@ -61,6 +62,7 @@ function buildContentFromResource(resource: PlatformResource): DocumentContent {
     platformResourceId: resource.id,
     title: resource.title,
     summary: resource.description,
+    createdAt: resource.createdAt,
     tag: resource.tags[0] ?? 'Resource',
     views: RESOURCE_VIEW_COUNTS[resource.id] ?? '—',
     size: primaryFile?.size ?? `${resource.files.length} files`,
@@ -74,6 +76,7 @@ const FALLBACK: DocumentContent = {
   platformResourceId: '',
   title: 'Document',
   summary: 'This document is not available for document chat.',
+  createdAt: '—',
   tag: 'Resource',
   views: '—',
   size: '—',

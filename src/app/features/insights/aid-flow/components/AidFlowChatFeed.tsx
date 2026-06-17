@@ -7,6 +7,7 @@ interface AidFlowChatFeedProps {
   messages: AidFlowChatMessage[];
   isQuerying: boolean;
   queryingMode?: ReportQueryingMode;
+  extendedKnowledge: boolean;
   onChipClick: (prompt: string) => void;
 }
 
@@ -19,7 +20,13 @@ function AnalystIcon() {
 const aidFlowChipClassName =
   'border-[#e6e9ef] text-[#3a4a5c] hover:border-[#1f6feb] hover:!text-[#1f6feb]';
 
-function AidFlowThinkingIndicator({ queryingMode }: { queryingMode: ReportQueryingMode }) {
+function AidFlowThinkingIndicator({
+  queryingMode,
+  extendedKnowledge,
+}: {
+  queryingMode: ReportQueryingMode;
+  extendedKnowledge: boolean;
+}) {
   const isChat = queryingMode === 'chat';
 
   return (
@@ -38,7 +45,11 @@ function AidFlowThinkingIndicator({ queryingMode }: { queryingMode: ReportQueryi
             />
           ))}
         </span>
-        {isChat ? 'Looking that up…' : 'Reading data, choosing charts…'}
+        {isChat
+          ? 'Looking that up…'
+          : extendedKnowledge
+            ? 'Reading data, cross-checking linked reports…'
+            : 'Reading data, choosing charts…'}
       </div>
     </div>
   );
@@ -48,6 +59,7 @@ export function AidFlowChatFeed({
   messages,
   isQuerying,
   queryingMode = 'dashboard',
+  extendedKnowledge,
   onChipClick,
 }: AidFlowChatFeedProps) {
   const hasUserMessages = messages.some((m) => m.role === 'user');
@@ -79,7 +91,27 @@ export function AidFlowChatFeed({
             <div key={`msg-${i}`} className="ml-auto max-w-[92%] self-end">
               <div className="rounded-[13px_13px_4px_13px] bg-[#eaf1fe] px-3 py-2.5 text-[12.5px] font-medium text-[#1550b3]">
                 {msg.text}
+                {msg.extended && (
+                  <span className="ml-2 rounded-full bg-[#DDA63A] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
+                    EXT
+                  </span>
+                )}
               </div>
+            </div>
+          );
+        }
+
+        if (msg.role === 'system') {
+          return (
+            <div key={`msg-${i}`} className="max-w-[92%]">
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#6b7a8d]">
+                <AnalystIcon />
+                Aid Flow · system
+              </div>
+              <div
+                className="rounded-[4px_13px_13px_13px] border border-[#e6e9ef] bg-[#f8f9fb] px-3 py-3 text-[12.8px] text-[#3a4a5c]"
+                dangerouslySetInnerHTML={{ __html: msg.text }}
+              />
             </div>
           );
         }
@@ -90,6 +122,11 @@ export function AidFlowChatFeed({
               <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#6b7a8d]">
                 <AnalystIcon />
                 Aid Flow · AI Analyst
+                {msg.extended && (
+                  <span className="rounded-full bg-[#DDA63A] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
+                    EXT
+                  </span>
+                )}
               </div>
               <div className="rounded-[4px_13px_13px_13px] border border-[#e6e9ef] bg-[#f8f9fb] px-3 py-3 text-[12.8px] leading-relaxed text-[#3a4a5c]">
                 {msg.body}
@@ -120,6 +157,11 @@ export function AidFlowChatFeed({
             <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#6b7a8d]">
               <AnalystIcon />
               Aid Flow · AI Analyst
+              {msg.extended && (
+                <span className="rounded-full bg-[#DDA63A] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
+                  EXT
+                </span>
+              )}
             </div>
             <div className="rounded-[4px_13px_13px_13px] border border-[#e6e9ef] bg-[#f8f9fb] px-3 py-3 text-[12.8px] text-[#3a4a5c]">
               <b className="text-[#0d1b2a]">{msg.title}.</b> View updated on the left.
@@ -142,7 +184,7 @@ export function AidFlowChatFeed({
       })}
 
       {isQuerying && queryingMode ? (
-        <AidFlowThinkingIndicator queryingMode={queryingMode} />
+        <AidFlowThinkingIndicator queryingMode={queryingMode} extendedKnowledge={extendedKnowledge} />
       ) : null}
     </div>
   );

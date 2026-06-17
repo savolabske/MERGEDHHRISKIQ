@@ -17,7 +17,11 @@ import { Locations } from "./components/Locations";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { HomeDashboard } from "./components/HomeDashboard";
 import { DocumentDetail } from "./components/DocumentDetail";
-import { resolveChatEligibleResourceId } from "./data/documentDetailData";
+import {
+  getPlatformResourceById,
+  resolveChatEligibleResourceId,
+} from "./data/documentDetailData";
+import type { DocumentChatMessage } from "./components/DocumentDetail";
 import { PlatformChats } from "./components/PlatformChats";
 import { PlatformResources } from "./components/PlatformResources";
 import { RiskIQPage } from "./components/RiskIQPage";
@@ -32,31 +36,23 @@ import {
   type DashboardChatPayload,
 } from "./utils/dashboardChatContext";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { generateHistoryConversations } from "./utils/chatHistoryData";
 import {
   createChatHistoryThread,
   normalizePreloadedMessages,
 } from "./data/chatAiResponses";
 import { Toaster } from "./components/ui/sonner";
+import { toast } from "sonner";
 import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./components/ui/tooltip";
+import { cn } from "./components/ui/utils";
 import { CURRENT_USER, getUserById } from "./utils/mockUsers";
 import { INITIAL_NOTIFICATIONS } from "./data/notificationsMock";
 import type { AppNotification } from "./types/notifications";
-
-interface ChatHistoryItem {
-  id: string;
-  query: string;
-  timestamp: string;
-  date: string;
-  messages?: any[]; // Store full conversation
-  sharedWith?: string[]; // User IDs
-  shareMode?: 'outgoing' | 'incoming';
-  createdBy?: string;
-  createdByName?: string;
-  unread?: boolean;
-}
+import type { ChatHistoryItem } from "./types/chat";
+import { withChatSources, assignChatSource } from "./utils/chatHistorySources";
+import { resolveChatSource } from "./components/chats/chatSource";
 
 interface JoinActivity {
   id: string;
@@ -104,9 +100,12 @@ export default function App() {
   const [selectedHistoryTitle, setSelectedHistoryTitle] = useState<string>('');
   const [cameFromHistory, setCameFromHistory] = useState(false);
   const [cameFromPlatformChats, setCameFromPlatformChats] = useState(false);
+  const [isPlatformNewChat, setIsPlatformNewChat] = useState(false);
+  const [isRiskIqNewChat, setIsRiskIqNewChat] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [aiSearchInput, setAiSearchInput] = useState('');
+  const [isRiskIqLandingExtended, setIsRiskIqLandingExtended] = useState(true);
   const [dashboardChatKey, setDashboardChatKey] = useState(0);
   const [dashboardChatPayload, setDashboardChatPayload] = useState<DashboardChatPayload | null>(null);
   const [cameFromRiskIq, setCameFromRiskIq] = useState(false);
@@ -114,6 +113,9 @@ export default function App() {
   const [riskIqReturnTab, setRiskIqReturnTab] = useState<RiskIqTab>('dashboard');
   const [currentDocumentId, setCurrentDocumentId] = useState('1');
   const [documentReturnView, setDocumentReturnView] = useState<AppView | 'aiSearch'>('home');
+  const [documentChatThreadId, setDocumentChatThreadId] = useState<string | null>(null);
+  const [documentChatOpen, setDocumentChatOpen] = useState(false);
+  const [resourcesHubFocusedResourceId, setResourcesHubFocusedResourceId] = useState<string | null>(null);
 
   const openRiskIqChat = useCallback((payload: DashboardChatPayload) => {
     setSelectedHistoryTitle(payload.title);
@@ -160,7 +162,7 @@ export default function App() {
   // Pre-generate conversation histories
   const conversationHistories = generateHistoryConversations();
   
-  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>(() => withChatSources([
     {
       id: '1',
       query: 'Security incidents in Lower Shabelle in the last 30 days',
@@ -565,7 +567,7 @@ export default function App() {
       createdBy: CURRENT_USER.id,
       createdByName: CURRENT_USER.name
     }
-  ]);
+  ]));
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [currentChatMessages, setCurrentChatMessages] = useState<any[]>([]);
   const [currentChatQuery, setCurrentChatQuery] = useState<string>('');
@@ -670,12 +672,116 @@ export default function App() {
     (documentIdOrTitle: string, returnView: AppView | 'aiSearch' = 'home') => {
       const resourceId = resolveChatEligibleResourceId(documentIdOrTitle);
       if (!resourceId) return;
+      const existingThread = chatHistory.find((chat) => chat.resourceId === resourceId);
       setCurrentDocumentId(resourceId);
       setDocumentReturnView(returnView);
+      setDocumentChatThreadId(existingThread?.id ?? null);
+      setDocumentChatOpen(Boolean(existingThread?.messages?.length));
       setCurrentView('documentDetail');
       setInvitePreviewThreadId(null);
     },
-    [],
+    [chatHistory],
+  );
+
+  const openResourceChat = useCallback(
+    (resourceId: string, returnView: AppView | 'aiSearch' = 'resourcesHub') => {
+      const resource = getPlatformResourceById(resourceId);
+      if (!resource || !resolveChatEligibleResourceId(resourceId)) return;
+
+      const { timeString, dateLabel } = getCurrentDateMeta();
+      const existing = chatHistory.find((chat) => chat.resourceId === resourceId);
+      const threadId = existing?.id ?? `resource-${resourceId}`;
+
+      if (!existing) {
+        const newHistoryItem: ChatHistoryItem = {
+          id: threadId,
+          query: resource.title,
+          timestamp: timeString,
+          date: dateLabel,
+          messages: [],
+          sharedWith: [],
+          source: 'resource',
+          resourceId,
+          resourceTitle: resource.title,
+          createdBy: CURRENT_USER.id,
+          createdByName: CURRENT_USER.name,
+          unread: false,
+        };
+        setChatHistory((prev) => [newHistoryItem, ...prev]);
+      } else {
+        setChatHistory((prev) =>
+          prev.map((chat) =>
+            chat.id === threadId ? { ...chat, unread: false } : chat,
+          ),
+        );
+      }
+
+      setDocumentChatThreadId(threadId);
+      setCurrentDocumentId(resourceId);
+      setDocumentReturnView(returnView);
+      setDocumentChatOpen(true);
+      if (returnView === 'resourcesHub') {
+        setResourcesHubFocusedResourceId(resourceId);
+      }
+      setCurrentView('documentDetail');
+      setInvitePreviewThreadId(null);
+    },
+    [chatHistory],
+  );
+
+  const handleResourceChatMessagesChange = useCallback(
+    (messages: DocumentChatMessage[], resourceTitle: string, resourceId: string) => {
+      const { timeString, dateLabel } = getCurrentDateMeta();
+      const firstUserMessage = messages.find((m) => m.role === 'user');
+      const query = firstUserMessage?.content || resourceTitle;
+
+      setChatHistory((prev) => {
+        const existing =
+          (documentChatThreadId
+            ? prev.find((chat) => chat.id === documentChatThreadId)
+            : undefined) ?? prev.find((chat) => chat.resourceId === resourceId);
+
+        if (existing) {
+          const updated: ChatHistoryItem = {
+            ...existing,
+            query,
+            timestamp: timeString,
+            date: dateLabel,
+            messages,
+            resourceTitle,
+            source: 'resource',
+            resourceId,
+            unread: currentView !== 'documentDetail',
+          };
+          const others = prev.filter((chat) => chat.id !== existing.id);
+          return [updated, ...others];
+        }
+
+        const threadId = `resource-${resourceId}`;
+        const newItem: ChatHistoryItem = {
+          id: threadId,
+          query,
+          timestamp: timeString,
+          date: dateLabel,
+          messages,
+          sharedWith: [],
+          source: 'resource',
+          resourceId,
+          resourceTitle,
+          createdBy: CURRENT_USER.id,
+          createdByName: CURRENT_USER.name,
+          unread: false,
+        };
+        return [newItem, ...prev];
+      });
+
+      setDocumentChatThreadId((current) => {
+        if (current) return current;
+        const existing = chatHistory.find((chat) => chat.resourceId === resourceId);
+        return existing?.id ?? `resource-${resourceId}`;
+      });
+    },
+    [documentChatThreadId, currentView, chatHistory],
   );
 
   const handleDocumentDetailBack = useCallback(() => {
@@ -700,6 +806,13 @@ export default function App() {
     },
     [isSidebarCollapsed]
   );
+
+  useEffect(() => {
+    setChatHistory((prev) => {
+      if (prev.every((chat) => chat.source)) return prev;
+      return prev.map((chat) => assignChatSource(chat));
+    });
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || !pendingLinkState) return;
@@ -761,6 +874,7 @@ export default function App() {
       date: dateLabel,
       messages: [],
       sharedWith: [],
+      source: options?.fromRiskIq ? 'risk-iq' : 'humanity-hub',
       createdBy: CURRENT_USER.id,
       createdByName: CURRENT_USER.name,
       unread: false
@@ -780,6 +894,43 @@ export default function App() {
       setRiskIqReturnTab('chats');
     }
     setSearchQuery(query);
+    setIsPlatformNewChat(false);
+    setIsRiskIqNewChat(false);
+    setCurrentView('aiSearch');
+  };
+
+  const openRiskIqEmptyChat = (returnTab: RiskIqTab = 'dashboard') => {
+    const { timeString, dateLabel } = getCurrentDateMeta();
+    const newChatId = Date.now().toString();
+    const newHistoryItem: ChatHistoryItem = {
+      id: newChatId,
+      query: 'New chat',
+      timestamp: timeString,
+      date: dateLabel,
+      messages: [],
+      sharedWith: [],
+      source: 'risk-iq',
+      createdBy: CURRENT_USER.id,
+      createdByName: CURRENT_USER.name,
+      unread: false,
+    };
+
+    setChatHistory((prev) => [newHistoryItem, ...prev]);
+    setCurrentChatId(newChatId);
+    setSearchQuery('');
+    setLoadDemoConversation(false);
+    setSelectedHistoryMessages(null);
+    setSelectedHistoryTitle('');
+    setDashboardChatPayload(null);
+    setCameFromHistory(false);
+    setCameFromHome(false);
+    setCameFromRiskIq(true);
+    setCameFromPlatformChats(false);
+    setIsPlatformNewChat(false);
+    setIsRiskIqNewChat(true);
+    setRiskIqReturnTab(returnTab);
+    setInvitePreviewThreadId(null);
+    setDashboardChatKey((k) => k + 1);
     setCurrentView('aiSearch');
   };
 
@@ -795,6 +946,9 @@ export default function App() {
   const handleNavigate = (view: AppView) => {
     setCurrentView(view);
     setInvitePreviewThreadId(null);
+    if (view !== 'resourcesHub') {
+      setResourcesHubFocusedResourceId(null);
+    }
     if (view === 'riskIQ') {
       setRiskIqTab('dashboard');
       saveRiskIqTab('dashboard');
@@ -832,6 +986,7 @@ export default function App() {
           date: dateLabel,
           messages: messages,
           sharedWith: [],
+          source: 'risk-iq',
           createdBy: CURRENT_USER.id,
           createdByName: CURRENT_USER.name,
           unread: false
@@ -840,32 +995,44 @@ export default function App() {
       }
     }
 
-    // Reset to new chat
-    setSearchQuery('');
-    setLoadDemoConversation(false);
-    setCurrentChatId(null);
-    setSelectedHistoryMessages(null);
-    setSelectedHistoryTitle('');
-    setDashboardChatPayload(null);
-    setCameFromHistory(false);
-    setCameFromHome(false);
-    setCameFromRiskIq(true);
-    setRiskIqReturnTab('chats');
-    setCurrentView('aiSearch');
+    openRiskIqEmptyChat('chats');
   };
 
   const handleRiskIqNewChat = () => {
+    openRiskIqEmptyChat('dashboard');
+  };
+
+  const handlePlatformNewChat = () => {
+    const { timeString, dateLabel } = getCurrentDateMeta();
+    const newChatId = Date.now().toString();
+    const newHistoryItem: ChatHistoryItem = {
+      id: newChatId,
+      query: 'New chat',
+      timestamp: timeString,
+      date: dateLabel,
+      messages: [],
+      sharedWith: [],
+      source: 'humanity-hub',
+      createdBy: CURRENT_USER.id,
+      createdByName: CURRENT_USER.name,
+      unread: false,
+    };
+
+    setChatHistory((prev) => [newHistoryItem, ...prev]);
+    setCurrentChatId(newChatId);
     setSearchQuery('');
     setLoadDemoConversation(false);
-    setCurrentChatId(null);
     setSelectedHistoryMessages(null);
     setSelectedHistoryTitle('');
     setDashboardChatPayload(null);
     setCameFromHistory(false);
     setCameFromHome(false);
-    setCameFromRiskIq(true);
-    setRiskIqReturnTab('dashboard');
+    setCameFromRiskIq(false);
+    setCameFromPlatformChats(true);
+    setIsPlatformNewChat(true);
+    setIsRiskIqNewChat(false);
     setInvitePreviewThreadId(null);
+    setDashboardChatKey((k) => k + 1);
     setCurrentView('aiSearch');
   };
 
@@ -887,6 +1054,8 @@ export default function App() {
     setCameFromHistory(true);
     setCameFromHome(false);
     setCameFromPlatformChats(returnTo === 'platformChats');
+    setIsPlatformNewChat(false);
+    setIsRiskIqNewChat(false);
     setCameFromRiskIq(returnTo === 'riskIQ');
     if (returnTo === 'riskIQ') {
       setRiskIqReturnTab('chats');
@@ -901,10 +1070,36 @@ export default function App() {
   };
 
   const handleChatSelect = (id: string) => {
+    const historyItem = chatHistory.find((chat) => chat.id === id);
+    if (historyItem && resolveChatSource(historyItem) === 'resource' && historyItem.resourceId) {
+      setDocumentChatThreadId(id);
+      setCurrentDocumentId(historyItem.resourceId);
+      setDocumentReturnView('riskIQ');
+      setDocumentChatOpen(true);
+      setChatHistory((prev) =>
+        prev.map((chat) => (chat.id === id ? { ...chat, unread: false } : chat)),
+      );
+      setCurrentView('documentDetail');
+      setInvitePreviewThreadId(null);
+      return;
+    }
     openChatFromHistory(id, 'riskIQ');
   };
 
   const handlePlatformChatSelect = (id: string) => {
+    const historyItem = chatHistory.find((chat) => chat.id === id);
+    if (historyItem && resolveChatSource(historyItem) === 'resource' && historyItem.resourceId) {
+      setDocumentChatThreadId(id);
+      setCurrentDocumentId(historyItem.resourceId);
+      setDocumentReturnView('platformChats');
+      setDocumentChatOpen(true);
+      setChatHistory((prev) =>
+        prev.map((chat) => (chat.id === id ? { ...chat, unread: false } : chat)),
+      );
+      setCurrentView('documentDetail');
+      setInvitePreviewThreadId(null);
+      return;
+    }
     openChatFromHistory(id, 'platformChats');
   };
 
@@ -1009,6 +1204,7 @@ export default function App() {
         messages: [],
         sharedWith: [CURRENT_USER.id],
         shareMode: 'incoming',
+        source: 'risk-iq',
         createdByName: 'Shared via invite link',
         unread: false
       };
@@ -1080,9 +1276,46 @@ export default function App() {
           />
         ) : currentView === 'documentDetail' ? (
           <DocumentDetail
+            key={
+              documentChatThreadId
+                ? `${currentDocumentId}-${documentChatThreadId}`
+                : currentDocumentId
+            }
             documentId={currentDocumentId}
             onBack={handleDocumentDetailBack}
-            onOpenDocument={(id) => openDocumentDetail(id, documentReturnView)}
+            onOpenDocument={(id) => {
+              if (documentChatThreadId) {
+                openResourceChat(id, documentReturnView);
+              } else {
+                openDocumentDetail(id, documentReturnView);
+              }
+            }}
+            initialChatOpen={documentChatOpen}
+            initialMessages={
+              documentChatThreadId
+                ? ((chatHistory.find((c) => c.id === documentChatThreadId)
+                    ?.messages ?? []) as DocumentChatMessage[])
+                : undefined
+            }
+            onMessagesChange={(messages, resourceTitle) =>
+              handleResourceChatMessagesChange(messages, resourceTitle, currentDocumentId)
+            }
+            breadcrumbParent={
+              documentReturnView === 'resourcesHub'
+                ? { label: 'Resources', onClick: handleDocumentDetailBack }
+                : undefined
+            }
+            breadcrumbCurrentOnClick={
+              documentReturnView === 'resourcesHub'
+                ? () => {
+                    setResourcesHubFocusedResourceId(currentDocumentId);
+                    setCurrentView('resourcesHub');
+                  }
+                : undefined
+            }
+            breadcrumbChildLabel={
+              documentReturnView === 'resourcesHub' && documentChatThreadId ? 'Chat' : undefined
+            }
           />
         ) : currentView === 'platformChats' ? (
           <PlatformChats
@@ -1090,9 +1323,13 @@ export default function App() {
             onChatSelect={handlePlatformChatSelect}
             onDeleteChat={handleDeleteChat}
             onBulkDeleteChats={handleBulkDeleteChats}
+            onNewChat={handlePlatformNewChat}
           />
         ) : currentView === 'resourcesHub' ? (
-          <PlatformResources />
+          <PlatformResources
+            onChatWithResource={(id) => openResourceChat(id, 'resourcesHub')}
+            focusedResourceId={resourcesHubFocusedResourceId}
+          />
         ) : currentView === 'riskIQ' ? (
           <RiskIQPage
             activeTab={riskIqTab}
@@ -1157,20 +1394,54 @@ export default function App() {
                 </div>
               </div>
             </div>
-          ) : searchQuery || loadDemoConversation ? (
+          ) : searchQuery || loadDemoConversation || isPlatformNewChat || isRiskIqNewChat ? (
+            (() => {
+              const activeThread = currentChatId
+                ? chatHistory.find((c) => c.id === currentChatId)
+                : undefined;
+              const activeSource = resolveChatSource(activeThread);
+              const showTopContextLabel =
+                cameFromPlatformChats || cameFromHome || isPlatformNewChat || isRiskIqNewChat;
+              const chatContextLabel: 'Risk iQ' | 'Humanity Hub' | undefined =
+                showTopContextLabel
+                  ? activeSource === 'risk-iq'
+                    ? 'Risk iQ'
+                    : 'Humanity Hub'
+                  : undefined;
+              return (
             <Chat 
-              key={`${dashboardChatKey}-${searchQuery}`}
-              initialQuery={loadDemoConversation ? "Summarize the top operational risks" : searchQuery} 
+              key={
+                isPlatformNewChat
+                  ? `platform-new-${dashboardChatKey}-${currentChatId}`
+                  : isRiskIqNewChat
+                    ? `riskiq-new-${dashboardChatKey}-${currentChatId}`
+                    : `${dashboardChatKey}-${searchQuery}`
+              }
+              initialQuery={
+                isPlatformNewChat || isRiskIqNewChat
+                  ? ''
+                  : loadDemoConversation
+                    ? 'Summarize the top operational risks'
+                    : searchQuery
+              }
+              startEmpty={isPlatformNewChat || isRiskIqNewChat}
               preloadedMessages={selectedHistoryMessages}
               dashboardChatPayload={dashboardChatPayload}
               threadId={currentChatId || undefined}
-              threadTitle={selectedHistoryTitle || (loadDemoConversation ? "Summarize the top operational risks" : searchQuery)}
+              threadTitle={
+                selectedHistoryTitle ||
+                (loadDemoConversation
+                  ? 'Summarize the top operational risks'
+                  : isPlatformNewChat || isRiskIqNewChat
+                    ? 'New chat'
+                    : searchQuery)
+              }
               sharedWithUserIds={chatHistory.find(c => c.id === currentChatId)?.sharedWith || []}
               isSharedThread={(chatHistory.find(c => c.id === currentChatId)?.sharedWith?.length || 0) > 0}
               createdByName={chatHistory.find(c => c.id === currentChatId)?.createdByName || CURRENT_USER.name}
               joinActivities={joinActivitiesByThreadId[currentChatId || ''] || []}
               onShareUpdate={handleShareUpdate}
-              showThreadHeader={!!currentChatId}
+              showThreadHeader={(!!currentChatId || isPlatformNewChat) && !isRiskIqNewChat}
               showRiskIqContext={cameFromRiskIq && !cameFromHistory}
               navigation={
                 cameFromHistory || cameFromPlatformChats || cameFromHome || cameFromRiskIq
@@ -1179,9 +1450,27 @@ export default function App() {
               }
               onBack={() => {
                 if (cameFromPlatformChats) {
+                  if (isPlatformNewChat && currentChatId) {
+                    setChatHistory((prev) => {
+                      const chat = prev.find((c) => c.id === currentChatId);
+                      if (chat && (!chat.messages || chat.messages.length === 0)) {
+                        return prev.filter((c) => c.id !== currentChatId);
+                      }
+                      return prev;
+                    });
+                  }
                   setCurrentView('platformChats');
                   setSearchQuery('');
                 } else if (cameFromHistory || cameFromRiskIq) {
+                  if (isRiskIqNewChat && currentChatId) {
+                    setChatHistory((prev) => {
+                      const chat = prev.find((c) => c.id === currentChatId);
+                      if (chat && (!chat.messages || chat.messages.length === 0)) {
+                        return prev.filter((c) => c.id !== currentChatId);
+                      }
+                      return prev;
+                    });
+                  }
                   returnToRiskIq(cameFromHistory ? 'chats' : riskIqReturnTab);
                   setSearchQuery('');
                 } else {
@@ -1195,9 +1484,12 @@ export default function App() {
                 setCameFromPlatformChats(false);
                 setCameFromRiskIq(false);
                 setCameFromHome(false);
+                setIsPlatformNewChat(false);
+                setIsRiskIqNewChat(false);
               }} 
               onNewChat={handleNewChat}
               onMessagesChange={handleMessagesChange}
+              chatContextLabel={chatContextLabel}
               onKnowledgeSourceClick={(source) => {
                 const resourceId =
                   (source.documentId &&
@@ -1210,6 +1502,8 @@ export default function App() {
                 );
               }}
             />
+              );
+            })()
           ) : (
             <div className="h-full flex flex-col bg-background">
               {cameFromRiskIq && (
@@ -1220,6 +1514,7 @@ export default function App() {
                     setCameFromHome(false);
                     setCameFromHistory(false);
                   }}
+                  onInvite={() => toast.info('Share this chat after sending your first message')}
                 />
               )}
 
@@ -1325,44 +1620,97 @@ export default function App() {
               )}
 
               {/* Bottom Input - Fixed */}
-              <div className="bg-background px-[32px] pt-[0px] pb-[24px]">
+              <div className="bg-background px-4 sm:px-8 pt-[0px] pb-[24px]">
                 <div className="max-w-[680px] mx-auto">
-                  {/* New Conversation Button */}
-                  <button className="flex items-center gap-2 text-sm text-text-subtle hover:text-muted-foreground transition-colors mb-6">
-                    
-                  </button>
-
                   <div className="relative">
-                    <Input
-                      type="text"
-                      placeholder="Ask anything about operational risks, security threats, or field conditions..."
-                      className="h-[54px] rounded-2xl px-6 pr-14 text-base"
-                      value={aiSearchInput}
-                      onChange={(e) => setAiSearchInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                          handleSearch(e.currentTarget.value);
-                          setAiSearchInput('');
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      disabled={!aiSearchInput.trim()}
-                      onClick={() => {
-                        if (aiSearchInput.trim()) {
-                          handleSearch(aiSearchInput);
-                          setAiSearchInput('');
-                        }
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 size-10 rounded-xl"
+                    <div
+                      role="presentation"
+                      data-composite-field
+                      className={cn(
+                        'relative w-full min-h-[96px] rounded-2xl border border-border bg-card transition-colors cursor-text',
+                        'hover:border-primary focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10',
+                      )}
                     >
-                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-                        <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextState = !isRiskIqLandingExtended;
+                              setIsRiskIqLandingExtended(nextState);
+                              toast.success(
+                                nextState
+                                  ? 'Extended Knowledge is on'
+                                  : 'Extended Knowledge is off',
+                              );
+                            }}
+                            className={cn(
+                              'absolute bottom-3 left-4 z-10 inline-flex max-w-[230px] items-center rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors',
+                              isRiskIqLandingExtended
+                                ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                                : 'border-border-muted bg-card text-muted-foreground hover:bg-muted',
+                            )}
+                          >
+                            <Sparkles size={12} />
+                            <span className="truncate ml-1.5">
+                              {isRiskIqLandingExtended ? 'Extended Knowledge ON' : 'Extended Knowledge'}
+                            </span>
+                            {isRiskIqLandingExtended ? (
+                              <span className="ml-1.5">
+                                <X size={12} />
+                              </span>
+                            ) : null}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          variant="muted"
+                          side="top"
+                          sideOffset={8}
+                          className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+                        >
+                          Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
+                        </TooltipContent>
+                      </Tooltip>
+                      <input
+                        type="text"
+                        placeholder={
+                          isRiskIqLandingExtended
+                            ? 'Ask in Extended Knowledge mode...'
+                            : 'Ask anything about operational risks, security threats, or field conditions...'
+                        }
+                        className="focus-ring-container-control h-[96px] w-full border-0 bg-transparent pl-6 pr-16 pt-4 pb-12 text-base text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors"
+                        value={aiSearchInput}
+                        onChange={(e) => setAiSearchInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                            handleSearch(e.currentTarget.value);
+                            setAiSearchInput('');
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        disabled={!aiSearchInput.trim()}
+                        onClick={() => {
+                          if (aiSearchInput.trim()) {
+                            handleSearch(aiSearchInput);
+                            setAiSearchInput('');
+                          }
+                        }}
+                        className="absolute right-2 bottom-3 size-10 rounded-xl"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+                          <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </Button>
+                    </div>
                   </div>
+                  {isRiskIqLandingExtended ? (
+                    <p className="mt-2 text-center text-xs text-muted-foreground">
+                      AI can make mistakes. Check important info.
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>

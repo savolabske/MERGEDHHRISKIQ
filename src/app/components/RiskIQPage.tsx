@@ -14,22 +14,10 @@ import { CollectiveRisk } from './CollectiveRisk';
 import { Chats } from './Chats';
 import type { RiskIqTab } from '../types/navigation';
 import type { DashboardChatPayload } from '../utils/dashboardChatContext';
+import type { ChatHistoryItem } from '../types/chat';
 import { Button } from './ui/button';
 import { useIsMobile } from './ui/use-mobile';
 import { cn } from './ui/utils';
-
-interface ChatHistoryItem {
-  id: string;
-  query: string;
-  timestamp: string;
-  date: string;
-  messages?: unknown[];
-  sharedWith?: string[];
-  shareMode?: 'outgoing' | 'incoming';
-  createdBy?: string;
-  createdByName?: string;
-  unread?: boolean;
-}
 
 const TABS: {
   id: RiskIqTab;
@@ -158,6 +146,7 @@ export function RiskIQPage({
         {activeTab === 'chats' && (
           <Chats
             embedded
+            defaultSourceFilter="risk-iq"
             onChatSelect={onChatSelect}
             onDeleteChat={onDeleteChat}
             onBulkDeleteChats={onBulkDeleteChats}

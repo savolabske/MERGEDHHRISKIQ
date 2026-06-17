@@ -64,6 +64,13 @@ export {
   SJF_CHAT_PROMPT_THEME,
   type ReportChatPromptTheme,
 } from './ReportChatPromptInput';
+export {
+  ReportExtendedKnowledgeToggle,
+  AID_FLOW_EXTENDED_KNOWLEDGE_THEME,
+  MIGRATION_EXTENDED_KNOWLEDGE_THEME,
+  SJF_EXTENDED_KNOWLEDGE_THEME,
+  type ReportExtendedKnowledgeTheme,
+} from './ReportExtendedKnowledgeToggle';
 export { ReportChipButton } from './ReportChipButton';
 export { ReportThinkingIndicator } from './ReportThinkingIndicator';
 export { useReportChatAutoScroll, ReportChatScrollSync } from './useReportChatAutoScroll';

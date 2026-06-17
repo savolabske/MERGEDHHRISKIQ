@@ -1,4 +1,5 @@
 import { getChatOnlyAnswer, isChatOnlyPrompt, stripHtml } from '../../shared/classifyReportPrompt';
+import { AID_FLOW_DATA } from '../../aid-flow/data/aidFlowData';
 import { COLORS, MIGRATION_CHIPS, MIGRATION_DATA } from './migrationData';
 import type { MigrationPromptResult, MigrationRecipeResult } from '../types';
 
@@ -434,12 +435,210 @@ function resolveMigrationRecipe(query: string): MigrationRecipeResult {
   return rGeneric(query);
 }
 
-export function resolveMigrationPrompt(query: string): MigrationPromptResult {
+function xAidFlow(): MigrationRecipeResult {
+  return {
+    title: 'Displacement vs aid funding',
+    extended: true,
+    summaryHtml:
+      'Cross-referencing with Aid Flow: Somalia received <b>$9.1B in disbursed aid (2014–2026)</b>, dominated by Food Security and Health. IOM tracked <b>~971,000 arrivals</b> since Oct 2023 — mostly drought-driven into Bay and Banadir. Humanitarian aid ($5.4B+) dwarfs development funding, yet durable-solutions programming remains thin against a <b>~4M IDP</b> national caseload.',
+    findings: [
+      { value: '971k', label: 'Tracked arrivals' },
+      { value: '$9.1B', label: 'Aid disbursed' },
+      { value: '68%', label: 'Drought-driven' },
+      { value: 'Bay', label: 'Top arrival region' },
+    ],
+    sections: [
+      {
+        type: 'grid',
+        items: [
+          {
+            title: 'Scale comparison',
+            subtitle: 'Displacement vs aid',
+            chart: {
+              kind: 'hbars',
+              rows: [
+                ['Total aid disbursed', AID_FLOW_DATA.totals.actual, '#1f6feb'],
+                ['Arrivals since Oct 23', D.totals.arrivalsAll, COLORS.brand],
+              ],
+            },
+          },
+          {
+            title: 'Top arrival regions',
+            subtitle: 'This report',
+            chart: {
+              kind: 'hbars',
+              rows: D.regions.slice(0, 5).map(([n, v]) => [n, v, COLORS.brand]),
+            },
+          },
+        ],
+      },
+    ],
+    followUps: [
+      'Compare with SJF durable solutions',
+      'Show climate-related aid flows',
+      'Where are the biggest response gaps?',
+    ],
+    chips: ['Show causes', 'Show by region'],
+  };
+}
+
+function xSjf(): MigrationRecipeResult {
+  return {
+    title: 'Displacement vs SJF response',
+    extended: true,
+    summaryHtml:
+      'Cross-referencing with the SJF report: IOM tracked <b>~971,000 new arrivals</b> since Oct 2023, with <b>Bay (133k)</b> and <b>Banadir (124k)</b> the largest receiving regions. The SJF Climate & Resilience window — including <b>Saameynta ($21.9M)</b> targeting IDPs — is the most directly relevant. In H1 2025, Saameynta mapped <b>5,650 households</b> against a national caseload of <b>~4M IDPs</b>.',
+    findings: [
+      { value: '971k', label: 'Tracked arrivals (Oct23+)' },
+      { value: '~4M', label: 'Total IDPs (national)' },
+      { value: '5,650', label: "Households mapped H1'25" },
+      { value: '$21.9M', label: 'Saameynta budget' },
+    ],
+    sections: [
+      {
+        type: 'grid',
+        items: [
+          {
+            title: 'Scale of displacement',
+            subtitle: 'This report',
+            chart: {
+              kind: 'hbars',
+              rows: [
+                ['Arrivals since Oct 23', D.totals.arrivalsAll, COLORS.brand],
+                ['Bay region', D.regions[0][1], COLORS.drought],
+                ['Banadir region', D.regions[1][1], COLORS.drought],
+              ],
+            },
+          },
+          {
+            title: 'SJF response scale',
+            subtitle: 'From SJF report',
+            chart: {
+              kind: 'hbars',
+              rows: [
+                ['SJF active portfolio', 214.7e6, '#00689D'],
+                ['Climate & Resilience window', 16.2e6, '#00689D'],
+                ['Saameynta programme', 21.85e6, '#00689D'],
+              ],
+            },
+          },
+        ],
+      },
+    ],
+    followUps: [
+      'Compare with all humanitarian aid',
+      'Show climate-driven displacement',
+      'Which regions are both most displaced and least funded?',
+    ],
+    chips: ['Show causes', 'Show trend'],
+  };
+}
+
+function xClimateAid(): MigrationRecipeResult {
+  return {
+    title: 'Drought displacement vs climate aid',
+    extended: true,
+    summaryHtml:
+      'Linking three reports: IOM data shows <b>drought is the top driver of displacement</b> (~68% of recent arrivals). Aid Flow shows <b>$3.77B of total aid touches climate</b>. The SJF Climate & Resilience window holds <b>$16.2M in 2024</b> — focused on integrating climate, displacement and durable solutions in programmes like Saameynta.',
+    findings: [
+      { value: '68%', label: 'Displacement = drought' },
+      { value: '$3.77B', label: 'Total climate aid' },
+      { value: '$16.2M', label: 'SJF climate window' },
+      { value: 'Bay', label: 'Top drought-hit region' },
+    ],
+    sections: [
+      {
+        type: 'grid',
+        items: [
+          {
+            title: 'Displacement drivers',
+            subtitle: 'This report',
+            chart: { kind: 'hbars', rows: D.cause.slice(0, 4), color: COLORS.drought },
+          },
+          {
+            title: 'Climate funding scale',
+            subtitle: 'From Aid Flow report',
+            chart: {
+              kind: 'hbars',
+              rows: [
+                ['Total climate-tagged aid', 3770e6, '#1f6feb'],
+                ['SJF Climate & Resilience', 16.2e6, '#00689D'],
+              ],
+            },
+          },
+        ],
+      },
+    ],
+    followUps: [
+      'Show drought-driven displacement trend',
+      'Compare with SJF climate programmes',
+      'Which regions get both?',
+    ],
+    chips: ['Show trend', 'Show by region'],
+  };
+}
+
+function xGeneric(_q: string): MigrationRecipeResult {
+  return {
+    isFallback: true,
+    title: 'Cross-report comparison',
+    extended: true,
+    summaryHtml:
+      'Extended Knowledge is on. I can compare displacement data against Aid Flow, SJF, and (where available) other Humanity Hub reports. Some example questions: <b>"Compare arrivals with total aid by region"</b>, <b>"Show climate funding vs drought displacement"</b>, <b>"Where is the biggest mismatch between displacement and SJF funding?"</b>, <b>"How does humanitarian aid compare to the caseload?"</b>',
+    findings: [
+      { value: '3', label: 'Reports linked so far' },
+      { value: '971k', label: 'Migration arrivals' },
+      { value: '$9.1B', label: 'Aid Flow disbursed' },
+      { value: '$214.7M', label: 'SJF active' },
+    ],
+    sections: [
+      {
+        type: 'grid',
+        items: [
+          {
+            title: 'Reports available for cross-reference',
+            subtitle: 'Humanity Hub thematic areas',
+            chart: {
+              kind: 'hbars',
+              rows: [
+                ['Migration arrivals (this report)', D.totals.arrivalsAll, COLORS.brand],
+                ['Aid Flow disbursed', AID_FLOW_DATA.totals.actual, '#1f6feb'],
+                ['SJF active portfolio', 214.7e6, '#00689D'],
+              ],
+            },
+          },
+        ],
+      },
+    ],
+    followUps: [
+      'Compare with Aid Flow funding',
+      'Compare with SJF programmes',
+      'Climate cross-cut',
+      'Show response gaps',
+    ],
+    chips: ['Aid Flow comparison', 'SJF comparison'],
+  };
+}
+
+function recipeExtended(q: string): MigrationRecipeResult {
+  const t = q.toLowerCase();
+  if (/aid flow|donor.*compar|aims|fcdo|bilateral|humanitarian.*aid/.test(t)) return xAidFlow();
+  if (/sjf|joint fund|pooled|saameynta|durable solution/.test(t)) return xSjf();
+  if (/climate/.test(t)) return xClimateAid();
+  return xGeneric(q);
+}
+
+function resolveMigrationRecipeWithMode(query: string, extendedKnowledge: boolean): MigrationRecipeResult {
+  if (extendedKnowledge) return recipeExtended(query);
+  return resolveMigrationRecipe(query);
+}
+
+export function resolveMigrationPrompt(query: string, extendedKnowledge = false): MigrationPromptResult {
   if (isChatOnlyPrompt(query)) {
     return { lane: 'chat', body: getChatOnlyAnswer('migration', query), chips: [...MIGRATION_CHIPS] };
   }
 
-  const recipe = resolveMigrationRecipe(query);
+  const recipe = resolveMigrationRecipeWithMode(query, extendedKnowledge);
   if (recipe.isFallback) {
     return {
       lane: 'chat',

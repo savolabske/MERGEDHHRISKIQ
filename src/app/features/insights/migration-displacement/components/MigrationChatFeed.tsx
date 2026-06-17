@@ -7,6 +7,7 @@ interface MigrationChatFeedProps {
   messages: MigrationChatMessage[];
   isQuerying: boolean;
   queryingMode?: ReportQueryingMode;
+  extendedKnowledge: boolean;
   onChipClick: (prompt: string) => void;
 }
 
@@ -19,7 +20,13 @@ function AnalystIcon() {
 const migrationChipClassName =
   'border-[#ece6df] text-[#4a3f38] hover:border-[#c2562a] hover:!text-[#c2562a]';
 
-function MigrationThinkingIndicator({ queryingMode }: { queryingMode: ReportQueryingMode }) {
+function MigrationThinkingIndicator({
+  queryingMode,
+  extendedKnowledge,
+}: {
+  queryingMode: ReportQueryingMode;
+  extendedKnowledge: boolean;
+}) {
   const isChat = queryingMode === 'chat';
 
   return (
@@ -38,7 +45,11 @@ function MigrationThinkingIndicator({ queryingMode }: { queryingMode: ReportQuer
             />
           ))}
         </span>
-        {isChat ? 'Looking that up…' : 'Reading DTM data, choosing charts…'}
+        {isChat
+          ? 'Looking that up…'
+          : extendedKnowledge
+            ? 'Reading data, cross-checking linked reports…'
+            : 'Reading DTM data, choosing charts…'}
       </div>
     </div>
   );
@@ -48,6 +59,7 @@ export function MigrationChatFeed({
   messages,
   isQuerying,
   queryingMode = 'dashboard',
+  extendedKnowledge,
   onChipClick,
 }: MigrationChatFeedProps) {
   const hasUserMessages = messages.some((m) => m.role === 'user');
@@ -79,7 +91,27 @@ export function MigrationChatFeed({
             <div key={`msg-${i}`} className="ml-auto max-w-[92%] self-end">
               <div className="rounded-[13px_13px_4px_13px] bg-[#fbeee5] px-3 py-2.5 text-[12.5px] font-medium text-[#a3461f]">
                 {msg.text}
+                {msg.extended && (
+                  <span className="ml-2 rounded-full bg-[#DDA63A] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
+                    EXT
+                  </span>
+                )}
               </div>
+            </div>
+          );
+        }
+
+        if (msg.role === 'system') {
+          return (
+            <div key={`msg-${i}`} className="max-w-[92%]">
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#8a7d72]">
+                <AnalystIcon />
+                Displacement · system
+              </div>
+              <div
+                className="rounded-[4px_13px_13px_13px] border border-[#ece6df] bg-[#faf7f2] px-3 py-3 text-[12.8px] text-[#4a3f38]"
+                dangerouslySetInnerHTML={{ __html: msg.text }}
+              />
             </div>
           );
         }
@@ -90,6 +122,11 @@ export function MigrationChatFeed({
               <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#8a7d72]">
                 <AnalystIcon />
                 Displacement · AI Analyst
+                {msg.extended && (
+                  <span className="rounded-full bg-[#DDA63A] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
+                    EXT
+                  </span>
+                )}
               </div>
               <div className="rounded-[4px_13px_13px_13px] border border-[#ece6df] bg-[#faf7f2] px-3 py-3 text-[12.8px] leading-relaxed text-[#4a3f38]">
                 {msg.body}
@@ -120,6 +157,11 @@ export function MigrationChatFeed({
             <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#8a7d72]">
               <AnalystIcon />
               Displacement · AI Analyst
+              {msg.extended && (
+                <span className="rounded-full bg-[#DDA63A] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
+                  EXT
+                </span>
+              )}
             </div>
             <div className="rounded-[4px_13px_13px_13px] border border-[#ece6df] bg-[#faf7f2] px-3 py-3 text-[12.8px] text-[#4a3f38]">
               <b className="text-[#1a1410]">{msg.title}.</b> View updated on the left.
@@ -142,7 +184,7 @@ export function MigrationChatFeed({
       })}
 
       {isQuerying && queryingMode ? (
-        <MigrationThinkingIndicator queryingMode={queryingMode} />
+        <MigrationThinkingIndicator queryingMode={queryingMode} extendedKnowledge={extendedKnowledge} />
       ) : null}
     </div>
   );

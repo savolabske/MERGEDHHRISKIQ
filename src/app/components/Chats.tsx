@@ -5,19 +5,17 @@ import { useProgressiveList } from '../hooks/useProgressiveList';
 import { getUserById } from '../utils/mockUsers';
 import { TableSkeleton } from './ui/table-skeleton';
 import { PageScrollShell } from './PageScrollShell';
-
-interface ChatHistoryItem {
-  id: string;
-  query: string;
-  timestamp: string;
-  date: string;
-  messages?: any[];
-  sharedWith?: string[];
-  shareMode?: 'outgoing' | 'incoming';
-  createdBy?: string;
-  createdByName?: string;
-  unread?: boolean;
-}
+import { Button } from './ui/button';
+import type { ChatHistoryItem } from '../types/chat';
+import {
+  ChatSourceBadge,
+  ChatSourceIcon,
+  chatSourceFilterLabel,
+  chatSourceLabel,
+  CHAT_SOURCE_OPTIONS,
+  resolveChatSource,
+  type ChatSourceFilter,
+} from './chats/chatSource';
 
 type ChatScopeFilter = 'all' | 'my' | 'shared-with-me';
 
@@ -56,6 +54,8 @@ function chatMatchesSearch(chat: ChatHistoryItem, rawQuery: string): boolean {
     getRelativeDayLabel(chat.date),
     chat.shareMode === 'incoming' ? 'shared with me' : '',
     chat.shareMode === 'outgoing' ? 'shared by me' : '',
+    chatSourceLabel(resolveChatSource(chat)),
+    chat.resourceTitle,
   ]
     .filter(Boolean)
     .join(' ')
@@ -63,9 +63,15 @@ function chatMatchesSearch(chat: ChatHistoryItem, rawQuery: string): boolean {
   return parts.includes(q);
 }
 
+function matchesChatSourceFilter(chat: ChatHistoryItem, filter: ChatSourceFilter): boolean {
+  if (filter === 'all') return true;
+  return resolveChatSource(chat) === filter;
+}
+
 interface ChatsProps {
   embedded?: boolean;
   subtitle?: string;
+  defaultSourceFilter?: ChatSourceFilter;
   onChatSelect?: (id: string) => void;
   onNewChat?: () => void;
   chatHistory?: ChatHistoryItem[];
@@ -141,6 +147,7 @@ function AvatarStack({ userIds, compact = false }: { userIds: string[]; compact?
 export function Chats({
   embedded = false,
   subtitle = 'Review and revisit your previous Risk IQ chats',
+  defaultSourceFilter = 'all',
   onChatSelect,
   onNewChat,
   chatHistory = [],
@@ -156,10 +163,14 @@ export function Chats({
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [chatScopeFilter, setChatScopeFilter] = useState<ChatScopeFilter>('all');
+  const [chatSourceFilter, setChatSourceFilter] = useState<ChatSourceFilter>(defaultSourceFilter);
   const [showChatFilterDropdown, setShowChatFilterDropdown] = useState(false);
+  const [showSourceFilterDropdown, setShowSourceFilterDropdown] = useState(false);
 
   const itemsPerPageDropdownRef = useRef<HTMLDivElement>(null);
   const chatFilterDropdownRef = useRef<HTMLDivElement>(null);
+  const sourceFilterDropdownRef = useRef<HTMLDivElement>(null);
+  const hideSourceFilter = embedded && defaultSourceFilter !== 'all';
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -171,6 +182,9 @@ export function Chats({
       if (chatFilterDropdownRef.current && !chatFilterDropdownRef.current.contains(target)) {
         setShowChatFilterDropdown(false);
       }
+      if (sourceFilterDropdownRef.current && !sourceFilterDropdownRef.current.contains(target)) {
+        setShowSourceFilterDropdown(false);
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -181,7 +195,11 @@ export function Chats({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, chatScopeFilter]);
+  }, [searchQuery, chatScopeFilter, chatSourceFilter]);
+
+  useEffect(() => {
+    setChatSourceFilter(defaultSourceFilter);
+  }, [defaultSourceFilter]);
 
   // Sort chats: pinned first, then preserve original order deterministically.
   const sortedHistory = chatHistory
@@ -199,6 +217,7 @@ export function Chats({
 
   const filteredChats = sortedHistory
     .filter((chat) => matchesChatScopeFilter(chat, chatScopeFilter))
+    .filter((chat) => matchesChatSourceFilter(chat, chatSourceFilter))
     .filter((chat) => chatMatchesSearch(chat, searchQuery));
 
   // Pagination logic
@@ -208,7 +227,7 @@ export function Chats({
   const paginatedHistory = filteredChats.slice(startIndex, endIndex);
   const { visibleItems: visiblePaginatedHistory, isProgressivelyLoading } = useProgressiveList(paginatedHistory, {
     minLoadingMs: 200,
-    transitionKey: `${currentPage}-${itemsPerPage}-${chatScopeFilter}-${searchQuery}`,
+    transitionKey: `${currentPage}-${itemsPerPage}-${chatScopeFilter}-${chatSourceFilter}-${searchQuery}`,
   });
   const showingStart = filteredChats.length > 0 ? startIndex + 1 : 0;
   const showingEnd = Math.min(endIndex, filteredChats.length);
@@ -347,11 +366,23 @@ export function Chats({
       innerClassName="space-y-6"
     >
             {!embedded && (
-              <div>
-                <h2 className="text-page-title mb-1">Chats</h2>
-                <p className="text-sm sm:text-sm text-muted-foreground">
-                  {subtitle}
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div>
+                  <h2 className="text-page-title mb-1">Chats</h2>
+                  <p className="text-sm sm:text-sm text-muted-foreground">
+                    {subtitle}
+                  </p>
+                </div>
+                {onNewChat && (
+                  <Button
+                    type="button"
+                    onClick={onNewChat}
+                    className="w-full sm:w-auto shrink-0 gap-2"
+                  >
+                    <Plus size={18} strokeWidth={2} />
+                    New Chat
+                  </Button>
+                )}
               </div>
             )}
 
@@ -419,6 +450,48 @@ export function Chats({
                   </div>
                 )}
               </div>
+              {!hideSourceFilter && (
+                <div className="relative shrink-0 w-full sm:w-auto" ref={sourceFilterDropdownRef}>
+                  <button
+                    type="button"
+                    aria-expanded={showSourceFilterDropdown}
+                    aria-haspopup="listbox"
+                    onClick={() => setShowSourceFilterDropdown((open) => !open)}
+                    className="w-full sm:w-auto min-w-0 sm:min-w-[180px] px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center justify-between gap-2"
+                  >
+                    <span className="truncate">{chatSourceFilterLabel(chatSourceFilter)}</span>
+                    <ChevronDown
+                      size={16}
+                      className={`text-muted-foreground shrink-0 transition-transform ${showSourceFilterDropdown ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {showSourceFilterDropdown && (
+                    <div
+                      className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 z-20 w-full sm:min-w-[220px] bg-card border border-border rounded-lg shadow-lg overflow-hidden"
+                      role="listbox"
+                      aria-label="Filter chats by source"
+                    >
+                      {CHAT_SOURCE_OPTIONS.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          role="option"
+                          aria-selected={chatSourceFilter === option.id}
+                          onClick={() => {
+                            setChatSourceFilter(option.id);
+                            setShowSourceFilterDropdown(false);
+                          }}
+                          className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors ${
+                            chatSourceFilter === option.id ? 'bg-secondary font-medium' : ''
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Content */}
@@ -485,7 +558,9 @@ export function Chats({
                 ) : isProgressivelyLoading ? (
                   <TableSkeleton variant="grid" rows={itemsPerPage} columns={4} />
                 ) : (
-                  visiblePaginatedHistory.map((chat) => (
+                  visiblePaginatedHistory.map((chat) => {
+                    const chatSource = resolveChatSource(chat);
+                    return (
                     <div
                       key={chat.id}
                       className="table-row-entity relative sm:grid sm:grid-cols-[auto_1fr_140px_auto] sm:items-center gap-4 px-4 sm:px-6 transition-colors group"
@@ -509,9 +584,7 @@ export function Chats({
                     className="flex items-start gap-3 text-left w-full min-w-0 sm:w-auto"
                   >
                     <div className="flex items-center gap-3 flex-1 w-full min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-sidebar-accent flex items-center justify-center shrink-0">
-                        <Search size={16} strokeWidth={2} className="text-primary" />
-                      </div>
+                      <ChatSourceIcon source={chatSource} />
                       <div className="flex-1 min-w-0 pr-12 sm:pr-0">
                         <div className="flex items-start gap-2 min-w-0">
                           <p className="table-primary-text group-hover:text-primary-text transition-colors min-w-0 flex-1 break-words">
@@ -524,8 +597,23 @@ export function Chats({
                             <Pin size={14} className="text-primary shrink-0" fill="var(--primary)" />
                           )}
                         </div>
-                        {/* Timestamp/meta below query */}
+                        {/* Source pill, resource context, timestamp/meta below query */}
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {!(hideSourceFilter && chatSource === 'risk-iq') && (
+                            <ChatSourceBadge source={chatSource} />
+                          )}
+                          {chatSource === 'resource' && chat.resourceTitle && (
+                            <>
+                              <span className="text-border-muted">•</span>
+                              <span
+                                className="text-xs text-muted-foreground truncate max-w-[240px] sm:max-w-[320px]"
+                                title={chat.resourceTitle}
+                              >
+                                {chat.resourceTitle}
+                              </span>
+                            </>
+                          )}
+                          <span className="text-border-muted">•</span>
                           <p className="table-metadata-text">
                             Last message {getRelativeDayLabel(chat.date)} at {chat.timestamp}
                           </p>
@@ -604,7 +692,8 @@ export function Chats({
                     </div>
                   </div>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 

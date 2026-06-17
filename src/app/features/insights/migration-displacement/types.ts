@@ -18,9 +18,10 @@ export interface MigrationScene {
 }
 
 export type MigrationChatMessage =
-  | { role: 'user'; text: string }
-  | { role: 'assistant'; lane: 'dashboard'; title: string; chips?: string[] }
-  | { role: 'assistant'; lane: 'chat'; body: string; chips?: string[] };
+  | { role: 'user'; text: string; extended?: boolean }
+  | { role: 'system'; text: string }
+  | { role: 'assistant'; lane: 'dashboard'; title: string; chips?: string[]; extended?: boolean }
+  | { role: 'assistant'; lane: 'chat'; body: string; chips?: string[]; extended?: boolean };
 
 export interface MigrationKeyFinding {
   value: string;
@@ -48,6 +49,7 @@ export interface MigrationRecipeResult {
   followUps: string[];
   chips?: string[];
   isFallback?: boolean;
+  extended?: boolean;
 }
 
 export type MigrationPromptResult =

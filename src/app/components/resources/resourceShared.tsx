@@ -7,8 +7,14 @@ import {
   FileType,
   Presentation,
   CheckCircle2,
+  Loader2,
 } from 'lucide-react';
-import type { ResourceFile, ResourceFileType, ResourceOwnership } from '../../data/resourcesMock';
+import type {
+  PlatformResourceStatusInfo,
+  ResourceFile,
+  ResourceFileType,
+  ResourceOwnership,
+} from '../../data/resourcesMock';
 
 export {
   DetailFieldLabel,
@@ -99,6 +105,82 @@ export function PlatformFileStatusCell({ file }: { file: ResourceFile }) {
           {file.uploadedAt}
         </p>
       </div>
+    </div>
+  );
+}
+
+export function PlatformResourceStatusCell({
+  status,
+  fallbackDate,
+}: {
+  status?: PlatformResourceStatusInfo;
+  fallbackDate: string;
+}) {
+  if (status?.state === 'uploading') {
+    const progressText =
+      status.uploadedFiles !== undefined && status.totalFiles !== undefined
+        ? `${status.uploadedFiles} of ${status.totalFiles} files`
+        : status.updatedAt;
+    return (
+      <div className="flex min-w-0 w-full items-center justify-start gap-1.5">
+        <div className="relative flex h-7 w-7 shrink-0 items-center justify-center text-warning-strong" aria-hidden>
+          <Loader2 size={18} strokeWidth={2.25} className="animate-spin" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium leading-snug text-warning-text">Uploading...</p>
+          <p className="mt-0.5 truncate text-xs leading-snug text-text-subtle" title={progressText}>
+            {progressText}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const completedDate = status?.updatedAt ?? fallbackDate;
+  return (
+    <div className="flex min-w-0 w-full items-center justify-start gap-1.5">
+      <div className="relative flex h-7 w-7 shrink-0 items-center justify-center" aria-hidden>
+        <CheckCircle2 size={16} className="text-success" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium leading-snug text-success">Completed</p>
+        <p className="mt-0.5 truncate text-xs leading-snug text-text-subtle" title={completedDate}>
+          {completedDate}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function PlatformResourceStatusCompact({
+  status,
+  fallbackDate,
+}: {
+  status?: PlatformResourceStatusInfo;
+  fallbackDate: string;
+}) {
+  if (status?.state === 'uploading') {
+    const progressText =
+      status.uploadedFiles !== undefined && status.totalFiles !== undefined
+        ? `${status.uploadedFiles}/${status.totalFiles}`
+        : status.updatedAt;
+    return (
+      <div className="inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-warning-text">
+        <Loader2 size={12} strokeWidth={2.25} className="shrink-0 animate-spin text-warning-strong" />
+        <span className="truncate" title={progressText}>
+          Uploading {progressText}
+        </span>
+      </div>
+    );
+  }
+
+  const completedDate = status?.updatedAt ?? fallbackDate;
+  return (
+    <div className="inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-success-text">
+      <CheckCircle2 size={12} className="shrink-0 text-success" />
+      <span className="truncate" title={`Completed ${completedDate}`}>
+        Completed
+      </span>
     </div>
   );
 }

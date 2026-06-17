@@ -23,7 +23,9 @@ import {
   ReportChatPromptInput,
   ReportChatScrollSync,
   MIGRATION_CHAT_PROMPT_THEME,
+  MIGRATION_EXTENDED_KNOWLEDGE_THEME,
   ReportDashboardCustomizeOverlay,
+  ReportExtendedKnowledgeToggle,
   ReportLoadDeferred,
   ReportFilterBar,
   ReportLoadItem,
@@ -97,6 +99,8 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
     chatScrollRef,
     runPrompt,
     backToReport,
+    extendedKnowledge,
+    toggleExtendedKnowledge,
   } = useMigrationReportPrompt({
     onChatLaneReady: () => chatLayoutRef.current?.openChat(),
   });
@@ -363,6 +367,11 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
               <p className="mt-1 text-[11.5px] text-[#8a7d72]">
                 Ask about causes, regions, demographics, needs, or trends.
               </p>
+              <ReportExtendedKnowledgeToggle
+                enabled={extendedKnowledge}
+                onToggle={toggleExtendedKnowledge}
+                theme={MIGRATION_EXTENDED_KNOWLEDGE_THEME}
+              />
             </ReportLoadItem>
           }
           chatFeed={
@@ -371,6 +380,7 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                 messages={messages}
                 isQuerying={isQuerying}
                 queryingMode={queryingMode}
+                extendedKnowledge={extendedKnowledge}
                 onChipClick={runPrompt}
               />
             </div>
@@ -397,6 +407,7 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                 query={activeQuery}
                 phase={customizePhase}
                 theme={MIGRATION_CUSTOMIZE_THEME}
+                extendedKnowledge={extendedKnowledge}
               />
             ) : null}
 

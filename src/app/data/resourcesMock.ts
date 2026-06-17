@@ -2,6 +2,15 @@ export type ResourceOwnership = 'created_by_me' | 'shared_with_me';
 
 export type ResourceFileType = 'PDF' | 'DOCX' | 'XLSX' | 'PPTX' | 'OTHER';
 
+export type PlatformResourceStatus = 'uploading' | 'completed';
+
+export interface PlatformResourceStatusInfo {
+  state: PlatformResourceStatus;
+  updatedAt: string;
+  uploadedFiles?: number;
+  totalFiles?: number;
+}
+
 export interface ResourceFile {
   id: string;
   name: string;
@@ -24,6 +33,7 @@ export interface PlatformResource {
   tags: string[];
   lastModified: string;
   createdAt: string;
+  status?: PlatformResourceStatusInfo;
   files: ResourceFile[];
   webLinks: ResourceWebLink[];
   userGroups: string[];
@@ -85,6 +95,7 @@ interface ResourceTemplate {
   userGroups: string[];
   lastModified: string;
   createdAt: string;
+  status?: PlatformResourceStatusInfo;
 }
 
 const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
@@ -311,6 +322,10 @@ function generateAdditionalResources(): PlatformResource[] {
       tags: template.tags,
       lastModified: template.lastModified,
       createdAt: template.createdAt,
+      status: template.status ?? {
+        state: 'completed',
+        updatedAt: template.lastModified,
+      },
       files: generateFiles(slug, template.fileCount),
       webLinks: [],
       userGroups: template.userGroups,
@@ -333,6 +348,12 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
     tags: ['HCT', 'coordination', '2026'],
     lastModified: 'Feb 20, 2026',
     createdAt: 'Feb 18, 2026',
+    status: {
+      state: 'uploading',
+      updatedAt: '3 of 5 files',
+      uploadedFiles: 3,
+      totalFiles: 5,
+    },
     files: generateFiles('HCT_Meeting_2026', 30),
     webLinks: [
       {
@@ -357,6 +378,10 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
     tags: ['WASH', 'assessment', '2026', 'internal'],
     lastModified: 'Feb 18, 2026',
     createdAt: 'Feb 10, 2026',
+    status: {
+      state: 'completed',
+      updatedAt: 'Mar 15, 2026',
+    },
     files: generateFiles('WASH_Q1', 12),
     webLinks: [],
     userGroups: ['WASH Cluster'],
@@ -371,6 +396,10 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
     tags: ['security', 'SOP', 'operations'],
     lastModified: 'Feb 15, 2026',
     createdAt: 'Jan 28, 2026',
+    status: {
+      state: 'completed',
+      updatedAt: 'Mar 12, 2026',
+    },
     files: generateFiles('Security_SOP', 8),
     webLinks: [
       {
@@ -391,6 +420,10 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
     tags: ['map', 'access', 'Mogadishu'],
     lastModified: 'Feb 12, 2026',
     createdAt: 'Feb 01, 2026',
+    status: {
+      state: 'completed',
+      updatedAt: 'Mar 10, 2026',
+    },
     files: generateFiles('Mogadishu_Map', 5),
     webLinks: [],
     userGroups: ['Mission Leadership'],
@@ -405,6 +438,10 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
     tags: ['strategy', 'risk', '2026'],
     lastModified: 'Feb 08, 2026',
     createdAt: 'Jan 15, 2026',
+    status: {
+      state: 'completed',
+      updatedAt: 'Mar 08, 2026',
+    },
     files: generateFiles('Risk_Strategy_2026', 6),
     webLinks: [],
     userGroups: ['Humanitarian Affairs'],

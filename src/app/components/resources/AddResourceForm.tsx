@@ -128,6 +128,10 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
       tags,
       lastModified: now,
       createdAt: now,
+      status: {
+        state: 'completed',
+        updatedAt: now,
+      },
       files: [],
       webLinks: resolveWebLinks().map((url, i) => ({
         id: `link-${i}`,

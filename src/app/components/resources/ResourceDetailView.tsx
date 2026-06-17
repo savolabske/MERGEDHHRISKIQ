@@ -6,6 +6,7 @@ import {
   Globe,
   User,
   Edit2,
+  MessagesSquare,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -20,6 +21,7 @@ import {
 } from './resourceShared';
 import { ResourceDocumentsList } from './ResourceDocumentsList';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
+import { Button } from '../ui/button';
 
 interface ResourceDetailViewProps {
   resource: PlatformResource;
@@ -27,6 +29,7 @@ interface ResourceDetailViewProps {
   onEdit: () => void;
   onDelete: () => void;
   onFilesChange?: (files: PlatformResource['files']) => void;
+  onChatWithResource?: () => void;
 }
 
 export function ResourceDetailView({
@@ -35,6 +38,7 @@ export function ResourceDetailView({
   onEdit,
   onDelete,
   onFilesChange,
+  onChatWithResource,
 }: ResourceDetailViewProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAllIndividualUsers, setShowAllIndividualUsers] = useState(false);
@@ -74,8 +78,18 @@ export function ResourceDetailView({
         ]}
       />
 
-      <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-foreground">{resource.title}</h1>
+        {onChatWithResource && (
+          <Button
+            type="button"
+            onClick={onChatWithResource}
+            className="w-full sm:w-auto shrink-0 gap-2"
+          >
+            <MessagesSquare size={16} />
+            Chat with resource
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

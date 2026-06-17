@@ -1,23 +1,12 @@
 import { Chats } from './Chats';
-
-interface PlatformChatHistoryItem {
-  id: string;
-  query: string;
-  timestamp: string;
-  date: string;
-  messages?: unknown[];
-  sharedWith?: string[];
-  shareMode?: 'outgoing' | 'incoming';
-  createdBy?: string;
-  createdByName?: string;
-  unread?: boolean;
-}
+import type { ChatHistoryItem } from '../types/chat';
 
 interface PlatformChatsProps {
-  chatHistory: PlatformChatHistoryItem[];
+  chatHistory: ChatHistoryItem[];
   onChatSelect: (id: string) => void;
   onDeleteChat: (id: string) => void;
   onBulkDeleteChats: (ids: string[]) => void;
+  onNewChat: () => void;
 }
 
 export function PlatformChats({
@@ -25,14 +14,16 @@ export function PlatformChats({
   onChatSelect,
   onDeleteChat,
   onBulkDeleteChats,
+  onNewChat,
 }: PlatformChatsProps) {
   return (
     <Chats
-      subtitle="Review and revisit your previous AI Search chats"
+      subtitle="All your conversations across Humanity Hub, Risk iQ, and resources"
       chatHistory={chatHistory}
       onChatSelect={onChatSelect}
       onDeleteChat={onDeleteChat}
       onBulkDeleteChats={onBulkDeleteChats}
+      onNewChat={onNewChat}
     />
   );
 }

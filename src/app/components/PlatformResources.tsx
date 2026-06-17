@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { INITIAL_RESOURCES, type PlatformResource } from '../data/resourcesMock';
 import { ResourcesList } from './resources/ResourcesList';
@@ -9,7 +9,12 @@ import { PageScrollShell } from './PageScrollShell';
 
 type HubView = 'list' | 'detail' | 'edit' | 'add';
 
-export function PlatformResources() {
+interface PlatformResourcesProps {
+  onChatWithResource?: (resourceId: string) => void;
+  focusedResourceId?: string | null;
+}
+
+export function PlatformResources({ onChatWithResource, focusedResourceId }: PlatformResourcesProps) {
   const [resources, setResources] = useState<PlatformResource[]>(INITIAL_RESOURCES);
   const [view, setView] = useState<HubView>('list');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -47,6 +52,14 @@ export function PlatformResources() {
     setView('detail');
   };
 
+  useEffect(() => {
+    if (!focusedResourceId) return;
+    const resourceExists = resources.some((resource) => resource.id === focusedResourceId);
+    if (!resourceExists) return;
+    setSelectedId(focusedResourceId);
+    setView('detail');
+  }, [focusedResourceId, resources]);
+
   return (
     <PageScrollShell>
             {view === 'list' && (
@@ -74,6 +87,11 @@ export function PlatformResources() {
                 onBack={goToList}
                 onEdit={() => setView('edit')}
                 onDelete={() => handleDelete(selectedResource.id)}
+                onChatWithResource={
+                  onChatWithResource
+                    ? () => onChatWithResource(selectedResource.id)
+                    : undefined
+                }
                 onFilesChange={(files) =>
                   handleSave({
                     ...selectedResource,
@@ -83,6 +101,14 @@ export function PlatformResources() {
                       day: 'numeric',
                       year: 'numeric',
                     }),
+                    status: {
+                      state: 'completed',
+                      updatedAt: new Date().toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      }),
+                    },
                   })
                 }
               />

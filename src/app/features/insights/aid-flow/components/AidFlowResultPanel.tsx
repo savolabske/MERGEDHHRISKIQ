@@ -17,6 +17,10 @@ export function AidFlowResultPanel({
   onBack,
   onFollowUp,
 }: AidFlowResultPanelProps) {
+  const sourceLabel = recipe.extended
+    ? 'AIMS + SSF + linked reports'
+    : 'AIMS + SSF data';
+
   return (
     <section>
       <AnimatedAIResponse
@@ -28,9 +32,16 @@ export function AidFlowResultPanel({
             <Sparkles size={14} />
           </span>
           <div>
-            <div className="text-[13.5px] font-semibold text-[#0d1b2a]">{recipe.title}</div>
+            <div className="text-[13.5px] font-semibold text-[#0d1b2a]">
+              {recipe.title}
+              {recipe.extended && (
+                <span className="ml-2 rounded-full bg-[#DDA63A] px-2 py-0.5 text-[10px] font-bold text-white">
+                  EXTENDED
+                </span>
+              )}
+            </div>
             <div className="text-[11px] text-[#6b7a8d]">
-              AI-generated from AIMS + SSF data ·{' '}
+              AI-generated from {sourceLabel} ·{' '}
               {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
             </div>
           </div>

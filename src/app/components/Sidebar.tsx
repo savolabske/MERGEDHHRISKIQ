@@ -384,7 +384,7 @@ export function Sidebar({
 
               <SidebarNavGroup>
                 <SidebarNavItem
-                  label="Resources"
+                  label="My Resources"
                   icon={BookOpen}
                   isActive={currentView === 'resourcesHub'}
                   collapsed={displayCollapsed}
