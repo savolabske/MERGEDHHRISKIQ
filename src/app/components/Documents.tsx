@@ -3247,6 +3247,39 @@ export function Documents() {
                     />
                   </div>
 
+                  {/* File Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Files</label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
+                      <input type="file" onChange={handleFileSelect} className="hidden" id="file-upload" accept=".pdf,.doc,.docx,.txt,.xlsx,.xls" multiple />
+                      <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
+                        <Upload size={32} className="text-text-subtle mb-2" />
+                        <span className="text-sm font-medium text-primary">Click to Upload</span>
+                        <span className="text-sm text-muted-foreground">or drag and drop</span>
+                      </label>
+                    </div>
+                    {selectedFiles.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 bg-muted border border-border rounded-lg">
+                            <FileText size={18} className="text-muted-foreground shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                              <p className="text-xs text-text-subtle">{formatFileSize(file.size)}</p>
+                            </div>
+                            <button
+                              onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                              className="p-1.5 hover:bg-destructive-subtle rounded-lg transition-colors shrink-0"
+                              title="Remove file"
+                            >
+                              <X size={16} className="text-muted-foreground hover:text-destructive-text" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1">
                       Web Links
@@ -3431,39 +3464,6 @@ export function Documents() {
                         </div>
                       )}
                     </div>
-                  </div>
-
-                  {/* File Upload */}
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Files</label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
-                      <input type="file" onChange={handleFileSelect} className="hidden" id="file-upload" accept=".pdf,.doc,.docx,.txt,.xlsx,.xls" multiple />
-                      <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-                        <Upload size={32} className="text-text-subtle mb-2" />
-                        <span className="text-sm font-medium text-primary">Click to Upload</span>
-                        <span className="text-sm text-muted-foreground">or drag and drop</span>
-                      </label>
-                    </div>
-                    {selectedFiles.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        {selectedFiles.map((file, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted border border-border rounded-lg">
-                            <FileText size={18} className="text-muted-foreground shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                              <p className="text-xs text-text-subtle">{formatFileSize(file.size)}</p>
-                            </div>
-                            <button
-                              onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
-                              className="p-1.5 hover:bg-destructive-subtle rounded-lg transition-colors shrink-0"
-                              title="Remove file"
-                            >
-                              <X size={16} className="text-muted-foreground hover:text-destructive-text" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
                   <DocumentAvailabilityFields

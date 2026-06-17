@@ -15,6 +15,7 @@ import { PageFooter } from './PageFooter';
 import { Button } from './ui/button';
 import { BackLink } from './ui/back-link';
 import { PageBreadcrumb } from './ui/page-breadcrumb';
+import { cn } from './ui/utils';
 import { getDocumentContent, type DocumentContent } from '../data/documentDetailData';
 import type { AppView } from '../types/navigation';
 
@@ -126,7 +127,6 @@ function generateDocumentResponse(query: string, content: DocumentContent): stri
 function DocumentChatComposer({
   chatQuery,
   isTyping,
-  isChatOpen,
   isExpandedLayout,
   isConnectedToPanel,
   onChange,
@@ -144,12 +144,22 @@ function DocumentChatComposer({
 }) {
   const canSend = Boolean(chatQuery.trim()) && !isTyping;
 
-  if (isExpandedLayout) {
-    return (
-      <form onSubmit={onSubmit} className={`relative ${isConnectedToPanel ? 'px-4 sm:px-6 py-3' : ''}`}>
-        <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none">
-          <Sparkles size={18} className="text-muted-foreground" />
-        </div>
+  return (
+    <form
+      onSubmit={onSubmit}
+      className={isExpandedLayout && isConnectedToPanel ? 'px-4 sm:px-6 py-3' : undefined}
+    >
+      <div
+        data-composite-field
+        className={cn(
+          'flex min-w-0 items-center gap-2 border px-3 py-2 transition-colors focus-within:ring-2',
+          'border-border bg-card hover:border-primary focus-within:border-primary focus-within:ring-ring/10',
+          isConnectedToPanel && !isExpandedLayout
+            ? 'rounded-b-[20px] rounded-t-none'
+            : 'rounded-xl',
+        )}
+      >
+        <Sparkles size={18} className="shrink-0 text-muted-foreground" aria-hidden />
         <input
           type="text"
           value={chatQuery}
@@ -157,52 +167,20 @@ function DocumentChatComposer({
           onFocus={onFocus}
           placeholder="Ask about this document…"
           disabled={isTyping}
-          className="focus-ring-container-control w-full bg-card text-sm text-foreground placeholder:text-muted-foreground pl-12 pr-14 focus:outline-none focus:ring-0 transition-all disabled:opacity-60 border border-border rounded-[22px] py-[18px] hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/10"
+          className="focus-ring-container-control min-w-0 flex-1 border-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={!canSend}
-          className={`absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-            canSend ? 'text-primary hover:bg-primary-subtle' : 'text-muted-foreground cursor-not-allowed'
-          }`}
+          className={cn(
+            'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white transition-colors disabled:opacity-50',
+            canSend ? 'bg-primary hover:bg-primary-hover' : 'bg-muted cursor-not-allowed',
+          )}
           aria-label="Send message"
         >
-          <Send size={18} />
+          <Send size={14} />
         </button>
-      </form>
-    );
-  }
-
-  return (
-    <form onSubmit={onSubmit} className="relative">
-      <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none">
-        <Sparkles size={18} className="text-muted-foreground" />
       </div>
-      <input
-        type="text"
-        value={chatQuery}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={onFocus}
-        placeholder="Ask about this document…"
-        disabled={isTyping}
-        className={`focus-ring-container-control w-full bg-card text-sm text-foreground placeholder:text-muted-foreground pl-12 pr-14 focus:outline-none focus:ring-0 transition-all disabled:opacity-60 ${
-          isConnectedToPanel
-            ? 'border border-border rounded-b-[20px] rounded-t-none py-[18px] hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/10'
-            : 'border border-border rounded-full py-[18px] hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/10'
-        }`}
-      />
-      <button
-        type="submit"
-        disabled={!canSend}
-        className={`absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-          canSend
-            ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
-            : 'bg-muted text-muted-foreground cursor-not-allowed'
-        }`}
-        aria-label="Send message"
-      >
-        <Send size={18} />
-      </button>
     </form>
   );
 }

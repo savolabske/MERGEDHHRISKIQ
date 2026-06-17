@@ -561,7 +561,7 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     </h3>
                     <AnimatedStat
                       value={sceneStats[i]?.stat ?? s.stat}
-                      className={cn(reportSceneStatClassName, 'text-[#00689D] lg:text-[42px]')}
+                      className={cn(reportSceneStatClassName, 'text-[#00689D]')}
                     />
                     <p className="mt-1 text-[12.5px] text-[#6f8094]">
                       {sceneStats[i]?.statLbl ?? s.statLbl}
