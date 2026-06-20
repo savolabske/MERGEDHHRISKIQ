@@ -27,6 +27,19 @@ export function DetailFieldLabel({
   return <Component className={cn('detail-field-label', className)}>{children}</Component>;
 }
 
+/** Muted placeholder for empty optional fields on detail views */
+export function DetailEmptyValue({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <p className={cn('text-sm text-muted-foreground', className)}>{children}</p>
+  );
+}
+
 /** @deprecated Use DetailSectionTitle or DetailFieldLabel */
 export function SectionLabel({ children }: { children: ReactNode }) {
   return <DetailSectionTitle>{children}</DetailSectionTitle>;

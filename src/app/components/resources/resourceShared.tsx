@@ -19,6 +19,7 @@ import type {
 export {
   DetailFieldLabel,
   DetailSectionTitle,
+  DetailEmptyValue,
   SectionLabel,
 } from '../ui/detail-labels';
 

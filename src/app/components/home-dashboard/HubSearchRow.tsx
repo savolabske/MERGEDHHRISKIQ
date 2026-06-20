@@ -6,6 +6,7 @@ import {
   Lock,
   Search,
   Shield,
+  Sparkles,
   X,
 } from 'lucide-react';
 import {
@@ -14,6 +15,8 @@ import {
   type HubQuickActionId,
 } from '../../data/homeDashboardMock';
 import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
+import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { cn } from '../ui/utils';
 import { HubKeyInsightsCard } from './HubKeyInsightsCard';
 import { hubCard } from './hubStyles';
@@ -53,14 +56,20 @@ function scrollPanelIntoView(panel: HTMLElement, padding = 24) {
   }
 }
 
+interface HubSearchOptions {
+  extendedKnowledge?: boolean;
+  privateToMe?: boolean;
+}
+
 interface HubSearchRowProps {
-  onSearch: (query: string) => void;
+  onSearch: (query: string, options?: HubSearchOptions) => void;
   onOpenChat: (payload: DashboardChatPayload) => void;
 }
 
 export function HubSearchRow({ onSearch, onOpenChat }: HubSearchRowProps) {
   const [query, setQuery] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
+  const [isExtendedKnowledge, setIsExtendedKnowledge] = useState(false);
   const [activePanel, setActivePanel] = useState<HubQuickActionId | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -110,10 +119,13 @@ export function HubSearchRow({ onSearch, onOpenChat }: HubSearchRowProps) {
     };
   }, [activePanel]);
 
-  const submitSearch = () => {
-    const trimmed = query.trim();
+  const submitSearch = (searchQuery = query) => {
+    const trimmed = searchQuery.trim();
     if (!trimmed) return;
-    onSearch(trimmed);
+    onSearch(trimmed, {
+      extendedKnowledge: isExtendedKnowledge,
+      privateToMe: isPrivate,
+    });
   };
 
   const toggleQuickActionPanel = (id: HubQuickActionId) => {
@@ -123,7 +135,7 @@ export function HubSearchRow({ onSearch, onOpenChat }: HubSearchRowProps) {
   const handlePanelItemClick = (item: string) => {
     setQuery(item);
     setActivePanel(null);
-    onSearch(item);
+    submitSearch(item);
   };
 
   const activePanelData = activePanel ? HUB_QUICK_ACTION_PANELS[activePanel] : null;
@@ -171,33 +183,88 @@ export function HubSearchRow({ onSearch, onOpenChat }: HubSearchRowProps) {
           </div>
 
           <div className="flex items-center justify-between gap-3 mt-3 pt-1">
-            {isPrivate ? (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-primary-subtle px-2.5 py-1 text-xs font-medium text-primary">
-                <Lock size={12} strokeWidth={2.25} aria-hidden />
-                <span>Private to me</span>
-                <button
-                  type="button"
-                  onClick={() => setIsPrivate(false)}
-                  aria-label="Remove private to me"
-                  className="inline-flex items-center justify-center rounded-full text-primary transition-colors hover:text-primary-hover"
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-pressed={isPrivate}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      const nextState = !isPrivate;
+                      setIsPrivate(nextState);
+                      toast.success(nextState ? 'Private to me is on' : 'Private to me is off');
+                    }}
+                    className={cn(
+                      'inline-flex max-w-[170px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                      isPrivate
+                        ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                        : 'border-border bg-card text-foreground hover:bg-muted/30',
+                    )}
+                  >
+                    <Lock size={12} strokeWidth={2.25} aria-hidden />
+                    <span className="truncate ml-1.5">Private to me</span>
+                    {isPrivate ? (
+                      <span className="ml-1.5">
+                        <X size={12} />
+                      </span>
+                    ) : null}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  variant="muted"
+                  side="top"
+                  sideOffset={8}
+                  className="w-[280px] max-w-[280px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
                 >
-                  <X size={12} strokeWidth={2.25} aria-hidden />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsPrivate(true)}
-                aria-pressed={false}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/30"
-              >
-                <Lock size={12} strokeWidth={2.25} aria-hidden />
-                Private to me
-              </button>
-            )}
+                  When on, answers are drawn from your personal library — the resources and documents you&apos;ve added in My Resources.
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-pressed={isExtendedKnowledge}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      const nextState = !isExtendedKnowledge;
+                      setIsExtendedKnowledge(nextState);
+                      toast.success(
+                        nextState ? 'Extended Knowledge is on' : 'Extended Knowledge is off',
+                      );
+                    }}
+                    className={cn(
+                      'inline-flex max-w-[230px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                      isExtendedKnowledge
+                        ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                        : 'border-border bg-card text-foreground hover:bg-muted/30',
+                    )}
+                  >
+                    <Sparkles size={12} />
+                    <span className="truncate ml-1.5">
+                      {isExtendedKnowledge ? 'Extended Knowledge ON' : 'Extended Knowledge'}
+                    </span>
+                    {isExtendedKnowledge ? (
+                      <span className="ml-1.5">
+                        <X size={12} />
+                      </span>
+                    ) : null}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  variant="muted"
+                  side="top"
+                  sideOffset={8}
+                  className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+                >
+                  Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <button
               type="button"
-              onClick={submitSearch}
+              onClick={() => submitSearch()}
               disabled={!query.trim()}
               aria-label="Search"
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"

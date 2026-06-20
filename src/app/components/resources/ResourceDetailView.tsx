@@ -18,6 +18,7 @@ import {
   SidebarUserGroupBadge,
   DetailSectionTitle,
   DetailFieldLabel,
+  DetailEmptyValue,
 } from './resourceShared';
 import { ResourceDocumentsList } from './ResourceDocumentsList';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
@@ -96,12 +97,16 @@ export function ResourceDetailView({
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-card rounded-xl border border-border p-6">
             <DetailSectionTitle>Description</DetailSectionTitle>
-            <p className="text-sm text-foreground leading-relaxed">{resource.description}</p>
+            {resource.description.trim() ? (
+              <p className="text-sm text-foreground leading-relaxed">{resource.description}</p>
+            ) : (
+              <DetailEmptyValue>No description provided</DetailEmptyValue>
+            )}
           </div>
 
-          {resource.webLinks.length > 0 && (
-            <div className="bg-card rounded-xl border border-border p-6">
-              <DetailSectionTitle>Web Links</DetailSectionTitle>
+          <div className="bg-card rounded-xl border border-border p-6">
+            <DetailSectionTitle>Web Links</DetailSectionTitle>
+            {resource.webLinks.length > 0 ? (
               <div className="space-y-4">
                 {resource.webLinks.map((link) => (
                   <div key={link.id}>
@@ -119,8 +124,10 @@ export function ResourceDetailView({
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <DetailEmptyValue>No links added</DetailEmptyValue>
+            )}
+          </div>
 
           <ResourceDocumentsList files={resource.files} onChange={onFilesChange} />
         </div>
@@ -139,20 +146,22 @@ export function ResourceDetailView({
               <OwnershipBadge ownership={resource.ownership} />
             </div>
 
-            {resource.userGroups.length > 0 && (
-              <div>
-                <DetailFieldLabel>User Group</DetailFieldLabel>
+            <div>
+              <DetailFieldLabel>User Group</DetailFieldLabel>
+              {resource.userGroups.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {resource.userGroups.map((group) => (
                     <SidebarUserGroupBadge key={group} group={group} />
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <DetailEmptyValue>Not assigned</DetailEmptyValue>
+              )}
+            </div>
 
-            {individualUsers.length > 0 && (
-              <div>
-                <DetailFieldLabel>Individual Users</DetailFieldLabel>
+            <div>
+              <DetailFieldLabel>Individual Users</DetailFieldLabel>
+              {individualUsers.length > 0 ? (
                 <div className="space-y-2">
                   {visibleIndividualUsers.map((email) => (
                     <div key={email} className="flex items-center gap-2 text-sm text-foreground">
@@ -182,19 +191,23 @@ export function ResourceDetailView({
                     </button>
                   )}
                 </div>
-              </div>
-            )}
+              ) : (
+                <DetailEmptyValue>Not assigned</DetailEmptyValue>
+              )}
+            </div>
 
-            {resource.tags.length > 0 && (
-              <div>
-                <DetailFieldLabel>Tags</DetailFieldLabel>
+            <div>
+              <DetailFieldLabel>Tags</DetailFieldLabel>
+              {resource.tags.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {resource.tags.map((tag) => (
                     <SidebarTagBadge key={tag} tag={tag} />
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <DetailEmptyValue>No tags added</DetailEmptyValue>
+              )}
+            </div>
 
             <div>
               <DetailFieldLabel>Created</DetailFieldLabel>

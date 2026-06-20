@@ -27,13 +27,15 @@ import {
   Loader2,
   Map,
   BarChart3,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { PageFooter } from './PageFooter';
 import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { TableSkeleton } from './ui/table-skeleton';
-import { DetailFieldLabel, DetailSectionTitle } from './ui/detail-labels';
+import { DetailFieldLabel, DetailSectionTitle, DetailEmptyValue } from './ui/detail-labels';
+import { ResourceFileUploadModal } from './ResourceFileUploadModal';
 
 type DocumentFileProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -70,69 +72,146 @@ interface DocumentGroup {
   dateAdded: string;
   addedBy: string;
   lastModified: string;
+  kind?: 'standard' | 'report_hub';
+  reportTypeId?: ReportTypeId;
   availabilityTarget?: 'map' | 'reports';
   reportTypes?: string[];
 }
 
 type AvailabilityTarget = 'map' | 'reports';
 
-const REPORT_AVAILABILITY_OPTIONS = [
-  'Aid Flow Intelligence',
-  'Migration & Displacement Intelligence',
-  'Somalia Joint Fund Intelligence',
+const REPORT_CATALOG = [
+  { id: 'aid-flow', title: 'Aid Flow Intelligence' },
+  { id: 'migration-displacement', title: 'Migration & Displacement Intelligence' },
+  { id: 'somalia-joint-fund', title: 'Somalia Joint Fund Intelligence' },
 ] as const;
 
-type DocumentAvailabilitySurface = 'chats' | 'map' | 'reports';
+type ReportTypeId = (typeof REPORT_CATALOG)[number]['id'];
 
 const AVAILABILITY_FILTER_OPTIONS = [
-  'All Availability',
+  'All Destinations',
   'Chats only',
   'Map',
-  'Reports',
+  ...REPORT_CATALOG.map((report) => `${report.title} hub`),
 ] as const;
 
-const AVAILABILITY_SURFACE_LABELS: Record<DocumentAvailabilitySurface, string> = {
+const AVAILABILITY_SURFACE_LABELS = {
   chats: 'Chats',
   map: 'Map',
-  reports: 'Reports',
-};
+} as const;
 
-const AVAILABILITY_SURFACE_STYLES: Record<DocumentAvailabilitySurface, string> = {
+const AVAILABILITY_SURFACE_STYLES = {
   chats: 'bg-sidebar-accent text-primary-text',
   map: 'bg-success-subtle text-success-text',
-  reports: 'bg-warning-subtle text-warning-text',
-};
+  reportHub: 'bg-warning-subtle text-warning-text',
+} as const;
 
-function getDocumentAvailabilitySurfaces(doc: DocumentGroup): DocumentAvailabilitySurface[] {
-  const surfaces: DocumentAvailabilitySurface[] = ['chats'];
-  if (doc.availabilityTarget === 'map') surfaces.push('map');
-  if (doc.availabilityTarget === 'reports') surfaces.push('reports');
-  return surfaces;
+function getReportCatalogEntry(reportTypeId: ReportTypeId) {
+  return REPORT_CATALOG.find((report) => report.id === reportTypeId)!;
 }
 
-function getDocumentAvailabilitySearchText(doc: DocumentGroup): string {
-  return getDocumentAvailabilitySurfaces(doc)
-    .map((surface) => AVAILABILITY_SURFACE_LABELS[surface])
-    .join(' ');
+function resolveReportTypeIdFromTitle(title: string): ReportTypeId | undefined {
+  return REPORT_CATALOG.find((report) => report.title === title)?.id;
+}
+
+function isReportHub(doc: DocumentGroup): boolean {
+  return doc.kind === 'report_hub';
+}
+
+function getDocumentReportTypeId(doc: DocumentGroup): ReportTypeId | undefined {
+  if (doc.reportTypeId) return doc.reportTypeId;
+  if (doc.reportTypes?.length) return resolveReportTypeIdFromTitle(doc.reportTypes[0]);
+  return undefined;
+}
+
+function getEstablishedReportHubIds(documents: DocumentGroup[]): Set<ReportTypeId> {
+  const ids = new Set<ReportTypeId>();
+  for (const doc of documents) {
+    if (!isReportHub(doc)) continue;
+    const reportTypeId = getDocumentReportTypeId(doc);
+    if (reportTypeId) ids.add(reportTypeId);
+  }
+  return ids;
+}
+
+function getReportHubByTypeId(documents: DocumentGroup[], reportTypeId: ReportTypeId): DocumentGroup | undefined {
+  return documents.find((doc) => isReportHub(doc) && getDocumentReportTypeId(doc) === reportTypeId);
+}
+
+function normalizeLegacyDocument(doc: DocumentGroup): DocumentGroup {
+  if (isReportHub(doc)) return doc;
+  if (doc.availabilityTarget === 'reports' && doc.reportTypes?.length) {
+    const reportTypeId = resolveReportTypeIdFromTitle(doc.reportTypes[0]);
+    if (reportTypeId) {
+      const entry = getReportCatalogEntry(reportTypeId);
+      return {
+        ...doc,
+        kind: 'report_hub',
+        reportTypeId,
+        title: entry.title,
+        reportTypes: [entry.title],
+      };
+    }
+  }
+  return { ...doc, kind: doc.kind ?? 'standard' };
+}
+
+function getDocumentDestinationSearchText(doc: DocumentGroup): string {
+  const parts = ['Chats'];
+  if (isReportHub(doc)) {
+    const reportTypeId = getDocumentReportTypeId(doc);
+    if (reportTypeId) parts.push(getReportCatalogEntry(reportTypeId).title);
+  } else if (doc.availabilityTarget === 'map') {
+    parts.push('Map');
+  }
+  return parts.join(' ');
 }
 
 function documentMatchesAvailabilityFilter(doc: DocumentGroup, filter: string): boolean {
-  if (filter === 'All Availability') return true;
-  const surfaces = getDocumentAvailabilitySurfaces(doc);
-  if (filter === 'Chats only') return surfaces.length === 1 && surfaces[0] === 'chats';
-  if (filter === 'Map') return surfaces.includes('map');
-  if (filter === 'Reports') return surfaces.includes('reports');
+  if (filter === 'All Destinations' || filter === 'All Availability') return true;
+  if (filter === 'Chats only') {
+    return !isReportHub(doc) && doc.availabilityTarget !== 'map';
+  }
+  if (filter === 'Map') return !isReportHub(doc) && doc.availabilityTarget === 'map';
+  if (filter === 'Reports') return isReportHub(doc);
+  for (const report of REPORT_CATALOG) {
+    if (filter === `${report.title} hub`) {
+      return isReportHub(doc) && getDocumentReportTypeId(doc) === report.id;
+    }
+  }
   return true;
 }
 
-function buildDocumentAvailabilityFields(
+function buildStandardAvailabilityFields(
   target: AvailabilityTarget | null,
-  reportTypes: string[],
-): Pick<DocumentGroup, 'availabilityTarget' | 'reportTypes'> {
-  if (!target) return {};
+): Pick<DocumentGroup, 'availabilityTarget' | 'reportTypes' | 'kind' | 'reportTypeId'> {
+  if (!target) {
+    return {
+      kind: 'standard',
+      availabilityTarget: undefined,
+      reportTypes: undefined,
+      reportTypeId: undefined,
+    };
+  }
+  if (target === 'reports') {
+    return { kind: 'standard', availabilityTarget: undefined, reportTypes: undefined, reportTypeId: undefined };
+  }
   return {
+    kind: 'standard',
     availabilityTarget: target,
-    ...(target === 'reports' && reportTypes.length ? { reportTypes } : {}),
+    reportTypes: undefined,
+    reportTypeId: undefined,
+  };
+}
+
+function buildReportHubFields(reportTypeId: ReportTypeId): Pick<DocumentGroup, 'kind' | 'reportTypeId' | 'availabilityTarget' | 'reportTypes' | 'title'> {
+  const entry = getReportCatalogEntry(reportTypeId);
+  return {
+    kind: 'report_hub',
+    reportTypeId,
+    availabilityTarget: 'reports',
+    reportTypes: [entry.title],
+    title: entry.title,
   };
 }
 
@@ -141,18 +220,26 @@ function DocumentAvailabilityFields({
   reportAvailabilityTypes,
   onToggleTarget,
   onToggleReportType,
+  establishedReportHubIds,
+  onOpenReportHub,
   variant = 'form',
+  hideReportsSection = false,
 }: {
   availabilityTarget: AvailabilityTarget | null;
   reportAvailabilityTypes: string[];
   onToggleTarget: (target: AvailabilityTarget) => void;
-  onToggleReportType: (reportType: string) => void;
+  onToggleReportType: (reportTypeId: ReportTypeId) => void;
+  establishedReportHubIds: Set<ReportTypeId>;
+  onOpenReportHub?: (reportTypeId: ReportTypeId) => void;
   variant?: 'form' | 'sidebar';
+  hideReportsSection?: boolean;
 }) {
+  const allReportHubsClaimed = REPORT_CATALOG.every((report) => establishedReportHubIds.has(report.id));
+
   const heading =
     variant === 'sidebar' ? (
       <DetailFieldLabel as="h3">
-        Availability{' '}
+        Destinations{' '}
         <span className="font-normal normal-case text-border-muted">(optional)</span>
       </DetailFieldLabel>
     ) : (
@@ -169,101 +256,134 @@ function DocumentAvailabilityFields({
         <span className="font-semibold text-secondary-foreground">Chats by Default</span>.
       </p>
 
-      <p className="text-sm font-medium text-secondary-foreground mt-5 mb-3">Also make available to</p>
+      {!hideReportsSection && (
+        <>
+          <p className="text-sm font-medium text-secondary-foreground mt-5 mb-3">Also make available to</p>
 
-      <div className="space-y-2.5" role="radiogroup" aria-label="Additional availability">
-        <button
-          type="button"
-          role="radio"
-          aria-checked={availabilityTarget === 'map'}
-          onClick={() => onToggleTarget('map')}
-          className={`w-full flex items-center gap-3.5 p-4 rounded-lg border text-left transition-colors ${
-            availabilityTarget === 'map'
-              ? 'border-primary bg-primary-subtle/60'
-              : 'border-border bg-card hover:border-border-muted hover:bg-muted'
-          }`}
-        >
-          <span
-            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-              availabilityTarget === 'map' ? 'border-primary bg-primary' : 'border-border-muted bg-card'
-            }`}
-            aria-hidden
-          >
-            {availabilityTarget === 'map' && <span className="h-1.5 w-1.5 rounded-full bg-card" />}
-          </span>
-          <span className="flex-1 min-w-0">
-            <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm leading-snug">
-              <Map size={16} className="text-muted-foreground shrink-0" />
-              <span className="font-medium text-foreground">Map</span>
-              <span className="text-xs font-normal text-text-subtle">
-                Use as data source for geospatial risk overlay.
+          <div className="space-y-2.5" role="radiogroup" aria-label="Additional availability">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={availabilityTarget === 'map'}
+              onClick={() => onToggleTarget('map')}
+              className={`w-full flex items-center gap-3.5 p-4 rounded-lg border text-left transition-colors ${
+                availabilityTarget === 'map'
+                  ? 'border-primary bg-primary-subtle/60'
+                  : 'border-border bg-card hover:border-border-muted hover:bg-muted'
+              }`}
+            >
+              <span
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                  availabilityTarget === 'map' ? 'border-primary bg-primary' : 'border-border-muted bg-card'
+                }`}
+                aria-hidden
+              >
+                {availabilityTarget === 'map' && <span className="h-1.5 w-1.5 rounded-full bg-card" />}
               </span>
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          role="radio"
-          aria-checked={availabilityTarget === 'reports'}
-          onClick={() => onToggleTarget('reports')}
-          className={`w-full flex items-center gap-3.5 p-4 rounded-lg border text-left transition-colors ${
-            availabilityTarget === 'reports'
-              ? 'border-primary bg-primary-subtle/60'
-              : 'border-border bg-card hover:border-border-muted hover:bg-muted'
-          }`}
-        >
-          <span
-            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-              availabilityTarget === 'reports' ? 'border-primary bg-primary' : 'border-border-muted bg-card'
-            }`}
-            aria-hidden
-          >
-            {availabilityTarget === 'reports' && <span className="h-1.5 w-1.5 rounded-full bg-card" />}
-          </span>
-          <span className="flex-1 min-w-0">
-            <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm leading-snug">
-              <BarChart3 size={16} className="text-muted-foreground shrink-0" />
-              <span className="font-medium text-foreground">Reports</span>
-              <span className="text-xs font-normal text-text-subtle">
-                Use as a knowledge source for specific reports.
+              <span className="flex-1 min-w-0">
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm leading-snug">
+                  <Map size={16} className="text-muted-foreground shrink-0" />
+                  <span className="font-medium text-foreground">Map</span>
+                  <span className="text-xs font-normal text-text-subtle">
+                    Use as data source for geospatial risk overlay.
+                  </span>
+                </span>
               </span>
-            </span>
-          </span>
-        </button>
+            </button>
 
-        {availabilityTarget === 'reports' && (
-          <div className="ml-1 pl-7 sm:pl-8 border-l-2 border-sidebar-accent">
-            <p className="text-sm font-medium text-foreground mb-2.5 pt-1">Select report types</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {REPORT_AVAILABILITY_OPTIONS.map((reportType) => {
-                const selected = reportAvailabilityTypes.includes(reportType);
-                return (
-                  <button
-                    key={reportType}
-                    type="button"
-                    onClick={() => onToggleReportType(reportType)}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-left text-sm transition-colors ${
-                      selected
-                        ? 'border-primary bg-primary-subtle/50 text-foreground'
-                        : 'border-border bg-muted text-secondary-foreground hover:border-border-muted'
-                    }`}
-                  >
-                    <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                        selected ? 'border-primary' : 'border-border-muted'
-                      }`}
-                    >
-                      {selected && <span className="h-2 w-2 rounded-full bg-primary" />}
-                    </span>
-                    <span className="font-medium leading-snug">{reportType}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={availabilityTarget === 'reports'}
+              onClick={() => onToggleTarget('reports')}
+              className={`w-full flex items-center gap-3.5 p-4 rounded-lg border text-left transition-colors ${
+                availabilityTarget === 'reports'
+                  ? 'border-primary bg-primary-subtle/60'
+                  : 'border-border bg-card hover:border-border-muted hover:bg-muted'
+              }`}
+            >
+              <span
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                  availabilityTarget === 'reports' ? 'border-primary bg-primary' : 'border-border-muted bg-card'
+                }`}
+                aria-hidden
+              >
+                {availabilityTarget === 'reports' && <span className="h-1.5 w-1.5 rounded-full bg-card" />}
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm leading-snug">
+                  <BarChart3 size={16} className="text-muted-foreground shrink-0" />
+                  <span className="font-medium text-foreground">Reports</span>
+                  <span className="text-xs font-normal text-text-subtle">
+                    Create a central knowledge hub for a specific report.
+                  </span>
+                </span>
+              </span>
+            </button>
+
+            {availabilityTarget === 'reports' && allReportHubsClaimed && (
+              <p className="text-sm text-muted-foreground ml-1 pl-7 sm:pl-8 border-l-2 border-sidebar-accent pt-1">
+                All report hubs are set up. Open a hub from the table to add files.
+              </p>
+            )}
+
+            {availabilityTarget === 'reports' && (
+              <div className="ml-1 pl-7 sm:pl-8 border-l-2 border-sidebar-accent">
+                <p className="text-sm font-medium text-foreground mb-2.5 pt-1">Select report types</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {REPORT_CATALOG.map((report) => {
+                    const isClaimed = establishedReportHubIds.has(report.id);
+                    const selected = reportAvailabilityTypes.includes(report.id);
+                    return (
+                      <div key={report.id} className="space-y-1">
+                        <button
+                          type="button"
+                          disabled={isClaimed}
+                          onClick={() => !isClaimed && onToggleReportType(report.id)}
+                          className={`flex w-full items-center gap-2.5 px-3 py-2.5 rounded-lg border text-left text-sm transition-colors ${
+                            isClaimed
+                              ? 'border-border bg-muted/50 text-text-subtle cursor-not-allowed'
+                              : selected
+                                ? 'border-primary bg-primary-subtle/50 text-foreground'
+                                : 'border-border bg-muted text-secondary-foreground hover:border-border-muted'
+                          }`}
+                        >
+                          {isClaimed ? (
+                            <Lock size={14} className="shrink-0 text-text-subtle" aria-hidden />
+                          ) : (
+                            <span
+                              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                                selected ? 'border-primary' : 'border-border-muted'
+                              }`}
+                            >
+                              {selected && <span className="h-2 w-2 rounded-full bg-primary" />}
+                            </span>
+                          )}
+                          <span className="font-medium leading-snug">{report.title}</span>
+                        </button>
+                        {isClaimed && (
+                          <p className="text-xs text-muted-foreground px-1 leading-relaxed">
+                            Managed in {report.title}.{' '}
+                            {onOpenReportHub && (
+                              <button
+                                type="button"
+                                onClick={() => onOpenReportHub(report.id)}
+                                className="text-primary hover:underline font-medium"
+                              >
+                                Open hub
+                              </button>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -275,31 +395,37 @@ function DocumentAvailabilityBadges({
   doc: DocumentGroup;
   size?: 'sm' | 'md';
 }) {
-  const surfaces = getDocumentAvailabilitySurfaces(doc);
   const pillClass =
     size === 'md'
       ? 'px-2.5 py-1 text-xs'
       : 'px-2 py-0.5 text-xs';
 
+  const reportTypeId = getDocumentReportTypeId(doc);
+  const reportTitle = reportTypeId ? getReportCatalogEntry(reportTypeId).title : null;
+
   return (
     <div className="flex flex-wrap gap-1">
-      {surfaces.map((surface) => (
+      <span
+        className={`inline-flex items-center rounded-xs font-medium ${pillClass} ${AVAILABILITY_SURFACE_STYLES.chats}`}
+        title="Available as AI knowledge in Chats"
+      >
+        {AVAILABILITY_SURFACE_LABELS.chats}
+      </span>
+      {isReportHub(doc) && reportTitle ? (
         <span
-          key={surface}
-          className={`inline-flex items-center rounded-xs font-medium ${pillClass} ${AVAILABILITY_SURFACE_STYLES[surface]}`}
-          title={
-            surface === 'chats'
-              ? 'Available as AI knowledge in Chats'
-              : surface === 'map'
-                ? 'Used as geospatial risk overlay data'
-                : doc.reportTypes?.length
-                  ? `Reports: ${doc.reportTypes.join(', ')}`
-                  : 'Used as knowledge source for reports'
-          }
+          className={`inline-flex items-center rounded-xs font-medium ${pillClass} ${AVAILABILITY_SURFACE_STYLES.reportHub}`}
+          title={`Report hub: ${reportTitle}`}
         >
-          {AVAILABILITY_SURFACE_LABELS[surface]}
+          {reportTitle}
         </span>
-      ))}
+      ) : doc.availabilityTarget === 'map' ? (
+        <span
+          className={`inline-flex items-center rounded-xs font-medium ${pillClass} ${AVAILABILITY_SURFACE_STYLES.map}`}
+          title="Used as geospatial risk overlay data"
+        >
+          {AVAILABILITY_SURFACE_LABELS.map}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -649,8 +775,6 @@ const mockDocuments: DocumentGroup[] = [
     dateAdded: 'Mar 12, 2026',
     addedBy: 'Mohamed Ali',
     lastModified: 'Mar 12, 2026',
-    availabilityTarget: 'reports',
-    reportTypes: ['Migration & Displacement Intelligence'],
   },
   {
     id: '3',
@@ -705,10 +829,12 @@ const mockDocuments: DocumentGroup[] = [
   },
   {
     id: '5',
-    title: 'Mogadishu IED Attack Pattern Analysis',
-    description: 'Comprehensive analysis of improvised explosive device incidents in Mogadishu including attack patterns, high-risk zones, and security recommendations for humanitarian operations',
-    tags: ['security', 'mogadishu', 'ied'],
+    title: 'Aid Flow Intelligence',
+    description: 'Central knowledge source for Aid Flow Intelligence — donor contributions, sector allocation, and spending delivery across regions.',
+    tags: ['aid-flow', 'donors', 'finance'],
     userGroup: 'Security Team',
+    kind: 'report_hub',
+    reportTypeId: 'aid-flow',
     files: [
       {
         id: '5.1',
@@ -1339,7 +1465,7 @@ export function Documents() {
     return deduplicateTags([...persistedTags, ...documentTags, ...defaultTags]);
   };
 
-  const [documents, setDocuments] = useState<DocumentGroup[]>(mockDocuments);
+  const [documents, setDocuments] = useState<DocumentGroup[]>(() => mockDocuments.map(normalizeLegacyDocument));
   const [searchQuery, setSearchQuery] = useState('');
   const [showUploadPage, setShowUploadPage] = useState(false);
   const [showFullView, setShowFullView] = useState(false);
@@ -1351,7 +1477,7 @@ export function Documents() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All Status');
-  const [availabilityFilter, setAvailabilityFilter] = useState('All Availability');
+  const [availabilityFilter, setAvailabilityFilter] = useState('All Destinations');
   const [userGroupFilter, setUserGroupFilter] = useState('All Groups');
   const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
   const [tagFilterSearchQuery, setTagFilterSearchQuery] = useState('');
@@ -1385,11 +1511,11 @@ export function Documents() {
   const [showUserGroupDropdown, setShowUserGroupDropdown] = useState(false);
   const [showTagsDropdown, setShowTagsDropdown] = useState(false);
   const [availabilityTarget, setAvailabilityTarget] = useState<AvailabilityTarget | null>(null);
-  const [reportAvailabilityTypes, setReportAvailabilityTypes] = useState<string[]>([]);
+  const [reportAvailabilityTypes, setReportAvailabilityTypes] = useState<ReportTypeId[]>([]);
 
   // Edit form state
   const [editAvailabilityTarget, setEditAvailabilityTarget] = useState<AvailabilityTarget | null>(null);
-  const [editReportAvailabilityTypes, setEditReportAvailabilityTypes] = useState<string[]>([]);
+  const [editReportAvailabilityTypes, setEditReportAvailabilityTypes] = useState<ReportTypeId[]>([]);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editWebLinks, setEditWebLinks] = useState<string[]>([]);
@@ -1410,6 +1536,9 @@ export function Documents() {
   const userGroupDropdownRef = useRef<HTMLDivElement>(null);
   const tagsDropdownRef = useRef<HTMLDivElement>(null);
   const uploadTagInputRef = useRef<HTMLInputElement>(null);
+  const [showHubUploadModal, setShowHubUploadModal] = useState(false);
+
+  const establishedReportHubIds = getEstablishedReportHubIds(documents);
   const editUserGroupDropdownRef = useRef<HTMLDivElement>(null);
   const editTagsDropdownRef = useRef<HTMLDivElement>(null);
   const editTagInputRef = useRef<HTMLInputElement>(null);
@@ -1493,7 +1622,7 @@ export function Documents() {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.userGroup.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      getDocumentAvailabilitySearchText(doc).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      getDocumentDestinationSearchText(doc).toLowerCase().includes(searchQuery.toLowerCase()) ||
       (doc.tags ?? []).some((tag) => normalizeTagValue(tag).toLowerCase().includes(searchQuery.toLowerCase())) ||
       (doc.uploadStatus === 'uploading'
         ? `uploading ${countCompletedFileUploads(doc)} of ${doc.files.length} files`
@@ -1639,8 +1768,8 @@ export function Documents() {
     });
   };
 
-  const toggleReportAvailabilityType = (reportType: string) => {
-    setReportAvailabilityTypes([reportType]);
+  const toggleReportAvailabilityType = (reportTypeId: ReportTypeId) => {
+    setReportAvailabilityTypes([reportTypeId]);
   };
 
   const toggleEditAvailabilityTarget = (target: AvailabilityTarget) => {
@@ -1654,8 +1783,8 @@ export function Documents() {
     });
   };
 
-  const toggleEditReportAvailabilityType = (reportType: string) => {
-    setEditReportAvailabilityTypes([reportType]);
+  const toggleEditReportAvailabilityType = (reportTypeId: ReportTypeId) => {
+    setEditReportAvailabilityTypes([reportTypeId]);
   };
 
   const addWebLink = () => {
@@ -1691,12 +1820,25 @@ export function Documents() {
   const handleUploadDocument = () => {
     if (!title.trim() || !description.trim() || !userGroup.length || !selectedFiles.length) return;
 
+    const isCreatingReportHub =
+      availabilityTarget === 'reports' && reportAvailabilityTypes.length === 1;
+    if (
+      isCreatingReportHub &&
+      establishedReportHubIds.has(reportAvailabilityTypes[0])
+    ) {
+      return;
+    }
+
     const docId = Date.now().toString();
     const trimmedTitle = title.trim();
     const uploadedAtStamp = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const reportHubFields = isCreatingReportHub
+      ? buildReportHubFields(reportAvailabilityTypes[0])
+      : buildStandardAvailabilityFields(availabilityTarget);
+
     const newDocument: DocumentGroup = {
       id: docId,
-      title: trimmedTitle,
+      title: isCreatingReportHub ? reportHubFields.title! : trimmedTitle,
       description: description.trim(),
       webLinks: resolveWebLinksForCreate(),
       tags,
@@ -1717,7 +1859,7 @@ export function Documents() {
       dateAdded: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       addedBy: 'You',
       lastModified: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      ...buildDocumentAvailabilityFields(availabilityTarget, reportAvailabilityTypes),
+      ...reportHubFields,
     };
 
     setDocuments([newDocument, ...documents]);
@@ -1792,6 +1934,15 @@ export function Documents() {
   };
 
   const handleDeleteSelected = () => {
+    const hubIds = [...selectedDocuments].filter((id) => {
+      const doc = documents.find((item) => item.id === id);
+      return doc && isReportHub(doc);
+    });
+    if (hubIds.length > 0) {
+      toast.error('Report hubs cannot be bulk deleted. Delete them individually from the hub detail view.');
+      return;
+    }
+
     const count = selectedDocuments.size;
     toast.promise(
       Promise.resolve().then(() => {
@@ -1838,12 +1989,190 @@ export function Documents() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = new Set(currentPageDocuments.map(doc => doc.id));
+      const allIds = new Set(currentPageDocuments.map((doc) => doc.id));
       setSelectedDocuments(allIds);
     } else {
       setSelectedDocuments(new Set());
     }
   };
+
+  const renderResourceTableRow = (doc: DocumentGroup, options?: { showSectionLabel?: string }) => (
+    <div key={doc.id}>
+      {options?.showSectionLabel && (
+        <div className="px-6 py-2 bg-muted/40 border-b border-border">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {options.showSectionLabel}
+          </span>
+        </div>
+      )}
+      <div
+        className="table-row-entity grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-x-6 lg:gap-y-0 px-6 lg:items-center cursor-pointer"
+        onClick={() => openDocumentGroup(doc)}
+      >
+        <div className="lg:col-span-4 flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={selectedDocuments.has(doc.id)}
+            onChange={() => toggleDocumentSelection(doc.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="hidden lg:block w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer shrink-0"
+          />
+          <div className="flex items-center gap-3 flex-1">
+            <div className={`p-2 rounded-lg shrink-0 ${isReportHub(doc) ? 'bg-warning-subtle' : 'bg-secondary'}`}>
+              {isReportHub(doc) ? (
+                <BarChart3 size={20} className="text-warning-text" />
+              ) : (
+                <Folder size={20} className="text-muted-foreground" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="table-mobile-label mb-1 lg:hidden">Resource</div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openDocumentGroup(doc);
+                }}
+                className="table-primary-text hover:text-primary transition-colors text-left"
+                title={`Open ${doc.title}`}
+              >
+                {doc.title}
+              </button>
+              {isReportHub(doc) ? (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {doc.files.length} file{doc.files.length !== 1 ? 's' : ''} · Updated {doc.lastModified}
+                </p>
+              ) : (
+                doc.tags && doc.tags.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {doc.tags.map((tag, index) => (
+                      <span
+                        key={`${doc.id}-tag-${index}`}
+                        className="px-2 py-0.5 bg-sidebar-accent text-primary-text rounded-xs text-xs font-medium"
+                      >
+                        {normalizeTagValue(tag)}
+                      </span>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 lg:col-start-6 flex items-center" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full">
+            <div className="table-mobile-label mb-1 lg:hidden">Destinations</div>
+            <DocumentAvailabilityBadges doc={doc} />
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 lg:col-start-8 flex items-center">
+          <div className="w-full">
+            <div className="table-mobile-label mb-1 lg:hidden">User group</div>
+            <span className="text-sm text-foreground">{doc.userGroup}</span>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 lg:col-start-10 flex items-center">
+          <div className="w-full">
+            <div className="table-mobile-label mb-1 lg:hidden">Status</div>
+            <div className="flex items-center gap-2">
+              {doc.uploadStatus === 'uploading' ? (
+                <>
+                  <div className={`${STATUS_ICON_INNER_BOX} text-warning-strong`} aria-hidden title="Uploading files">
+                    <Loader2 size={18} strokeWidth={2.25} className="animate-spin" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-warning-text">Uploading...</span>
+                    <div className="mt-0.5 text-xs tabular-nums text-text-subtle">
+                      {countCompletedFileUploads(doc)} of {doc.files.length}{' '}
+                      {doc.files.length === 1 ? 'file' : 'files'}
+                    </div>
+                  </div>
+                </>
+              ) : doc.processingStatus === 'processing' ? (
+                <>
+                  <DetailFileCircularProgress
+                    percent={clampFileProgressPct(doc.uploadProgress)}
+                    opticalMargin={false}
+                  />
+                  <div className="min-w-0">
+                    <span className={`text-sm font-medium ${getStatusColor(doc.processingStatus)}`}>
+                      Processing {clampFileProgressPct(doc.uploadProgress)}%
+                    </span>
+                    <div className="text-xs text-text-subtle">{doc.dateAdded}</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {getStatusIcon(doc.processingStatus)}
+                  <div className="min-w-0">
+                    <span className={`text-sm font-medium ${getStatusColor(doc.processingStatus)}`}>
+                      {getStatusText(doc.processingStatus)}
+                    </span>
+                    <div className="text-xs text-text-subtle">{doc.dateAdded}</div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-1 lg:col-start-12 flex items-center lg:justify-end" onClick={(e) => e.stopPropagation()}>
+          <div className="relative" ref={(el) => { menuDropdownRefs.current[doc.id] = el; }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenMenuId(openMenuId === doc.id ? null : doc.id);
+              }}
+              className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              title="More actions"
+            >
+              <MoreVertical size={18} className="text-muted-foreground" />
+            </button>
+            {openMenuId === doc.id && (
+              <div className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-lg shadow-lg z-10">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDocumentGroup(doc);
+                    setOpenMenuId(null);
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg flex items-center gap-2"
+                >
+                  <FileText size={14} />
+                  View
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDocumentGroup(doc);
+                    initializeInlineEdit(doc);
+                    setIsInlineEditing(true);
+                    setOpenMenuId(null);
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2"
+                >
+                  <Edit2 size={14} />
+                  Edit
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteDocument(doc.id);
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-destructive-text hover:bg-destructive-subtle transition-colors last:rounded-b-lg flex items-center gap-2"
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const toggleDocumentSelection = (id: string) => {
     const newSelection = new Set(selectedDocuments);
@@ -1880,6 +2209,39 @@ export function Documents() {
     setDetailFileMenuAnchor(null);
   };
 
+  const openReportHubFromForm = (reportTypeId: ReportTypeId) => {
+    const hub = getReportHubByTypeId(documents, reportTypeId);
+    if (!hub) return;
+    setShowUploadPage(false);
+    openDocumentGroup(hub);
+  };
+
+  const handleHubFilesUpload = (files: File[]) => {
+    if (!files.length || !selectedGroup || !isReportHub(selectedGroup)) return;
+
+    const uploadedAtStamp = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const newFiles: DocumentFile[] = files.map((file, idx) => ({
+      id: `${selectedGroup.id}-hub-${Date.now()}-${idx}`,
+      name: file.name,
+      size: formatFileSize(file.size),
+      uploadedAt: uploadedAtStamp,
+      uploadedBy: 'You',
+      processingStatus: 'processing' as DocumentFileProcessingStatus,
+      processingProgress: Math.min(40 + idx * 10, 90),
+    }));
+
+    const updatedDocument: DocumentGroup = {
+      ...selectedGroup,
+      files: [...newFiles, ...selectedGroup.files],
+      lastModified: uploadedAtStamp,
+    };
+
+    setDocuments((prev) => prev.map((doc) => (doc.id === selectedGroup.id ? updatedDocument : doc)));
+    setSelectedGroup(updatedDocument);
+    setDetailCurrentPage(1);
+    toast.success(files.length === 1 ? '1 file added to hub' : `${files.length} files added to hub`);
+  };
+
   const initializeInlineEdit = (doc: DocumentGroup) => {
     setDetailFileMenuAnchor(null);
     setEditTitle(doc.title);
@@ -1893,8 +2255,10 @@ export function Documents() {
     setEditFilesSearchQuery('');
     setEditFilesCurrentPage(1);
     setEditFilesItemsPerPage(10);
-    setEditAvailabilityTarget(doc.availabilityTarget ?? null);
-    setEditReportAvailabilityTypes(doc.reportTypes ?? []);
+    setEditAvailabilityTarget(isReportHub(doc) ? 'reports' : doc.availabilityTarget ?? null);
+    setEditReportAvailabilityTypes(
+      isReportHub(doc) && doc.reportTypeId ? [doc.reportTypeId] : [],
+    );
     setShowEditUserGroupDropdown(false);
     setShowEditTagsDropdown(false);
     setEditTagSearchQuery('');
@@ -1987,11 +2351,14 @@ export function Documents() {
     setDetailFileMenuAnchor(null);
   };
 
-  // Pagination
-  const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
+  // Pagination — report hubs stay pinned above paginated standard resources
+  const filteredReportHubs = filteredDocuments.filter(isReportHub);
+  const filteredStandardResources = filteredDocuments.filter((doc) => !isReportHub(doc));
+  const totalPages = Math.ceil(filteredStandardResources.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentPageDocuments = filteredDocuments.slice(startIndex, endIndex);
+  const currentPageStandardResources = filteredStandardResources.slice(startIndex, endIndex);
+  const currentPageDocuments = [...filteredReportHubs, ...currentPageStandardResources];
   const { visibleItems: visibleCurrentPageDocuments, isProgressivelyLoading } = useProgressiveList(currentPageDocuments, {
     minLoadingMs: 200,
     transitionKey: `${currentPage}-${itemsPerPage}`,
@@ -2155,13 +2522,17 @@ export function Documents() {
               />
 
               <div>
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  placeholder="Enter title"
-                  className="w-full text-2xl font-semibold text-foreground bg-transparent border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors"
-                />
+                {isReportHub(selectedGroup) ? (
+                  <h1 className="text-xl font-semibold text-foreground">{selectedGroup.title}</h1>
+                ) : (
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="Enter title"
+                    className="w-full text-2xl font-semibold text-foreground bg-transparent border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors"
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2596,13 +2967,24 @@ export function Documents() {
                       </div>
                     </div>
 
-                    <DocumentAvailabilityFields
-                      variant="sidebar"
-                      availabilityTarget={editAvailabilityTarget}
-                      reportAvailabilityTypes={editReportAvailabilityTypes}
-                      onToggleTarget={toggleEditAvailabilityTarget}
-                      onToggleReportType={toggleEditReportAvailabilityType}
-                    />
+                    {!isReportHub(selectedGroup) && (
+                      <DocumentAvailabilityFields
+                        variant="sidebar"
+                        availabilityTarget={editAvailabilityTarget}
+                        reportAvailabilityTypes={editReportAvailabilityTypes}
+                        onToggleTarget={toggleEditAvailabilityTarget}
+                        onToggleReportType={toggleEditReportAvailabilityType}
+                        establishedReportHubIds={establishedReportHubIds}
+                        onOpenReportHub={openReportHubFromForm}
+                      />
+                    )}
+
+                    {isReportHub(selectedGroup) && (
+                      <div>
+                        <DetailFieldLabel as="h3">Destinations</DetailFieldLabel>
+                        <DocumentAvailabilityBadges doc={selectedGroup} size="md" />
+                      </div>
+                    )}
 
                     <div>
                       <DetailFieldLabel as="h3">Created</DetailFieldLabel>
@@ -2624,17 +3006,17 @@ export function Documents() {
                   <div className="space-y-3">
                     <button
                       onClick={() => {
-                        const { availabilityTarget: _prevTarget, reportTypes: _prevReports, ...docRest } =
-                          selectedGroup;
+                        const hubFields = isReportHub(selectedGroup) && selectedGroup.reportTypeId
+                          ? buildReportHubFields(selectedGroup.reportTypeId)
+                          : buildStandardAvailabilityFields(editAvailabilityTarget);
                         const updatedDocument: DocumentGroup = {
-                          ...docRest,
-                          title: editTitle.trim(),
+                          ...selectedGroup,
+                          title: isReportHub(selectedGroup) ? hubFields.title! : editTitle.trim(),
                           description: editDescription.trim(),
                           webLinks: resolveWebLinksForEdit(),
                           userGroup: editUserGroup.join(', '),
                           tags: editTags,
                           files: [
-                            ...editFiles,
                             ...newEditFiles.map((file, addIdx) => ({
                               id: `${selectedGroup.id}-add-${Date.now()}-${addIdx}`,
                               name: file.name,
@@ -2644,9 +3026,10 @@ export function Documents() {
                               processingStatus: 'processing' satisfies DocumentFileProcessingStatus,
                               processingProgress: Math.min(45 + addIdx * 7, 88),
                             })),
+                            ...editFiles,
                           ],
                           lastModified: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                          ...buildDocumentAvailabilityFields(editAvailabilityTarget, editReportAvailabilityTypes),
+                          ...hubFields,
                         };
 
                         setDocuments(documents.map(doc =>
@@ -2656,11 +3039,20 @@ export function Documents() {
                         ));
                         setSelectedGroup(updatedDocument);
                         setIsInlineEditing(false);
+                        if (newEditFiles.length > 0) setDetailCurrentPage(1);
                         toast.success('Document updated successfully');
                       }}
-                      disabled={!editTitle.trim() || !editDescription.trim() || !editUserGroup.length || (editFiles.length === 0 && newEditFiles.length === 0)}
+                      disabled={
+                        (!isReportHub(selectedGroup) && !editTitle.trim()) ||
+                        !editDescription.trim() ||
+                        !editUserGroup.length ||
+                        (editFiles.length === 0 && newEditFiles.length === 0)
+                      }
                       className={`w-full px-4 py-3 rounded-lg text-base font-medium transition-colors ${
-                        editTitle.trim() && editDescription.trim() && editUserGroup.length && (editFiles.length > 0 || newEditFiles.length > 0)
+                        (isReportHub(selectedGroup) || editTitle.trim()) &&
+                        editDescription.trim() &&
+                        editUserGroup.length &&
+                        (editFiles.length > 0 || newEditFiles.length > 0)
                           ? 'bg-primary hover:bg-primary-hover text-white'
                           : 'bg-muted text-text-subtle cursor-not-allowed'
                       }`}
@@ -2690,6 +3082,7 @@ export function Documents() {
 
   // Full page view
   if (showFullView && selectedGroup) {
+    const viewingReportHub = isReportHub(selectedGroup);
     const detailFileMenuPortalFile =
       detailFileMenuAnchor !== null
         ? selectedGroup.files.find((f) => f.id === detailFileMenuAnchor.fileId)
@@ -2720,9 +3113,20 @@ export function Documents() {
               />
 
               <div>
+                {viewingReportHub && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-2 rounded-xs text-xs font-semibold bg-warning-subtle text-warning-text">
+                    <BarChart3 size={14} />
+                    Report hub
+                  </span>
+                )}
                 <h1 className="text-xl font-semibold text-foreground">
                   {selectedGroup.title}
                 </h1>
+                {viewingReportHub && (
+                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-2xl">
+                    Central knowledge source for this report. Add files here to update report AI context.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2731,14 +3135,18 @@ export function Documents() {
                   {/* Description */}
                   <div className="bg-card rounded-xl border border-border p-6">
                     <DetailSectionTitle as="h3">Description</DetailSectionTitle>
-                    <p className="text-sm text-foreground leading-relaxed">
-                      {selectedGroup.description}
-                    </p>
+                    {selectedGroup.description.trim() ? (
+                      <p className="text-sm text-foreground leading-relaxed">
+                        {selectedGroup.description}
+                      </p>
+                    ) : (
+                      <DetailEmptyValue>No description provided</DetailEmptyValue>
+                    )}
                   </div>
 
-                  {(selectedGroup.webLinks?.length ?? 0) > 0 && (
-                    <div className="bg-card rounded-xl border border-border p-6">
-                      <DetailSectionTitle as="h3">Web Links</DetailSectionTitle>
+                  <div className="bg-card rounded-xl border border-border p-6">
+                    <DetailSectionTitle as="h3">Web Links</DetailSectionTitle>
+                    {(selectedGroup.webLinks?.length ?? 0) > 0 ? (
                       <div className="space-y-3">
                         {selectedGroup.webLinks?.map((link) => (
                           <a
@@ -2754,11 +3162,25 @@ export function Documents() {
                           </a>
                         ))}
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <DetailEmptyValue>No links added</DetailEmptyValue>
+                    )}
+                  </div>
 
                   {/* Documents */}
                   <div className="bg-card rounded-xl border border-border p-6">
+                    {viewingReportHub && (
+                      <div className="mb-4">
+                        <button
+                          type="button"
+                          onClick={() => setShowHubUploadModal(true)}
+                          className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2"
+                        >
+                          <Upload size={16} />
+                          Add files
+                        </button>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between mb-4">
                       <DetailSectionTitle as="h3" className="mb-0">
                         Files
@@ -2978,36 +3400,35 @@ export function Documents() {
                 <div className="space-y-6">
                   {/* Combined Metadata Card */}
                   <div className="bg-card rounded-xl border border-border p-6 space-y-6">
-                    {/* Availability */}
+                    {/* Destinations */}
                     <div>
-                      <DetailFieldLabel as="h3">Available in</DetailFieldLabel>
+                      <DetailFieldLabel as="h3">Destinations</DetailFieldLabel>
                       <DocumentAvailabilityBadges doc={selectedGroup} size="md" />
-                      {selectedGroup.availabilityTarget === 'reports' && (selectedGroup.reportTypes?.length ?? 0) > 0 && (
-                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                          Report types: {selectedGroup.reportTypes!.join(', ')}
-                        </p>
-                      )}
                     </div>
 
                     {/* User Group */}
                     <div>
                       <DetailFieldLabel as="h3">User Group</DetailFieldLabel>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedGroup.userGroup.split(', ').map((group, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1.5 bg-success-subtle text-success-text rounded-lg text-sm font-medium"
-                          >
-                            {group}
-                          </span>
-                        ))}
-                      </div>
+                      {selectedGroup.userGroup.trim() ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedGroup.userGroup.split(', ').filter(Boolean).map((group, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1.5 bg-success-subtle text-success-text rounded-lg text-sm font-medium"
+                            >
+                              {group}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <DetailEmptyValue>Not assigned</DetailEmptyValue>
+                      )}
                     </div>
 
                     {/* Tags */}
-                    {selectedGroup.tags && selectedGroup.tags.length > 0 && (
-                      <div>
-                        <DetailFieldLabel as="h3">Tags</DetailFieldLabel>
+                    <div>
+                      <DetailFieldLabel as="h3">Tags</DetailFieldLabel>
+                      {selectedGroup.tags && selectedGroup.tags.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {selectedGroup.tags.map((tag, index) => (
                             <span
@@ -3018,8 +3439,10 @@ export function Documents() {
                             </span>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <DetailEmptyValue>No tags added</DetailEmptyValue>
+                      )}
+                    </div>
 
                     {/* Created */}
                     <div>
@@ -3050,7 +3473,7 @@ export function Documents() {
                       className="w-full px-4 py-3 bg-primary hover:bg-primary-hover text-white rounded-lg text-base font-medium transition-colors flex items-center justify-center gap-2"
                     >
                       <Edit2 size={18} />
-                      Edit Resource
+                      {viewingReportHub ? 'Edit Hub' : 'Edit Resource'}
                     </button>
                     <button
                       onClick={() => {
@@ -3105,11 +3528,15 @@ export function Documents() {
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1500] p-4">
               <div className="bg-card rounded-xl max-w-[460px] w-full shadow-2xl">
                 <div className="p-6 border-b border-border">
-                  <h3 className="text-lg font-semibold text-foreground">Delete resource?</h3>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {viewingReportHub ? 'Delete report hub?' : 'Delete resource?'}
+                  </h3>
                 </div>
                 <div className="p-6">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Are you sure you want to delete this resource? This action cannot be undone.
+                    {viewingReportHub
+                      ? 'This report will lose its central knowledge source. The report type will become available again when creating a new hub. This action cannot be undone.'
+                      : 'Are you sure you want to delete this resource? This action cannot be undone.'}
                   </p>
                   <p className="text-sm font-medium text-foreground mt-2">
                     {selectedGroup.title}
@@ -3190,6 +3617,12 @@ export function Documents() {
               </div>,
               document.body,
             )}
+            <ResourceFileUploadModal
+              isOpen={showHubUploadModal}
+              onClose={() => setShowHubUploadModal(false)}
+              resourceTitle={selectedGroup.title}
+              onUploadComplete={handleHubFilesUpload}
+            />
             <PageFooter />
         </div>
       </div>
@@ -3472,6 +3905,8 @@ export function Documents() {
                     reportAvailabilityTypes={reportAvailabilityTypes}
                     onToggleTarget={toggleAvailabilityTarget}
                     onToggleReportType={toggleReportAvailabilityType}
+                    establishedReportHubIds={establishedReportHubIds}
+                    onOpenReportHub={openReportHubFromForm}
                   />
 
                 
@@ -3486,9 +3921,25 @@ export function Documents() {
                   </button>
                   <button
                     onClick={handleUploadDocument}
-                    disabled={!title.trim() || !description.trim() || !userGroup.length || !selectedFiles.length}
+                    disabled={
+                      !title.trim() ||
+                      !description.trim() ||
+                      !userGroup.length ||
+                      !selectedFiles.length ||
+                      (availabilityTarget === 'reports' &&
+                        (reportAvailabilityTypes.length === 0 ||
+                          establishedReportHubIds.has(reportAvailabilityTypes[0])))
+                    }
                     className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      title.trim() && description.trim() && userGroup.length && selectedFiles.length
+                      title.trim() &&
+                      description.trim() &&
+                      userGroup.length &&
+                      selectedFiles.length &&
+                      !(
+                        availabilityTarget === 'reports' &&
+                        (reportAvailabilityTypes.length === 0 ||
+                          establishedReportHubIds.has(reportAvailabilityTypes[0]))
+                      )
                         ? 'bg-primary hover:bg-primary-hover text-white'
                         : 'bg-muted text-text-subtle cursor-not-allowed'
                     }`}
@@ -3575,7 +4026,7 @@ export function Documents() {
                     type="button"
                     onClick={() => setShowAvailabilityFilterDropdown(!showAvailabilityFilterDropdown)}
                     className={`px-4 py-2.5 border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      showAvailabilityFilterDropdown || availabilityFilter !== 'All Availability'
+                      showAvailabilityFilterDropdown || availabilityFilter !== 'All Destinations'
                         ? 'border-primary'
                         : 'border-border'
                     }`}
@@ -3710,6 +4161,23 @@ export function Documents() {
               </div>
             </div>
 
+            {establishedReportHubIds.size === 0 && (
+              <div className="rounded-xl border border-border bg-card p-5">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-warning-subtle shrink-0">
+                    <BarChart3 size={20} className="text-warning-text" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Set up report knowledge hubs</h3>
+                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                      When you upload a resource and assign it to a report type, it becomes the central hub for that
+                      report. Add all related files inside the hub — each report type can only have one hub.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Documents Table */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               {/* Bulk Actions Bar */}
@@ -3776,7 +4244,7 @@ export function Documents() {
                   <span className="table-header-label">Resource</span>
                 </div>
                 <div className="col-span-2 col-start-6 table-header-label">
-                  Available in
+                  Destinations
                 </div>
                 <div className="col-span-2 col-start-8 table-header-label">
                   User group
@@ -3794,178 +4262,24 @@ export function Documents() {
                 {isProgressivelyLoading ? (
                   <TableSkeleton variant="grid" rows={itemsPerPage} columns={5} />
                 ) : (
-                  visibleCurrentPageDocuments.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="table-row-entity grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-x-6 lg:gap-y-0 px-6 lg:items-center cursor-pointer"
-                    onClick={() => openDocumentGroup(doc)}
-                  >
-                    {/* Checkbox & Document */}
-                    <div className="lg:col-span-4 flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedDocuments.has(doc.id)}
-                        onChange={() => toggleDocumentSelection(doc.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="hidden lg:block w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer shrink-0"
-                      />
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="p-2 bg-secondary rounded-lg shrink-0">
-                          <Folder size={20} className="text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="table-mobile-label mb-1 lg:hidden">Resource</div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDocumentGroup(doc);
-                            }}
-                            className="table-primary-text hover:text-primary transition-colors text-left"
-                            title={`Open ${doc.title}`}
-                          >
-                            {doc.title}
-                          </button>
-                          {doc.tags && doc.tags.length > 0 && (
-                            <div className="mt-1.5 flex flex-wrap gap-1.5">
-                              {doc.tags.map((tag, index) => (
-                                <span
-                                  key={`${doc.id}-tag-${index}`}
-                                  className="px-2 py-0.5 bg-sidebar-accent text-primary-text rounded-xs text-xs font-medium"
-                                >
-                                  {normalizeTagValue(tag)}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Availability */}
-                    <div className="lg:col-span-2 lg:col-start-6 flex items-center" onClick={(e) => e.stopPropagation()}>
-                      <div className="w-full">
-                        <div className="table-mobile-label mb-1 lg:hidden">
-                          Available in
-                        </div>
-                        <DocumentAvailabilityBadges doc={doc} />
-                      </div>
-                    </div>
-
-                    {/* User Group */}
-                    <div className="lg:col-span-2 lg:col-start-8 flex items-center">
-                      <div className="w-full">
-                        <div className="table-mobile-label mb-1 lg:hidden">User group</div>
-                        <span className="text-sm text-foreground">
-                          {doc.userGroup}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="lg:col-span-2 lg:col-start-10 flex items-center">
-                      <div className="w-full">
-                        <div className="table-mobile-label mb-1 lg:hidden">Status</div>
-                        <div className="flex items-center gap-2">
-                          {doc.uploadStatus === 'uploading' ? (
-                            <>
-                              <div className={`${STATUS_ICON_INNER_BOX} text-warning-strong`} aria-hidden title="Uploading files">
-                                <Loader2 size={18} strokeWidth={2.25} className="animate-spin" />
-                              </div>
-                              <div className="min-w-0">
-                                <span className="text-sm font-medium text-warning-text">Uploading...</span>
-                                <div className="mt-0.5 text-xs tabular-nums text-text-subtle">
-                                  {countCompletedFileUploads(doc)} of {doc.files.length}{' '}
-                                  {doc.files.length === 1 ? 'file' : 'files'}
-                                </div>
-                              </div>
-                            </>
-                          ) : doc.processingStatus === 'processing' ? (
-                            <>
-                              <DetailFileCircularProgress
-                                percent={clampFileProgressPct(doc.uploadProgress)}
-                                opticalMargin={false}
-                              />
-                              <div className="min-w-0">
-                                <span className={`text-sm font-medium ${getStatusColor(doc.processingStatus)}`}>
-                                  Processing {clampFileProgressPct(doc.uploadProgress)}%
-                                </span>
-                                <div className="text-xs text-text-subtle">
-                                  {doc.dateAdded}
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              {getStatusIcon(doc.processingStatus)}
-                              <div className="min-w-0">
-                                <span className={`text-sm font-medium ${getStatusColor(doc.processingStatus)}`}>
-                                  {getStatusText(doc.processingStatus)}
-                                </span>
-                                <div className="text-xs text-text-subtle">
-                                  {doc.dateAdded}
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Actions - 3 Dot Menu */}
-                    <div className="lg:col-span-1 lg:col-start-12 flex items-center lg:justify-end">
-                      <div className="relative" ref={el => menuDropdownRefs.current[doc.id] = el}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(openMenuId === doc.id ? null : doc.id);
-                          }}
-                          className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                          title="More actions"
-                        >
-                          <MoreVertical size={18} className="text-muted-foreground" />
-                        </button>
-                        {openMenuId === doc.id && (
-                          <div className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-lg shadow-lg z-10">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openDocumentGroup(doc);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg flex items-center gap-2"
-                            >
-                              <FileText size={14} />
-                              View
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openDocumentGroup(doc);
-                                initializeInlineEdit(doc);
-                                setIsInlineEditing(true);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2"
-                            >
-                              <Edit2 size={14} />
-                              Edit
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteDocument(doc.id);
-                              }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-destructive-text hover:bg-destructive-subtle transition-colors last:rounded-b-lg flex items-center gap-2"
-                            >
-                              <Trash2 size={14} />
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  ))
+                  (() => {
+                    let hubsSectionShown = false;
+                    let standardsSectionShown = false;
+                    return visibleCurrentPageDocuments.map((doc) => {
+                      let sectionLabel: string | undefined;
+                      if (isReportHub(doc) && !hubsSectionShown) {
+                        hubsSectionShown = true;
+                        sectionLabel = 'Report hubs';
+                      } else if (!isReportHub(doc) && filteredReportHubs.length > 0 && !standardsSectionShown) {
+                        standardsSectionShown = true;
+                        sectionLabel = 'All resources';
+                      }
+                      return renderResourceTableRow(
+                        doc,
+                        sectionLabel ? { showSectionLabel: sectionLabel } : undefined,
+                      );
+                    });
+                  })()
                 )}
               </div>
 
@@ -4015,7 +4329,9 @@ export function Documents() {
                   {/* Right: Page navigation */}
                   <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                     <span className="text-sm text-muted-foreground text-center sm:text-left">
-                      {isProgressivelyLoading ? 'Loading...' : `${startIndex + 1}-${Math.min(endIndex, filteredDocuments.length)} of ${filteredDocuments.length}`}
+                      {isProgressivelyLoading
+                        ? 'Loading...'
+                        : `${filteredReportHubs.length > 0 ? `${filteredReportHubs.length} hub${filteredReportHubs.length !== 1 ? 's' : ''} · ` : ''}${startIndex + 1}-${Math.min(endIndex, filteredStandardResources.length)} of ${filteredStandardResources.length} resources`}
                     </span>
                     <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
                       {/* Previous Arrow */}

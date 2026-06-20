@@ -107,6 +107,8 @@ export default function App() {
   const [aiSearchInput, setAiSearchInput] = useState('');
   const [isRiskIqLandingExtended, setIsRiskIqLandingExtended] = useState(false);
   const [riskIqSearchExtendedKnowledge, setRiskIqSearchExtendedKnowledge] = useState(false);
+  const [hubSearchExtendedKnowledge, setHubSearchExtendedKnowledge] = useState(false);
+  const [hubSearchPrivateToMe, setHubSearchPrivateToMe] = useState(false);
   const [dashboardChatKey, setDashboardChatKey] = useState(0);
   const [dashboardChatPayload, setDashboardChatPayload] = useState<DashboardChatPayload | null>(null);
   const [cameFromRiskIq, setCameFromRiskIq] = useState(false);
@@ -940,7 +942,14 @@ export default function App() {
     startSearchChat(query, { fromRiskIq: true });
   };
 
-  const handleHomeSearch = (query: string) => startSearchChat(query, { fromHome: true });
+  const handleHomeSearch = (
+    query: string,
+    options?: { extendedKnowledge?: boolean; privateToMe?: boolean },
+  ) => {
+    setHubSearchExtendedKnowledge(options?.extendedKnowledge ?? false);
+    setHubSearchPrivateToMe(options?.privateToMe ?? false);
+    startSearchChat(query, { fromHome: true });
+  };
 
   const handleBackToHome = () => {
     setSearchQuery('');
@@ -1448,7 +1457,14 @@ export default function App() {
               onShareUpdate={handleShareUpdate}
               showThreadHeader={(!!currentChatId || isPlatformNewChat) && !isRiskIqNewChat}
               showRiskIqContext={cameFromRiskIq && !cameFromHistory}
-              initialExtendedKnowledge={cameFromRiskIq && !cameFromHistory ? riskIqSearchExtendedKnowledge : false}
+              initialExtendedKnowledge={
+                cameFromRiskIq && !cameFromHistory
+                  ? riskIqSearchExtendedKnowledge
+                  : cameFromHome && !cameFromHistory
+                    ? hubSearchExtendedKnowledge
+                    : false
+              }
+              initialPrivateToMe={cameFromHome && !cameFromHistory ? hubSearchPrivateToMe : false}
               navigation={
                 cameFromHistory || cameFromPlatformChats || cameFromHome || cameFromRiskIq
                   ? 'back'

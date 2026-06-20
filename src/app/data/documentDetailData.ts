@@ -13,12 +13,19 @@ const RESOURCE_VIEW_COUNTS: Record<string, string> = {
   '5': '387',
 };
 
-export interface RelatedDocument {
+export interface ResourceFileItem {
   id: string;
-  title: string;
+  name: string;
   type: string;
   size: string;
-  fileType: 'pdf' | 'doc';
+  uploadedAt: string;
+  fileType: 'pdf' | 'doc' | 'xlsx' | 'pptx' | 'other';
+}
+
+export interface ResourceWebLinkItem {
+  id: string;
+  url: string;
+  addedAt: string;
 }
 
 export interface DocumentContent {
@@ -26,48 +33,57 @@ export interface DocumentContent {
   title: string;
   summary: string;
   createdAt: string;
-  tag: string;
+  tags: string[];
   views: string;
-  size: string;
-  fileType: 'pdf' | 'doc';
-  relatedDocs: RelatedDocument[];
+  fileCount: number;
+  files: ResourceFileItem[];
+  webLinks: ResourceWebLinkItem[];
   /** From main-menu Resources module */
   platformResourceId: string;
 }
 
-function fileTypeFromResource(resource: PlatformResource): 'pdf' | 'doc' {
-  const first = resource.files[0]?.type;
-  return first === 'PDF' ? 'pdf' : 'doc';
+function fileTypeFromMime(type: string): ResourceFileItem['fileType'] {
+  switch (type) {
+    case 'PDF':
+      return 'pdf';
+    case 'DOCX':
+      return 'doc';
+    case 'XLSX':
+      return 'xlsx';
+    case 'PPTX':
+      return 'pptx';
+    default:
+      return 'other';
+  }
 }
 
-function buildRelatedDocs(resourceId: string): RelatedDocument[] {
-  return INITIAL_RESOURCES.filter((r) => r.id !== resourceId)
-    .slice(0, 2)
-    .map((r) => {
-      const file = r.files[0];
-      return {
-        id: r.id,
-        title: r.title,
-        type: r.tags[0] ?? 'Resource',
-        size: file?.size ?? '—',
-        fileType: file?.type === 'PDF' ? 'pdf' : 'doc',
-      };
-    });
+function buildResourceFiles(resource: PlatformResource): ResourceFileItem[] {
+  return resource.files.map((file) => ({
+    id: file.id,
+    name: file.name,
+    type: file.type,
+    size: file.size,
+    uploadedAt: file.uploadedAt,
+    fileType: fileTypeFromMime(file.type),
+  }));
 }
 
 function buildContentFromResource(resource: PlatformResource): DocumentContent {
-  const primaryFile = resource.files[0];
   return {
     id: resource.id,
     platformResourceId: resource.id,
     title: resource.title,
     summary: resource.description,
     createdAt: resource.createdAt,
-    tag: resource.tags[0] ?? 'Resource',
+    tags: resource.tags,
     views: RESOURCE_VIEW_COUNTS[resource.id] ?? '—',
-    size: primaryFile?.size ?? `${resource.files.length} files`,
-    fileType: fileTypeFromResource(resource),
-    relatedDocs: buildRelatedDocs(resource.id),
+    fileCount: resource.files.length,
+    files: buildResourceFiles(resource),
+    webLinks: resource.webLinks.map((link) => ({
+      id: link.id,
+      url: link.url,
+      addedAt: link.addedAt,
+    })),
   };
 }
 
@@ -77,11 +93,11 @@ const FALLBACK: DocumentContent = {
   title: 'Document',
   summary: 'This document is not available for document chat.',
   createdAt: '—',
-  tag: 'Resource',
+  tags: ['Resource'],
   views: '—',
-  size: '—',
-  fileType: 'pdf',
-  relatedDocs: [],
+  fileCount: 0,
+  files: [],
+  webLinks: [],
 };
 
 export function isChatEligiblePlatformResource(resourceId: string): boolean {

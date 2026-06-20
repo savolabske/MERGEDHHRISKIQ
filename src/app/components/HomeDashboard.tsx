@@ -12,7 +12,7 @@ interface HomeDashboardProps {
   onOpenChat: (payload: DashboardChatPayload) => void;
   onOpenBriefing?: () => void;
   onNavigate: (view: AppView) => void;
-  onSearch: (query: string) => void;
+  onSearch: (query: string, options?: { extendedKnowledge?: boolean; privateToMe?: boolean }) => void;
   onOpenDocument?: (documentId: string) => void;
   onOpenReport?: (reportId: HubReportHighlightId) => void;
 }

@@ -159,8 +159,9 @@ export function ResourceDocumentsList({
       uploadedAt: now,
     }));
 
-    onChange([...files, ...newFiles]);
+    onChange([...newFiles, ...files]);
     e.target.value = '';
+    setPage(1);
     toast.success(
       newFiles.length === 1 ? 'File added' : `${newFiles.length} files added`,
     );

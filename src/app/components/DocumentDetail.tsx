@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import {
   Calendar,
+  Download,
   ExternalLink,
   Eye,
   File,
   FileText,
+  Globe,
   Maximize2,
   Minus,
   Send,
   Sparkles,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { hubCard } from './home-dashboard/hubStyles';
 import { Button } from './ui/button';
 import { BackLink } from './ui/back-link';
@@ -160,7 +163,7 @@ function DocumentChatComposer({
           value={chatQuery}
           onChange={(e) => onChange(e.target.value)}
           onFocus={onFocus}
-          placeholder="Ask about this document…"
+          placeholder="Ask about this resource…"
           disabled={isTyping}
           className="focus-ring-container-control min-w-0 flex-1 border-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 disabled:opacity-60"
         />
@@ -287,11 +290,18 @@ export function DocumentDetail({
   const renderEmptyChat = () => (
     <div className="text-center py-12">
       <Sparkles size={40} className="text-border mx-auto mb-3" />
-      <p className="text-sm text-muted-foreground">Ask anything about this document</p>
+      <p className="text-sm text-muted-foreground">Ask anything about this resource</p>
     </div>
   );
 
-  const FileIcon = content.fileType === 'pdf' ? FileText : File;
+  const fileIconForType = (fileType: DocumentContent['files'][number]['fileType']) => {
+    if (fileType === 'pdf' || fileType === 'doc') return FileText;
+    return File;
+  };
+
+  const handleFileDownload = (fileName: string) => {
+    toast.success(`Download started for ${fileName}`);
+  };
 
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden relative">
@@ -323,63 +333,110 @@ export function DocumentDetail({
                     </h1>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1.5">
-                        <FileIcon size={15} className="text-primary" />
-                        {content.size}
+                        <FileText size={15} className="text-primary" />
+                        {content.fileCount === 1
+                          ? `${content.fileCount} file`
+                          : `${content.fileCount} files`}
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         <Eye size={15} />
                         {content.views} views
                       </span>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-subtle text-primary-text">
-                        {content.tag}
-                      </span>
+                      {content.tags.slice(0, 2).map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-subtle text-primary-text"
+                        >
+                          {tag}
+                        </span>
+                      ))}
                       <span className="inline-flex items-center gap-1.5">
                         <Calendar size={15} />
                         Added {content.createdAt}
                       </span>
                     </div>
                   </div>
-                  <Button type="button" className="shrink-0 gap-2">
-                    Open Resource
-                    <ExternalLink size={16} />
-                  </Button>
+                  {breadcrumbCurrentOnClick && (
+                    <Button
+                      type="button"
+                      className="shrink-0 gap-2"
+                      onClick={breadcrumbCurrentOnClick}
+                    >
+                      Open Resource
+                      <ExternalLink size={16} />
+                    </Button>
+                  )}
                 </div>
               </div>
 
               <section>
-                <h2 className="mb-3 text-sm">Document Summary</h2>
+                <h2 className="mb-3 text-sm font-semibold text-foreground">Description</h2>
                 <p className="text-sm text-foreground leading-relaxed">
                   {content.summary}
                 </p>
               </section>
 
-              {content.relatedDocs.length > 0 && (
+              {content.webLinks.length > 0 && (
                 <section>
-                  <h2 className="mb-0 pb-2 text-sm">
-                    Related Documents ({content.relatedDocs.length})
+                  <h2 className="mb-3 text-sm font-semibold text-foreground">
+                    Web Links in this resource ({content.webLinks.length})
                   </h2>
                   <ul className="divide-y divide-border">
-                    {content.relatedDocs.map((doc) => {
-                      const RelIcon = doc.fileType === 'pdf' ? FileText : File;
-                      return (
-                        <li key={doc.id}>
-                          <button
-                            type="button"
-                            onClick={() => onOpenDocument?.(doc.id)}
-                            className="w-full flex items-start gap-4 pr-5 sm:pr-6 py-4 text-left hover:bg-muted/50 transition-colors group"
+                    {content.webLinks.map((link) => (
+                      <li key={link.id}>
+                        <div className="py-4 pr-5 sm:pr-6">
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-primary hover:underline max-w-full"
                           >
+                            <Globe size={14} className="shrink-0" />
+                            <span className="truncate">{link.url}</span>
+                            <ExternalLink size={12} className="shrink-0" />
+                          </a>
+                          <p className="text-xs text-muted-foreground mt-1.5">
+                            Added {link.addedAt}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {content.files.length > 0 && (
+                <section>
+                  <h2 className="mb-0 pb-2 text-sm font-semibold text-foreground">
+                    Files in this resource ({content.files.length})
+                  </h2>
+                  <ul className="divide-y divide-border">
+                    {content.files.map((file) => {
+                      const RelIcon = fileIconForType(file.fileType);
+                      return (
+                        <li key={file.id}>
+                          <div className="group w-full flex items-center gap-4 pr-5 sm:pr-6 py-4 hover:bg-muted/50 transition-colors">
                             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-subtle border border-border">
                               <RelIcon size={18} className="text-primary" />
                             </span>
                             <span className="flex-1 min-w-0">
-                              <span className="block text-sm font-medium leading-6 text-foreground group-hover:text-primary transition-colors">
-                                {doc.title}
+                              <span className="block text-sm font-medium leading-6 text-foreground">
+                                {file.name}
                               </span>
                               <span className="block text-sm text-muted-foreground mt-0.5">
-                                {doc.type} • {doc.size}
+                                {file.type} • {file.size} • Uploaded {file.uploadedAt}
                               </span>
                             </span>
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleFileDownload(file.name)}
+                              className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-border bg-card text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-foreground hover:bg-muted transition-all"
+                              aria-label={`Download ${file.name}`}
+                              title="Download"
+                            >
+                              <Download size={16} />
+                            </button>
+                          </div>
                         </li>
                       );
                     })}

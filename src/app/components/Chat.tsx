@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, UserPlus, Sparkles, CircleHelp, Check } from 'lucide-react';
+import { FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, UserPlus, Sparkles, CircleHelp, Check, Lock } from 'lucide-react';
 import { RiskIQChatHeader } from './RiskIQChatHeader';
 import { BackLink } from './ui/back-link';
 import { RiskMatrix } from './RiskMatrix';
@@ -93,6 +93,7 @@ interface ChatProps {
   navigation?: 'none' | 'back';
   showRiskIqContext?: boolean;
   initialExtendedKnowledge?: boolean;
+  initialPrivateToMe?: boolean;
   createdByName?: string;
   isSharedThread?: boolean;
   joinActivities?: { id: string; userName: string; timestampLabel: string; afterMessageCount: number }[];
@@ -174,6 +175,7 @@ export function Chat({
   navigation = 'none',
   showRiskIqContext = false,
   initialExtendedKnowledge = false,
+  initialPrivateToMe = false,
   createdByName = CURRENT_USER.name,
   isSharedThread = false,
   joinActivities = [],
@@ -223,6 +225,7 @@ export function Chat({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isExtendedKnowledgeMode, setIsExtendedKnowledgeMode] = useState(initialExtendedKnowledge);
   const [isSharedExtendedPillVisible, setIsSharedExtendedPillVisible] = useState(false);
+  const [isPrivateToMe, setIsPrivateToMe] = useState(initialPrivateToMe);
   const [suggestedFollowUps, setSuggestedFollowUps] = useState<string[]>([]);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSharedPopoverOpen, setIsSharedPopoverOpen] = useState(false);
@@ -1890,51 +1893,95 @@ export function Chat({
               )}
             >
             {(!isSharedThread || invokesAiInComposer) && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nextState = !isExtendedInputActive;
+              <div className="absolute bottom-3 left-4 z-10 flex max-w-[calc(100%-4.5rem)] flex-wrap items-center gap-2">
+                {!showRiskIqContext && !isSharedThread && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-pressed={isPrivateToMe}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          const nextState = !isPrivateToMe;
+                          setIsPrivateToMe(nextState);
+                          toast.success(
+                            nextState ? 'Private to me is on' : 'Private to me is off',
+                          );
+                        }}
+                        className={cn(
+                          'inline-flex max-w-[170px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                          isPrivateToMe
+                            ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                            : 'border-border bg-card text-foreground hover:bg-muted/30',
+                        )}
+                      >
+                        <Lock size={12} strokeWidth={2.25} aria-hidden />
+                        <span className="truncate ml-1.5">Private to me</span>
+                        {isPrivateToMe ? (
+                          <span className="ml-1.5">
+                            <X size={12} />
+                          </span>
+                        ) : null}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      variant="muted"
+                      side="top"
+                      sideOffset={8}
+                      className="w-[280px] max-w-[280px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+                    >
+                      When on, answers are drawn from your personal library — the resources and documents you&apos;ve added in My Resources.
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        const nextState = !isExtendedInputActive;
 
-                      if (isSharedThread) {
-                        setIsSharedExtendedPillVisible(nextState);
-                      } else {
-                        setIsExtendedKnowledgeMode(nextState);
-                      }
+                        if (isSharedThread) {
+                          setIsSharedExtendedPillVisible(nextState);
+                        } else {
+                          setIsExtendedKnowledgeMode(nextState);
+                        }
 
-                      toast.success(
-                        nextState
-                          ? 'Extended Knowledge is on'
-                          : 'Extended Knowledge is off'
-                      );
-                    }}
-                    className={`absolute bottom-3 left-4 z-10 inline-flex max-w-[230px] items-center rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
-                      isExtendedInputActive
-                        ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
-                        : 'border-border-muted bg-card text-muted-foreground hover:bg-muted'
-                    }`}
-                  >
-                    <Sparkles size={12} />
-                    <span className="truncate ml-1.5">
-                      {isExtendedInputActive ? 'Extended Knowledge ON' : 'Extended Knowledge'}
-                    </span>
-                    {isExtendedInputActive && (
-                      <span className="ml-1.5">
-                        <X size={12} />
+                        toast.success(
+                          nextState
+                            ? 'Extended Knowledge is on'
+                            : 'Extended Knowledge is off'
+                        );
+                      }}
+                      className={cn(
+                        'inline-flex max-w-[230px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                        isExtendedInputActive
+                          ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                          : 'border-border bg-card text-foreground hover:bg-muted/30',
+                      )}
+                    >
+                      <Sparkles size={12} />
+                      <span className="truncate ml-1.5">
+                        {isExtendedInputActive ? 'Extended Knowledge ON' : 'Extended Knowledge'}
                       </span>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent
-                  variant="muted"
-                  side="top"
-                  sideOffset={8}
-                  className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
-                >
-                  Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
-                </TooltipContent>
-              </Tooltip>
+                      {isExtendedInputActive && (
+                        <span className="ml-1.5">
+                          <X size={12} />
+                        </span>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    variant="muted"
+                    side="top"
+                    sideOffset={8}
+                    className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+                  >
+                    Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             )}
             <input
               ref={inputRef}
