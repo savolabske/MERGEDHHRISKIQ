@@ -56,6 +56,7 @@ function chatMatchesSearch(chat: ChatHistoryItem, rawQuery: string): boolean {
     chat.shareMode === 'outgoing' ? 'shared by me' : '',
     chatSourceLabel(resolveChatSource(chat)),
     chat.resourceTitle,
+    chat.reportTitle,
   ]
     .filter(Boolean)
     .join(' ')
@@ -603,17 +604,25 @@ export function Chats({
                         </div>
                         {/* Source pill, resource context, timestamp/meta below query */}
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {!(hideSourceFilter && chatSource === 'risk-iq') && (
+                          {!(hideSourceFilter && chatSource === 'risk-iq') && chatSource !== 'resource' && (
                             <ChatSourceBadge source={chatSource} />
                           )}
                           {chatSource === 'resource' && chat.resourceTitle && (
+                            <span
+                              className="text-xs text-muted-foreground truncate max-w-[240px] sm:max-w-[320px]"
+                              title={chat.resourceTitle}
+                            >
+                              {chat.resourceTitle}
+                            </span>
+                          )}
+                          {chatSource === 'report' && chat.reportTitle && (
                             <>
                               <span className="text-border-muted">•</span>
                               <span
                                 className="text-xs text-muted-foreground truncate max-w-[240px] sm:max-w-[320px]"
-                                title={chat.resourceTitle}
+                                title={chat.reportTitle}
                               >
-                                {chat.resourceTitle}
+                                {chat.reportTitle}
                               </span>
                             </>
                           )}

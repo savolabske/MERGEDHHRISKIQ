@@ -167,6 +167,83 @@ export default function App() {
   
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>(() => withChatSources([
     {
+      id: 'map-1',
+      query: 'Show IDP camps near Mogadishu within 50km',
+      timestamp: '10:12 AM',
+      date: 'Today',
+      messages: [],
+      sharedWith: ['2', '3'],
+      shareMode: 'outgoing',
+      source: 'map',
+      createdBy: CURRENT_USER.id,
+      createdByName: CURRENT_USER.name,
+      unread: false,
+    },
+    {
+      id: 'report-1',
+      query: 'Which donors increased WASH funding in 2025?',
+      timestamp: '9:58 AM',
+      date: 'Today',
+      messages: [],
+      sharedWith: [],
+      source: 'report',
+      reportId: 'aid-flow',
+      reportTitle: 'Aid Flow Intelligence',
+      createdBy: CURRENT_USER.id,
+      createdByName: CURRENT_USER.name,
+      unread: false,
+    },
+    {
+      id: 'map-2',
+      query: 'Which areas have the most aid diversion cases?',
+      timestamp: '4:30 PM',
+      date: 'Yesterday',
+      messages: [],
+      sharedWith: [],
+      source: 'map',
+      createdBy: CURRENT_USER.id,
+      createdByName: CURRENT_USER.name,
+    },
+    {
+      id: 'report-2',
+      query: 'Compare Bay region displacement against food assistance delivery',
+      timestamp: '2:45 PM',
+      date: 'Yesterday',
+      messages: [],
+      sharedWith: ['4'],
+      shareMode: 'incoming',
+      source: 'report',
+      reportId: 'migration-data',
+      reportTitle: 'Migration & Displacement Intelligence',
+      createdBy: '4',
+      createdByName: 'James Wilson',
+      unread: true,
+    },
+    {
+      id: 'map-3',
+      query: 'Where are drought-affected districts projected to worsen in 2026?',
+      timestamp: '11:20 AM',
+      date: 'Feb 22, 2026',
+      messages: [],
+      sharedWith: [],
+      source: 'map',
+      createdBy: CURRENT_USER.id,
+      createdByName: CURRENT_USER.name,
+    },
+    {
+      id: 'report-3',
+      query: 'What is the SJF portfolio allocation for protection programmes?',
+      timestamp: '3:15 PM',
+      date: 'Feb 21, 2026',
+      messages: [],
+      sharedWith: [],
+      source: 'report',
+      reportId: 'somalia-joint-fund',
+      reportTitle: 'Somalia Joint Fund Intelligence',
+      createdBy: CURRENT_USER.id,
+      createdByName: CURRENT_USER.name,
+    },
+    {
       id: '1',
       query: 'Security incidents in Lower Shabelle in the last 30 days',
       timestamp: '9:24 AM',
@@ -1101,7 +1178,11 @@ export default function App() {
 
   const handlePlatformChatSelect = (id: string) => {
     const historyItem = chatHistory.find((chat) => chat.id === id);
-    if (historyItem && resolveChatSource(historyItem) === 'resource' && historyItem.resourceId) {
+    if (!historyItem) return;
+
+    const source = resolveChatSource(historyItem);
+
+    if (source === 'resource' && historyItem.resourceId) {
       setDocumentChatThreadId(id);
       setCurrentDocumentId(historyItem.resourceId);
       setDocumentReturnView('platformChats');
@@ -1113,6 +1194,26 @@ export default function App() {
       setInvitePreviewThreadId(null);
       return;
     }
+
+    if (source === 'map') {
+      setChatHistory((prev) =>
+        prev.map((chat) => (chat.id === id ? { ...chat, unread: false } : chat)),
+      );
+      setCurrentView('mapAI');
+      setInvitePreviewThreadId(null);
+      return;
+    }
+
+    if (source === 'report' && historyItem.reportId) {
+      setPendingHubReport(historyItem.reportId);
+      setChatHistory((prev) =>
+        prev.map((chat) => (chat.id === id ? { ...chat, unread: false } : chat)),
+      );
+      setCurrentView('reports');
+      setInvitePreviewThreadId(null);
+      return;
+    }
+
     openChatFromHistory(id, 'platformChats');
   };
 

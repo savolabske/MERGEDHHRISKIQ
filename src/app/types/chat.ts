@@ -1,4 +1,5 @@
 import type { ChatSource } from '../components/chats/chatSource';
+import type { ActiveReport } from '../components/Reports';
 
 export type { ChatSource, ChatSourceFilter } from '../components/chats/chatSource';
 
@@ -16,4 +17,6 @@ export interface ChatHistoryItem {
   source?: ChatSource;
   resourceId?: string;
   resourceTitle?: string;
+  reportId?: ActiveReport;
+  reportTitle?: string;
 }

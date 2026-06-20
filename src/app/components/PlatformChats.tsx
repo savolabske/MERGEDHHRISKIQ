@@ -18,7 +18,7 @@ export function PlatformChats({
 }: PlatformChatsProps) {
   return (
     <Chats
-      subtitle="All your conversations across Humanity Hub, Risk iQ, and resources"
+      subtitle="All your conversations across Humanity Hub, Risk iQ, resources, maps, and reports"
       chatHistory={chatHistory}
       onChatSelect={onChatSelect}
       onDeleteChat={onDeleteChat}

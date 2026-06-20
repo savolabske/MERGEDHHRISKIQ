@@ -1,6 +1,6 @@
-import { FileText, Shield, Sparkles, type LucideIcon } from 'lucide-react';
+import { BarChart3, FileText, Map, Shield, Sparkles, type LucideIcon } from 'lucide-react';
 
-export type ChatSource = 'humanity-hub' | 'risk-iq' | 'resource';
+export type ChatSource = 'humanity-hub' | 'risk-iq' | 'resource' | 'map' | 'report';
 
 export type ChatSourceFilter = ChatSource | 'all';
 
@@ -9,6 +9,8 @@ export const CHAT_SOURCE_OPTIONS: { id: ChatSourceFilter; label: string }[] = [
   { id: 'humanity-hub', label: 'Humanity Hub' },
   { id: 'risk-iq', label: 'Risk iQ' },
   { id: 'resource', label: 'Resource' },
+  { id: 'map', label: 'Maps' },
+  { id: 'report', label: 'Reports' },
 ];
 
 type ChatSourceConfig = {
@@ -41,6 +43,20 @@ export const CHAT_SOURCE_CONFIG: Record<ChatSource, ChatSourceConfig> = {
     iconClassName: 'text-[#27500A]',
     pillClassName: 'bg-[#EAF3DE] text-[#27500A]',
   },
+  map: {
+    label: 'Maps',
+    Icon: Map,
+    tileClassName: 'bg-[#E8F0FE]',
+    iconClassName: 'text-[#1A4B8C]',
+    pillClassName: 'bg-[#E8F0FE] text-[#1A4B8C]',
+  },
+  report: {
+    label: 'Reports',
+    Icon: BarChart3,
+    tileClassName: 'bg-[#F3E8FF]',
+    iconClassName: 'text-[#6B21A8]',
+    pillClassName: 'bg-[#F3E8FF] text-[#6B21A8]',
+  },
 };
 
 export function chatSourceLabel(source: ChatSource): string {
@@ -51,12 +67,17 @@ export function chatSourceLabel(source: ChatSource): string {
 export function resolveChatSource(chat?: {
   source?: ChatSource;
   resourceId?: string;
+  reportId?: string;
+  id?: string;
 }): ChatSource {
   if (!chat) return 'humanity-hub';
   if (chat.source && CHAT_SOURCE_CONFIG[chat.source]) {
     return chat.source;
   }
+  if (chat.reportId) return 'report';
   if (chat.resourceId) return 'resource';
+  if (chat.id?.startsWith('map-')) return 'map';
+  if (chat.id?.startsWith('report-')) return 'report';
   return 'humanity-hub';
 }
 
