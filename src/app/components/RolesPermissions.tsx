@@ -166,6 +166,7 @@ const modules: { section: string; items: ModuleItem[] }[] = [
       { module: 'Definitions' },
       { module: 'Admin Resources', label: 'Resources' },
       { module: 'URL Sources' },
+      { module: 'API' },
     ],
   },
 ];

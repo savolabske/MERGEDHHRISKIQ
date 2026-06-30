@@ -13,6 +13,7 @@ import {
   Check,
   ClipboardList,
   Link,
+  Braces,
   ChevronDown,
   ChevronsUpDown,
   BookOpen,
@@ -42,6 +43,7 @@ const ADMIN_NAV_ITEMS: {
   { view: 'definitions', label: 'Definitions', icon: BookOpen },
   { view: 'resources', label: 'Resources', icon: FileText },
   { view: 'links', label: 'URL Sources', icon: Link },
+  { view: 'api', label: 'API', icon: Braces },
   { view: 'auditTrails', label: 'Audit Trails', icon: ClipboardList },
 ];
 
@@ -233,6 +235,7 @@ export function Sidebar({
     currentView === 'definitions' ||
     currentView === 'resources' ||
     currentView === 'links' ||
+    currentView === 'api' ||
     currentView === 'auditTrails';
 
   const setCollapsed = (next: boolean) => {

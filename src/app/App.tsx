@@ -11,6 +11,7 @@ import { Approvals } from "./components/Approvals";
 import { UsersAccess } from "./components/UsersAccess";
 import { AuditTrail } from "./components/AuditTrail";
 import { URLSources } from "./components/URLSources";
+import { Api } from "./components/Api";
 import { Definitions } from "./components/Definitions";
 import { Documents } from "./components/Documents";
 import { Locations } from "./components/Locations";
@@ -1869,6 +1870,8 @@ export default function App() {
           <AuditTrail />
         ) : currentView === 'links' ? (
           <URLSources />
+        ) : currentView === 'api' ? (
+          <Api />
         ) : currentView === 'definitions' ? (
           <Definitions />
         ) : currentView === 'resources' ? (
