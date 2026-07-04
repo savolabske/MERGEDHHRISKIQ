@@ -13,6 +13,18 @@ export const CHAT_SOURCE_OPTIONS: { id: ChatSourceFilter; label: string }[] = [
   { id: 'report', label: 'Reports' },
 ];
 
+export const PLATFORM_CHAT_SOURCE_OPTIONS: { id: ChatSourceFilter; label: string }[] = [
+  { id: 'all', label: 'All sources' },
+  { id: 'humanity-hub', label: 'Humanity Hub' },
+  { id: 'risk-iq', label: 'Risk iQ' },
+];
+
+const PLATFORM_CHAT_SOURCES = new Set<ChatSource>(['humanity-hub', 'risk-iq']);
+
+export function isPlatformChatSource(source: ChatSource): boolean {
+  return PLATFORM_CHAT_SOURCES.has(source);
+}
+
 type ChatSourceConfig = {
   label: string;
   Icon: LucideIcon;
@@ -81,8 +93,11 @@ export function resolveChatSource(chat?: {
   return 'humanity-hub';
 }
 
-export function chatSourceFilterLabel(filter: ChatSourceFilter): string {
-  return CHAT_SOURCE_OPTIONS.find((o) => o.id === filter)?.label ?? 'All sources';
+export function chatSourceFilterLabel(
+  filter: ChatSourceFilter,
+  options: { id: ChatSourceFilter; label: string }[] = CHAT_SOURCE_OPTIONS,
+): string {
+  return options.find((o) => o.id === filter)?.label ?? 'All sources';
 }
 
 export function ChatSourceBadge({

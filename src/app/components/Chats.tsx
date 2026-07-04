@@ -73,6 +73,7 @@ interface ChatsProps {
   embedded?: boolean;
   subtitle?: string;
   defaultSourceFilter?: ChatSourceFilter;
+  sourceFilterOptions?: { id: ChatSourceFilter; label: string }[];
   onChatSelect?: (id: string) => void;
   onNewChat?: () => void;
   chatHistory?: ChatHistoryItem[];
@@ -149,6 +150,7 @@ export function Chats({
   embedded = false,
   subtitle = 'Review and revisit your previous Risk IQ chats',
   defaultSourceFilter = 'all',
+  sourceFilterOptions = CHAT_SOURCE_OPTIONS,
   onChatSelect,
   onNewChat,
   chatHistory = [],
@@ -460,7 +462,7 @@ export function Chats({
                     onClick={() => setShowSourceFilterDropdown((open) => !open)}
                     className="w-full sm:w-auto min-w-0 sm:min-w-[180px] px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center justify-between gap-2"
                   >
-                    <span className="truncate">{chatSourceFilterLabel(chatSourceFilter)}</span>
+                    <span className="truncate">{chatSourceFilterLabel(chatSourceFilter, sourceFilterOptions)}</span>
                     <ChevronDown
                       size={16}
                       className={`text-muted-foreground shrink-0 transition-transform ${showSourceFilterDropdown ? 'rotate-180' : ''}`}
@@ -472,7 +474,7 @@ export function Chats({
                       role="listbox"
                       aria-label="Filter chats by source"
                     >
-                      {CHAT_SOURCE_OPTIONS.map((option) => (
+                      {sourceFilterOptions.map((option) => (
                         <button
                           key={option.id}
                           type="button"
