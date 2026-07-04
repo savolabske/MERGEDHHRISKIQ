@@ -19,6 +19,7 @@ export type AppView =
   | 'resources'
   | 'links'
   | 'api'
+  | 'manageReports'
   | 'documentDetail';
 
 export const RISK_IQ_TAB_STORAGE_KEY = 'riskiq.lastTab';

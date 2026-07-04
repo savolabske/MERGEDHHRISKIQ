@@ -24,7 +24,6 @@ import {
   getDashboardStreamingResponse,
   type DashboardChatPayload,
 } from '../utils/dashboardChatContext';
-import { ChatSourceBadge } from './chats/chatSource';
 
 // Utility function to clean markdown from content for better typing display
 const cleanMarkdown = (text: string) => text.replace(/\*\*/g, '');
@@ -99,7 +98,6 @@ interface ChatProps {
   joinActivities?: { id: string; userName: string; timestampLabel: string; afterMessageCount: number }[];
   onKnowledgeSourceClick?: (source: Source) => void;
   startEmpty?: boolean;
-  chatContextLabel?: 'Risk iQ' | 'Humanity Hub';
 }
 
 const getAIResponse = getChatAiResponse;
@@ -181,7 +179,6 @@ export function Chat({
   joinActivities = [],
   onKnowledgeSourceClick,
   startEmpty = false,
-  chatContextLabel,
 }: ChatProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [messages, setMessages] = useState<Message[]>(() => {
@@ -1653,12 +1650,6 @@ export function Chat({
                   <BackLink onClick={onBack} />
                 ) : (
                   <div className="w-10 sm:w-0 shrink-0" />
-                )}
-                {chatContextLabel && (
-                  <ChatSourceBadge
-                    source={chatContextLabel === 'Risk iQ' ? 'risk-iq' : 'humanity-hub'}
-                    size="md"
-                  />
                 )}
               </div>
               <div className="flex items-center gap-3 shrink-0">

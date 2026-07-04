@@ -75,4 +75,17 @@ export { ReportChipButton } from './ReportChipButton';
 export { ReportThinkingIndicator } from './ReportThinkingIndicator';
 export { useReportChatAutoScroll, ReportChatScrollSync } from './useReportChatAutoScroll';
 export { useReportPrompt } from './useReportPrompt';
+export {
+  ReportChatHistoryButton,
+} from './ReportChatHistoryButton';
+export {
+  ReportChatHistoryBackButton,
+  ReportChatHistoryPanel,
+} from './ReportChatHistoryPanel';
+export {
+  formatReportHistoryTimeAgo,
+  type ReportChatHistoryItem,
+  type ReportChatHistoryReportId,
+} from './reportChatHistory';
+export { useReportChatHistory } from './useReportChatHistory';
 export * from './animations';

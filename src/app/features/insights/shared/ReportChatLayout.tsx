@@ -42,6 +42,8 @@ interface ReportChatLayoutProps {
   chatHeader: React.ReactNode;
   chatFeed: React.ReactNode;
   promptInput: React.ReactNode;
+  /** Hide the prompt input area (e.g. while browsing chat history). */
+  showPromptInput?: boolean;
   /** Shown vertically on the expand rail when the panel is collapsed (desktop). */
   chatLabel?: string;
   /** Chevron label when sheet is closed; defaults from messageCount. */
@@ -111,18 +113,22 @@ function DesktopChatSidebar({
   chatHeader,
   chatFeed,
   promptInput,
+  showPromptInput,
   className,
 }: {
   chatHeader: React.ReactNode;
   chatFeed: React.ReactNode;
   promptInput: React.ReactNode;
+  showPromptInput: boolean;
   className?: string;
 }) {
   return (
     <aside className={cn('flex h-full min-h-0 flex-col', className)}>
       {chatHeader}
       {chatFeed}
-      <div className="shrink-0 border-t border-border bg-card p-3">{promptInput}</div>
+      {showPromptInput && (
+        <div className="shrink-0 border-t border-border bg-card p-3">{promptInput}</div>
+      )}
     </aside>
   );
 }
@@ -134,6 +140,7 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
       chatHeader,
       chatFeed,
       promptInput,
+      showPromptInput = true,
       chatLabel = 'Ask',
       dockHint,
       messageCount = 0,
@@ -211,6 +218,7 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
                   chatHeader={chatHeader}
                   chatFeed={chatFeed}
                   promptInput={promptInput}
+                  showPromptInput={showPromptInput}
                   className={sidebarClassName}
                 />
               </div>
@@ -246,7 +254,9 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
                     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                       {chatHeader}
                       {chatFeed}
-                      <div className="shrink-0 border-t border-border bg-card p-3">{promptInput}</div>
+                      {showPromptInput && (
+                        <div className="shrink-0 border-t border-border bg-card p-3">{promptInput}</div>
+                      )}
                     </div>
                   </>
                 )}
@@ -258,12 +268,15 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
                     type="button"
                     onClick={openMobileChat}
                     aria-label={`Open ${chatLabel}`}
-                    className="mb-2 flex w-full items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground"
+                    className={cn(
+                      'flex w-full items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground',
+                      showPromptInput ? 'mb-2' : 'py-1',
+                    )}
                   >
                     <ChevronUp size={14} />
                     {resolvedDockHint}
                   </button>
-                  {promptInput}
+                  {showPromptInput && promptInput}
                 </div>
               )}
             </>

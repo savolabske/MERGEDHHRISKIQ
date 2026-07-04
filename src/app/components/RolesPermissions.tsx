@@ -55,6 +55,7 @@ const modulePermissions: Record<string, {
   'Locations': { view: true, create: true, edit: true },
   'Definitions': { view: true, create: true, edit: true, delete: true },
   'Admin Resources': { view: true, create: true, delete: true },
+  'Manage Reports': { view: true, create: true, edit: true, delete: true },
   'URL Sources': { view: true, create: true, delete: true },
 };
 
@@ -165,6 +166,7 @@ const modules: { section: string; items: ModuleItem[] }[] = [
       { module: 'Locations' },
       { module: 'Definitions' },
       { module: 'Admin Resources', label: 'Resources' },
+      { module: 'Manage Reports' },
       { module: 'URL Sources' },
       { module: 'API' },
     ],

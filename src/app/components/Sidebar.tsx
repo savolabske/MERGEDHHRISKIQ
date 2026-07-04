@@ -19,6 +19,7 @@ import {
   BookOpen,
   PanelLeft,
   Shield,
+  LayoutTemplate,
   type LucideIcon,
 } from 'lucide-react';
 import type { AppView } from '../types/navigation';
@@ -41,6 +42,7 @@ const ADMIN_NAV_ITEMS: {
   { view: 'approvals', label: 'Approvals', icon: Check, badge: 4 },
   { view: 'usersAccess', label: 'Users and Access', icon: Users },
   { view: 'definitions', label: 'Definitions', icon: BookOpen },
+  { view: 'manageReports', label: 'Manage Reports', icon: LayoutTemplate },
   { view: 'resources', label: 'Resources', icon: FileText },
   { view: 'links', label: 'URL Sources', icon: Link },
   { view: 'api', label: 'API', icon: Braces },

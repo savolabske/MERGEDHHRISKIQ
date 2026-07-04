@@ -12,6 +12,9 @@ import {
   AnimatedStat,
   AID_FLOW_CUSTOMIZE_THEME,
   ReportChatHeaderCollapse,
+  ReportChatHistoryBackButton,
+  ReportChatHistoryButton,
+  ReportChatHistoryPanel,
   ReportChatLayout,
   ReportChatPromptInput,
   ReportChatScrollSync,
@@ -38,6 +41,7 @@ import {
   reportSceneTitleClassName,
   reportTitleFilterRowClassName,
   type ReportChatLayoutHandle,
+  useReportChatHistory,
   useReportFilterMode,
 } from '../../shared';
 import { cn } from '../../../../components/ui/utils';
@@ -100,10 +104,28 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
     chatScrollRef,
     runPrompt,
     backToReport,
+    restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,
   } = useAidFlowReportPrompt({
     onChatLaneReady: () => chatLayoutRef.current?.openChat(),
+  });
+
+  const {
+    historyItems,
+    isHistoryOpen,
+    openHistory,
+    closeHistory,
+    restoreHistoryItem,
+    deleteHistoryItem,
+    togglePinHistoryItem,
+  } = useReportChatHistory({
+    reportId: 'aid-flow',
+    messages,
+    extendedKnowledge,
+    resultMode,
+    resultTitle,
+    onRestore: restoreSession,
   });
 
   const { mode: filterMode, filtersInteractive } = useReportFilterMode(resultMode, customizePhase);
@@ -364,36 +386,57 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
           mainClassName={reportMainPaddingClassName}
           chatLabel="Ask Aid Flow"
           messageCount={messages.length}
+          showPromptInput={!isHistoryOpen}
           sidebarClassName="border-l border-[#e6e9ef] bg-white"
           chatHeader={
             <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className="shrink-0 border-b border-[#e6e9ef] bg-white px-4 py-3">
-              <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1f6feb] to-[#16a39a] text-white">
-                  <Sparkles size={14} />
-                </span>
-                <h3 className="text-[15px] font-semibold text-[#0d1b2a]">Ask Aid Flow</h3>
+              <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying, isHistoryOpen]} />
+              <div className="mb-2 flex items-center justify-between">
+                {isHistoryOpen ? (
+                  <ReportChatHistoryBackButton onClick={closeHistory} />
+                ) : (
+                  <ReportChatHistoryButton onClick={openHistory} />
+                )}
                 <ReportChatHeaderCollapse className="border-[#e6e9ef] hover:text-[#1f6feb]" />
               </div>
-              <p className="mt-1 text-[11.5px] text-[#6b7a8d]">
-                Ask about donors, sectors, regions or trends. Answers reshape the dashboard on the left.
-              </p>
-              <ReportExtendedKnowledgeToggle
-                enabled={extendedKnowledge}
-                onToggle={toggleExtendedKnowledge}
-                theme={AID_FLOW_EXTENDED_KNOWLEDGE_THEME}
-              />
+              {!isHistoryOpen && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1f6feb] to-[#16a39a] text-white">
+                      <Sparkles size={14} />
+                    </span>
+                    <h3 className="text-[15px] font-semibold text-[#0d1b2a]">Ask Aid Flow</h3>
+                  </div>
+                  <ReportExtendedKnowledgeToggle
+                    enabled={extendedKnowledge}
+                    onToggle={toggleExtendedKnowledge}
+                    theme={AID_FLOW_EXTENDED_KNOWLEDGE_THEME}
+                  />
+                </>
+              )}
+              {isHistoryOpen && (
+                <h3 className="text-[15px] font-semibold text-[#0d1b2a]">Chat history</h3>
+              )}
             </ReportLoadItem>
           }
           chatFeed={
             <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white p-4">
-              <AidFlowChatFeed
-                messages={messages}
-                isQuerying={isQuerying}
-                queryingMode={queryingMode}
-                extendedKnowledge={extendedKnowledge}
-                onChipClick={runPrompt}
-              />
+              {isHistoryOpen ? (
+                <ReportChatHistoryPanel
+                  items={historyItems}
+                  onSelect={restoreHistoryItem}
+                  onDelete={deleteHistoryItem}
+                  onTogglePin={togglePinHistoryItem}
+                />
+              ) : (
+                <AidFlowChatFeed
+                  messages={messages}
+                  isQuerying={isQuerying}
+                  queryingMode={queryingMode}
+                  extendedKnowledge={extendedKnowledge}
+                  onChipClick={runPrompt}
+                />
+              )}
             </div>
           }
           promptInput={

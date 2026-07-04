@@ -13,6 +13,7 @@ import { AuditTrail } from "./components/AuditTrail";
 import { URLSources } from "./components/URLSources";
 import { Api } from "./components/Api";
 import { Definitions } from "./components/Definitions";
+import { ManageReports } from "./components/manage-reports/ManageReports";
 import { Documents } from "./components/Documents";
 import { Locations } from "./components/Locations";
 import { AdminDashboard } from "./components/AdminDashboard";
@@ -1511,20 +1512,6 @@ export default function App() {
               </div>
             </div>
           ) : searchQuery || loadDemoConversation || isPlatformNewChat || isRiskIqNewChat ? (
-            (() => {
-              const activeThread = currentChatId
-                ? chatHistory.find((c) => c.id === currentChatId)
-                : undefined;
-              const activeSource = resolveChatSource(activeThread);
-              const showTopContextLabel =
-                cameFromPlatformChats || cameFromHome || isPlatformNewChat || isRiskIqNewChat;
-              const chatContextLabel: 'Risk iQ' | 'Humanity Hub' | undefined =
-                showTopContextLabel
-                  ? activeSource === 'risk-iq'
-                    ? 'Risk iQ'
-                    : 'Humanity Hub'
-                  : undefined;
-              return (
             <Chat 
               key={
                 isPlatformNewChat
@@ -1613,7 +1600,6 @@ export default function App() {
               }} 
               onNewChat={handleNewChat}
               onMessagesChange={handleMessagesChange}
-              chatContextLabel={chatContextLabel}
               onKnowledgeSourceClick={(source) => {
                 const resourceId =
                   (source.documentId &&
@@ -1626,8 +1612,6 @@ export default function App() {
                 );
               }}
             />
-              );
-            })()
           ) : (
             <div className="h-full flex flex-col bg-background">
               {cameFromRiskIq && (
@@ -1874,6 +1858,8 @@ export default function App() {
           <Api />
         ) : currentView === 'definitions' ? (
           <Definitions />
+        ) : currentView === 'manageReports' ? (
+          <ManageReports />
         ) : currentView === 'resources' ? (
           <Documents />
         ) : currentView === 'locations' ? (

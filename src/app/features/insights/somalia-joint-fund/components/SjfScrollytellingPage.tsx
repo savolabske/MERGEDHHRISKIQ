@@ -22,6 +22,9 @@ import {
   AnimatedNarrative,
   AnimatedStat,
   ReportChatHeaderCollapse,
+  ReportChatHistoryBackButton,
+  ReportChatHistoryButton,
+  ReportChatHistoryPanel,
   ReportChatLayout,
   ReportChatPromptInput,
   ReportChatScrollSync,
@@ -49,6 +52,7 @@ import {
   reportSceneTitleClassName,
   reportTitleFilterRowClassName,
   type ReportChatLayoutHandle,
+  useReportChatHistory,
   useReportFilterMode,
 } from '../../shared';
 import { cn } from '../../../../components/ui/utils';
@@ -98,10 +102,28 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
     chatScrollRef,
     runPrompt,
     backToReport,
+    restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,
   } = useSjfReportPrompt({
     onChatLaneReady: () => chatLayoutRef.current?.openChat(),
+  });
+
+  const {
+    historyItems,
+    isHistoryOpen,
+    openHistory,
+    closeHistory,
+    restoreHistoryItem,
+    deleteHistoryItem,
+    togglePinHistoryItem,
+  } = useReportChatHistory({
+    reportId: 'somalia-joint-fund',
+    messages,
+    extendedKnowledge,
+    resultMode,
+    resultTitle,
+    onRestore: restoreSession,
   });
 
   const [copiedKpi, setCopiedKpi] = useState<string | null>(null);
@@ -390,39 +412,62 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
           mainClassName={reportMainPaddingClassName}
           chatLabel="Ask SJF"
           messageCount={messages.length}
+          showPromptInput={!isHistoryOpen}
           sidebarClassName="border-l border-[#e2e6ee] bg-white"
           chatHeader={
             <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className="shrink-0 border-b border-[#e2e6ee] bg-white px-4 py-3">
-              <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#00689D] to-[#19486A] text-white">
-                  <Sparkles size={14} />
-                </span>
-                <h3 className="text-[15px] font-semibold text-[#0b1a2c]">Ask SJF</h3>
-                <span className="rounded-md bg-[#E5F3FB] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[#00689D]">
-                  BETA
-                </span>
+              <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying, isHistoryOpen]} />
+              <div className="mb-2 flex items-center justify-between">
+                {isHistoryOpen ? (
+                  <ReportChatHistoryBackButton onClick={closeHistory} />
+                ) : (
+                  <ReportChatHistoryButton onClick={openHistory} />
+                )}
                 <ReportChatHeaderCollapse className="border-[#e2e6ee] hover:text-[#00689D]" />
               </div>
-              <p className="mt-1 text-[11.5px] text-[#6f8094]">
-                Ask about donors, windows, programmes, results or financials.
-              </p>
-              <ReportExtendedKnowledgeToggle
-                enabled={extendedKnowledge}
-                onToggle={toggleExtendedKnowledge}
-                theme={SJF_EXTENDED_KNOWLEDGE_THEME}
-              />
+              {!isHistoryOpen && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#00689D] to-[#19486A] text-white">
+                      <Sparkles size={14} />
+                    </span>
+                    <h3 className="text-[15px] font-semibold text-[#0b1a2c]">Ask SJF</h3>
+                    <span className="rounded-md bg-[#E5F3FB] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[#00689D]">
+                      BETA
+                    </span>
+                  </div>
+                  <ReportExtendedKnowledgeToggle
+                    enabled={extendedKnowledge}
+                    onToggle={toggleExtendedKnowledge}
+                    theme={SJF_EXTENDED_KNOWLEDGE_THEME}
+                  />
+                </>
+              )}
+              {isHistoryOpen && (
+                <h3 className="text-[15px] font-semibold text-[#0b1a2c]">Chat history</h3>
+              )}
             </ReportLoadItem>
           }
           chatFeed={
             <div ref={chatScrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-white p-4">
-              <SjfChatFeed
-                messages={messages}
-                isQuerying={isQuerying}
-                queryingMode={queryingMode}
-                extendedKnowledge={extendedKnowledge}
-                onChipClick={runPrompt}
-              />
+              {isHistoryOpen ? (
+                <ReportChatHistoryPanel
+                  items={historyItems}
+                  onSelect={restoreHistoryItem}
+                  onDelete={deleteHistoryItem}
+                  onTogglePin={togglePinHistoryItem}
+                  accentClassName="group-hover:text-[#00689D] hover:border-[#00689D]"
+                  emptyClassName="text-[#6f8094]"
+                />
+              ) : (
+                <SjfChatFeed
+                  messages={messages}
+                  isQuerying={isQuerying}
+                  queryingMode={queryingMode}
+                  extendedKnowledge={extendedKnowledge}
+                  onChipClick={runPrompt}
+                />
+              )}
             </div>
           }
           promptInput={

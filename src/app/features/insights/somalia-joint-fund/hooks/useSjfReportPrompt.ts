@@ -47,6 +47,39 @@ export function useSjfReportPrompt(options?: { onChatLaneReady?: () => void }) {
     pendingResolutionRef.current = null;
   }, []);
 
+  const restoreSession = useCallback(
+    (snapshot: {
+      messages: SjfChatMessage[];
+      extendedKnowledge?: boolean;
+      resultMode?: boolean;
+      resultTitle?: string;
+    }) => {
+      cancelQuery();
+      setMessages(snapshot.messages);
+      setExtendedKnowledge(snapshot.extendedKnowledge ?? false);
+      setResultMode(snapshot.resultMode ?? false);
+      setResultTitle(snapshot.resultTitle ?? 'SJF overview');
+      setPromptInput('');
+
+      if (snapshot.resultMode) {
+        const lastUser = [...snapshot.messages].reverse().find((message) => message.role === 'user');
+        if (lastUser?.role === 'user') {
+          const resolution = resolveSjfPrompt(lastUser.text, snapshot.extendedKnowledge ?? false);
+          if (resolution.lane === 'dashboard') {
+            setActiveRecipe(resolution.recipe);
+            setResultTitle(resolution.recipe.title);
+          } else {
+            setActiveRecipe(null);
+            setResultMode(false);
+          }
+        }
+      } else {
+        setActiveRecipe(null);
+      }
+    },
+    [cancelQuery],
+  );
+
   const backToReport = useCallback(() => {
     cancelQuery();
     setResultMode(false);
@@ -184,6 +217,7 @@ export function useSjfReportPrompt(options?: { onChatLaneReady?: () => void }) {
     chatScrollRef,
     runPrompt,
     backToReport,
+    restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,
   };

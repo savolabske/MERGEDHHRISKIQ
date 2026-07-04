@@ -19,6 +19,9 @@ import {
   AnimatedStat,
   MIGRATION_CUSTOMIZE_THEME,
   ReportChatHeaderCollapse,
+  ReportChatHistoryBackButton,
+  ReportChatHistoryButton,
+  ReportChatHistoryPanel,
   ReportChatLayout,
   ReportChatPromptInput,
   ReportChatScrollSync,
@@ -45,6 +48,7 @@ import {
   reportSceneTitleClassName,
   reportTitleFilterRowClassName,
   type ReportChatLayoutHandle,
+  useReportChatHistory,
   useReportFilterMode,
 } from '../../shared';
 import { cn } from '../../../../components/ui/utils';
@@ -99,10 +103,28 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
     chatScrollRef,
     runPrompt,
     backToReport,
+    restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,
   } = useMigrationReportPrompt({
     onChatLaneReady: () => chatLayoutRef.current?.openChat(),
+  });
+
+  const {
+    historyItems,
+    isHistoryOpen,
+    openHistory,
+    closeHistory,
+    restoreHistoryItem,
+    deleteHistoryItem,
+    togglePinHistoryItem,
+  } = useReportChatHistory({
+    reportId: 'migration-data',
+    messages,
+    extendedKnowledge,
+    resultMode,
+    resultTitle,
+    onRestore: restoreSession,
   });
   const regionOptions = useMemo(() => MIGRATION_DATA.regions.map(([name]) => name), []);
   const causeOptions = useMemo(() => MIGRATION_DATA.cause.map(([name]) => name), []);
@@ -353,36 +375,59 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
           mainClassName={reportMainPaddingClassName}
           chatLabel="Ask Displacement"
           messageCount={messages.length}
+          showPromptInput={!isHistoryOpen}
           sidebarClassName="border-l border-[#ece6df] bg-white"
           chatHeader={
             <ReportLoadItem order={REPORT_LOAD_ORDER.chat} className="shrink-0 border-b border-[#ece6df] bg-white px-4 py-3">
-              <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying]} />
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#c2562a] to-[#d99a21] text-white">
-                  <Sparkles size={14} />
-                </span>
-                <h3 className="text-[15px] font-semibold text-[#1a1410]">Ask Displacement</h3>
+              <ReportChatScrollSync scrollRef={chatScrollRef} deps={[messages, isQuerying, isHistoryOpen]} />
+              <div className="mb-2 flex items-center justify-between">
+                {isHistoryOpen ? (
+                  <ReportChatHistoryBackButton onClick={closeHistory} />
+                ) : (
+                  <ReportChatHistoryButton onClick={openHistory} />
+                )}
                 <ReportChatHeaderCollapse className="border-[#ece6df] hover:text-[#c2562a]" />
               </div>
-              <p className="mt-1 text-[11.5px] text-[#8a7d72]">
-                Ask about causes, regions, demographics, needs, or trends.
-              </p>
-              <ReportExtendedKnowledgeToggle
-                enabled={extendedKnowledge}
-                onToggle={toggleExtendedKnowledge}
-                theme={MIGRATION_EXTENDED_KNOWLEDGE_THEME}
-              />
+              {!isHistoryOpen && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#c2562a] to-[#d99a21] text-white">
+                      <Sparkles size={14} />
+                    </span>
+                    <h3 className="text-[15px] font-semibold text-[#1a1410]">Ask Displacement</h3>
+                  </div>
+                  <ReportExtendedKnowledgeToggle
+                    enabled={extendedKnowledge}
+                    onToggle={toggleExtendedKnowledge}
+                    theme={MIGRATION_EXTENDED_KNOWLEDGE_THEME}
+                  />
+                </>
+              )}
+              {isHistoryOpen && (
+                <h3 className="text-[15px] font-semibold text-[#1a1410]">Chat history</h3>
+              )}
             </ReportLoadItem>
           }
           chatFeed={
             <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white p-4">
-              <MigrationChatFeed
-                messages={messages}
-                isQuerying={isQuerying}
-                queryingMode={queryingMode}
-                extendedKnowledge={extendedKnowledge}
-                onChipClick={runPrompt}
-              />
+              {isHistoryOpen ? (
+                <ReportChatHistoryPanel
+                  items={historyItems}
+                  onSelect={restoreHistoryItem}
+                  onDelete={deleteHistoryItem}
+                  onTogglePin={togglePinHistoryItem}
+                  accentClassName="group-hover:text-[#c2562a] hover:border-[#c2562a]"
+                  emptyClassName="text-[#8a7d72]"
+                />
+              ) : (
+                <MigrationChatFeed
+                  messages={messages}
+                  isQuerying={isQuerying}
+                  queryingMode={queryingMode}
+                  extendedKnowledge={extendedKnowledge}
+                  onChipClick={runPrompt}
+                />
+              )}
             </div>
           }
           promptInput={

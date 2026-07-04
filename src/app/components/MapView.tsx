@@ -2074,13 +2074,30 @@ export function MapView() {
           )}
 
           {!isMobileViewport && (
-            <div className="absolute right-4 top-4 z-10">
+            <div
+              className={cn(
+                'flex shrink-0 items-center justify-between px-4 pt-4',
+                !activeFlow && 'mb-6',
+              )}
+            >
+              {!activeFlow ? (
+                <button
+                  onClick={() => setIsHistoryOpen(true)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E7EB] px-3 transition-all group hover:border-[#1D4ED8] hover:bg-[#F9FAFB]"
+                  title="View query history"
+                >
+                  <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
+                  <span className="text-[0.75rem] font-medium text-[#6B7280] group-hover:text-[#2463EB]">History</span>
+                </button>
+              ) : (
+                <span className="h-8" aria-hidden />
+              )}
               <button
                 type="button"
                 onClick={() => setIsPanelMinimized(true)}
                 aria-label="Collapse assistant panel"
                 title="Collapse panel"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]"
               >
                 <PanelRightClose size={16} />
               </button>
@@ -2090,18 +2107,18 @@ export function MapView() {
           {!activeFlow ? (
             /* ── Default State: Suggested Prompts ── */
             <div className={cn('flex flex-col', isMobileViewport ? 'min-h-0 flex-1' : 'h-full')}>
-              <div className="shrink-0 px-8 pt-8 pb-4">
-                <div className="flex items-center justify-between mb-6">
+              {isMobileViewport && (
+                <div className="shrink-0 px-4 pt-4 pb-4">
                   <button
                     onClick={() => setIsHistoryOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E7EB] hover:border-[#1D4ED8] hover:bg-[#F9FAFB] transition-all group"
+                    className="mb-6 inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E7EB] px-3 transition-all group hover:border-[#1D4ED8] hover:bg-[#F9FAFB]"
                     title="View query history"
                   >
                     <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
-                    <span className="text-[0.75rem] text-[#6B7280] group-hover:text-[#2463EB] font-medium">History</span>
+                    <span className="text-[0.75rem] font-medium text-[#6B7280] group-hover:text-[#2463EB]">History</span>
                   </button>
                 </div>
-              </div>
+              )}
 
               <div className="min-h-0 flex-1" />
 

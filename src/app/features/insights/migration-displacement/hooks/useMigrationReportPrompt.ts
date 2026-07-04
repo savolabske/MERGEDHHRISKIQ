@@ -45,6 +45,39 @@ export function useMigrationReportPrompt(options?: { onChatLaneReady?: () => voi
     pendingResolutionRef.current = null;
   }, []);
 
+  const restoreSession = useCallback(
+    (snapshot: {
+      messages: MigrationChatMessage[];
+      extendedKnowledge?: boolean;
+      resultMode?: boolean;
+      resultTitle?: string;
+    }) => {
+      cancelQuery();
+      setMessages(snapshot.messages);
+      setExtendedKnowledge(snapshot.extendedKnowledge ?? false);
+      setResultMode(snapshot.resultMode ?? false);
+      setResultTitle(snapshot.resultTitle ?? 'Displacement overview');
+      setPromptInput('');
+
+      if (snapshot.resultMode) {
+        const lastUser = [...snapshot.messages].reverse().find((message) => message.role === 'user');
+        if (lastUser?.role === 'user') {
+          const resolution = resolveMigrationPrompt(lastUser.text, snapshot.extendedKnowledge ?? false);
+          if (resolution.lane === 'dashboard') {
+            setActiveRecipe(resolution.recipe);
+            setResultTitle(resolution.recipe.title);
+          } else {
+            setActiveRecipe(null);
+            setResultMode(false);
+          }
+        }
+      } else {
+        setActiveRecipe(null);
+      }
+    },
+    [cancelQuery],
+  );
+
   const backToReport = useCallback(() => {
     cancelQuery();
     setResultMode(false);
@@ -182,6 +215,7 @@ export function useMigrationReportPrompt(options?: { onChatLaneReady?: () => voi
     chatScrollRef,
     runPrompt,
     backToReport,
+    restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,
   };

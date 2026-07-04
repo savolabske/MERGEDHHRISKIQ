@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import {
   Calendar,
+  ChevronDown,
+  ChevronUp,
+  Database,
   Download,
   ExternalLink,
   Eye,
@@ -11,12 +14,14 @@ import {
   Minus,
   Send,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { hubCard } from './home-dashboard/hubStyles';
 import { Button } from './ui/button';
 import { BackLink } from './ui/back-link';
 import { PageBreadcrumb } from './ui/page-breadcrumb';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { cn } from './ui/utils';
 import { getDocumentContent, type DocumentContent } from '../data/documentDetailData';
 import type { AppView } from '../types/navigation';
@@ -25,6 +30,9 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   isThinking?: boolean;
+  thinkingPhase?: string;
+  webIntelligenceSummary?: string;
+  isExtended?: boolean;
 }
 
 export type DocumentChatMessage = ChatMessage;
@@ -126,10 +134,16 @@ function generateDocumentResponse(query: string, content: DocumentContent): stri
   return `Based on your question about "${query}" in the context of ${content.title}:\n\n${content.summary.slice(0, 280)}…\n\nAsk a more specific question about regions, timelines, or recommended actions.`;
 }
 
+function generateExtendedWebIntelligence(query: string, content: DocumentContent): string {
+  return `**Web Intelligence** (supplementary, unverified)\n\nBroader context beyond ${content.title}: recent field reporting and open-source updates suggest overlapping signals across Bay, Bakool, and Banadir that may refine how you interpret this resource. For "${query}", cross-reporting from partner networks indicates operational conditions can shift faster than static document timelines.\n\nUse this layer to stress-test assumptions from the resource — not as a substitute for verified internal data.`;
+}
+
 function DocumentChatComposer({
   chatQuery,
   isTyping,
   isConnectedToPanel,
+  isExtendedKnowledgeMode,
+  onExtendedKnowledgeChange,
   onChange,
   onFocus,
   onSubmit,
@@ -138,10 +152,13 @@ function DocumentChatComposer({
   isTyping: boolean;
   isChatOpen: boolean;
   isConnectedToPanel?: boolean;
+  isExtendedKnowledgeMode: boolean;
+  onExtendedKnowledgeChange: (enabled: boolean) => void;
   onChange: (value: string) => void;
   onFocus: () => void;
   onSubmit: (e: FormEvent) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const canSend = Boolean(chatQuery.trim()) && !isTyping;
 
   return (
@@ -150,36 +167,120 @@ function DocumentChatComposer({
       className={isConnectedToPanel ? 'px-4 sm:px-6 py-3' : undefined}
     >
       <div
+        role="presentation"
         data-composite-field
+        onClick={() => inputRef.current?.focus()}
         className={cn(
-          'flex min-w-0 items-center gap-2 border px-3 py-2 transition-colors focus-within:ring-2',
-          'border-border bg-card hover:border-primary focus-within:border-primary focus-within:ring-ring/10',
-          'rounded-xl',
+          'relative w-full rounded-2xl border border-border bg-card transition-colors cursor-text',
+          'hover:border-primary',
+          'focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10',
+          'min-h-[96px]',
         )}
       >
-        <Sparkles size={18} className="shrink-0 text-muted-foreground" aria-hidden />
+        <div className="absolute bottom-3 left-4 z-10 flex max-w-[calc(100%-4.5rem)] flex-wrap items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-pressed={isExtendedKnowledgeMode}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  const nextState = !isExtendedKnowledgeMode;
+                  onExtendedKnowledgeChange(nextState);
+                  toast.success(
+                    nextState ? 'Extended Knowledge is on' : 'Extended Knowledge is off',
+                  );
+                }}
+                className={cn(
+                  'inline-flex max-w-[230px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                  isExtendedKnowledgeMode
+                    ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                    : 'border-border bg-card text-foreground hover:bg-muted/30',
+                )}
+              >
+                <Sparkles size={12} />
+                <span className="truncate ml-1.5">
+                  {isExtendedKnowledgeMode ? 'Extended Knowledge ON' : 'Extended Knowledge'}
+                </span>
+                {isExtendedKnowledgeMode ? (
+                  <span className="ml-1.5">
+                    <X size={12} />
+                  </span>
+                ) : null}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent
+              variant="muted"
+              side="top"
+              sideOffset={8}
+              className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+            >
+              Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <input
+          ref={inputRef}
           type="text"
           value={chatQuery}
           onChange={(e) => onChange(e.target.value)}
           onFocus={onFocus}
-          placeholder="Ask about this resource…"
+          placeholder={
+            isExtendedKnowledgeMode
+              ? 'Ask in Extended Knowledge mode...'
+              : 'Ask about this resource…'
+          }
           disabled={isTyping}
-          className="focus-ring-container-control min-w-0 flex-1 border-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 disabled:opacity-60"
+          className="focus-ring-container-control h-[96px] w-full border-0 bg-transparent pl-6 pr-16 pt-4 pb-12 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={!canSend}
           className={cn(
-            'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white transition-colors disabled:opacity-50',
+            'absolute right-2 bottom-3 inline-flex h-10 w-10 items-center justify-center rounded-xl text-white transition-colors',
             canSend ? 'bg-primary hover:bg-primary-hover' : 'bg-muted cursor-not-allowed',
           )}
           aria-label="Send message"
         >
-          <Send size={14} />
+          <Send size={16} className={canSend ? 'text-white' : 'text-text-subtle'} />
         </button>
       </div>
+      {isExtendedKnowledgeMode && (
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          AI can make mistakes. Check important info.
+        </p>
+      )}
     </form>
+  );
+}
+
+function WebIntelligenceCard({ content }: { content: string }) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div className="mt-3 border border-border rounded-xl bg-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted transition-colors border-b border-border"
+      >
+        <div className="flex items-center gap-2">
+          <Globe size={14} className="text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground">Web Intelligence</span>
+          <span className="text-xs text-text-subtle font-normal">Supplementary, unverified</span>
+        </div>
+        {isExpanded ? (
+          <ChevronUp size={16} className="text-muted-foreground" />
+        ) : (
+          <ChevronDown size={16} className="text-muted-foreground" />
+        )}
+      </button>
+      {isExpanded && (
+        <div className="px-4 py-3">
+          <div className="space-y-0.5">{renderFormattedAssistantText(content)}</div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -198,6 +299,7 @@ export function DocumentDetail({
   const [chatQuery, setChatQuery] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [isTyping, setIsTyping] = useState(false);
+  const [isExtendedKnowledgeMode, setIsExtendedKnowledgeMode] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(initialChatOpen);
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -229,10 +331,60 @@ export function DocumentDetail({
     if (!chatQuery.trim() || isTyping) return;
 
     const userQuery = chatQuery.trim();
+    const useExtendedKnowledge = isExtendedKnowledgeMode;
     setChatQuery('');
     setIsChatOpen(true);
     setMessages((prev) => [...prev, { role: 'user', content: userQuery }]);
     setIsTyping(true);
+
+    if (useExtendedKnowledge) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: '',
+          isThinking: true,
+          thinkingPhase: 'Looking through knowledge base...',
+        },
+      ]);
+
+      window.setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((message, index) =>
+            index === prev.length - 1 && message.isThinking
+              ? { ...message, thinkingPhase: 'Searching web sources...' }
+              : message,
+          ),
+        );
+      }, 900);
+
+      window.setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((message, index) =>
+            index === prev.length - 1 && message.isThinking
+              ? { ...message, thinkingPhase: 'Preparing answer...' }
+              : message,
+          ),
+        );
+      }, 1800);
+
+      window.setTimeout(() => {
+        setMessages((prev) => {
+          const withoutThinking = prev.filter((message) => !message.isThinking);
+          return [
+            ...withoutThinking,
+            {
+              role: 'assistant',
+              content: generateDocumentResponse(userQuery, content),
+              webIntelligenceSummary: generateExtendedWebIntelligence(userQuery, content),
+              isExtended: true,
+            },
+          ];
+        });
+        setIsTyping(false);
+      }, 2700);
+      return;
+    }
 
     setTimeout(() => {
       setMessages((prev) => [
@@ -255,21 +407,39 @@ export function DocumentDetail({
             </div>
           ) : (
             <div className="max-w-full">
-              <div className="px-1 text-sm text-secondary-foreground whitespace-pre-wrap leading-relaxed">
-                {message.isThinking ? (
-                  <span className="inline-flex items-center gap-2 text-primary">
-                    <Sparkles size={14} className="animate-pulse" />
-                    Thinking…
-                  </span>
-                ) : (
-                  <div className="space-y-0.5">{renderFormattedAssistantText(message.content)}</div>
-                )}
-              </div>
+              {message.isExtended && (
+                <div className="mb-3 border border-border rounded-xl bg-card overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border bg-muted/40">
+                    <div className="flex items-center gap-2">
+                      <Database size={14} className="text-primary" />
+                      <span className="text-sm font-semibold text-foreground">Knowledge Base</span>
+                    </div>
+                  </div>
+                  <div className="px-4 py-3">
+                    <div className="space-y-0.5">{renderFormattedAssistantText(message.content)}</div>
+                  </div>
+                </div>
+              )}
+              {!message.isExtended && (
+                <div className="px-1 text-sm text-secondary-foreground whitespace-pre-wrap leading-relaxed">
+                  {message.isThinking ? (
+                    <span className="inline-flex items-center gap-2 text-primary">
+                      <span className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+                      {message.thinkingPhase || 'Thinking…'}
+                    </span>
+                  ) : (
+                    <div className="space-y-0.5">{renderFormattedAssistantText(message.content)}</div>
+                  )}
+                </div>
+              )}
+              {message.webIntelligenceSummary && !message.isThinking && (
+                <WebIntelligenceCard content={message.webIntelligenceSummary} />
+              )}
             </div>
           )}
         </div>
       ))}
-      {isTyping && (
+      {isTyping && !messages.some((message) => message.isThinking) && (
         <div>
           <div className="px-1">
             <div className="flex gap-1">
@@ -500,6 +670,8 @@ export function DocumentDetail({
                     isTyping={isTyping}
                     isChatOpen={isChatOpen}
                     isConnectedToPanel
+                    isExtendedKnowledgeMode={isExtendedKnowledgeMode}
+                    onExtendedKnowledgeChange={setIsExtendedKnowledgeMode}
                     onChange={setChatQuery}
                     onFocus={() => setIsChatOpen(true)}
                     onSubmit={handleSendMessage}
@@ -510,6 +682,8 @@ export function DocumentDetail({
                   chatQuery={chatQuery}
                   isTyping={isTyping}
                   isChatOpen={isChatOpen}
+                  isExtendedKnowledgeMode={isExtendedKnowledgeMode}
+                  onExtendedKnowledgeChange={setIsExtendedKnowledgeMode}
                   onChange={setChatQuery}
                   onFocus={() => setIsChatOpen(true)}
                   onSubmit={handleSendMessage}
@@ -549,6 +723,8 @@ export function DocumentDetail({
               isTyping={isTyping}
               isChatOpen
               isConnectedToPanel
+              isExtendedKnowledgeMode={isExtendedKnowledgeMode}
+              onExtendedKnowledgeChange={setIsExtendedKnowledgeMode}
               onChange={setChatQuery}
               onFocus={() => setIsChatOpen(true)}
               onSubmit={handleSendMessage}
