@@ -136,7 +136,8 @@ export function ManageReportsList({
             {filtered.map((report, index) => (
               <div
                 key={report.id}
-                className="table-row-narrative relative grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors"
+                onClick={() => onEdit(report.id)}
+                className="table-row-narrative relative grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors cursor-pointer"
               >
                 <div className="lg:col-span-5 min-w-0 pr-12 lg:pr-0">
                   <div className="table-header-label mb-1 lg:hidden">Name</div>
@@ -165,11 +166,17 @@ export function ManageReportsList({
                   <span className="table-supporting-text">{report.updatedAt}</span>
                 </div>
 
-                <div className="absolute top-4 right-4 lg:relative lg:top-auto lg:right-auto lg:col-span-2 flex items-center lg:justify-end">
+                <div
+                  className="absolute top-4 right-4 lg:relative lg:top-auto lg:right-auto lg:col-span-2 flex items-center lg:justify-end"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="relative">
                     <button
                       type="button"
-                      onClick={(e) => toggleMenu(report, index, e.currentTarget)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleMenu(report, index, e.currentTarget);
+                      }}
                       className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground transition-colors"
                       aria-label="Report actions"
                       aria-expanded={openMenuId === report.id}
