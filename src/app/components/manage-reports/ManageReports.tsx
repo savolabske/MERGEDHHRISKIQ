@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   createDefaultReportSkeleton,
@@ -7,17 +7,26 @@ import {
   saveManagedReports,
   type ManagedReport,
 } from '../../data/reportsAdminMock';
+import {
+  clearManageReportsReturnContext,
+  loadManageReportsReturnContext,
+  saveReportResourceLinkContext,
+} from '../../data/reportResourceLink';
 import { ManageReportsList } from './ManageReportsList';
 import { ReportAddModal } from './ReportAddModal';
 import { ReportBuilder } from './ReportBuilder';
 
 type View = 'list' | 'builder';
 
+interface ManageReportsProps {
+  onAttachSources?: (report: ManagedReport) => void;
+}
+
 function formatDate(d: Date): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export function ManageReports() {
+export function ManageReports({ onAttachSources }: ManageReportsProps) {
   const [view, setView] = useState<View>('list');
   const [reports, setReports] = useState<ManagedReport[]>(() => loadManagedReports());
   const [activeReportId, setActiveReportId] = useState<string | null>(null);
@@ -25,6 +34,22 @@ export function ManageReports() {
   const [savedSnapshots, setSavedSnapshots] = useState<Record<string, string>>(() =>
     Object.fromEntries(loadManagedReports().map((r) => [r.id, JSON.stringify(r)])),
   );
+
+  useEffect(() => {
+    const returnCtx = loadManageReportsReturnContext();
+    if (!returnCtx) return;
+    clearManageReportsReturnContext();
+    const freshReports = loadManagedReports();
+    setReports(freshReports);
+    setSavedSnapshots(
+      Object.fromEntries(freshReports.map((r) => [r.id, JSON.stringify(r)])),
+    );
+    setActiveReportId(returnCtx.reportId);
+    setView('builder');
+    if (returnCtx.toastMessage) {
+      toast.success(returnCtx.toastMessage);
+    }
+  }, []);
 
   const persistReports = useCallback((updater: ManagedReport[] | ((prev: ManagedReport[]) => ManagedReport[])) => {
     setReports((prev) => {
@@ -49,14 +74,16 @@ export function ManageReports() {
   const savedSnapshot = activeReportId ? savedSnapshots[activeReportId] ?? '' : '';
 
   const handleCreate = useCallback(
-    (input: { title: string; description: string; userGroups: string[] }) => {
+    (input: { title: string; description: string; userGroups: string[]; resourceId?: string }) => {
       const report = createDefaultReportSkeleton(input);
       persistReports((prev) => [report, ...prev]);
       setSavedSnapshots((prev) => ({ ...prev, [report.id]: JSON.stringify(report) }));
       setActiveReportId(report.id);
       setShowAddModal(false);
       setView('builder');
-      toast.success('Report created');
+      toast.success(
+        input.resourceId ? 'Report created and linked to resource' : 'Report created as draft',
+      );
     },
     [persistReports],
   );
@@ -162,6 +189,19 @@ export function ManageReports() {
     setView('list');
   };
 
+  const handleAttachSources = useCallback(
+    (report: ManagedReport) => {
+      saveReportResourceLinkContext({
+        reportId: report.id,
+        reportTitle: report.title,
+        prefillTitle: report.title,
+        prefillDescription: report.description,
+      });
+      onAttachSources?.(report);
+    },
+    [onAttachSources],
+  );
+
   if (view === 'builder' && activeReport) {
     return (
       <ReportBuilder
@@ -171,6 +211,7 @@ export function ManageReports() {
         onUpdate={handleUpdate}
         onPublish={handlePublish}
         onCommit={commitSnapshot}
+        onAttachSources={() => handleAttachSources(activeReport)}
       />
     );
   }

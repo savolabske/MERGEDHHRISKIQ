@@ -12,6 +12,7 @@ import {
 interface ReportBuilderHeaderProps {
   report: ManagedReport;
   isDirty: boolean;
+  hasKnowledgeSources?: boolean;
   onBack: () => void;
   onTitleChange: (title: string) => void;
   onDescriptionChange: (description: string) => void;
@@ -22,6 +23,7 @@ interface ReportBuilderHeaderProps {
 export function ReportBuilderHeader({
   report,
   isDirty,
+  hasKnowledgeSources = true,
   onBack,
   onTitleChange,
   onDescriptionChange,
@@ -76,8 +78,8 @@ export function ReportBuilderHeader({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  disabled
-                  className="px-3 py-2 border border-border rounded-lg text-sm font-medium text-muted-foreground opacity-60 cursor-not-allowed flex items-center gap-2"
+                  disabled={!hasKnowledgeSources}
+                  className="px-3 py-2 border border-border rounded-lg text-sm font-medium text-muted-foreground opacity-60 cursor-not-allowed flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed enabled:opacity-100 enabled:cursor-pointer enabled:text-foreground enabled:hover:bg-muted"
                 >
                   <Eye size={16} />
                   Preview

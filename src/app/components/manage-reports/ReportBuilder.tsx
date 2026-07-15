@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { ManagedReport, ReportSection } from '../../data/reportsAdminMock';
+import { hasLinkedKnowledgeSources } from '../../data/reportsAdminMock';
 import { ReportBuilderHeader } from './ReportBuilderHeader';
+import { ReportDraftSourcesEmpty } from './ReportDraftSourcesEmpty';
 import { ReportKpiTileGrid } from './ReportKpiTileGrid';
 import { ReportSectionCard } from './ReportSectionCard';
 import { ReportSectionInsert } from './ReportSectionInsert';
@@ -20,6 +22,7 @@ interface ReportBuilderProps {
   onUpdate: (report: ManagedReport) => void;
   onPublish: (report: ManagedReport) => void;
   onCommit: (report: ManagedReport) => void;
+  onAttachSources?: () => void;
 }
 
 export function ReportBuilder({
@@ -29,6 +32,7 @@ export function ReportBuilder({
   onUpdate,
   onPublish,
   onCommit,
+  onAttachSources,
 }: ReportBuilderProps) {
   const [editTarget, setEditTarget] = useState<SectionEditTarget | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -37,6 +41,7 @@ export function ReportBuilder({
   const theme = getReportBuilderTheme(report.themeId);
   const isDirty = JSON.stringify(report) !== savedSnapshot;
   const panelOpen = Boolean(editTarget) || settingsOpen;
+  const showTemplate = hasLinkedKnowledgeSources(report);
 
   const sortedSections = useMemo(
     () => [...report.sections].sort((a, b) => a.order - b.order),
@@ -131,6 +136,7 @@ export function ReportBuilder({
               <ReportBuilderHeader
                 report={report}
                 isDirty={isDirty}
+                hasKnowledgeSources={showTemplate}
                 onBack={onBack}
                 onTitleChange={(title) => touch({ title })}
                 onDescriptionChange={(description) => touch({ description })}
@@ -138,6 +144,10 @@ export function ReportBuilder({
                 onPublish={() => onPublish({ ...report, status: 'published' })}
               />
 
+              {!showTemplate && onAttachSources ? (
+                <ReportDraftSourcesEmpty onAttachSources={onAttachSources} />
+              ) : (
+                <>
               <ReportKpiTileGrid
                 tiles={report.kpiTiles}
                 theme={theme}
@@ -182,6 +192,8 @@ export function ReportBuilder({
                   </div>
                 ))}
               </div>
+                </>
+              )}
             </div>
           </div>
         </div>

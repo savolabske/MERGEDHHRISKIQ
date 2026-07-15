@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import type { ReportResourceLinkContext } from '../data/reportResourceLink';
 import {
   Plus,
   X,
@@ -76,6 +77,8 @@ interface DocumentGroup {
   reportTypeId?: ReportTypeId;
   availabilityTarget?: 'map' | 'reports';
   reportTypes?: string[];
+  /** Custom managed report this resource is linked to */
+  managedReportId?: string;
 }
 
 type AvailabilityTarget = 'map' | 'reports';
@@ -224,6 +227,10 @@ function DocumentAvailabilityFields({
   onOpenReportHub,
   variant = 'form',
   hideReportsSection = false,
+  customManagedReports = [],
+  selectedManagedReportIds = [],
+  onToggleManagedReport,
+  lockedManagedReportId,
 }: {
   availabilityTarget: AvailabilityTarget | null;
   reportAvailabilityTypes: string[];
@@ -233,6 +240,10 @@ function DocumentAvailabilityFields({
   onOpenReportHub?: (reportTypeId: ReportTypeId) => void;
   variant?: 'form' | 'sidebar';
   hideReportsSection?: boolean;
+  customManagedReports?: { id: string; title: string }[];
+  selectedManagedReportIds?: string[];
+  onToggleManagedReport?: (reportId: string) => void;
+  lockedManagedReportId?: string;
 }) {
   const allReportHubsClaimed = REPORT_CATALOG.every((report) => establishedReportHubIds.has(report.id));
 
@@ -376,6 +387,36 @@ function DocumentAvailabilityFields({
                           </p>
                         )}
                       </div>
+                    );
+                  })}
+                  {customManagedReports.map((report) => {
+                    const selected = selectedManagedReportIds.includes(report.id);
+                    const locked = lockedManagedReportId === report.id;
+                    return (
+                      <button
+                        key={report.id}
+                        type="button"
+                        disabled={locked}
+                        onClick={() => !locked && onToggleManagedReport?.(report.id)}
+                        className={`flex w-full items-center gap-2.5 px-3 py-2.5 rounded-lg border text-left text-sm transition-colors ${
+                          locked
+                            ? 'border-primary bg-primary-subtle/50 text-foreground cursor-default'
+                            : selected
+                              ? 'border-primary bg-primary-subtle/50 text-foreground'
+                              : 'border-border bg-muted text-secondary-foreground hover:border-border-muted'
+                        }`}
+                      >
+                        <span
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                            selected || locked ? 'border-primary' : 'border-border-muted'
+                          }`}
+                        >
+                          {(selected || locked) && (
+                            <span className="h-2 w-2 rounded-full bg-primary" />
+                          )}
+                        </span>
+                        <span className="font-medium leading-snug">{report.title}</span>
+                      </button>
                     );
                   })}
                 </div>
@@ -1428,7 +1469,17 @@ const userGroups = ['All Staff', 'Program Staff', 'WASH Team', 'Logistics Team',
 const defaultTags = ['SomaliaGBHA', 'EconomicOutlook', 'FoodSystem', 'ClimateData', 'Humanitarian'];
 const DOCUMENT_TAGS_STORAGE_KEY = 'documents.availableTags';
 
-export function Documents() {
+interface DocumentsProps {
+  reportLinkContext?: ReportResourceLinkContext | null;
+  onReportLinkComplete?: (resourceId: string) => void;
+  onReportLinkBack?: () => void;
+}
+
+export function Documents({
+  reportLinkContext = null,
+  onReportLinkComplete,
+  onReportLinkBack,
+}: DocumentsProps = {}) {
   const normalizeTagValue = (value: string) => value.replace(/^#+/, '').replace(/\s+/g, '').trim();
   const tagEquals = (a: string, b: string) =>
     normalizeTagValue(a).toLowerCase() === normalizeTagValue(b).toLowerCase();
@@ -1512,6 +1563,16 @@ export function Documents() {
   const [showTagsDropdown, setShowTagsDropdown] = useState(false);
   const [availabilityTarget, setAvailabilityTarget] = useState<AvailabilityTarget | null>(null);
   const [reportAvailabilityTypes, setReportAvailabilityTypes] = useState<ReportTypeId[]>([]);
+  const [managedReportAvailabilityIds, setManagedReportAvailabilityIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!reportLinkContext) return;
+    setShowUploadPage(true);
+    setTitle(reportLinkContext.prefillTitle);
+    setDescription(reportLinkContext.prefillDescription);
+    setAvailabilityTarget('reports');
+    setManagedReportAvailabilityIds([reportLinkContext.reportId]);
+  }, [reportLinkContext]);
 
   // Edit form state
   const [editAvailabilityTarget, setEditAvailabilityTarget] = useState<AvailabilityTarget | null>(null);
@@ -1772,6 +1833,23 @@ export function Documents() {
     setReportAvailabilityTypes([reportTypeId]);
   };
 
+  const toggleManagedReportAvailability = (reportId: string) => {
+    setManagedReportAvailabilityIds((prev) =>
+      prev.includes(reportId) ? prev.filter((id) => id !== reportId) : [reportId],
+    );
+  };
+
+  const hasValidReportAvailability =
+    reportAvailabilityTypes.length > 0 ||
+    managedReportAvailabilityIds.length > 0;
+
+  const isReportAvailabilityBlocked =
+    availabilityTarget === 'reports' &&
+    (!hasValidReportAvailability ||
+      (reportAvailabilityTypes.length === 1 &&
+        establishedReportHubIds.has(reportAvailabilityTypes[0]) &&
+        managedReportAvailabilityIds.length === 0));
+
   const toggleEditAvailabilityTarget = (target: AvailabilityTarget) => {
     setEditAvailabilityTarget((prev) => {
       if (prev === target) {
@@ -1820,8 +1898,11 @@ export function Documents() {
   const handleUploadDocument = () => {
     if (!title.trim() || !description.trim() || !userGroup.length || !selectedFiles.length) return;
 
+    const linkedManagedReportId = managedReportAvailabilityIds[0];
     const isCreatingReportHub =
-      availabilityTarget === 'reports' && reportAvailabilityTypes.length === 1;
+      availabilityTarget === 'reports' &&
+      reportAvailabilityTypes.length === 1 &&
+      !linkedManagedReportId;
     if (
       isCreatingReportHub &&
       establishedReportHubIds.has(reportAvailabilityTypes[0])
@@ -1860,14 +1941,21 @@ export function Documents() {
       addedBy: 'You',
       lastModified: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       ...reportHubFields,
+      ...(linkedManagedReportId ? { managedReportId: linkedManagedReportId } : {}),
     };
 
     setDocuments([newDocument, ...documents]);
 
     const fileCount = selectedFiles.length;
-    toast.success(fileCount === 1 ? 'Uploading 1 file' : `Uploading ${fileCount} files`, {
-      description: trimmedTitle,
-    });
+    const completingReportLink = Boolean(reportLinkContext && linkedManagedReportId);
+
+    if (completingReportLink && onReportLinkComplete) {
+      onReportLinkComplete(docId);
+    } else {
+      toast.success(fileCount === 1 ? 'Uploading 1 file' : `Uploading ${fileCount} files`, {
+        description: trimmedTitle,
+      });
+    }
 
     // Simulate sequential file uploads; when all reach storage the document is Completed.
     let uploadedFileCount = 0;
@@ -1929,6 +2017,7 @@ export function Documents() {
     setSelectedFiles([]);
     setAvailabilityTarget(null);
     setReportAvailabilityTypes([]);
+    setManagedReportAvailabilityIds([]);
     setShowTagsDropdown(false);
     setShowUploadPage(false);
   };
@@ -3635,10 +3724,29 @@ export function Documents() {
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 sm:px-8 pt-6">
             <div className="max-w-[900px] mx-auto space-y-6">
+              {reportLinkContext && (
+                <div className="bg-info-subtle border border-info/30 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
+                  <p className="text-sm text-foreground">
+                    This resource is being linked to the report{' '}
+                    <span className="font-semibold">{reportLinkContext.reportTitle}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onReportLinkBack}
+                    className="shrink-0 text-sm font-medium text-primary hover:underline"
+                  >
+                    ← Back to report
+                  </button>
+                </div>
+              )}
+
               <PageBreadcrumb
                 className="mb-4"
                 items={[
-                  { label: 'Resources', onClick: () => setShowUploadPage(false) },
+                  {
+                    label: 'Resources',
+                    onClick: reportLinkContext ? onReportLinkBack : () => setShowUploadPage(false),
+                  },
                   { label: 'Add New Resource' },
                 ]}
               />
@@ -3907,6 +4015,14 @@ export function Documents() {
                     onToggleReportType={toggleReportAvailabilityType}
                     establishedReportHubIds={establishedReportHubIds}
                     onOpenReportHub={openReportHubFromForm}
+                    customManagedReports={
+                      reportLinkContext
+                        ? [{ id: reportLinkContext.reportId, title: reportLinkContext.reportTitle }]
+                        : []
+                    }
+                    selectedManagedReportIds={managedReportAvailabilityIds}
+                    onToggleManagedReport={toggleManagedReportAvailability}
+                    lockedManagedReportId={reportLinkContext?.reportId}
                   />
 
                 
@@ -3914,7 +4030,7 @@ export function Documents() {
 
                 <div className="p-6 sm:px-8 border-t border-border flex justify-end gap-3">
                   <button
-                    onClick={() => setShowUploadPage(false)}
+                    onClick={reportLinkContext ? onReportLinkBack : () => setShowUploadPage(false)}
                     className="px-4 py-2.5 border border-border hover:bg-muted rounded-lg text-sm font-medium text-muted-foreground transition-colors"
                   >
                     Cancel
@@ -3926,20 +4042,14 @@ export function Documents() {
                       !description.trim() ||
                       !userGroup.length ||
                       !selectedFiles.length ||
-                      (availabilityTarget === 'reports' &&
-                        (reportAvailabilityTypes.length === 0 ||
-                          establishedReportHubIds.has(reportAvailabilityTypes[0])))
+                      isReportAvailabilityBlocked
                     }
                     className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       title.trim() &&
                       description.trim() &&
                       userGroup.length &&
                       selectedFiles.length &&
-                      !(
-                        availabilityTarget === 'reports' &&
-                        (reportAvailabilityTypes.length === 0 ||
-                          establishedReportHubIds.has(reportAvailabilityTypes[0]))
-                      )
+                      !isReportAvailabilityBlocked
                         ? 'bg-primary hover:bg-primary-hover text-white'
                         : 'bg-muted text-text-subtle cursor-not-allowed'
                     }`}

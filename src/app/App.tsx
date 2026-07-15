@@ -15,6 +15,14 @@ import { Api } from "./components/Api";
 import { Definitions } from "./components/Definitions";
 import { ManageReports } from "./components/manage-reports/ManageReports";
 import { Documents } from "./components/Documents";
+import { linkReportResource } from "./data/reportsAdminMock";
+import type { ManagedReport } from "./data/reportsAdminMock";
+import {
+  clearReportResourceLinkContext,
+  loadReportResourceLinkContext,
+  saveManageReportsReturnContext,
+  type ReportResourceLinkContext,
+} from "./data/reportResourceLink";
 import { Locations } from "./components/Locations";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { HomeDashboard } from "./components/HomeDashboard";
@@ -121,6 +129,40 @@ export default function App() {
   const [documentChatThreadId, setDocumentChatThreadId] = useState<string | null>(null);
   const [documentChatOpen, setDocumentChatOpen] = useState(false);
   const [resourcesHubFocusedResourceId, setResourcesHubFocusedResourceId] = useState<string | null>(null);
+  const [reportLinkContext, setReportLinkContext] = useState<ReportResourceLinkContext | null>(() =>
+    loadReportResourceLinkContext(),
+  );
+
+  const handleAttachSourcesFromReport = useCallback((report: ManagedReport) => {
+    setReportLinkContext({
+      reportId: report.id,
+      reportTitle: report.title,
+      prefillTitle: report.title,
+      prefillDescription: report.description,
+    });
+    setCurrentView('resources');
+  }, []);
+
+  const handleReportLinkComplete = useCallback(
+    (resourceId: string) => {
+      if (!reportLinkContext) return;
+      linkReportResource(reportLinkContext.reportId, resourceId);
+      saveManageReportsReturnContext({
+        reportId: reportLinkContext.reportId,
+        toastMessage: 'Knowledge sources attached — you can now build report sections',
+      });
+      clearReportResourceLinkContext();
+      setReportLinkContext(null);
+      setCurrentView('manageReports');
+    },
+    [reportLinkContext],
+  );
+
+  const handleReportLinkBack = useCallback(() => {
+    clearReportResourceLinkContext();
+    setReportLinkContext(null);
+    setCurrentView('manageReports');
+  }, []);
 
   const openRiskIqChat = useCallback((payload: DashboardChatPayload) => {
     setSelectedHistoryTitle(payload.title);
@@ -1859,9 +1901,13 @@ export default function App() {
         ) : currentView === 'definitions' ? (
           <Definitions />
         ) : currentView === 'manageReports' ? (
-          <ManageReports />
+          <ManageReports onAttachSources={handleAttachSourcesFromReport} />
         ) : currentView === 'resources' ? (
-          <Documents />
+          <Documents
+            reportLinkContext={reportLinkContext}
+            onReportLinkComplete={handleReportLinkComplete}
+            onReportLinkBack={handleReportLinkBack}
+          />
         ) : currentView === 'locations' ? (
           <Locations />
         ) : null}

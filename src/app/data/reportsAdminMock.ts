@@ -87,8 +87,28 @@ export interface ManagedReport {
   sections: ReportSection[];
   createdAt: string;
   updatedAt: string;
-  /** Future: sourceIds for attached resources */
-  // sourceIds?: string[];
+  /** Linked admin resource used as AI knowledge for this report */
+  resourceId?: string;
+}
+
+export function hasLinkedKnowledgeSources(report: ManagedReport): boolean {
+  if (report.resourceId) return true;
+  return Boolean(report.catalogId);
+}
+
+export function linkReportResource(reportId: string, resourceId: string): ManagedReport | null {
+  const reports = loadManagedReports();
+  const idx = reports.findIndex((r) => r.id === reportId);
+  if (idx < 0) return null;
+  const updated: ManagedReport = {
+    ...reports[idx],
+    resourceId,
+    updatedAt: formatDate(new Date()),
+  };
+  const next = [...reports];
+  next[idx] = updated;
+  saveManagedReports(next);
+  return updated;
 }
 
 export interface ReportChartTypeOption {
@@ -326,6 +346,7 @@ export function createDefaultReportSkeleton(input: {
   title: string;
   description: string;
   userGroups: string[];
+  resourceId?: string;
 }): ManagedReport {
   const now = new Date();
   const dateStr = formatDate(now);
@@ -349,6 +370,7 @@ export function createDefaultReportSkeleton(input: {
     status: 'draft',
     themeId: 'aid_flow',
     userGroups: input.userGroups,
+    resourceId: input.resourceId,
     kpiTiles: createKpiTiles(),
     sections,
     createdAt: dateStr,
