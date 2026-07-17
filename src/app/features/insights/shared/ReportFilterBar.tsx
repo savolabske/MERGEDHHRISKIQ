@@ -33,6 +33,8 @@ interface ReportFilterBarProps {
   theme: ReportFilterTheme;
   onBackToReport?: () => void;
   children: React.ReactNode;
+  /** Renders outside paused filter controls (e.g. Export). */
+  trailingAction?: React.ReactNode;
   hasAppliedFilters?: boolean;
   onClearAll?: () => void;
   isApplyingFilters?: boolean;
@@ -107,6 +109,7 @@ export function ReportFilterBar({
   theme,
   onBackToReport,
   children,
+  trailingAction,
   hasAppliedFilters = false,
   onClearAll,
   isApplyingFilters,
@@ -138,15 +141,15 @@ export function ReportFilterBar({
         </p>
       ) : null}
 
-      {/* Mobile/tablet: single Filters control */}
-      <div className="w-full lg:hidden">
+      {/* Mobile/tablet: Filters + trailing action */}
+      <div className="flex w-full items-stretch gap-2 lg:hidden">
         <button
           type="button"
           disabled={paused}
           onClick={() => setMobileOpen((open) => !open)}
           aria-expanded={mobileOpen}
           className={cn(
-            'inline-flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+            'inline-flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
             hasAppliedFilters
               ? 'border-primary bg-primary-subtle text-primary'
               : 'border-border bg-card text-foreground',
@@ -166,47 +169,48 @@ export function ReportFilterBar({
             className={cn('shrink-0 transition-transform duration-200', mobileOpen && 'rotate-180')}
           />
         </button>
-
-        {mobileOpen && !paused ? (
-          <div className="report-mobile-filters mt-2 rounded-xl border border-border bg-card p-3 shadow-sm">
-            {hasAppliedFilters && onClearAll ? (
-              <div className="mb-3 flex items-center justify-between gap-3 border-b border-border pb-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {isApplyingFilters ? 'Applying…' : 'Active filters'}
-                </span>
-                <ClearAllButton
-                  onClearAll={onClearAll}
-                  isApplyingFilters={isApplyingFilters}
-                  filtersAppliedPulse={filtersAppliedPulse}
-                  className="shrink-0"
-                />
-              </div>
-            ) : null}
-            <div className={cn('flex flex-col gap-2', filterControlsClass)} aria-disabled={paused}>
-              {children}
-            </div>
-          </div>
-        ) : null}
+        {trailingAction ? <div className="shrink-0 self-center">{trailingAction}</div> : null}
       </div>
 
-      {/* Desktop: inline filter chips */}
-      <div
-        className={cn(
-          'hidden w-full lg:flex lg:flex-wrap lg:justify-end lg:gap-2 lg:rounded-xl',
-          filterControlsClass,
-        )}
-        aria-disabled={paused}
-      >
-        {children}
-        {hasAppliedFilters && onClearAll ? (
-          <div className="flex items-center">
-            <ClearAllButton
-              onClearAll={onClearAll}
-              isApplyingFilters={isApplyingFilters}
-              filtersAppliedPulse={filtersAppliedPulse}
-            />
+      {mobileOpen && !paused ? (
+        <div className="report-mobile-filters w-full rounded-xl border border-border bg-card p-3 shadow-sm lg:hidden">
+          {hasAppliedFilters && onClearAll ? (
+            <div className="mb-3 flex items-center justify-between gap-3 border-b border-border pb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {isApplyingFilters ? 'Applying…' : 'Active filters'}
+              </span>
+              <ClearAllButton
+                onClearAll={onClearAll}
+                isApplyingFilters={isApplyingFilters}
+                filtersAppliedPulse={filtersAppliedPulse}
+                className="shrink-0"
+              />
+            </div>
+          ) : null}
+          <div className={cn('flex flex-col gap-2', filterControlsClass)} aria-disabled={paused}>
+            {children}
           </div>
-        ) : null}
+        </div>
+      ) : null}
+
+      {/* Desktop: inline filter chips + trailing action */}
+      <div className="hidden w-full items-center justify-end gap-2 lg:flex">
+        <div
+          className={cn('flex flex-wrap justify-end gap-2 rounded-xl', filterControlsClass)}
+          aria-disabled={paused}
+        >
+          {children}
+          {hasAppliedFilters && onClearAll ? (
+            <div className="flex items-center">
+              <ClearAllButton
+                onClearAll={onClearAll}
+                isApplyingFilters={isApplyingFilters}
+                filtersAppliedPulse={filtersAppliedPulse}
+              />
+            </div>
+          ) : null}
+        </div>
+        {trailingAction ? <div className="shrink-0">{trailingAction}</div> : null}
       </div>
     </div>
   );

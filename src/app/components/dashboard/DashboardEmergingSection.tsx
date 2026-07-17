@@ -1,6 +1,8 @@
+import type { ReactNode } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import type { RiskEmergingRiskView } from '../../data/riskDashboardCustomize';
 import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
 import {
   buildEmergingRiskChatPayload,
@@ -105,9 +107,11 @@ function activateOnKeyDown(e: KeyboardEvent, onActivate: () => void) {
 
 export function EmergingRiskCard({
   risk,
+  interactive = true,
   onOpenChat,
 }: {
-  risk: (typeof DASHBOARD_EMERGING_RISKS)[number];
+  risk: RiskEmergingRiskView;
+  interactive?: boolean;
   onOpenChat: (payload: DashboardChatPayload) => void;
 }) {
   const open = () => onOpenChat(buildEmergingRiskChatPayload(risk));
@@ -115,14 +119,14 @@ export function EmergingRiskCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={open}
-      onKeyDown={(e) => activateOnKeyDown(e, open)}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? open : undefined}
+      onKeyDown={interactive ? (e) => activateOnKeyDown(e, open) : undefined}
       style={customBackground ? { background: customBackground } : undefined}
       className={`relative flex flex-col rounded-2xl border ${risk.borderClass} ${
         customBackground ? '' : `bg-gradient-to-br ${risk.gradientClass}`
-      } p-5 sm:p-6 text-white overflow-hidden min-h-[220px] text-left group ${dashboardCardClass.gradient}`}
+      } p-5 sm:p-6 text-white overflow-hidden min-h-[220px] text-left group ${interactive ? dashboardCardClass.gradient : ''}`}
     >
       <div
         className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-card/10 blur-2xl pointer-events-none"
@@ -300,23 +304,42 @@ function RiskTrendCard({ onOpenChat }: { onOpenChat: (payload: DashboardChatPayl
 
 export function DashboardEmergingSection({
   onOpenChat,
+  emergingRisks = DASHBOARD_EMERGING_RISKS.map((risk) => ({ ...risk })),
+  interactive = true,
+  showTopRisks = true,
+  topRisksSlot,
 }: {
   onOpenChat: (payload: DashboardChatPayload) => void;
+  emergingRisks?: RiskEmergingRiskView[];
+  interactive?: boolean;
+  showTopRisks?: boolean;
+  topRisksSlot?: ReactNode;
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
-        <h2 className="text-lg sm:text-xl font-bold text-foreground">Top Emerging Risks</h2>
-        <p className="text-sm sm:text-sm text-muted-foreground">
-          Detected by RiskIQ across all registers in the last 7 days
-        </p>
-      </div>
+      {showTopRisks && (
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">Top Emerging Risks</h2>
+            <p className="text-sm sm:text-sm text-muted-foreground">
+              Detected by RiskIQ across all registers in the last 7 days
+            </p>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {DASHBOARD_EMERGING_RISKS.map((risk) => (
-          <EmergingRiskCard key={risk.id} risk={risk} onOpenChat={onOpenChat} />
-        ))}
-      </div>
+          {topRisksSlot ?? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {emergingRisks.map((risk) => (
+                <EmergingRiskCard
+                  key={risk.id}
+                  risk={risk}
+                  interactive={interactive}
+                  onOpenChat={onOpenChat}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RiskTrendCard onOpenChat={onOpenChat} />

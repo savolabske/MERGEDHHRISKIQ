@@ -3,6 +3,7 @@ import { Calendar, ChevronDown, Sparkles } from 'lucide-react';
 import { DONOR_OPTIONS, FORWARD_ICONS, REGION_OPTIONS, SCENES, SECTOR_OPTIONS } from '../data/aidFlowData';
 import { useAidFlowFilters } from '../hooks/useAidFlowFilters';
 import { useAidFlowReportPrompt } from '../hooks/useAidFlowReportPrompt';
+import { buildAidFlowExportDocument } from '../export/buildAidFlowExportDocument';
 import { AidFlowChatFeed } from './AidFlowChatFeed';
 import { AidFlowResultPanel } from './AidFlowResultPanel';
 import { AidFlowSceneChart } from './AidFlowCharts';
@@ -44,6 +45,7 @@ import {
   useReportChatHistory,
   useReportFilterMode,
 } from '../../shared';
+import { ReportExportButton, useReportExport } from '../../shared/export';
 import { cn } from '../../../../components/ui/utils';
 import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
@@ -59,6 +61,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
   const filterRef = useRef<HTMLDivElement>(null);
   const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
 
+  const filters = useAidFlowFilters();
   const {
     selectedDonors,
     setSelectedDonors,
@@ -86,7 +89,9 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
     filteredEnvelope,
     filteredActual,
     filteredPlanned,
-  } = useAidFlowFilters();
+  } = filters;
+
+  const { exportReport, isExporting } = useReportExport(() => buildAidFlowExportDocument(filters));
 
   const {
     promptInput,
@@ -257,6 +262,9 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                 onClearAll={clearAllFilters}
                 isApplyingFilters={isApplyingFilters}
                 filtersAppliedPulse={filtersAppliedPulse}
+                trailingAction={
+                  <ReportExportButton onExport={exportReport} disabled={isExporting} />
+                }
               >
               <div className="relative">
                 <button

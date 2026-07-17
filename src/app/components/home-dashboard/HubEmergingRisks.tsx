@@ -1,5 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import { ChevronRight } from 'lucide-react';
+import type { HubPredictiveInsightView } from '../../data/homeDashboardCustomize';
 import { HUB_PREDICTIVE_INSIGHTS } from '../../data/homeDashboardMock';
 import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
 import {
@@ -8,6 +9,8 @@ import {
 } from '../../utils/dashboardChatContext';
 
 interface HubPredictiveInsightsProps {
+  insights?: HubPredictiveInsightView[];
+  interactive?: boolean;
   onOpenChat: (payload: DashboardChatPayload) => void;
 }
 
@@ -20,21 +23,23 @@ function activateOnKeyDown(e: KeyboardEvent, onActivate: () => void) {
 
 function PredictiveInsightCard({
   insight,
+  interactive,
   onOpenChat,
 }: {
-  insight: (typeof HUB_PREDICTIVE_INSIGHTS)[number];
+  insight: HubPredictiveInsightView;
+  interactive: boolean;
   onOpenChat: (payload: DashboardChatPayload) => void;
 }) {
   const open = () => onOpenChat(buildHubPredictiveInsightChatPayload(insight));
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={open}
-      onKeyDown={(e) => activateOnKeyDown(e, open)}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? open : undefined}
+      onKeyDown={interactive ? (e) => activateOnKeyDown(e, open) : undefined}
       style={{ background: insight.background }}
-      className={`relative flex flex-col rounded-2xl border ${insight.borderClass} p-5 sm:p-6 text-white overflow-hidden min-h-[220px] text-left group ${dashboardCardClass.gradient}`}
+      className={`relative flex flex-col rounded-2xl border ${insight.borderClass} p-5 sm:p-6 text-white overflow-hidden min-h-[220px] text-left group ${interactive ? dashboardCardClass.gradient : ''}`}
     >
       <div
         className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-card/10 blur-2xl pointer-events-none"
@@ -64,7 +69,11 @@ function PredictiveInsightCard({
 }
 
 /** Humanity Hub home — predictive aid, climate, and displacement cards. */
-export function HubEmergingRisks({ onOpenChat }: HubPredictiveInsightsProps) {
+export function HubEmergingRisks({
+  insights = HUB_PREDICTIVE_INSIGHTS.map((item) => ({ ...item })),
+  interactive = true,
+  onOpenChat,
+}: HubPredictiveInsightsProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
@@ -75,8 +84,13 @@ export function HubEmergingRisks({ onOpenChat }: HubPredictiveInsightsProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {HUB_PREDICTIVE_INSIGHTS.map((insight) => (
-          <PredictiveInsightCard key={insight.id} insight={insight} onOpenChat={onOpenChat} />
+        {insights.map((insight) => (
+          <PredictiveInsightCard
+            key={insight.id}
+            insight={insight}
+            interactive={interactive}
+            onOpenChat={onOpenChat}
+          />
         ))}
       </div>
     </div>

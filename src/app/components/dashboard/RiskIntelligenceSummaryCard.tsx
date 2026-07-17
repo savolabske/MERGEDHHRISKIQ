@@ -1,6 +1,8 @@
 import type { KeyboardEvent, ReactNode } from 'react';
 import { ChevronRight, Sparkles, Zap } from 'lucide-react';
 import { DASHBOARD_BRIEFING } from '../../data/dashboardMock';
+import type { HubMainInsightBody } from '../../data/homeDashboardCustomize';
+import type { RiskSummaryBody } from '../../data/riskDashboardCustomize';
 import { HUB_MAIN_INSIGHT } from '../../data/homeDashboardMock';
 import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
 import {
@@ -62,20 +64,35 @@ type SummaryCardVariant = 'risk' | 'hub';
 
 interface RiskIntelligenceSummaryCardProps {
   variant?: SummaryCardVariant;
+  mainInsightBody?: HubMainInsightBody;
+  riskSummaryBody?: RiskSummaryBody;
+  interactive?: boolean;
   onOpenChat: (payload: DashboardChatPayload) => void;
   onOpenBriefing?: () => void;
 }
 
 export function RiskIntelligenceSummaryCard({
   variant = 'risk',
+  mainInsightBody,
+  riskSummaryBody,
+  interactive = true,
   onOpenChat,
   onOpenBriefing,
 }: RiskIntelligenceSummaryCardProps) {
   const isHub = variant === 'hub';
+  const hubBody = mainInsightBody ?? HUB_MAIN_INSIGHT.body;
+  const riskBody = riskSummaryBody ?? {
+    activeRisks: '247 active risks',
+    region1: 'Lower Shabelle',
+    region2: 'Banadir',
+    drivers: 'Supply chain and security risks',
+    criticalCases: '18 critical cases',
+  };
   const openSummaryChat = () =>
     onOpenChat(isHub ? buildHubInsightChatPayload() : buildSummaryChatPayload());
 
   const onCardKeyDown = (e: KeyboardEvent) => {
+    if (!interactive) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       openSummaryChat();
@@ -84,11 +101,11 @@ export function RiskIntelligenceSummaryCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={openSummaryChat}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? openSummaryChat : undefined}
       onKeyDown={onCardKeyDown}
-      className={`relative overflow-hidden rounded-2xl border border-white/20 p-6 sm:p-8 text-white shadow-sm text-left ${dashboardCardClass.gradient}`}
+      className={`relative overflow-hidden rounded-2xl border border-white/20 p-6 sm:p-8 text-white shadow-sm text-left ${interactive ? dashboardCardClass.gradient : ''}`}
       style={{ background: SUMMARY_CARD_BACKGROUND }}
     >
       <SummaryCardDecoration />
@@ -109,20 +126,20 @@ export function RiskIntelligenceSummaryCard({
 
         {isHub ? (
           <p className="text-xl leading-snug text-white font-semibold line-clamp-2 overflow-hidden">
-            {HUB_MAIN_INSIGHT.body.lead}{' '}
-            <Highlight underline="salmon">{HUB_MAIN_INSIGHT.body.foodInsecure}</Highlight> in{' '}
-            <Highlight underline="white">{HUB_MAIN_INSIGHT.body.regions}</Highlight>{' '}
-            {HUB_MAIN_INSIGHT.body.into}{' '}
-            <Highlight underline="peach">{HUB_MAIN_INSIGHT.body.idpSites}</Highlight> arrivals rose{' '}
-            <Highlight underline="mint">{HUB_MAIN_INSIGHT.body.displacementChange}</Highlight>{' '}
-            {HUB_MAIN_INSIGHT.body.tail}
+            {hubBody.lead}{' '}
+            <Highlight underline="salmon">{hubBody.foodInsecure}</Highlight> in{' '}
+            <Highlight underline="white">{hubBody.regions}</Highlight>{' '}
+            {hubBody.into}{' '}
+            <Highlight underline="peach">{hubBody.idpSites}</Highlight> arrivals rose{' '}
+            <Highlight underline="mint">{hubBody.displacementChange}</Highlight>{' '}
+            {hubBody.tail}
           </p>
         ) : (
           <p className="text-xl leading-[1.65] text-white max-w-none font-semibold">
-            There&apos;s <Highlight underline="salmon">247 active risks</Highlight> across Somalia this week, with critical
-            incidents rising in <Highlight underline="white">Lower Shabelle</Highlight> and{' '}
-            <Highlight underline="peach">Banadir</Highlight>. Supply chain and security risks are driving the
-            most activity, with <Highlight underline="mint">18 critical cases</Highlight> currently open.
+            There&apos;s <Highlight underline="salmon">{riskBody.activeRisks}</Highlight> across Somalia this week, with critical
+            incidents rising in <Highlight underline="white">{riskBody.region1}</Highlight> and{' '}
+            <Highlight underline="peach">{riskBody.region2}</Highlight>. {riskBody.drivers} are driving the
+            most activity, with <Highlight underline="mint">{riskBody.criticalCases}</Highlight> currently open.
           </p>
         )}
 

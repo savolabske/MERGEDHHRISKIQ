@@ -37,6 +37,14 @@ export {
   type ReportFilterTheme,
 } from './ReportFilterBar';
 export {
+  ReportExportButton,
+  useReportExport,
+  renderReportPdf,
+  renderReportPptx,
+  type ReportExportDocument,
+  type ReportExportFormat,
+} from './export';
+export {
   useReportFilterMode,
   areReportFiltersInteractive,
   getReportFilterInteractionMode,

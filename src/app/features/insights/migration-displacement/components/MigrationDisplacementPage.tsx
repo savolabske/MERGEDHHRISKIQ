@@ -9,6 +9,7 @@ import {
 } from '../data/migrationData';
 import { useMigrationFilters } from '../hooks/useMigrationFilters';
 import { useMigrationReportPrompt } from '../hooks/useMigrationReportPrompt';
+import { buildMigrationExportDocument } from '../export/buildMigrationExportDocument';
 import { MigrationDisplacementProps } from '../types';
 import { MigrationChatFeed } from './MigrationChatFeed';
 import { MigrationResultPanel } from './MigrationResultPanel';
@@ -51,6 +52,7 @@ import {
   useReportChatHistory,
   useReportFilterMode,
 } from '../../shared';
+import { ReportExportButton, useReportExport } from '../../shared/export';
 import { cn } from '../../../../components/ui/utils';
 import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
@@ -62,6 +64,7 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
   const filterRef = useRef<HTMLDivElement>(null);
   const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
 
+  const filters = useMigrationFilters();
   const {
     startYear,
     endYear,
@@ -85,7 +88,9 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
     yearLabel,
     hasAnyFilter,
     K,
-  } = useMigrationFilters();
+  } = filters;
+
+  const { exportReport, isExporting } = useReportExport(() => buildMigrationExportDocument(filters));
 
   const {
     promptInput,
@@ -268,6 +273,9 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                 onClearAll={clearAllFilters}
                 isApplyingFilters={isApplyingFilters}
                 filtersAppliedPulse={filtersAppliedPulse}
+                trailingAction={
+                  <ReportExportButton onExport={exportReport} disabled={isExporting} />
+                }
               >
               <div className="relative">
                 <button

@@ -1259,19 +1259,19 @@ export function UsersAccess() {
 
               {/* Status Badges */}
               <div className="flex items-center gap-2 mt-4">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium ${
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium ${
                   selectedUser.status === 'Active' ? 'bg-success-subtle text-success-text' :
                   selectedUser.status === 'Pending' ? 'bg-warning-subtle text-warning-text' :
                   'bg-muted text-muted-foreground'
                 }`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${
+                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                     selectedUser.status === 'Active' ? 'bg-success' :
                     selectedUser.status === 'Pending' ? 'bg-warning-text' :
                     'bg-muted-foreground'
                   }`} />
                   {selectedUser.status}
                 </span>
-                <span className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${getRoleBadgeColor(selectedUser.role)}`}>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium ${getRoleBadgeColor(selectedUser.role)}`}>
                   {selectedUser.role}
                 </span>
               </div>
@@ -1282,19 +1282,19 @@ export function UsersAccess() {
               {/* Full Name */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-subtle">Full Name</span>
-                <span className="text-base font-medium text-foreground">{selectedUser.name}</span>
+                <span className="text-sm font-medium text-foreground">{selectedUser.name}</span>
               </div>
 
               {/* Email */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-subtle">Email</span>
-                <span className="text-base font-medium text-primary">{selectedUser.email}</span>
+                <span className="text-sm font-medium text-primary">{selectedUser.email}</span>
               </div>
 
               {/* Organization */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-subtle">Organization</span>
-                <span className="text-base font-medium text-foreground">{selectedUser.group}</span>
+                <span className="text-sm font-medium text-foreground">{selectedUser.group}</span>
               </div>
 
               {/* Role */}
@@ -1308,13 +1308,13 @@ export function UsersAccess() {
               {/* User Group */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-subtle">User Group</span>
-                <span className="text-base font-medium text-foreground">{selectedUser.group}</span>
+                <span className="text-sm font-medium text-foreground">{selectedUser.group}</span>
               </div>
             </div>
 
             {/* Actions Section */}
             <div className="px-6 py-4 border-t border-border">
-              <h3 className="table-header-labelr mb-3">Actions</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Actions</h3>
               <div className="space-y-2">
                 {/* Edit Role & Group */}
                 <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">
@@ -1337,7 +1337,7 @@ export function UsersAccess() {
                 {/* Block User */}
                 <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-destructive-subtle rounded-lg transition-colors text-left">
                   <Ban size={18} className="text-destructive-text" />
-                  <span className="text-base text-destructive-text">Block User</span>
+                  <span className="text-sm text-destructive-text">Block User</span>
                 </button>
               </div>
             </div>

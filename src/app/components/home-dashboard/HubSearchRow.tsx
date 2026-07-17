@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowRight,
   FileText,
@@ -12,6 +12,7 @@ import {
 import {
   HUB_QUICK_ACTIONS,
   HUB_QUICK_ACTION_PANELS,
+  type HubKeyInsight,
   type HubQuickActionId,
 } from '../../data/homeDashboardMock';
 import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
@@ -64,9 +65,18 @@ interface HubSearchOptions {
 interface HubSearchRowProps {
   onSearch: (query: string, options?: HubSearchOptions) => void;
   onOpenChat: (payload: DashboardChatPayload) => void;
+  emergingInsights?: HubKeyInsight[];
+  emergingInsightsInteractive?: boolean;
+  emergingInsightsSlot?: ReactNode;
 }
 
-export function HubSearchRow({ onSearch, onOpenChat }: HubSearchRowProps) {
+export function HubSearchRow({
+  onSearch,
+  onOpenChat,
+  emergingInsights,
+  emergingInsightsInteractive = true,
+  emergingInsightsSlot,
+}: HubSearchRowProps) {
   const [query, setQuery] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [isExtendedKnowledge, setIsExtendedKnowledge] = useState(false);
@@ -333,7 +343,13 @@ export function HubSearchRow({ onSearch, onOpenChat }: HubSearchRowProps) {
         </div>
       </div>
 
-      <HubKeyInsightsCard onOpenChat={onOpenChat} />
+      {emergingInsightsSlot ?? (
+        <HubKeyInsightsCard
+          insights={emergingInsights}
+          interactive={emergingInsightsInteractive}
+          onOpenChat={onOpenChat}
+        />
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from '../data/sjfData';
 import { useSjfFilters } from '../hooks/useSjfFilters';
 import { useSjfReportPrompt } from '../hooks/useSjfReportPrompt';
+import { buildSjfExportDocument } from '../export/buildSjfExportDocument';
 import type { SjfScrollytellingProps } from '../types';
 import { SjfChatFeed } from './SjfChatFeed';
 import { SjfSceneChart } from './SjfCharts';
@@ -55,6 +56,7 @@ import {
   useReportChatHistory,
   useReportFilterMode,
 } from '../../shared';
+import { ReportExportButton, useReportExport } from '../../shared/export';
 import { cn } from '../../../../components/ui/utils';
 import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
@@ -68,6 +70,7 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
   const filterRef = useRef<HTMLDivElement>(null);
   const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
 
+  const filters = useSjfFilters();
   const {
     startYear,
     setStartYear,
@@ -84,7 +87,9 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
     kpiCards,
     sceneStats,
     getSceneChart,
-  } = useSjfFilters();
+  } = filters;
+
+  const { exportReport, isExporting } = useReportExport(() => buildSjfExportDocument(filters));
 
   const {
     promptInput,
@@ -265,6 +270,9 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                 onClearAll={clearAllFilters}
                 isApplyingFilters={isApplyingFilters}
                 filtersAppliedPulse={filtersAppliedPulse}
+                trailingAction={
+                  <ReportExportButton onExport={exportReport} disabled={isExporting} />
+                }
               >
                 <div className="relative">
                   <button

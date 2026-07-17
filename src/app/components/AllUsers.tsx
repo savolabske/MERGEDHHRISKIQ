@@ -347,12 +347,12 @@ export function AllUsers() {
             <div className="p-6 space-y-6">
               {/* Status & Role Badges */}
               <div className="flex gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-success-subtle text-success-text text-sm font-medium rounded-full">
-                  <div className="w-2 h-2 rounded-full bg-success"></div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-success-subtle text-success-text text-sm font-medium rounded-md">
+                  <div className="w-1.5 h-1.5 rounded-full bg-success shrink-0"></div>
                   {selectedUser.status}
                 </div>
                 <span 
-                  className="px-3 py-1.5 rounded-full text-sm font-medium"
+                  className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium"
                   style={{ backgroundColor: selectedUser.roleColor, color: selectedUser.role === 'Admin' ? 'var(--destructive-text)' : selectedUser.role === 'Agency' ? 'var(--primary)' : selectedUser.role === 'Contributor' ? 'var(--success-text)' : 'var(--muted-foreground)' }}
                 >
                   {selectedUser.role}
@@ -363,21 +363,21 @@ export function AllUsers() {
               <div className="space-y-5">
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
                   <div className="text-sm text-muted-foreground">Full Name</div>
-                  <div className="text-base text-foreground font-medium text-right">{selectedUser.name}</div>
+                  <div className="text-sm text-foreground font-medium text-right">{selectedUser.name}</div>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
                   <div className="text-sm text-muted-foreground">Email</div>
-                  <div className="text-base text-foreground font-medium text-right">{selectedUser.email}</div>
+                  <div className="text-sm text-foreground font-medium text-right">{selectedUser.email}</div>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
                   <div className="text-sm text-muted-foreground">Organization</div>
-                  <div className="text-base text-foreground font-medium text-right">{selectedUser.group.split(' ')[0]}</div>
+                  <div className="text-sm text-foreground font-medium text-right">{selectedUser.group.split(' ')[0]}</div>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
                   <div className="text-sm text-muted-foreground">Role</div>
                   <div className="text-right">
                     <span 
-                      className="inline-block px-3 py-1.5 rounded-full text-sm font-medium"
+                      className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium"
                       style={{ backgroundColor: selectedUser.roleColor, color: selectedUser.role === 'Admin' ? 'var(--destructive-text)' : selectedUser.role === 'Agency' ? 'var(--primary)' : selectedUser.role === 'Contributor' ? 'var(--success-text)' : 'var(--muted-foreground)' }}
                     >
                       {selectedUser.role}
@@ -386,14 +386,14 @@ export function AllUsers() {
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-start">
                   <div className="text-sm text-muted-foreground">User Group</div>
-                  <div className="text-base text-foreground font-medium text-right">{selectedUser.group}</div>
+                  <div className="text-sm text-foreground font-medium text-right">{selectedUser.group}</div>
                 </div>
                 
               </div>
 
               {/* Actions Section */}
               <div className="pt-6 border-t border-border">
-                <h3 className="text-base font-bold text-foreground mb-4">Actions</h3>
+                <h3 className="text-sm font-semibold text-foreground mb-4">Actions</h3>
                 
                 <div className="space-y-2">
                   <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">
@@ -413,7 +413,7 @@ export function AllUsers() {
                   
                   <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-destructive-subtle rounded-lg transition-colors text-left mt-2">
                     <Ban size={18} className="text-destructive-text" />
-                    <span className="text-base text-destructive-text">Block User</span>
+                    <span className="text-sm text-destructive-text">Block User</span>
                   </button>
                 </div>
               </div>

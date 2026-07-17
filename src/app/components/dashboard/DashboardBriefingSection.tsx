@@ -15,6 +15,7 @@ function activateOnKeyDown(e: KeyboardEvent, onActivate: () => void) {
 function BriefingUpdateRow({
   update,
   isLast,
+  interactive,
   onOpenChat,
   buildUpdateChatPayload,
   compactDescription = false,
@@ -23,6 +24,7 @@ function BriefingUpdateRow({
 }: {
   update: BriefingUpdate;
   isLast: boolean;
+  interactive: boolean;
   onOpenChat: (payload: DashboardChatPayload) => void;
   buildUpdateChatPayload: (update: BriefingUpdate) => DashboardChatPayload;
   compactDescription?: boolean;
@@ -30,6 +32,50 @@ function BriefingUpdateRow({
   fillHeight?: boolean;
 }) {
   const open = () => onOpenChat(buildUpdateChatPayload(update));
+
+  if (!interactive) {
+    return (
+      <div
+        className={`flex gap-4 px-5 sm:px-6 text-left ${
+          fillHeight ? 'flex-1 min-h-0' : ''
+        } ${hideDescription || compactDescription ? 'py-3.5 items-center' : 'py-5'} ${
+          isLast ? '' : 'border-b border-sidebar-border'
+        }`}
+      >
+        <span
+          className={`w-2.5 h-2.5 rounded-full shrink-0 ${hideDescription ? '' : 'mt-1.5'}`}
+          style={{ backgroundColor: update.dotColor }}
+          aria-hidden
+        />
+        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
+          <div className="flex-1 min-w-0">
+            <h3
+              className={`text-sm text-foreground leading-snug pr-2 ${
+                hideDescription ? 'font-medium' : 'font-semibold'
+              }`}
+            >
+              {update.headline}
+            </h3>
+            {!hideDescription && (
+              <p
+                className={`text-sm text-muted-foreground italic ${
+                  compactDescription
+                    ? 'mt-1.5 line-clamp-1 leading-snug'
+                    : 'mt-2 leading-relaxed'
+                }`}
+              >
+                &ldquo;{update.description}&rdquo;
+              </p>
+            )}
+          </div>
+          <div className="shrink-0 sm:text-right sm:min-w-[88px]">
+            <p className="text-sm font-semibold text-foreground">{update.relativeTime}</p>
+            <p className="text-xs text-text-subtle mt-0.5">{update.absoluteTime}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -97,6 +143,7 @@ export function DashboardBriefingSection({
   compactDescription = false,
   hideDescription = false,
   fillHeight = false,
+  interactive = true,
 }: {
   onOpenChat: (payload: DashboardChatPayload) => void;
   title?: string;
@@ -109,6 +156,7 @@ export function DashboardBriefingSection({
   hideDescription?: boolean;
   /** Stretch card to match a sibling column (e.g. home Reports) */
   fillHeight?: boolean;
+  interactive?: boolean;
 }) {
   return (
     <div className={`space-y-4 ${fillHeight ? 'h-full flex flex-col' : ''}`}>
@@ -127,6 +175,7 @@ export function DashboardBriefingSection({
             key={update.id}
             update={update}
             isLast={index === updates.length - 1}
+            interactive={interactive}
             onOpenChat={onOpenChat}
             buildUpdateChatPayload={buildUpdateChatPayload}
             compactDescription={compactDescription}

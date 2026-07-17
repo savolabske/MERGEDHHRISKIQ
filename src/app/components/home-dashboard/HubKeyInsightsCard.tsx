@@ -48,12 +48,34 @@ function InsightTabs({
 
 function InsightRow({
   insight,
+  interactive,
   onOpen,
 }: {
   insight: HubKeyInsight;
+  interactive: boolean;
   onOpen: (insight: HubKeyInsight) => void;
 }) {
   const open = () => onOpen(insight);
+
+  if (!interactive) {
+    return (
+      <div className="w-full flex items-start gap-2.5 py-2.5 text-left">
+        <span
+          className="w-2 h-2 rounded-full shrink-0 mt-1.5"
+          style={{ backgroundColor: insight.dotColor }}
+          aria-hidden
+        />
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-medium text-foreground leading-snug line-clamp-1">
+            {insight.headline}
+          </span>
+          <span className="block text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-1">
+            {insight.description}
+          </span>
+        </span>
+      </div>
+    );
+  }
 
   return (
     <button
@@ -164,16 +186,22 @@ function InsightPageNav({
 }
 
 interface HubKeyInsightsCardProps {
+  insights?: HubKeyInsight[];
+  interactive?: boolean;
   onOpenChat: (payload: DashboardChatPayload) => void;
 }
 
-export function HubKeyInsightsCard({ onOpenChat }: HubKeyInsightsCardProps) {
+export function HubKeyInsightsCard({
+  insights = HUB_KEY_INSIGHTS,
+  interactive = true,
+  onOpenChat,
+}: HubKeyInsightsCardProps) {
   const [activeCategory, setActiveCategory] = useState<HubKeyInsightCategory>('climate');
   const [pageIndex, setPageIndex] = useState(0);
 
   const categoryInsights = useMemo(
-    () => HUB_KEY_INSIGHTS.filter((insight) => insight.category === activeCategory),
-    [activeCategory],
+    () => insights.filter((insight) => insight.category === activeCategory),
+    [activeCategory, insights],
   );
 
   const pageCount = Math.max(1, Math.ceil(categoryInsights.length / HUB_KEY_INSIGHT_PREVIEW_COUNT));
@@ -218,7 +246,7 @@ export function HubKeyInsightsCard({ onOpenChat }: HubKeyInsightsCardProps) {
       <ul className="mt-3 divide-y divide-border flex-1">
         {preview.map((insight) => (
           <li key={insight.id}>
-            <InsightRow insight={insight} onOpen={openInsight} />
+            <InsightRow insight={insight} interactive={interactive} onOpen={openInsight} />
           </li>
         ))}
       </ul>

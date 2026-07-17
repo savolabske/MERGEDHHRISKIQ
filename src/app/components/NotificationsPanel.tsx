@@ -1,10 +1,36 @@
-import { AlertTriangle, Bell, Share2, X } from 'lucide-react';
-import type { AppNotification, NotificationDayGroup } from '../types/notifications';
+import {
+  AlertTriangle,
+  Bell,
+  FileCheck2,
+  FileText,
+  MessageSquare,
+  RefreshCw,
+  Share2,
+  X,
+} from 'lucide-react';
+import type {
+  AppNotification,
+  NotificationDayGroup,
+  NotificationKind,
+} from '../types/notifications';
 import { getDayGroupLabel } from '../data/notificationsMock';
 import { Sheet, SheetClose, SheetContent, SheetTitle } from './ui/sheet';
 import { cn } from './ui/utils';
 
 const DAY_GROUP_ORDER: NotificationDayGroup[] = ['today', 'yesterday', 'earlier'];
+
+const KIND_FOOTER_ICON: Record<
+  NotificationKind,
+  typeof Share2
+> = {
+  'chat-reply': MessageSquare,
+  'chat-added': MessageSquare,
+  invite: Share2,
+  'shared-thread': AlertTriangle,
+  briefing: FileText,
+  'doc-sync': FileCheck2,
+  'workspace-sync': RefreshCw,
+};
 
 interface NotificationsPanelProps {
   open: boolean;
@@ -19,6 +45,15 @@ function NotificationAvatar({ notification }: { notification: AppNotification })
     return (
       <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive-subtle text-destructive-text">
         <AlertTriangle size={18} strokeWidth={1.75} aria-hidden />
+      </div>
+    );
+  }
+
+  if (notification.kind === 'doc-sync' || notification.kind === 'workspace-sync') {
+    const Icon = notification.kind === 'doc-sync' ? FileCheck2 : RefreshCw;
+    return (
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-subtle text-primary">
+        <Icon size={18} strokeWidth={1.75} aria-hidden />
       </div>
     );
   }
@@ -44,12 +79,10 @@ function NotificationRow({
   notification: AppNotification;
   onClick: () => void;
 }) {
-  const footerIcon =
-    notification.kind === 'shared-thread' ? (
-      <AlertTriangle size={14} strokeWidth={1.75} className="text-muted-foreground" aria-hidden />
-    ) : (
-      <Share2 size={14} strokeWidth={1.75} className="text-muted-foreground" aria-hidden />
-    );
+  const FooterIcon = KIND_FOOTER_ICON[notification.kind];
+  const footerIcon = (
+    <FooterIcon size={14} strokeWidth={1.75} className="text-muted-foreground" aria-hidden />
+  );
 
   return (
     <button

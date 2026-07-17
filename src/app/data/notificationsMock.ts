@@ -3,6 +3,17 @@ import type { AppNotification } from '../types/notifications';
 
 export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
+    id: 'notif-doc-sync',
+    kind: 'doc-sync',
+    title: 'Document sync complete',
+    description: 'Baidoa IDP cholera assessment.pdf finished uploading and is ready to use.',
+    time: 'Just now',
+    dayGroup: 'today',
+    unread: true,
+    action: { type: 'navigate', view: 'resources' },
+    ctaLabel: 'View document',
+  },
+  {
     id: 'notif-chat-reply',
     kind: 'chat-reply',
     title: 'Shared chat update',

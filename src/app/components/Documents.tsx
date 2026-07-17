@@ -218,10 +218,47 @@ function buildReportHubFields(reportTypeId: ReportTypeId): Pick<DocumentGroup, '
   };
 }
 
+function AvailabilityOptionCard({
+  selected,
+  onClick,
+  icon: Icon,
+  title,
+  description,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  icon: typeof Map;
+  title: string;
+  description: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onClick}
+      className={`w-full flex items-center gap-3.5 p-4 rounded-lg border text-left transition-colors ${
+        selected
+          ? 'border-primary bg-primary-subtle/60'
+          : 'border-border bg-card hover:border-border-muted hover:bg-muted'
+      }`}
+    >
+      <span className="flex-1 min-w-0">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm leading-snug">
+          <Icon size={16} className="text-muted-foreground shrink-0" />
+          <span className="font-medium text-foreground">{title}</span>
+          <span className="text-xs font-normal text-text-subtle">{description}</span>
+        </span>
+      </span>
+    </button>
+  );
+}
+
 function DocumentAvailabilityFields({
   availabilityTarget,
   reportAvailabilityTypes,
   onToggleTarget,
+  onClearTarget,
   onToggleReportType,
   establishedReportHubIds,
   onOpenReportHub,
@@ -235,6 +272,7 @@ function DocumentAvailabilityFields({
   availabilityTarget: AvailabilityTarget | null;
   reportAvailabilityTypes: string[];
   onToggleTarget: (target: AvailabilityTarget) => void;
+  onClearTarget: () => void;
   onToggleReportType: (reportTypeId: ReportTypeId) => void;
   establishedReportHubIds: Set<ReportTypeId>;
   onOpenReportHub?: (reportTypeId: ReportTypeId) => void;
@@ -272,65 +310,31 @@ function DocumentAvailabilityFields({
           <p className="text-sm font-medium text-secondary-foreground mt-5 mb-3">Also make available to</p>
 
           <div className="space-y-2.5" role="radiogroup" aria-label="Additional availability">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={availabilityTarget === 'map'}
+            <AvailabilityOptionCard
+              selected={availabilityTarget === 'map'}
               onClick={() => onToggleTarget('map')}
-              className={`w-full flex items-center gap-3.5 p-4 rounded-lg border text-left transition-colors ${
-                availabilityTarget === 'map'
-                  ? 'border-primary bg-primary-subtle/60'
-                  : 'border-border bg-card hover:border-border-muted hover:bg-muted'
-              }`}
-            >
-              <span
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                  availabilityTarget === 'map' ? 'border-primary bg-primary' : 'border-border-muted bg-card'
-                }`}
-                aria-hidden
-              >
-                {availabilityTarget === 'map' && <span className="h-1.5 w-1.5 rounded-full bg-card" />}
-              </span>
-              <span className="flex-1 min-w-0">
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm leading-snug">
-                  <Map size={16} className="text-muted-foreground shrink-0" />
-                  <span className="font-medium text-foreground">Map</span>
-                  <span className="text-xs font-normal text-text-subtle">
-                    Use as data source for geospatial risk overlay.
-                  </span>
-                </span>
-              </span>
-            </button>
+              icon={Map}
+              title="Map"
+              description="Use as data source for geospatial risk overlay."
+            />
 
-            <button
-              type="button"
-              role="radio"
-              aria-checked={availabilityTarget === 'reports'}
+            <AvailabilityOptionCard
+              selected={availabilityTarget === 'reports'}
               onClick={() => onToggleTarget('reports')}
-              className={`w-full flex items-center gap-3.5 p-4 rounded-lg border text-left transition-colors ${
-                availabilityTarget === 'reports'
-                  ? 'border-primary bg-primary-subtle/60'
-                  : 'border-border bg-card hover:border-border-muted hover:bg-muted'
-              }`}
-            >
-              <span
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                  availabilityTarget === 'reports' ? 'border-primary bg-primary' : 'border-border-muted bg-card'
-                }`}
-                aria-hidden
+              icon={BarChart3}
+              title="Reports"
+              description="Create a central knowledge hub for a specific report."
+            />
+
+            {availabilityTarget && !lockedManagedReportId && (
+              <button
+                type="button"
+                onClick={onClearTarget}
+                className="text-sm font-medium text-primary hover:underline"
               >
-                {availabilityTarget === 'reports' && <span className="h-1.5 w-1.5 rounded-full bg-card" />}
-              </span>
-              <span className="flex-1 min-w-0">
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm leading-snug">
-                  <BarChart3 size={16} className="text-muted-foreground shrink-0" />
-                  <span className="font-medium text-foreground">Reports</span>
-                  <span className="text-xs font-normal text-text-subtle">
-                    Create a central knowledge hub for a specific report.
-                  </span>
-                </span>
-              </span>
-            </button>
+                Clear selection
+              </button>
+            )}
 
             {availabilityTarget === 'reports' && allReportHubsClaimed && (
               <p className="text-sm text-muted-foreground ml-1 pl-7 sm:pl-8 border-l-2 border-sidebar-accent pt-1">
@@ -1820,13 +1824,16 @@ export function Documents({
 
   const toggleAvailabilityTarget = (target: AvailabilityTarget) => {
     setAvailabilityTarget((prev) => {
-      if (prev === target) {
-        if (target === 'reports') setReportAvailabilityTypes([]);
-        return null;
-      }
+      if (prev === target) return prev;
       if (target !== 'reports') setReportAvailabilityTypes([]);
       return target;
     });
+  };
+
+  const clearAvailabilityTarget = () => {
+    setAvailabilityTarget(null);
+    setReportAvailabilityTypes([]);
+    setManagedReportAvailabilityIds([]);
   };
 
   const toggleReportAvailabilityType = (reportTypeId: ReportTypeId) => {
@@ -1852,13 +1859,15 @@ export function Documents({
 
   const toggleEditAvailabilityTarget = (target: AvailabilityTarget) => {
     setEditAvailabilityTarget((prev) => {
-      if (prev === target) {
-        if (target === 'reports') setEditReportAvailabilityTypes([]);
-        return null;
-      }
+      if (prev === target) return prev;
       if (target !== 'reports') setEditReportAvailabilityTypes([]);
       return target;
     });
+  };
+
+  const clearEditAvailabilityTarget = () => {
+    setEditAvailabilityTarget(null);
+    setEditReportAvailabilityTypes([]);
   };
 
   const toggleEditReportAvailabilityType = (reportTypeId: ReportTypeId) => {
@@ -3062,6 +3071,7 @@ export function Documents({
                         availabilityTarget={editAvailabilityTarget}
                         reportAvailabilityTypes={editReportAvailabilityTypes}
                         onToggleTarget={toggleEditAvailabilityTarget}
+                        onClearTarget={clearEditAvailabilityTarget}
                         onToggleReportType={toggleEditReportAvailabilityType}
                         establishedReportHubIds={establishedReportHubIds}
                         onOpenReportHub={openReportHubFromForm}
@@ -4012,6 +4022,7 @@ export function Documents({
                     availabilityTarget={availabilityTarget}
                     reportAvailabilityTypes={reportAvailabilityTypes}
                     onToggleTarget={toggleAvailabilityTarget}
+                    onClearTarget={clearAvailabilityTarget}
                     onToggleReportType={toggleReportAvailabilityType}
                     establishedReportHubIds={establishedReportHubIds}
                     onOpenReportHub={openReportHubFromForm}

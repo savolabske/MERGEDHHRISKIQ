@@ -3,12 +3,13 @@ export type NotificationAction =
   | { type: 'open-invite'; threadId: string }
   | { type: 'join-shared-chat'; threadId: string }
   | { type: 'open-briefing'; threadId: string }
-  | { type: 'navigate'; view: 'home' | 'riskIQ' };
+  | { type: 'navigate'; view: 'home' | 'riskIQ' | 'resources' };
 
 export type NotificationKind =
   | 'chat-reply'
   | 'briefing'
   | 'workspace-sync'
+  | 'doc-sync'
   | 'chat-added'
   | 'invite'
   | 'shared-thread';
