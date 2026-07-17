@@ -326,16 +326,6 @@ function DocumentAvailabilityFields({
               description="Create a central knowledge hub for a specific report."
             />
 
-            {availabilityTarget && !lockedManagedReportId && (
-              <button
-                type="button"
-                onClick={onClearTarget}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Clear selection
-              </button>
-            )}
-
             {availabilityTarget === 'reports' && allReportHubsClaimed && (
               <p className="text-sm text-muted-foreground ml-1 pl-7 sm:pl-8 border-l-2 border-sidebar-accent pt-1">
                 All report hubs are set up. Open a hub from the table to add files.
@@ -425,6 +415,16 @@ function DocumentAvailabilityFields({
                   })}
                 </div>
               </div>
+            )}
+
+            {availabilityTarget && !lockedManagedReportId && (
+              <button
+                type="button"
+                onClick={onClearTarget}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Clear
+              </button>
             )}
           </div>
         </>
