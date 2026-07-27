@@ -4,7 +4,15 @@ import { PageFooter } from './PageFooter';
 import { toast } from 'sonner';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { DetailSectionTitle } from './ui/detail-labels';
+import { cn } from './ui/utils';
+import {
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+} from './ui/interaction';
 
 interface CustomDropdownProps {
   label?: string;
@@ -41,7 +49,7 @@ function CustomDropdown({ label, value, options, onChange, placeholder }: Custom
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-xl text-sm text-secondary-foreground font-medium hover:bg-muted transition-colors"
+        className={listFilterTriggerClass}
       >
         <span className={selectedOption ? 'text-secondary-foreground' : 'text-text-subtle'}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -59,9 +67,12 @@ function CustomDropdown({ label, value, options, onChange, placeholder }: Custom
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-4 py-3 text-left text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                option.value === value ? 'bg-primary-subtle text-primary font-semibold' : 'text-secondary-foreground'
-              }`}
+              className={cn(
+                menuItemClass,
+                option.value === value
+                  ? 'bg-primary-subtle text-primary font-semibold'
+                  : 'text-secondary-foreground',
+              )}
             >
               {option.label}
             </button>
@@ -145,6 +156,7 @@ export function CollectiveRisk() {
       { id: 'um-8', text: 'Establish contingency stock in-country to buffer delays', owner: 'Supply Chain', status: 'completed', source: 'user' }
     ]
   });
+  const [mitigationToDelete, setMitigationToDelete] = useState<{ riskId: string; mitigationId: string } | null>(null);
 
   const aiSuggestedMitigations: { [key: string]: Array<{ id: string; text: string; rationale: string }> } = {
     'CR-001': [
@@ -850,7 +862,7 @@ export function CollectiveRisk() {
               <div className="relative" ref={itemsPerPageDropdownRef}>
                 <button
                   onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                  className="px-3 py-1.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 min-w-[70px] justify-between"
+                  className={cn(listFilterTriggerClass, 'min-w-[70px] justify-between px-3 py-1.5')}
                 >
                   {itemsPerPage}
                   <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
@@ -865,9 +877,11 @@ export function CollectiveRisk() {
                           setCurrentPage(1);
                           setShowItemsPerPageDropdown(false);
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                          itemsPerPage === count ? 'bg-secondary font-medium' : ''
-                        }`}
+                        className={cn(
+                          menuItemClass,
+                          'px-3',
+                          itemsPerPage === count && 'bg-secondary font-medium',
+                        )}
                       >
                         {count}
                       </button>
@@ -887,11 +901,7 @@ export function CollectiveRisk() {
                 <button 
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    currentPage === 1
-                      ? 'text-border-muted cursor-not-allowed'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
+                  className={paginationControlClass}
                   title="Previous page"
                 >
                   <ChevronLeft size={16} />
@@ -905,11 +915,12 @@ export function CollectiveRisk() {
                     <button 
                       key={page}
                       onClick={() => setCurrentPage(typeof page === 'number' ? page : currentPage)}
-                      className={`min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 rounded-lg text-sm sm:text-sm font-medium transition-colors ${
-                        page === currentPage 
-                          ? 'bg-primary text-white' 
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
+                      className={cn(
+                        paginationControlClass,
+                        'min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 text-sm font-medium',
+                        page === currentPage &&
+                          'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                      )}
                     >
                       {page}
                     </button>
@@ -918,11 +929,7 @@ export function CollectiveRisk() {
                 <button 
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    currentPage === totalPages
-                      ? 'text-border-muted cursor-not-allowed'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
+                  className={paginationControlClass}
                   title="Next page"
                 >
                   <ChevronRight size={16} />
@@ -1017,11 +1024,7 @@ export function CollectiveRisk() {
               <button 
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  currentPage === 1
-                    ? 'text-border-muted cursor-not-allowed'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
+                className={paginationControlClass}
               >
                 <ChevronLeft size={16} />
               </button>
@@ -1035,11 +1038,12 @@ export function CollectiveRisk() {
                   <button 
                     key={page}
                     onClick={() => setCurrentPage(typeof page === 'number' ? page : currentPage)}
-                    className={`min-w-[30px] h-[30px] px-2 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === page
-                        ? 'bg-primary text-white'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
+                    className={cn(
+                      paginationControlClass,
+                      'min-w-[30px] h-[30px] px-2 text-sm font-medium',
+                      currentPage === page &&
+                        'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                    )}
                   >
                     {page}
                   </button>
@@ -1049,11 +1053,7 @@ export function CollectiveRisk() {
               <button 
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  currentPage === totalPages
-                    ? 'text-border-muted cursor-not-allowed'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
+                className={paginationControlClass}
               >
                 <ChevronRight size={16} />
               </button>
@@ -1093,7 +1093,7 @@ export function CollectiveRisk() {
                 </h2>
                 <button 
                   onClick={() => { setSelectedRisk(null); setDrawerStatusOpen(false); setIsEditingResidual(false); setTempResidualValue(''); }}
-                  className="p-2 hover:bg-muted rounded-lg transition-colors border border-transparent hover:border-border">
+                  className={cn(iconButtonSmClass, 'size-8')}>
                   <X size={18} className="text-muted-foreground" />
                 </button>
               </div>
@@ -1190,7 +1190,7 @@ export function CollectiveRisk() {
                           setIsEditingResidual(false);
                           setTempResidualValue('');
                         }}
-                        className="flex-1 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted transition-colors"
+                        className={cn(listFilterTriggerClass, 'flex-1 justify-center')}
                       >
                         Cancel
                       </button>
@@ -1285,11 +1285,10 @@ export function CollectiveRisk() {
                             </div>
                             <button
                               onClick={() => {
-                                setUserMitigations({
-                                  ...userMitigations,
-                                  [selectedRiskData.id]: userMitigations[selectedRiskData.id]?.filter(m => m.id !== mitigation.id) || []
+                                setMitigationToDelete({
+                                  riskId: selectedRiskData.id,
+                                  mitigationId: mitigation.id,
                                 });
-                                toast.success('Mitigation removed');
                               }}
                               className="shrink-0 p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive-subtle rounded-md transition-all"
                               title="Remove mitigation"
@@ -1564,6 +1563,25 @@ export function CollectiveRisk() {
         </div>
         </div>
       </div>
+
+      <ConfirmDeleteDialog
+        open={Boolean(mitigationToDelete)}
+        onOpenChange={(open) => !open && setMitigationToDelete(null)}
+        onConfirm={() => {
+          if (!mitigationToDelete) return;
+          setUserMitigations({
+            ...userMitigations,
+            [mitigationToDelete.riskId]:
+              userMitigations[mitigationToDelete.riskId]?.filter(
+                (m) => m.id !== mitigationToDelete.mitigationId,
+              ) || [],
+          });
+          toast.success('Mitigation removed');
+          setMitigationToDelete(null);
+        }}
+        title="Are you sure you want to delete?"
+        description="This mitigation will be permanently removed. This action cannot be undone."
+      />
     </div>
   );
 }

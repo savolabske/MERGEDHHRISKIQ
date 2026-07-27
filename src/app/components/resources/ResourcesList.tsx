@@ -10,9 +10,21 @@ import {
   Pencil,
   Trash2,
   Eye,
+  MessagesSquare,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PlatformResource, ResourceOwnership } from '../../data/resourcesMock';
+import { Button } from '../ui/button';
+import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
+import {
+  iconButtonSmClass,
+  interactiveCardProps,
+  interactiveSurfaceClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+} from '../ui/interaction';
+import { cn } from '../ui/utils';
 import {
   OwnershipBadge,
   PlatformResourceStatusCell,
@@ -31,6 +43,120 @@ interface ResourcesListProps {
   onSelect: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onChatWithResource?: (id: string) => void;
+}
+
+function ResourceActionsMenu({
+  resourceId,
+  isOpen,
+  onToggle,
+  onClose,
+  onSelect,
+  onEdit,
+  onDelete,
+  onChatWithResource,
+}: {
+  resourceId: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onSelect: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onChatWithResource?: (id: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        className={cn(iconButtonSmClass, 'size-9')}
+        aria-label="Resource actions"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+      >
+        <MoreVertical size={18} />
+      </button>
+      {isOpen && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-10"
+            aria-label="Close menu"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+          />
+          <div
+            role="menu"
+            className="absolute right-0 top-full mt-1 z-20 w-48 bg-card border border-border rounded-lg shadow-lg py-1"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(resourceId);
+                onClose();
+              }}
+              className={cn(menuItemClass, 'flex items-center gap-2 px-3 text-foreground')}
+            >
+              <Eye size={14} />
+              View
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(resourceId);
+                onClose();
+              }}
+              className={cn(menuItemClass, 'flex items-center gap-2 px-3 text-foreground')}
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
+            {onChatWithResource && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChatWithResource(resourceId);
+                  onClose();
+                }}
+                className={cn(menuItemClass, 'flex items-center gap-2 px-3 text-foreground')}
+              >
+                <MessagesSquare size={14} />
+                Chat with resource
+              </button>
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(resourceId);
+                onClose();
+              }}
+              className={cn(
+                menuItemClass,
+                'flex items-center gap-2 px-3 text-destructive-text hover:bg-destructive-subtle',
+              )}
+            >
+              <Trash2 size={14} />
+              Delete
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function ResourcesList({
@@ -39,6 +165,7 @@ export function ResourcesList({
   onSelect,
   onEdit,
   onDelete,
+  onChatWithResource,
 }: ResourcesListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
@@ -47,6 +174,7 @@ export function ResourcesList({
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [showStatusFilterMenu, setShowStatusFilterMenu] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(PAGE_SIZE_OPTIONS[0]);
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
@@ -150,13 +278,10 @@ export function ResourcesList({
             Manage and discover operational documents, research, and technical links.
           </p>
         </div>
-        <button
-          onClick={onAdd}
-          className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shrink-0"
-        >
+        <Button type="button" onClick={onAdd} className="w-full sm:w-auto shrink-0">
           <Plus size={18} />
           Add Resource
-        </button>
+        </Button>
       </div>
 
       <div className="flex items-center gap-3">
@@ -181,7 +306,7 @@ export function ResourcesList({
               setShowStatusFilterMenu(false);
               setShowFilterMenu((v) => !v);
             }}
-            className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center gap-2 whitespace-nowrap"
+            className={listFilterTriggerClass}
             aria-expanded={showFilterMenu}
           >
             <span>{filterLabel}</span>
@@ -206,9 +331,10 @@ export function ResourcesList({
                     setFilter(value);
                     setShowFilterMenu(false);
                   }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors ${
-                    filter === value ? 'text-primary font-medium' : 'text-foreground'
-                  }`}
+                  className={cn(
+                    menuItemClass,
+                    filter === value ? 'text-primary font-medium' : 'text-foreground',
+                  )}
                 >
                   {label}
                 </button>
@@ -224,7 +350,7 @@ export function ResourcesList({
               setShowFilterMenu(false);
               setShowStatusFilterMenu((v) => !v);
             }}
-            className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center gap-2 whitespace-nowrap"
+            className={listFilterTriggerClass}
             aria-expanded={showStatusFilterMenu}
           >
             <span>{statusFilterLabel}</span>
@@ -249,9 +375,10 @@ export function ResourcesList({
                     setStatusFilter(value);
                     setShowStatusFilterMenu(false);
                   }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors ${
-                    statusFilter === value ? 'text-primary font-medium' : 'text-foreground'
-                  }`}
+                  className={cn(
+                    menuItemClass,
+                    statusFilter === value ? 'text-primary font-medium' : 'text-foreground',
+                  )}
                 >
                   {label}
                 </button>
@@ -264,9 +391,11 @@ export function ResourcesList({
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`w-9 h-9 flex items-center justify-center rounded-md transition-colors ${
-              viewMode === 'list' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted'
-            }`}
+            className={cn(
+              iconButtonSmClass,
+              'size-9',
+              viewMode === 'list' && 'bg-primary text-white hover:bg-primary-hover hover:text-white',
+            )}
             aria-label="List view"
           >
             <List size={16} />
@@ -274,9 +403,11 @@ export function ResourcesList({
           <button
             type="button"
             onClick={() => setViewMode('grid')}
-            className={`w-9 h-9 flex items-center justify-center rounded-md transition-colors ${
-              viewMode === 'grid' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted'
-            }`}
+            className={cn(
+              iconButtonSmClass,
+              'size-9',
+              viewMode === 'grid' && 'bg-primary text-white hover:bg-primary-hover hover:text-white',
+            )}
             aria-label="Grid view"
           >
             <Grid2X2 size={16} />
@@ -341,61 +472,18 @@ export function ResourcesList({
                 </div>
 
                 <div className="absolute top-4 right-4 sm:right-6 md:relative md:top-auto md:right-auto md:col-span-2 flex items-center justify-end">
-                  <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setOpenMenuId(openMenuId === resource.id ? null : resource.id)}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground transition-colors"
-                    aria-label="Resource actions"
-                  >
-                    <MoreVertical size={18} />
-                  </button>
-                  {openMenuId === resource.id && (
-                    <>
-                      <button
-                        type="button"
-                        className="fixed inset-0 z-10"
-                        aria-label="Close menu"
-                        onClick={() => setOpenMenuId(null)}
-                      />
-                      <div className="absolute right-0 top-full mt-1 z-20 w-44 bg-card border border-border rounded-lg shadow-lg py-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onSelect(resource.id);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
-                        >
-                          <Eye size={14} />
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onEdit(resource.id);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
-                        >
-                          <Pencil size={14} />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onDelete(resource.id);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive-text hover:bg-destructive-subtle"
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                  </div>
+                  <ResourceActionsMenu
+                    resourceId={resource.id}
+                    isOpen={openMenuId === resource.id}
+                    onToggle={() =>
+                      setOpenMenuId(openMenuId === resource.id ? null : resource.id)
+                    }
+                    onClose={() => setOpenMenuId(null)}
+                    onSelect={onSelect}
+                    onEdit={onEdit}
+                    onDelete={(id) => setDeleteId(id)}
+                    onChatWithResource={onChatWithResource}
+                  />
                 </div>
               </div>
             ))}
@@ -410,13 +498,38 @@ export function ResourcesList({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {paginatedResources.map((resource) => (
-            <button
+            <div
               key={resource.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => onSelect(resource.id)}
-              className="text-left p-5 bg-card border border-border rounded-xl hover:border-primary hover:shadow-sm transition-all group"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect(resource.id);
+                }
+              }}
+              className={cn(
+                'group relative text-left p-5 bg-card border border-border rounded-xl cursor-pointer',
+                interactiveSurfaceClass.white,
+              )}
+              {...interactiveCardProps}
             >
-              <h3 className="table-primary-text mb-2 break-words group-hover:text-primary transition-colors">
+              <div className="absolute top-3 right-3 z-10">
+                <ResourceActionsMenu
+                  resourceId={resource.id}
+                  isOpen={openMenuId === resource.id}
+                  onToggle={() =>
+                    setOpenMenuId(openMenuId === resource.id ? null : resource.id)
+                  }
+                  onClose={() => setOpenMenuId(null)}
+                  onSelect={onSelect}
+                  onEdit={onEdit}
+                  onDelete={(id) => setDeleteId(id)}
+                  onChatWithResource={onChatWithResource}
+                />
+              </div>
+              <h3 className="table-primary-text mb-2 pr-10 break-words group-hover:text-primary transition-colors">
                 {resource.title}
               </h3>
               <div className="flex flex-wrap gap-2 mb-3">
@@ -428,7 +541,7 @@ export function ResourcesList({
               </div>
               <p className="table-supporting-text line-clamp-2 mb-3">{resource.description}</p>
               <p className="table-metadata-text">{resource.lastModified}</p>
-            </button>
+            </div>
           ))}
           {filtered.length === 0 && (
             <div className="col-span-full py-12 text-center">
@@ -446,7 +559,7 @@ export function ResourcesList({
               <button
                 type="button"
                 onClick={() => setShowItemsPerPageDropdown((v) => !v)}
-                className="px-3 py-1.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 min-w-[70px] justify-between"
+                className={cn(listFilterTriggerClass, 'min-w-[70px] justify-between px-3 py-1.5')}
               >
                 {itemsPerPage}
                 <ChevronDown
@@ -464,9 +577,11 @@ export function ResourcesList({
                         setItemsPerPage(count);
                         setShowItemsPerPageDropdown(false);
                       }}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                        itemsPerPage === count ? 'bg-secondary font-medium' : ''
-                      }`}
+                      className={cn(
+                        menuItemClass,
+                        'px-3',
+                        itemsPerPage === count && 'bg-secondary font-medium',
+                      )}
                     >
                       {count}
                     </button>
@@ -486,11 +601,7 @@ export function ResourcesList({
                 type="button"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  currentPage === 1
-                    ? 'text-border-muted cursor-not-allowed'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
+                className={paginationControlClass}
                 title="Previous page"
               >
                 <ChevronLeft size={16} />
@@ -505,11 +616,11 @@ export function ResourcesList({
                     key={page}
                     type="button"
                     onClick={() => setCurrentPage(page as number)}
-                    className={`min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === page
-                        ? 'bg-primary text-white'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
+                    className={cn(
+                      paginationControlClass,
+                      'min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 text-sm font-medium',
+                      currentPage === page && 'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                    )}
                   >
                     {page}
                   </button>
@@ -519,11 +630,7 @@ export function ResourcesList({
                 type="button"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  currentPage === totalPages
-                    ? 'text-border-muted cursor-not-allowed'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
+                className={paginationControlClass}
                 title="Next page"
               >
                 <ChevronRight size={16} />
@@ -532,6 +639,22 @@ export function ResourcesList({
           </div>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={Boolean(deleteId)}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={() => {
+          if (!deleteId) return;
+          onDelete(deleteId);
+          setDeleteId(null);
+        }}
+        title="Are you sure you want to delete?"
+        description={
+          deleteId
+            ? `"${resources.find((r) => r.id === deleteId)?.title ?? 'This resource'}" will be permanently removed. This action cannot be undone.`
+            : 'This resource will be permanently removed. This action cannot be undone.'
+        }
+      />
     </div>
   );
 }

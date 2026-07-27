@@ -3,7 +3,11 @@ import { ChevronRight } from 'lucide-react';
 import { DASHBOARD_BRIEFING_UPDATES } from '../../data/dashboardMock';
 import { HUB_BRIEFING_UPDATES } from '../../data/homeDashboardMock';
 import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
-import { buildBriefingUpdateChatPayload, dashboardCardClass } from '../../utils/dashboardChatContext';
+import {
+  buildBriefingUpdateChatPayload,
+  dashboardCardClass,
+  interactiveCardProps,
+} from '../../utils/dashboardChatContext';
 
 function activateOnKeyDown(e: KeyboardEvent, onActivate: () => void) {
   if (e.key === 'Enter' || e.key === ' ') {
@@ -88,6 +92,7 @@ function BriefingUpdateRow({
       } ${hideDescription || compactDescription ? 'py-3.5 items-center' : 'py-5'} ${
         isLast ? '' : 'border-b border-sidebar-border'
       }`}
+      {...interactiveCardProps}
     >
       <span
         className={`w-2.5 h-2.5 rounded-full shrink-0 ${hideDescription ? '' : 'mt-1.5'}`}

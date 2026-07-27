@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { Search, Plus, MoreVertical, ChevronLeft, Check, Shield, Users, Trash2, X, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageFooter } from './PageFooter';
+import { cn } from './ui/utils';
+import {
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+} from './ui/interaction';
 
 interface Role {
   id: string;
@@ -573,7 +580,7 @@ export function RolesPermissions() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={handleBackToRoles}
-                      className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
+                      className={listFilterTriggerClass}
                     >
                       Discard
                     </button>
@@ -724,7 +731,7 @@ export function RolesPermissions() {
                     e.stopPropagation();
                     setOpenMenuId(openMenuId === role.id ? null : role.id);
                   }}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors"
+                  className={cn(iconButtonSmClass, 'size-8')}
                 >
                   <MoreVertical size={18} className="text-muted-foreground" />
                 </button>
@@ -743,7 +750,7 @@ export function RolesPermissions() {
                           setOpenMenuId(null);
                           // Edit role functionality
                         }}
-                        className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                        className={cn(menuItemClass, 'flex items-center gap-2 text-foreground')}
                       >
                         <Shield size={16} />
                         Edit Role
@@ -757,7 +764,7 @@ export function RolesPermissions() {
                               // Delete role functionality
                             }
                           }}
-                          className="w-full px-4 py-2.5 text-left text-sm text-destructive-text hover:bg-destructive-subtle transition-colors flex items-center gap-2"
+                          className={cn(menuItemClass, 'flex items-center gap-2 text-destructive-text hover:bg-destructive-subtle')}
                         >
                           <Trash2 size={16} />
                           Delete Role
@@ -813,14 +820,14 @@ export function RolesPermissions() {
                     setShowCreateRole(true);
                     toast.success('Opening edit mode...');
                   }}
-                  className="px-4 py-2 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  className={listFilterTriggerClass}
                 >
                   <Edit2 size={16} />
                   Edit
                 </button>
                 <button 
                   onClick={() => setViewingRole(null)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                  className={cn(iconButtonSmClass, 'size-8')}
                 >
                   <X size={20} className="text-muted-foreground" />
                 </button>

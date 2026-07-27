@@ -1,4 +1,5 @@
 import { cn } from '../../../components/ui/utils';
+import { chipButtonClass } from '../../../components/ui/interaction';
 
 interface ReportChipButtonProps {
   label: string;
@@ -11,10 +12,7 @@ export function ReportChipButton({ label, onClick, className }: ReportChipButton
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        'rounded-full border bg-white px-2.5 py-1 text-left text-[10.5px] font-medium leading-snug !text-[10.5px] transition',
-        className,
-      )}
+      className={cn(chipButtonClass, '!text-[10.5px]', className)}
     >
       {label}
     </button>

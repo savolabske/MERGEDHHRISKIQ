@@ -6,6 +6,15 @@ import { getUserById } from '../utils/mockUsers';
 import { TableSkeleton } from './ui/table-skeleton';
 import { PageScrollShell } from './PageScrollShell';
 import { Button } from './ui/button';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { cn } from './ui/utils';
+import {
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+  textLinkActionClass,
+} from './ui/interaction';
 import type { ChatHistoryItem } from '../types/chat';
 import {
   ChatSourceBadge,
@@ -164,6 +173,7 @@ export function Chats({
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
   const [selectedChatIds, setSelectedChatIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [deleteChatId, setDeleteChatId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [chatScopeFilter, setChatScopeFilter] = useState<ChatScopeFilter>('all');
   const [chatSourceFilter, setChatSourceFilter] = useState<ChatSourceFilter>(defaultSourceFilter);
@@ -419,7 +429,7 @@ export function Chats({
                   aria-expanded={showChatFilterDropdown}
                   aria-haspopup="listbox"
                   onClick={() => setShowChatFilterDropdown((open) => !open)}
-                  className="w-full sm:w-auto min-w-0 sm:min-w-[180px] px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center justify-between gap-2"
+                  className={cn(listFilterTriggerClass, 'w-full sm:w-auto min-w-0 sm:min-w-[180px] justify-between py-2.5')}
                 >
                   <span className="truncate">{chatScopeLabel(chatScopeFilter)}</span>
                   <ChevronDown
@@ -443,9 +453,11 @@ export function Chats({
                           setChatScopeFilter(option.id);
                           setShowChatFilterDropdown(false);
                         }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors ${
-                          chatScopeFilter === option.id ? 'bg-secondary font-medium' : ''
-                        }`}
+                        className={cn(
+                          menuItemClass,
+                          'py-2.5',
+                          chatScopeFilter === option.id && 'bg-secondary font-medium',
+                        )}
                       >
                         {option.label}
                       </button>
@@ -460,7 +472,7 @@ export function Chats({
                     aria-expanded={showSourceFilterDropdown}
                     aria-haspopup="listbox"
                     onClick={() => setShowSourceFilterDropdown((open) => !open)}
-                    className="w-full sm:w-auto min-w-0 sm:min-w-[180px] px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center justify-between gap-2"
+                    className={cn(listFilterTriggerClass, 'w-full sm:w-auto min-w-0 sm:min-w-[180px] justify-between py-2.5')}
                   >
                     <span className="truncate">{chatSourceFilterLabel(chatSourceFilter, sourceFilterOptions)}</span>
                     <ChevronDown
@@ -484,9 +496,11 @@ export function Chats({
                             setChatSourceFilter(option.id);
                             setShowSourceFilterDropdown(false);
                           }}
-                          className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors ${
-                            chatSourceFilter === option.id ? 'bg-secondary font-medium' : ''
-                          }`}
+                          className={cn(
+                            menuItemClass,
+                            'py-2.5',
+                            chatSourceFilter === option.id && 'bg-secondary font-medium',
+                          )}
                         >
                           {option.label}
                         </button>
@@ -517,7 +531,7 @@ export function Chats({
                     <button
                       type="button"
                       onClick={() => setSelectedChatIds(new Set())}
-                      className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      className={cn(textLinkActionClass, 'px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground')}
                     >
                       Clear
                     </button>
@@ -665,10 +679,10 @@ export function Chats({
                           e.stopPropagation();
                           setOpenMenuId(openMenuId === chat.id ? null : chat.id);
                         }}
-                        className="p-2 hover:bg-card rounded-lg transition-colors"
+                        className={cn(iconButtonSmClass, 'size-8 hover:bg-card')}
                         title="More options"
                       >
-                        <MoreVertical size={16} className="text-muted-foreground" />
+                        <MoreVertical size={16} />
                       </button>
                       {openMenuId === chat.id && (
                         <>
@@ -685,7 +699,7 @@ export function Chats({
                                 e.stopPropagation();
                                 togglePin(chat.id);
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                              className={cn(menuItemClass, 'flex items-center gap-2 py-2.5 text-foreground')}
                             >
                               <Pin size={16} className={pinnedChats.has(chat.id) ? "text-primary" : "text-muted-foreground"} />
                               <span>{pinnedChats.has(chat.id) ? 'Unpin chat' : 'Pin chat'}</span>
@@ -693,9 +707,10 @@ export function Chats({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDelete(chat.id);
+                                setDeleteChatId(chat.id);
+                                setOpenMenuId(null);
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-destructive-text hover:bg-destructive-subtle transition-colors flex items-center gap-2"
+                              className={cn(menuItemClass, 'flex items-center gap-2 py-2.5 text-destructive-text hover:bg-destructive-subtle')}
                             >
                               <Trash2 size={16} className="text-destructive-text" />
                               <span>Delete</span>
@@ -720,7 +735,7 @@ export function Chats({
                     <div className="relative" ref={itemsPerPageDropdownRef}>
                       <button
                         onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                        className="px-3 py-1.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 min-w-[70px] justify-between"
+                        className={cn(listFilterTriggerClass, 'min-w-[70px] justify-between px-3 py-1.5')}
                       >
                         {itemsPerPage}
                         <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
@@ -735,9 +750,11 @@ export function Chats({
                                 setCurrentPage(1);
                                 setShowItemsPerPageDropdown(false);
                               }}
-                              className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                                itemsPerPage === count ? 'bg-secondary font-medium' : ''
-                              }`}
+                              className={cn(
+                                menuItemClass,
+                                'px-3',
+                                itemsPerPage === count && 'bg-secondary font-medium',
+                              )}
                             >
                               {count}
                             </button>
@@ -759,11 +776,7 @@ export function Chats({
                       <button
                         onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          currentPage === 1
-                            ? 'text-border-muted cursor-not-allowed'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        className={paginationControlClass}
                         title="Previous page"
                       >
                         <ChevronLeft size={16} />
@@ -777,11 +790,11 @@ export function Chats({
                           <button
                             key={page}
                             onClick={() => setCurrentPage(typeof page === 'number' ? page : currentPage)}
-                            className={`min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 rounded-lg text-sm sm:text-sm font-medium transition-colors ${
-                              page === currentPage
-                                ? 'bg-primary text-white'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            }`}
+                            className={cn(
+                              paginationControlClass,
+                              'min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 text-sm font-medium',
+                              page === currentPage && 'bg-primary text-white hover:bg-primary hover:text-white',
+                            )}
                           >
                             {page}
                           </button>
@@ -790,11 +803,7 @@ export function Chats({
                       <button
                         onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                         disabled={currentPage === totalPages}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          currentPage === totalPages
-                            ? 'text-border-muted cursor-not-allowed'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        className={paginationControlClass}
                         title="Next page"
                       >
                         <ChevronRight size={16} />
@@ -806,35 +815,30 @@ export function Chats({
             </div>
     </PageScrollShell>
 
-      {showBulkDeleteConfirm && (
-        <div
-          className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400] p-4"
-          onClick={() => setShowBulkDeleteConfirm(false)}
-        >
-          <div className="bg-card rounded-2xl max-w-[500px] w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-foreground mb-3">Delete chats</h3>
-            <p className="text-base text-muted-foreground mb-6">
-              Delete {selectedChatIds.size} conversation{selectedChatIds.size > 1 ? 's' : ''}? This cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowBulkDeleteConfirm(false)}
-                className="flex-1 px-5 py-3 bg-card hover:bg-muted text-muted-foreground border border-border rounded-lg text-base font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={executeBulkDelete}
-                className="flex-1 px-5 py-3 bg-destructive hover:bg-destructive-text text-white rounded-lg text-base font-medium transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteChatId)}
+        onOpenChange={(open) => !open && setDeleteChatId(null)}
+        onConfirm={() => {
+          if (!deleteChatId) return;
+          handleDelete(deleteChatId);
+          setDeleteChatId(null);
+        }}
+        title="Are you sure you want to delete?"
+        description={
+          deleteChatId
+            ? `"${chatHistory.find((c) => c.id === deleteChatId)?.query ?? 'This conversation'}" will be permanently removed. This action cannot be undone.`
+            : 'This conversation will be permanently removed. This action cannot be undone.'
+        }
+      />
+
+      <ConfirmDeleteDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+        onConfirm={executeBulkDelete}
+        title="Are you sure you want to delete?"
+        description={`Delete ${selectedChatIds.size} conversation${selectedChatIds.size > 1 ? 's' : ''}? This action cannot be undone.`}
+        confirmLabel={`Delete ${selectedChatIds.size > 1 ? 'chats' : 'chat'}`}
+      />
     </>
   );
 }

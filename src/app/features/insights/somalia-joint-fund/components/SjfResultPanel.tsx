@@ -1,5 +1,7 @@
 import React from 'react';
 import { AnimatedAIResponse, ReportChipButton } from '../../shared';
+import { outlineControlClass } from '../../../../components/ui/interaction';
+import { cn } from '../../../../components/ui/utils';
 import type { SjfRecipeResult } from '../types';
 import { SjfChartRenderer } from './SjfCharts';
 
@@ -41,8 +43,9 @@ export function SjfResultPanel({ recipe, resultTitle, onBack, onFollowUp }: SjfR
           </div>
         </div>
         <button
+          type="button"
           onClick={onBack}
-          className="rounded-lg border border-[#B8D9EE] bg-white px-3 py-2 text-[12px] font-semibold text-[#00689D]"
+          className={cn(outlineControlClass, 'border-[#B8D9EE] text-[#00689D]')}
         >
           Back
         </button>

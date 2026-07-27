@@ -33,7 +33,7 @@ export function AuthHeroPanel() {
               className={`rounded-full transition-all ${
                 activeSlide === i
                   ? 'w-8 h-2.5 bg-white'
-                  : 'w-2.5 h-2.5 bg-white/40'
+                  : 'w-2.5 h-2.5 bg-white/40 hover:bg-white/70'
               }`}
             />
           ))}

@@ -754,13 +754,10 @@
   border-color: var(--checkbox-unchecked);
 }
 
+/* Hover visuals live in `interactiveSurfaceClass` (ui/interaction.ts).
+   This attribute only applies the shared surface transition duration. */
 :where([data-slot="card"], [data-interactive-card]) {
   transition-duration: var(--transition-surface);
-}
-
-:where([data-interactive-card]):hover {
-  border-color: var(--primary-border);
-  box-shadow: var(--shadow-sm);
 }
 
 :where([data-kpi="hero"], .text-kpi-hero) {

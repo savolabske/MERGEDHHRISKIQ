@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronDown, Filter, X } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
+import { filterTriggerIdleHoverClass } from '../../../components/ui/interaction';
 import type { ReportFilterInteractionMode } from './useReportFilterMode';
 
 export interface ReportFilterTheme {
@@ -152,7 +153,7 @@ export function ReportFilterBar({
             'inline-flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
             hasAppliedFilters
               ? 'border-primary bg-primary-subtle text-primary'
-              : 'border-border bg-card text-foreground',
+              : cn('border-border bg-card text-foreground', filterTriggerIdleHoverClass),
           )}
         >
           <span className="inline-flex items-center gap-2 min-w-0">

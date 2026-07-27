@@ -4,6 +4,7 @@ import { getChartTypeDisplayLabel } from '../../data/reportsAdminMock';
 import { KPI_ICON_MAP } from '../../data/reportsAdminMock';
 import type { ReportThemeTokens } from '../../data/reportThemeTokens';
 import { cn } from '../ui/utils';
+import { interactiveCardProps } from '../ui/interaction';
 import { ChartSkeletonGraphic } from './reportSkeletonGraphics';
 
 interface ReportSectionCardProps {
@@ -45,6 +46,7 @@ export function ReportSectionCard({
           borderColor: theme.forwardLookBorder,
           ...(isSelected ? { boxShadow: `0 0 0 2px ${theme.accent}` } : {}),
         }}
+        {...interactiveCardProps}
       >
         <div className="flex items-start justify-between gap-4 mb-5">
           <div className="flex items-center gap-2 min-w-0">
@@ -105,7 +107,7 @@ export function ReportSectionCard({
                 key={tile.id}
                 type="button"
                 onClick={() => onTileClick?.(tile.id)}
-                className="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors"
+                className="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors hover:bg-white/5 hover:border-white/20"
                 style={{
                   backgroundColor: theme.forwardLookTileBg,
                   borderColor: 'rgba(255,255,255,0.1)',
@@ -136,7 +138,7 @@ export function ReportSectionCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'w-full rounded-2xl border text-left transition-colors overflow-hidden',
+        'w-full rounded-2xl border text-left transition-colors overflow-hidden hover:brightness-[1.03]',
         isSelected && 'ring-2 ring-offset-1',
       )}
       style={{
@@ -146,6 +148,7 @@ export function ReportSectionCard({
           ? 'none'
           : '0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04)',
       }}
+      {...interactiveCardProps}
     >
       <div className="grid grid-cols-1 lg:grid-cols-2">
         <div

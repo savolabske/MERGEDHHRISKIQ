@@ -77,6 +77,7 @@ export function ResourceDocumentsList({
   }, [files]);
 
   const canEdit = editable && !!onChange;
+  const canUpload = !!onChange;
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -174,9 +175,32 @@ export function ResourceDocumentsList({
     <div className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-4">
         <DetailSectionTitle className="mb-0">Files</DetailSectionTitle>
-        <span className="text-sm text-muted-foreground">
-          {files.length} file{files.length !== 1 ? 's' : ''}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">
+            {files.length} file{files.length !== 1 ? 's' : ''}
+          </span>
+          {canUpload && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="platform-resource-file-upload"
+                accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.pptx"
+                multiple
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <Upload size={14} />
+                Add files
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="relative mb-4">
@@ -470,18 +494,10 @@ export function ResourceDocumentsList({
 
       {canEdit && (
         <div className="mt-5 border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors">
-          <input
-            ref={fileInputRef}
-            type="file"
-            onChange={handleFileSelect}
-            className="hidden"
-            id="platform-resource-file-upload"
-            accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.pptx"
-            multiple
-          />
-          <label
-            htmlFor="platform-resource-file-upload"
-            className="cursor-pointer flex flex-col items-center"
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full cursor-pointer flex flex-col items-center"
           >
             <Upload size={28} className="text-text-subtle mb-2" />
             <span className="text-sm font-medium text-primary">
@@ -490,7 +506,7 @@ export function ResourceDocumentsList({
             <span className="text-xs text-text-subtle mt-1">
               PDF, DOC, DOCX, TXT, XLSX (max 25MB)
             </span>
-          </label>
+          </button>
         </div>
       )}
     </div>

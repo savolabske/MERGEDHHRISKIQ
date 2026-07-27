@@ -47,6 +47,7 @@ import {
 } from '../../shared';
 import { ReportExportButton, useReportExport } from '../../shared/export';
 import { cn } from '../../../../components/ui/utils';
+import { filterTriggerClass, textLinkActionClass } from '../../../../components/ui/interaction';
 import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
 interface AidFlowScrollytellingProps {
@@ -271,7 +272,12 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   type="button"
                   disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'time' ? null : 'time'))}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'time' || startYear !== 2014 || endYear !== 2026 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
+                  className={filterTriggerClass(
+                    openMenu === 'time' || startYear !== 2014 || endYear !== 2026,
+                    'border-[#e6e9ef] bg-white text-[#3a4a5c]',
+                    'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]',
+                    'gap-2',
+                  )}
                 >
                   <Calendar size={13} />
                   {yearLabel}
@@ -284,7 +290,11 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                         Year Range
                       </span>
                       {(startYear !== 2014 || endYear !== 2026) && (
-                        <button onClick={() => clearMenu('time')} className="text-[11px] text-[#1f6feb]">
+                        <button
+                          type="button"
+                          onClick={() => clearMenu('time')}
+                          className={cn(textLinkActionClass, 'text-[#1f6feb]')}
+                        >
                           Clear Filters
                         </button>
                       )}
@@ -328,7 +338,11 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   type="button"
                   disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'donors' ? null : 'donors'))}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'donors' || selectedDonors.length > 0 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
+                  className={filterTriggerClass(
+                    openMenu === 'donors' || selectedDonors.length > 0,
+                    'border-[#e6e9ef] bg-white text-[#3a4a5c]',
+                    'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]',
+                  )}
                 >
                   {selectedDonors.length > 0 ? `Donors (${selectedDonors.length})` : 'All Donors'}
                   <ChevronDown size={13} />
@@ -348,7 +362,11 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   type="button"
                   disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'sectors' ? null : 'sectors'))}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'sectors' || selectedSectors.length > 0 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
+                  className={filterTriggerClass(
+                    openMenu === 'sectors' || selectedSectors.length > 0,
+                    'border-[#e6e9ef] bg-white text-[#3a4a5c]',
+                    'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]',
+                  )}
                 >
                   {selectedSectors.length > 0 ? `Sectors (${selectedSectors.length})` : 'All Sectors'}
                   <ChevronDown size={13} />
@@ -368,7 +386,11 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   type="button"
                   disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'regions' ? null : 'regions'))}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'regions' || selectedRegions.length > 0 ? 'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]' : 'border-[#e6e9ef] bg-white text-[#3a4a5c]'}`}
+                  className={filterTriggerClass(
+                    openMenu === 'regions' || selectedRegions.length > 0,
+                    'border-[#e6e9ef] bg-white text-[#3a4a5c]',
+                    'border-[#2a7fe0] bg-[#eaf1fe] text-[#1550b3]',
+                  )}
                 >
                   {selectedRegions.length > 0 ? `Regions (${selectedRegions.length})` : 'All Regions'}
                   <ChevronDown size={13} />

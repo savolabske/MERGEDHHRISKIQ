@@ -9,6 +9,7 @@ import { ReportSectionInsert } from './ReportSectionInsert';
 import { ReportSectionEditPanel, type SectionEditTarget } from './ReportSectionEditPanel';
 import { ReportSettingsPanel } from './ReportSettingsPanel';
 import { getReportBuilderTheme } from './reportBuilderTokens';
+import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
 import { cn } from '../ui/utils';
 
 function formatDate(d: Date): string {
@@ -20,7 +21,7 @@ interface ReportBuilderProps {
   savedSnapshot: string;
   onBack: () => void;
   onUpdate: (report: ManagedReport) => void;
-  onPublish: (report: ManagedReport) => void;
+  onPublish: (report: ManagedReport) => void | Promise<void>;
   onCommit: (report: ManagedReport) => void;
   onAttachSources?: () => void;
 }
@@ -37,6 +38,7 @@ export function ReportBuilder({
   const [editTarget, setEditTarget] = useState<SectionEditTarget | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedHighlight, setSelectedHighlight] = useState<string | null>(null);
+  const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
 
   const theme = getReportBuilderTheme(report.themeId);
   const isDirty = JSON.stringify(report) !== savedSnapshot;
@@ -179,7 +181,7 @@ export function ReportBuilder({
                           ? () => handleMoveSection(section.id, 'down')
                           : undefined
                       }
-                      onDelete={() => handleDeleteSection(section.id)}
+                      onDelete={() => setSectionToDelete(section.id)}
                       onTileClick={(tileId) =>
                         openSectionEdit({
                           kind: 'forward_tile',
@@ -241,6 +243,22 @@ export function ReportBuilder({
           />
         )}
       </div>
+
+      <ConfirmDeleteDialog
+        open={Boolean(sectionToDelete)}
+        onOpenChange={(open) => !open && setSectionToDelete(null)}
+        onConfirm={() => {
+          if (!sectionToDelete) return;
+          handleDeleteSection(sectionToDelete);
+          setSectionToDelete(null);
+        }}
+        title="Are you sure you want to delete?"
+        description={
+          sectionToDelete
+            ? `"${sortedSections.find((s) => s.id === sectionToDelete)?.title ?? 'This section'}" will be removed from the report. This action cannot be undone.`
+            : 'This section will be removed from the report. This action cannot be undone.'
+        }
+      />
     </div>
   );
 }

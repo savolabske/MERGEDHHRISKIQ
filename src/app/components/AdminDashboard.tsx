@@ -1,4 +1,6 @@
 import { PageScrollShell } from './PageScrollShell';
+import { cn } from './ui/utils';
+import { segmentPillClass } from './ui/interaction';
 
 export function AdminDashboard() {
   const groupUsage = [
@@ -75,8 +77,10 @@ export function AdminDashboard() {
                     <p className="text-sm text-muted-foreground mt-0.5">Active this week vs total registered</p>
                   </div>
                   <div className="flex items-center bg-muted border border-border rounded-lg p-0.5">
-                    <button className="px-3 py-1 text-xs text-muted-foreground rounded-md">Today</button>
-                    <button className="px-3 py-1 text-xs text-primary bg-card border border-border rounded-md font-medium">
+                    <button type="button" className={cn(segmentPillClass.base, segmentPillClass.idle)}>
+                      Today
+                    </button>
+                    <button type="button" className={cn(segmentPillClass.base, segmentPillClass.active)}>
                       This week
                     </button>
                   </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, X, Search, FileText, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 
 interface Definition {
   id: string;
@@ -78,6 +79,8 @@ export function Definitions() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingDefinition, setEditingDefinition] = useState<Definition | null>(null);
   const [selectedDefinitions, setSelectedDefinitions] = useState<Set<string>>(new Set());
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   
   // Form state
   const [shortForm, setShortForm] = useState('');
@@ -187,6 +190,7 @@ export function Definitions() {
       Promise.resolve().then(() => {
         setDefinitions(prev => prev.filter(d => !selectedDefinitions.has(d.id)));
         setSelectedDefinitions(new Set());
+        setShowBulkDeleteConfirm(false);
       }),
       {
         loading: `Deleting ${count} definition${count > 1 ? 's' : ''}...`,
@@ -239,7 +243,7 @@ export function Definitions() {
                     {selectedDefinitions.size} definition{selectedDefinitions.size > 1 ? 's' : ''} selected
                   </span>
                   <button
-                    onClick={handleBulkDelete}
+                    onClick={() => setShowBulkDeleteConfirm(true)}
                     className="px-3 py-1.5 bg-destructive hover:bg-destructive-text text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                   >
                     <Trash2 size={14} />
@@ -306,7 +310,7 @@ export function Definitions() {
                         Edit
                       </button>
                       <button 
-                        onClick={() => handleRemoveDefinition(definition.id)}
+                        onClick={() => setDeleteId(definition.id)}
                         className="px-3 py-1.5 border border-border bg-card hover:bg-destructive-subtle hover:border-destructive hover:text-destructive-text rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                         title="Remove definition"
                       >
@@ -483,6 +487,30 @@ export function Definitions() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={Boolean(deleteId)}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={() => {
+          if (!deleteId) return;
+          handleRemoveDefinition(deleteId);
+          setDeleteId(null);
+        }}
+        title="Are you sure you want to delete?"
+        description={
+          deleteId
+            ? `"${definitions.find((d) => d.id === deleteId)?.shortForm ?? 'This definition'}" will be permanently removed. This action cannot be undone.`
+            : 'This definition will be permanently removed. This action cannot be undone.'
+        }
+      />
+
+      <ConfirmDeleteDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+        onConfirm={handleBulkDelete}
+        title="Are you sure you want to delete?"
+        description={`Are you sure you want to delete ${selectedDefinitions.size} definition${selectedDefinitions.size > 1 ? 's' : ''}? This action cannot be undone.`}
+      />
     </>
   );
 }

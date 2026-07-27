@@ -4,6 +4,14 @@ import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
+import { cn } from './ui/utils';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import {
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+} from './ui/interaction';
 
 type CrawlSchedule = 'manual' | 'daily' | 'weekly';
 
@@ -270,6 +278,7 @@ export function URLSources() {
   const [isDrawerEditing, setIsDrawerEditing] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<URLSource | null>(null);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
@@ -532,6 +541,7 @@ export function URLSources() {
       Promise.resolve().then(() => {
         setSources(sources.filter(s => !selectedSources.has(s.id)));
         setSelectedSources(new Set());
+        setShowBulkDeleteConfirm(false);
       }),
       {
         loading: `Deleting ${count} URL source${count > 1 ? 's' : ''}...`,
@@ -665,7 +675,7 @@ export function URLSources() {
                 <div className="relative" ref={statusDropdownRef}>
                   <button
                     onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                    className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+                    className={listFilterTriggerClass}
                   >
                     {statusFilter}
                     <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
@@ -679,7 +689,7 @@ export function URLSources() {
                             setStatusFilter(status);
                             setShowStatusDropdown(false);
                           }}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
+                          className={menuItemClass}
                         >
                           {status}
                         </button>
@@ -692,7 +702,7 @@ export function URLSources() {
                 <div className="relative" ref={itemsPerPageDropdownRef}>
                   <button
                     onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                    className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+                    className={listFilterTriggerClass}
                   >
                     {itemsPerPage} per page
                     <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
@@ -706,7 +716,7 @@ export function URLSources() {
                             setItemsPerPage(num);
                             setShowItemsPerPageDropdown(false);
                           }}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
+                          className={menuItemClass}
                         >
                           {num} per page
                         </button>
@@ -726,7 +736,7 @@ export function URLSources() {
                     {selectedSources.size} source{selectedSources.size > 1 ? 's' : ''} selected
                   </span>
                   <button
-                    onClick={handleBulkDelete}
+                    onClick={() => setShowBulkDeleteConfirm(true)}
                     className="px-3 py-1.5 bg-destructive hover:bg-destructive-text text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                   >
                     <Trash2 size={14} />
@@ -813,21 +823,21 @@ export function URLSources() {
                     >
                       <button
                         onClick={() => openDetailDrawer(source)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted transition-colors"
+                        className={cn(iconButtonSmClass, 'size-8 border border-border bg-card')}
                         title="View details"
                       >
                         <Eye size={16} className="text-muted-foreground" />
                       </button>
                       <button
                         onClick={() => handleRecrawl(source.id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted transition-colors"
+                        className={cn(iconButtonSmClass, 'size-8 border border-border bg-card')}
                         title="Recrawl now"
                       >
                         <RefreshCw size={16} className="text-muted-foreground" />
                       </button>
                       <button
                         onClick={() => setSourceToDelete(source)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border bg-card hover:bg-destructive-subtle transition-colors"
+                        className={cn(iconButtonSmClass, 'size-8 border border-border bg-card hover:bg-destructive-subtle')}
                         title="Delete source"
                       >
                         <Trash2 size={16} className="text-destructive-text" />
@@ -853,7 +863,7 @@ export function URLSources() {
                     <div className="relative" ref={itemsPerPageDropdownRef}>
                       <button
                         onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                        className="px-3 py-1.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 min-w-[70px] justify-between"
+                        className={cn(listFilterTriggerClass, 'min-w-[70px] justify-between px-3 py-1.5')}
                       >
                         {itemsPerPage}
                         <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
@@ -868,9 +878,11 @@ export function URLSources() {
                                 setCurrentPage(1);
                                 setShowItemsPerPageDropdown(false);
                               }}
-                              className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                                itemsPerPage === count ? 'bg-secondary font-medium' : ''
-                              }`}
+                              className={cn(
+                                menuItemClass,
+                                'px-3',
+                                itemsPerPage === count && 'bg-secondary font-medium',
+                              )}
                             >
                               {count}
                             </button>
@@ -890,11 +902,7 @@ export function URLSources() {
                       <button 
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          currentPage === 1
-                            ? 'text-border-muted cursor-not-allowed'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        className={paginationControlClass}
                         title="Previous page"
                       >
                         <ChevronLeft size={16} />
@@ -908,11 +916,12 @@ export function URLSources() {
                           <button 
                             key={page}
                             onClick={() => setCurrentPage(typeof page === 'number' ? page : currentPage)}
-                            className={`min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 rounded-lg text-sm sm:text-sm font-medium transition-colors ${
-                              page === currentPage 
-                                ? 'bg-primary text-white' 
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            }`}
+                            className={cn(
+                              paginationControlClass,
+                              'min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 text-sm font-medium',
+                              page === currentPage &&
+                                'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                            )}
                           >
                             {page}
                           </button>
@@ -921,11 +930,7 @@ export function URLSources() {
                       <button 
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          currentPage === totalPages
-                            ? 'text-border-muted cursor-not-allowed'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        className={paginationControlClass}
                         title="Next page"
                       >
                         <ChevronRight size={16} />
@@ -951,7 +956,7 @@ export function URLSources() {
               </div>
               <button 
                 onClick={closeAddModal}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                className={cn(iconButtonSmClass, 'size-8')}
               >
                 <X size={20} className="text-muted-foreground" />
               </button>
@@ -1084,7 +1089,7 @@ export function URLSources() {
             <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4 flex items-center justify-end gap-3">
               <button
                 onClick={closeAddModal}
-                className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
+                className={listFilterTriggerClass}
               >
                 Cancel
               </button>
@@ -1143,7 +1148,7 @@ export function URLSources() {
                 </div>
                 <button
                   onClick={closeDetailDrawer}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors shrink-0"
+                  className={cn(iconButtonSmClass, 'size-8 shrink-0')}
                 >
                   <X size={20} className="text-muted-foreground" />
                 </button>
@@ -1289,7 +1294,7 @@ export function URLSources() {
               <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 shrink-0 bg-card">
                 <button
                   onClick={cancelDrawerEdit}
-                  className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
+                  className={listFilterTriggerClass}
                 >
                   Cancel
                 </button>
@@ -1324,43 +1329,31 @@ export function URLSources() {
       )}
 
       {/* Delete confirmation */}
-      {sourceToDelete && (
-        <div
-          className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400] p-4"
-          onClick={() => setSourceToDelete(null)}
-        >
-          <div
-            className="bg-card rounded-2xl max-w-[500px] w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-6 py-5 border-b border-border">
-              <h3 className="text-lg font-semibold text-foreground">Remove URL source?</h3>
-            </div>
-            <div className="px-6 py-5">
-              <p className="text-sm text-muted-foreground mb-2">
-                Are you sure you want to remove this URL source? This action cannot be undone.
-              </p>
-              <p className="text-sm font-medium text-foreground break-all">{sourceToDelete.url}</p>
-            </div>
-            <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setSourceToDelete(null)}
-                className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                className="px-4 py-2.5 bg-destructive hover:bg-destructive-text text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                Remove source
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        open={Boolean(sourceToDelete)}
+        onOpenChange={(open) => !open && setSourceToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Are you sure you want to delete?"
+        description={
+          sourceToDelete ? (
+            <>
+              <p>Are you sure you want to remove this URL source? This action cannot be undone.</p>
+              <p className="font-medium text-foreground break-all">{sourceToDelete.url}</p>
+            </>
+          ) : (
+            'This URL source will be permanently removed. This action cannot be undone.'
+          )
+        }
+        confirmLabel="Remove source"
+      />
+
+      <ConfirmDeleteDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+        onConfirm={handleBulkDelete}
+        title="Are you sure you want to delete?"
+        description={`Are you sure you want to delete ${selectedSources.size} URL source${selectedSources.size > 1 ? 's' : ''}? This action cannot be undone.`}
+      />
     </>
   );
 }

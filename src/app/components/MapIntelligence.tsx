@@ -14,6 +14,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { cn } from "./ui/utils";
+import { iconButtonSmClass } from "./ui/interaction";
 
 const riskPrompts = [
   {
@@ -1891,8 +1893,9 @@ export function MapIntelligence() {
                       <h3 className="text-lg font-semibold leading-tight text-foreground">Query History</h3>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setIsHistoryOpen(false)}
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-text-subtle hover:bg-muted hover:text-muted-foreground"
+                      className={iconButtonSmClass}
                       aria-label="Close history"
                       title="Close history"
                     >
@@ -1904,8 +1907,9 @@ export function MapIntelligence() {
                     <div className="flex items-center gap-2">
                       {chatMessages.length > 0 && (
                         <button
+                          type="button"
                           onClick={handleBackToBaseScreen}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                          className={cn(iconButtonSmClass, 'border border-border')}
                           aria-label="Back to base screen"
                           title="Back to base screen"
                         >
@@ -1924,7 +1928,7 @@ export function MapIntelligence() {
                       onClick={() => (isMobileViewport ? setIsMobilePromptOpen((prev) => !prev) : setIsPromptCollapsed((prev) => !prev))}
                       aria-label={isPromptCollapsed ? "Expand prompt panel" : "Collapse prompt panel"}
                       title={isPromptCollapsed ? "Expand panel" : "Collapse panel"}
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                      className={cn(iconButtonSmClass, 'border border-border')}
                     >
                       {isMobileViewport ? (
                         isMobilePromptOpen ? (
@@ -1947,7 +1951,7 @@ export function MapIntelligence() {
                 onClick={() => setIsPromptCollapsed((prev) => !prev)}
                 aria-label={isPromptCollapsed ? "Expand prompt panel" : "Collapse prompt panel"}
                 title={isPromptCollapsed ? "Expand panel" : "Collapse panel"}
-                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                className={cn(iconButtonSmClass, 'border border-border')}
               >
                 {isPromptCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
               </button>

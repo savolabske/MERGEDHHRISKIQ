@@ -1,6 +1,8 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
 import { AnimatedAIResponse, ReportChipButton } from '../../shared';
+import { outlineControlClass } from '../../../../components/ui/interaction';
+import { cn } from '../../../../components/ui/utils';
 import type { AidFlowRecipeResult } from '../types';
 import { AidFlowChartRenderer } from './AidFlowCharts';
 
@@ -47,8 +49,9 @@ export function AidFlowResultPanel({
           </div>
         </div>
         <button
+          type="button"
           onClick={onBack}
-          className="rounded-lg border border-[#cfe0fd] bg-white px-3 py-2 text-[12px] font-semibold text-[#1f6feb]"
+          className={cn(outlineControlClass, 'border-[#cfe0fd] text-[#1f6feb]')}
         >
           Back
         </button>

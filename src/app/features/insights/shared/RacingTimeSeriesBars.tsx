@@ -178,7 +178,7 @@ export function RacingTimeSeriesBars({
           type="button"
           onClick={togglePlay}
           aria-label={isPlaying ? 'Pause animation' : 'Play animation'}
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${styles.accentBorder} text-white ${styles.accentBg}`}
+          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-white transition-colors ${styles.accentBorder} ${styles.accentBg}`}
         >
           {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
         </button>

@@ -36,6 +36,15 @@ import { PageFooter } from './PageFooter';
 import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { TableSkeleton } from './ui/table-skeleton';
 import { DetailFieldLabel, DetailSectionTitle, DetailEmptyValue } from './ui/detail-labels';
+import {
+  chipRemoveClass,
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+} from './ui/interaction';
+import { cn } from './ui/utils';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { ResourceFileUploadModal } from './ResourceFileUploadModal';
 
 type DocumentFileProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed';
@@ -1552,6 +1561,8 @@ export function Documents({
   const [pendingDetailDeleteIds, setPendingDetailDeleteIds] = useState<string[]>([]);
   const [detailFileMenuAnchor, setDetailFileMenuAnchor] = useState<DetailFileMenuAnchor | null>(null);
   const [showMainDeleteConfirm, setShowMainDeleteConfirm] = useState(false);
+  const [pendingListDeleteId, setPendingListDeleteId] = useState<string | null>(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   
   // Form state
   const [title, setTitle] = useState('');
@@ -2038,6 +2049,7 @@ export function Documents({
     });
     if (hubIds.length > 0) {
       toast.error('Report hubs cannot be bulk deleted. Delete them individually from the hub detail view.');
+      setShowBulkDeleteConfirm(false);
       return;
     }
 
@@ -2047,6 +2059,7 @@ export function Documents({
         setDocuments(documents.filter(doc => !selectedDocuments.has(doc.id)));
         setSelectedDocuments(new Set());
         setShowBulkActionsDropdown(false);
+        setShowBulkDeleteConfirm(false);
       }),
       {
         loading: `Deleting ${count} resource${count > 1 ? 's' : ''}...`,
@@ -2060,7 +2073,8 @@ export function Documents({
     const count = selectedDocuments.size;
     switch (action) {
       case 'delete':
-        handleDeleteSelected();
+        setShowBulkActionsDropdown(false);
+        setShowBulkDeleteConfirm(true);
         break;
       case 'process':
         toast.success(`Processing ${count} resource${count > 1 ? 's' : ''}...`);
@@ -2223,7 +2237,7 @@ export function Documents({
                 e.stopPropagation();
                 setOpenMenuId(openMenuId === doc.id ? null : doc.id);
               }}
-              className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              className={cn(iconButtonSmClass, 'size-8')}
               title="More actions"
             >
               <MoreVertical size={18} className="text-muted-foreground" />
@@ -2236,7 +2250,7 @@ export function Documents({
                     openDocumentGroup(doc);
                     setOpenMenuId(null);
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg flex items-center gap-2"
+                  className={cn(menuItemClass, 'flex items-center gap-2')}
                 >
                   <FileText size={14} />
                   View
@@ -2249,7 +2263,7 @@ export function Documents({
                     setIsInlineEditing(true);
                     setOpenMenuId(null);
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2"
+                  className={cn(menuItemClass, 'flex items-center gap-2')}
                 >
                   <Edit2 size={14} />
                   Edit
@@ -2257,9 +2271,13 @@ export function Documents({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDeleteDocument(doc.id);
+                    setPendingListDeleteId(doc.id);
+                    setOpenMenuId(null);
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-destructive-text hover:bg-destructive-subtle transition-colors last:rounded-b-lg flex items-center gap-2"
+                  className={cn(
+                    menuItemClass,
+                    'flex items-center gap-2 text-destructive-text hover:bg-destructive-subtle',
+                  )}
                 >
                   <Trash2 size={14} />
                   Delete
@@ -2692,7 +2710,7 @@ export function Documents({
                             <button
                               type="button"
                               onClick={() => setEditWebLinks((prev) => prev.filter((item) => item !== link))}
-                              className="text-muted-foreground hover:text-destructive-text p-1 shrink-0"
+                              className={chipRemoveClass}
                               aria-label={`Remove ${link}`}
                             >
                               <X size={14} />
@@ -3870,10 +3888,10 @@ export function Documents({
                             <button
                               type="button"
                               onClick={() => setWebLinks((prev) => prev.filter((item) => item !== link))}
-                              className="shrink-0"
+                              className={chipRemoveClass}
                               aria-label={`Remove ${link}`}
                             >
-                              <X size={14} className="text-muted-foreground" />
+                              <X size={14} />
                             </button>
                           </li>
                         ))}
@@ -4118,7 +4136,7 @@ export function Documents({
                 <div className="relative" ref={statusDropdownRef}>
                   <button
                     onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                    className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+                    className={listFilterTriggerClass}
                   >
                     {statusFilter}
                     <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
@@ -4132,7 +4150,7 @@ export function Documents({
                             setStatusFilter(status);
                             setShowStatusDropdown(false);
                           }}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
+                          className={menuItemClass}
                         >
                           {status}
                         </button>
@@ -4146,11 +4164,11 @@ export function Documents({
                   <button
                     type="button"
                     onClick={() => setShowAvailabilityFilterDropdown(!showAvailabilityFilterDropdown)}
-                    className={`px-4 py-2.5 border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap ${
-                      showAvailabilityFilterDropdown || availabilityFilter !== 'All Destinations'
-                        ? 'border-primary'
-                        : 'border-border'
-                    }`}
+                    className={cn(
+                      listFilterTriggerClass,
+                      (showAvailabilityFilterDropdown || availabilityFilter !== 'All Destinations') &&
+                        'border-primary',
+                    )}
                   >
                     {availabilityFilter}
                     <ChevronDown
@@ -4168,9 +4186,12 @@ export function Documents({
                             setAvailabilityFilter(option);
                             setShowAvailabilityFilterDropdown(false);
                           }}
-                          className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                            availabilityFilter === option ? 'text-primary font-medium bg-muted' : 'text-foreground'
-                          }`}
+                          className={cn(
+                            menuItemClass,
+                            availabilityFilter === option
+                              ? 'text-primary font-medium bg-muted'
+                              : 'text-foreground',
+                          )}
                         >
                           {option}
                         </button>
@@ -4183,7 +4204,7 @@ export function Documents({
                 <div className="relative" ref={userGroupFilterDropdownRef}>
                   <button
                     onClick={() => setShowUserGroupFilterDropdown(!showUserGroupFilterDropdown)}
-                    className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+                    className={listFilterTriggerClass}
                   >
                     {userGroupFilter}
                     <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showUserGroupFilterDropdown ? 'rotate-180' : ''}`} />
@@ -4197,7 +4218,7 @@ export function Documents({
                             setUserGroupFilter(group);
                             setShowUserGroupFilterDropdown(false);
                           }}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
+                          className={menuItemClass}
                         >
                           {group}
                         </button>
@@ -4211,11 +4232,11 @@ export function Documents({
                   <button
                     type="button"
                     onClick={() => setShowTagFilterDropdown(!showTagFilterDropdown)}
-                    className={`px-4 py-2.5 border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap max-w-[220px] ${
-                      showTagFilterDropdown || selectedTagFilters.length > 0
-                        ? 'border-primary'
-                        : 'border-border'
-                    }`}
+                    className={cn(
+                      listFilterTriggerClass,
+                      'max-w-[220px]',
+                      (showTagFilterDropdown || selectedTagFilters.length > 0) && 'border-primary',
+                    )}
                   >
                     <span className="truncate">{tagFilterButtonLabel}</span>
                     <ChevronDown size={16} className={`text-muted-foreground shrink-0 transition-transform ${showTagFilterDropdown ? 'rotate-180' : ''}`} />
@@ -4250,7 +4271,7 @@ export function Documents({
                                 type="button"
                                 key={display}
                                 onClick={() => toggleTagFilterSelection(tag)}
-                                className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center gap-3"
+                                className={cn(menuItemClass, 'flex items-center gap-3 px-3')}
                               >
                                 <div
                                   className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
@@ -4310,7 +4331,7 @@ export function Documents({
                   <div className="relative" ref={bulkActionsDropdownRef}>
                     <button
                       onClick={() => setShowBulkActionsDropdown(!showBulkActionsDropdown)}
-                      className="px-4 py-2 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+                      className={listFilterTriggerClass}
                     >
                       Bulk Actions
                       <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showBulkActionsDropdown ? 'rotate-180' : ''}`} />
@@ -4319,31 +4340,34 @@ export function Documents({
                       <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
                         <button
                           onClick={() => handleBulkAction('delete')}
-                          className="w-full px-4 py-2.5 text-left text-sm text-destructive-text hover:bg-destructive-subtle transition-colors first:rounded-t-lg"
+                          className={cn(
+                            menuItemClass,
+                            'text-destructive-text hover:bg-destructive-subtle',
+                          )}
                         >
                           Delete
                         </button>
                         <button
                           onClick={() => handleBulkAction('process')}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors"
+                          className={menuItemClass}
                         >
                           Process
                         </button>
                         <button
                           onClick={() => handleBulkAction('reembed')}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors"
+                          className={menuItemClass}
                         >
                           Re-embed
                         </button>
                         <button
                           onClick={() => handleBulkAction('cleanup')}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors"
+                          className={menuItemClass}
                         >
                           Clean up
                         </button>
                         <button
                           onClick={() => handleBulkAction('rebuild')}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors last:rounded-b-lg"
+                          className={menuItemClass}
                         >
                           Force full rebuild
                         </button>
@@ -4419,7 +4443,7 @@ export function Documents({
                     <div className="relative" ref={itemsPerPageDropdownRef}>
                       <button
                         onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                        className="px-3 py-1.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 min-w-[70px] justify-between"
+                        className={cn(listFilterTriggerClass, 'min-w-[70px] justify-between px-3 py-1.5')}
                       >
                         {itemsPerPage}
                         <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
@@ -4434,9 +4458,11 @@ export function Documents({
                                 setCurrentPage(1);
                                 setShowItemsPerPageDropdown(false);
                               }}
-                              className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                                itemsPerPage === count ? 'bg-secondary font-medium' : ''
-                              }`}
+                              className={cn(
+                                menuItemClass,
+                                'px-3',
+                                itemsPerPage === count && 'bg-secondary font-medium',
+                              )}
                             >
                               {count}
                             </button>
@@ -4459,11 +4485,7 @@ export function Documents({
                       <button
                         onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          currentPage === 1
-                            ? 'text-border-muted cursor-not-allowed'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        className={paginationControlClass}
                         title="Previous page"
                       >
                         <ChevronLeft size={16} />
@@ -4479,11 +4501,12 @@ export function Documents({
                           <button
                             key={page}
                             onClick={() => setCurrentPage(page as number)}
-                            className={`min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 rounded-lg text-sm sm:text-sm font-medium transition-colors ${
-                              currentPage === page
-                                ? 'bg-primary text-white'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            }`}
+                            className={cn(
+                              paginationControlClass,
+                              'min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 text-sm font-medium',
+                              currentPage === page &&
+                                'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                            )}
                           >
                             {page}
                           </button>
@@ -4494,11 +4517,7 @@ export function Documents({
                       <button
                         onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                         disabled={currentPage === totalPages}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          currentPage === totalPages
-                            ? 'text-border-muted cursor-not-allowed'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        className={paginationControlClass}
                         title="Next page"
                       >
                         <ChevronRight size={16} />
@@ -4513,6 +4532,29 @@ export function Documents({
         </div>
       </div>
 
+      <ConfirmDeleteDialog
+        open={Boolean(pendingListDeleteId)}
+        onOpenChange={(open) => !open && setPendingListDeleteId(null)}
+        onConfirm={() => {
+          if (!pendingListDeleteId) return;
+          handleDeleteDocument(pendingListDeleteId);
+          setPendingListDeleteId(null);
+        }}
+        title="Are you sure you want to delete?"
+        description={
+          pendingListDeleteId
+            ? `"${documents.find((d) => d.id === pendingListDeleteId)?.title ?? 'This resource'}" will be permanently removed. This action cannot be undone.`
+            : 'This resource will be permanently removed. This action cannot be undone.'
+        }
+      />
+
+      <ConfirmDeleteDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+        onConfirm={handleDeleteSelected}
+        title="Are you sure you want to delete?"
+        description={`Are you sure you want to delete ${selectedDocuments.size} resource${selectedDocuments.size > 1 ? 's' : ''}? This action cannot be undone.`}
+      />
     </div>
   );
 }

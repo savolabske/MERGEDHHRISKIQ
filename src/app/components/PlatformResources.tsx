@@ -68,6 +68,7 @@ export function PlatformResources({ onChatWithResource, focusedResourceId }: Pla
                 onAdd={() => setView('add')}
                 onSelect={handleSelect}
                 onEdit={handleEdit}
+                onChatWithResource={onChatWithResource}
                 onDelete={(id) => {
                   toast.promise(
                     Promise.resolve().then(() => handleDelete(id)),

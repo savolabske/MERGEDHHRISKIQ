@@ -3,6 +3,14 @@ import { PageFooter } from './PageFooter';
 import { ChevronDown, X, ChevronLeft, MapPin, Sparkles, Shield, Plus, Check, Lightbulb, CheckCircle2, Circle, Clock, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { DetailSectionTitle } from './ui/detail-labels';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { cn } from './ui/utils';
+import {
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  selectTriggerClass,
+} from './ui/interaction';
 
 interface Risk {
   id: string;
@@ -126,7 +134,7 @@ function CustomDropdown({ label, value, options, onChange, placeholder }: Custom
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 bg-card border border-border rounded-xl text-sm text-secondary-foreground font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent flex items-center justify-between"
+        className={selectTriggerClass}
       >
         <span className={selectedOption ? 'text-secondary-foreground' : 'text-text-subtle'}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -144,9 +152,12 @@ function CustomDropdown({ label, value, options, onChange, placeholder }: Custom
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-4 py-3 text-left text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                option.value === value ? 'bg-primary-subtle text-primary font-semibold' : 'text-secondary-foreground'
-              }`}
+              className={cn(
+                menuItemClass,
+                option.value === value
+                  ? 'bg-primary-subtle text-primary font-semibold'
+                  : 'text-secondary-foreground',
+              )}
             >
               {option.label}
             </button>
@@ -243,6 +254,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
     ]
   });
   const [dismissedAiSuggestions, setDismissedAiSuggestions] = useState<{ [key: string]: string[] }>({});
+  const [mitigationToDelete, setMitigationToDelete] = useState<{ riskId: string; mitigationId: string } | null>(null);
 
   // Sample risk data
   const risks: Risk[] = [
@@ -936,7 +948,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
                   setSelectedRisk(null);
                   setSelectedCell(null);
                 }}
-                className="p-2 hover:bg-muted rounded-lg transition-colors border border-transparent hover:border-border"
+                className={cn(iconButtonSmClass, 'size-8')}
               >
                 <X size={18} className="text-muted-foreground" />
               </button>
@@ -1078,7 +1090,7 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
                               setIsEditingResidual(false);
                               setTempResidualValue('');
                             }}
-                            className="flex-1 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted transition-colors"
+                            className={cn(listFilterTriggerClass, 'flex-1 justify-center')}
                           >
                             Cancel
                           </button>
@@ -1181,11 +1193,10 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
                                 </div>
                                 <button
                                   onClick={() => {
-                                    setUserMitigations({
-                                      ...userMitigations,
-                                      [selectedRisk.id]: userMitigations[selectedRisk.id]?.filter(m => m.id !== mitigation.id) || []
+                                    setMitigationToDelete({
+                                      riskId: selectedRisk.id,
+                                      mitigationId: mitigation.id,
                                     });
-                                    toast.success('Mitigation action removed');
                                   }}
                                   className="shrink-0 p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive-subtle rounded-md transition-all"
                                   title="Remove mitigation"
@@ -1427,6 +1438,25 @@ export function RiskMatrix({ compact = false }: { compact?: boolean }) {
         )}
         </div>
       </div>
+
+      <ConfirmDeleteDialog
+        open={Boolean(mitigationToDelete)}
+        onOpenChange={(open) => !open && setMitigationToDelete(null)}
+        onConfirm={() => {
+          if (!mitigationToDelete) return;
+          setUserMitigations({
+            ...userMitigations,
+            [mitigationToDelete.riskId]:
+              userMitigations[mitigationToDelete.riskId]?.filter(
+                (m) => m.id !== mitigationToDelete.mitigationId,
+              ) || [],
+          });
+          toast.success('Mitigation action removed');
+          setMitigationToDelete(null);
+        }}
+        title="Are you sure you want to delete?"
+        description="This mitigation will be permanently removed. This action cannot be undone."
+      />
     </div>
   );
 }

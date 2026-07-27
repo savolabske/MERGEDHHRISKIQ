@@ -12,6 +12,12 @@ import { ShareThreadModal } from './ShareThreadModal';
 import { CURRENT_USER, RISK_IQ_USER, getUserById } from '../utils/mockUsers';
 import { toast } from 'sonner';
 import { cn } from './ui/utils';
+import {
+  iconButtonSmClass,
+  menuItemClass,
+  outlineControlClass,
+  textLinkActionClass,
+} from './ui/interaction';
 import { isChatEligibleKnowledgeSource } from '../data/documentDetailData';
 import {
   buildRefinedKnowledgeResponse,
@@ -784,7 +790,7 @@ export function Chat({
                   <button
                     type="button"
                     onClick={() => onKnowledgeSourceClick(source)}
-                    className="inline-flex w-fit items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground-emphasis hover:bg-muted transition-colors"
+                    className={cn(outlineControlClass, 'inline-flex w-fit items-center gap-2 text-xs font-medium text-foreground-emphasis')}
                   >
                     <FileText size={14} className="text-muted-foreground shrink-0" />
                     <span>Chat with this document</span>
@@ -797,7 +803,7 @@ export function Chat({
                     href={sourceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground-emphasis hover:bg-muted transition-colors"
+                    className={cn(outlineControlClass, 'inline-flex items-center gap-2 text-xs font-medium text-foreground-emphasis')}
                   >
                     <ExternalLink size={14} className="text-muted-foreground" />
                     <span className="truncate max-w-[280px]">{sourceUrl}</span>
@@ -1064,7 +1070,7 @@ export function Chat({
             <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setIsDrawerOpen(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 border border-border-muted hover:bg-muted text-foreground rounded-full text-sm font-medium transition-colors"
+              className={cn(outlineControlClass, 'inline-flex items-center gap-2 rounded-full border-border-muted text-sm font-medium text-foreground')}
             >
               <Database size={14} />
               <Globe size={14} />
@@ -1078,11 +1084,13 @@ export function Chat({
                 type="button"
                 onClick={() => handleExtendWithAI(message)}
                 disabled={isProcessing || !canExtend || !canResolveExtensionQuery || Boolean(message.usedForAiExtension)}
-                className={`inline-flex items-center gap-2 px-1 py-1 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                className={cn(
+                  textLinkActionClass,
+                  'gap-2 px-1 py-1 text-sm disabled:cursor-not-allowed',
                   message.usedForAiExtension
                     ? 'text-primary'
-                    : 'text-primary-text hover:text-primary disabled:opacity-40'
-                }`}
+                    : 'text-primary-text hover:text-primary disabled:opacity-40',
+                )}
               >
                 {message.usedForAiExtension ? <Check size={14} /> : <Sparkles size={14} />}
                 <span>Extended Knowledge</span>
@@ -1126,11 +1134,12 @@ export function Chat({
                         {sources.length} sources consulted
                       </p>
                     </div>
-                    <button 
+                    <button
+                      type="button"
                       onClick={() => setIsDrawerOpen(false)}
-                      className="p-2 hover:bg-muted rounded-lg transition-colors border border-transparent hover:border-border"
+                      className={cn(iconButtonSmClass, 'size-8 border border-transparent hover:border-border')}
                     >
-                      <X size={18} className="text-muted-foreground" />
+                      <X size={18} />
                     </button>
                   </div>
 
@@ -1631,7 +1640,7 @@ export function Chat({
               <button
                 type="button"
                 onClick={() => setIsShareOpen(true)}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground-emphasis text-sm font-medium transition-colors"
+                className={cn(outlineControlClass, 'inline-flex items-center gap-2 rounded-xl text-sm font-medium text-foreground-emphasis')}
               >
                 <UserPlus size={16} className="text-muted-foreground" />
                 <span>Invite</span>
@@ -1706,7 +1715,7 @@ export function Chat({
                 <button
                   type="button"
                   onClick={() => setIsShareOpen(true)}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground-emphasis text-sm font-medium transition-colors"
+                  className={cn(outlineControlClass, 'inline-flex items-center gap-2 rounded-xl text-sm font-medium text-foreground-emphasis')}
                 >
                   <UserPlus size={16} className="text-muted-foreground" />
                   <span>Invite</span>
@@ -1858,7 +1867,7 @@ export function Chat({
                 <button
                   type="button"
                   onClick={applyHumanityHubMention}
-                  className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-left hover:bg-muted transition-colors shadow-sm"
+                  className={cn(menuItemClass, 'rounded-2xl border border-border bg-card px-4 py-3 shadow-sm first:rounded-t-2xl last:rounded-b-2xl')}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-sidebar-accent text-primary flex items-center justify-center font-bold text-xs">

@@ -5,6 +5,13 @@ import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
+import { cn } from './ui/utils';
+import {
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+} from './ui/interaction';
 
 interface User {
   id: string;
@@ -650,7 +657,7 @@ export function UsersAccess() {
                     <div className="relative">
                       <button
                         onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-                        className="px-4 py-2 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+                        className={listFilterTriggerClass}
                       >
                         {roleFilter}
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-muted-foreground">
@@ -666,7 +673,7 @@ export function UsersAccess() {
                                 setRoleFilter(role);
                                 setShowRoleDropdown(false);
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
+                              className={menuItemClass}
                             >
                               {role}
                             </button>
@@ -676,7 +683,7 @@ export function UsersAccess() {
                     </div>
 
                     {/* Status Filter Dropdown */}
-                    <button className="px-4 py-2 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                    <button className={listFilterTriggerClass}>
                       All Status
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-muted-foreground">
                         <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -861,7 +868,7 @@ export function UsersAccess() {
                         <div className="relative" ref={itemsPerPageDropdownRef}>
                           <button
                             onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                            className="px-3 py-1.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 min-w-[70px] justify-between"
+                            className={cn(listFilterTriggerClass, 'min-w-[70px] justify-between px-3 py-1.5')}
                           >
                             {itemsPerPage}
                             <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
@@ -876,9 +883,11 @@ export function UsersAccess() {
                                     setCurrentPage(1);
                                     setShowItemsPerPageDropdown(false);
                                   }}
-                                  className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                                    itemsPerPage === count ? 'bg-secondary font-medium' : ''
-                                  }`}
+                                  className={cn(
+                                    menuItemClass,
+                                    'px-3',
+                                    itemsPerPage === count && 'bg-secondary font-medium',
+                                  )}
                                 >
                                   {count}
                                 </button>
@@ -900,11 +909,7 @@ export function UsersAccess() {
                           <button 
                             onClick={() => handlePageChange(currentPage - 1)}
                             disabled={currentPage === 1}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              currentPage === 1
-                                ? 'text-border-muted cursor-not-allowed'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            }`}
+                            className={paginationControlClass}
                             title="Previous page"
                           >
                             <ChevronLeft size={16} />
@@ -918,11 +923,11 @@ export function UsersAccess() {
                               <button 
                                 key={page}
                                 onClick={() => handlePageChange(typeof page === 'number' ? page : currentPage)}
-                                className={`min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 rounded-lg text-sm sm:text-sm font-medium transition-colors ${
-                                  page === currentPage 
-                                    ? 'bg-primary text-white' 
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                                }`}
+                                className={cn(
+                                  paginationControlClass,
+                                  'min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 text-sm font-medium',
+                                  page === currentPage && 'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                                )}
                               >
                                 {page}
                               </button>
@@ -931,11 +936,7 @@ export function UsersAccess() {
                           <button 
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              currentPage === totalPages
-                                ? 'text-border-muted cursor-not-allowed'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            }`}
+                            className={paginationControlClass}
                             title="Next page"
                           >
                             <ChevronRight size={16} />
@@ -1062,7 +1063,7 @@ export function UsersAccess() {
                         <div className="lg:col-span-1 flex items-center justify-end">
                           <button 
                             onClick={(e) => e.stopPropagation()}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors"
+                            className={cn(iconButtonSmClass, 'size-8')}
                           >
                             <MoreVertical size={18} className="text-muted-foreground" />
                           </button>
@@ -1102,7 +1103,7 @@ export function UsersAccess() {
                   setNewGroupName('');
                   setSelectedUsersForGroup([]);
                 }}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                className={cn(iconButtonSmClass, 'size-8')}
               >
                 <X size={20} className="text-muted-foreground" />
               </button>
@@ -1207,7 +1208,7 @@ export function UsersAccess() {
                   setNewGroupName('');
                   setSelectedUsersForGroup([]);
                 }}
-                className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
+                className={listFilterTriggerClass}
               >
                 Cancel
               </button>
@@ -1251,7 +1252,7 @@ export function UsersAccess() {
                 </div>
                 <button 
                   onClick={() => setShowUserDrawer(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors shrink-0"
+                  className={cn(iconButtonSmClass, 'size-8 shrink-0')}
                 >
                   <X size={20} className="text-muted-foreground" />
                 </button>
@@ -1376,7 +1377,7 @@ export function UsersAccess() {
                 </div>
                 <button 
                   onClick={() => setShowGroupDrawer(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                  className={cn(iconButtonSmClass, 'size-8')}
                 >
                   <X size={20} className="text-muted-foreground" />
                 </button>
@@ -1432,7 +1433,7 @@ export function UsersAccess() {
                           </div>
                         </div>
                       </div>
-                      <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-card transition-colors shrink-0">
+                      <button className={cn(iconButtonSmClass, 'size-8 shrink-0')}>
                         <UserCog size={16} className="text-muted-foreground" />
                       </button>
                     </div>
@@ -1566,7 +1567,7 @@ export function UsersAccess() {
                   setShowBulkGroupModal(false);
                   setBulkSelectedGroup('');
                 }}
-                className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
+                className={listFilterTriggerClass}
               >
                 Cancel
               </button>
@@ -1618,7 +1619,7 @@ export function UsersAccess() {
                   setShowBulkRoleModal(false);
                   setBulkSelectedRole('');
                 }}
-                className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
+                className={listFilterTriggerClass}
               >
                 Cancel
               </button>

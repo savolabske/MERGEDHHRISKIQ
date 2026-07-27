@@ -8,6 +8,7 @@ import {
   buildEmergingRiskChatPayload,
   buildRiskTrendChatPayload,
   dashboardCardClass,
+  interactiveCardProps,
 } from '../../utils/dashboardChatContext';
 import {
   Area,
@@ -127,6 +128,7 @@ export function EmergingRiskCard({
       className={`relative flex flex-col rounded-2xl border ${risk.borderClass} ${
         customBackground ? '' : `bg-gradient-to-br ${risk.gradientClass}`
       } p-5 sm:p-6 text-white overflow-hidden min-h-[220px] text-left group ${interactive ? dashboardCardClass.gradient : ''}`}
+      {...(interactive ? interactiveCardProps : {})}
     >
       <div
         className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-card/10 blur-2xl pointer-events-none"
@@ -204,6 +206,7 @@ function RiskTrendCard({ onOpenChat }: { onOpenChat: (payload: DashboardChatPayl
       onClick={open}
       onKeyDown={(e) => activateOnKeyDown(e, open)}
       className={`bg-card rounded-2xl border border-border p-5 sm:p-6 text-left ${dashboardCardClass.white}`}
+      {...interactiveCardProps}
     >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
         <div>

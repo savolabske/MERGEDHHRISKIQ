@@ -5,6 +5,15 @@ import { PageFooter } from './PageFooter';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
 import { DetailSectionTitle } from './ui/detail-labels';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { cn } from './ui/utils';
+import {
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+  selectTriggerClass,
+} from './ui/interaction';
 
 interface CustomDropdownProps {
   label?: string;
@@ -41,7 +50,7 @@ function CustomDropdown({ label, value, options, onChange, placeholder }: Custom
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 bg-card border border-border rounded-xl text-sm text-secondary-foreground font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent flex items-center justify-between"
+        className={selectTriggerClass}
       >
         <span className={selectedOption ? 'text-secondary-foreground' : 'text-text-subtle'}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -59,9 +68,12 @@ function CustomDropdown({ label, value, options, onChange, placeholder }: Custom
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-4 py-3 text-left text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                option.value === value ? 'bg-primary-subtle text-primary font-semibold' : 'text-secondary-foreground'
-              }`}
+              className={cn(
+                menuItemClass,
+                option.value === value
+                  ? 'bg-primary-subtle text-primary font-semibold'
+                  : 'text-secondary-foreground',
+              )}
             >
               {option.label}
             </button>
@@ -132,6 +144,7 @@ export function RiskRegister() {
   // Mitigations data (per risk)
   const [userMitigations, setUserMitigations] = useState<{ [key: string]: Array<{ id: string; text: string; owner: string; status: 'planned' | 'in-progress' | 'completed'; source: 'user' | 'ai' }> }>({});
   const [dismissedAiSuggestions, setDismissedAiSuggestions] = useState<{ [key: string]: string[] }>({});
+  const [mitigationToDelete, setMitigationToDelete] = useState<{ riskId: string; mitigationId: string } | null>(null);
 
   // Upload modal states
   const [uploadStep, setUploadStep] = useState<UploadStep>('upload');
@@ -797,7 +810,7 @@ export function RiskRegister() {
                           e.stopPropagation();
                           setOpenActionMenu(openActionMenu === risk.id ? null : risk.id);
                         }}
-                        className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                        className={cn(iconButtonSmClass, 'size-8')}
                       >
                         <MoreVertical size={16} className="text-muted-foreground" />
                       </button>
@@ -811,7 +824,7 @@ export function RiskRegister() {
                               setSelectedRisk(risk);
                               setOpenActionMenu(null);
                             }}
-                            className="w-full px-4 py-3 text-left text-sm text-secondary-foreground hover:bg-muted transition-colors first:rounded-t-xl flex items-center gap-2"
+                            className={cn(menuItemClass, 'flex items-center gap-2 text-secondary-foreground')}
                           >
                             <Eye size={14} />
                             View Details
@@ -822,7 +835,7 @@ export function RiskRegister() {
                               handleEdit(risk);
                               setOpenActionMenu(null);
                             }}
-                            className="w-full px-4 py-3 text-left text-sm text-secondary-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                            className={cn(menuItemClass, 'flex items-center gap-2 text-secondary-foreground')}
                           >
                             <Edit2 size={14} />
                             Edit
@@ -833,7 +846,10 @@ export function RiskRegister() {
                               handleDelete(risk.id);
                               setOpenActionMenu(null);
                             }}
-                            className="w-full px-4 py-3 text-left text-sm text-destructive-text hover:bg-destructive-subtle transition-colors last:rounded-b-xl flex items-center gap-2"
+                            className={cn(
+                              menuItemClass,
+                              'flex items-center gap-2 text-destructive-text hover:bg-destructive-subtle',
+                            )}
                           >
                             <Trash2 size={14} />
                             Delete
@@ -856,7 +872,7 @@ export function RiskRegister() {
               <div className="relative" ref={itemsPerPageDropdownRef}>
                 <button
                   onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                  className="px-3 py-1.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 min-w-[70px] justify-between"
+                  className={cn(listFilterTriggerClass, 'min-w-[70px] justify-between px-3 py-1.5')}
                 >
                   {itemsPerPage}
                   <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
@@ -871,9 +887,11 @@ export function RiskRegister() {
                           setCurrentPage(1);
                           setShowItemsPerPageDropdown(false);
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                          itemsPerPage === count ? 'bg-secondary font-medium' : ''
-                        }`}
+                        className={cn(
+                          menuItemClass,
+                          'px-3',
+                          itemsPerPage === count && 'bg-secondary font-medium',
+                        )}
                       >
                         {count}
                       </button>
@@ -893,11 +911,7 @@ export function RiskRegister() {
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    currentPage === 1
-                      ? 'text-border-muted cursor-not-allowed'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
+                  className={paginationControlClass}
                   title="Previous page"
                 >
                   <ChevronLeft size={16} />
@@ -911,11 +925,12 @@ export function RiskRegister() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(typeof page === 'number' ? page : currentPage)}
-                      className={`min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 rounded-lg text-sm sm:text-sm font-medium transition-colors ${
-                        currentPage === page
-                          ? 'bg-primary text-white'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
+                      className={cn(
+                        paginationControlClass,
+                        'min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 text-sm font-medium',
+                        currentPage === page &&
+                          'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                      )}
                     >
                       {page}
                     </button>
@@ -924,11 +939,7 @@ export function RiskRegister() {
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    currentPage === totalPages
-                      ? 'text-border-muted cursor-not-allowed'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
+                  className={paginationControlClass}
                   title="Next page"
                 >
                   <ChevronRight size={16} />
@@ -1008,11 +1019,7 @@ export function RiskRegister() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  currentPage === 1
-                    ? 'text-border-muted cursor-not-allowed'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
+                className={paginationControlClass}
               >
                 <ChevronLeft size={16} />
               </button>
@@ -1026,11 +1033,12 @@ export function RiskRegister() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(typeof page === 'number' ? page : currentPage)}
-                    className={`min-w-[30px] h-[30px] px-2 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === page
-                        ? 'bg-primary text-white'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
+                    className={cn(
+                      paginationControlClass,
+                      'min-w-[30px] h-[30px] px-2 text-sm font-medium',
+                      currentPage === page &&
+                        'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                    )}
                   >
                     {page}
                   </button>
@@ -1040,11 +1048,7 @@ export function RiskRegister() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  currentPage === totalPages
-                    ? 'text-border-muted cursor-not-allowed'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
+                className={paginationControlClass}
               >
                 <ChevronRight size={16} />
               </button>
@@ -1080,7 +1084,7 @@ export function RiskRegister() {
               </h2>
               <button 
                 onClick={() => { setSelectedRisk(null); setDrawerStatusOpen(false); setIsEditingResidual(false); setTempResidualValue(''); }}
-                className="p-2 hover:bg-muted rounded-lg transition-colors border border-transparent hover:border-border"
+                className={cn(iconButtonSmClass, 'size-8')}
               >
                 <X size={18} className="text-muted-foreground" />
               </button>
@@ -1172,7 +1176,7 @@ export function RiskRegister() {
                         setIsEditingResidual(false);
                         setTempResidualValue('');
                       }}
-                      className="flex-1 px-4 py-2.5 bg-card border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted transition-colors"
+                      className={cn(listFilterTriggerClass, 'flex-1 justify-center')}
                     >
                       Cancel
                     </button>
@@ -1276,9 +1280,9 @@ export function RiskRegister() {
                           </div>
                           <button
                             onClick={() => {
-                              setUserMitigations({
-                                ...userMitigations,
-                                [selectedRisk.id]: userMitigations[selectedRisk.id]?.filter(m => m.id !== mitigation.id) || []
+                              setMitigationToDelete({
+                                riskId: selectedRisk.id,
+                                mitigationId: mitigation.id,
                               });
                             }}
                             className="shrink-0 p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive-subtle rounded-md transition-all"
@@ -1547,7 +1551,7 @@ export function RiskRegister() {
               <h3 className="text-lg font-semibold text-foreground">
                 {uploadStep === 'upload' ? 'Import Risks from Document' : uploadStep === 'processing' ? 'Processing Document' : 'Import Complete'}
               </h3>
-              <button onClick={handleModalClose} className="p-2 hover:bg-muted rounded-lg transition-colors">
+              <button onClick={handleModalClose} className={cn(iconButtonSmClass, 'size-8')}>
                 <X size={18} className="text-muted-foreground" />
               </button>
             </div>
@@ -1678,6 +1682,24 @@ export function RiskRegister() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={Boolean(mitigationToDelete)}
+        onOpenChange={(open) => !open && setMitigationToDelete(null)}
+        onConfirm={() => {
+          if (!mitigationToDelete) return;
+          setUserMitigations({
+            ...userMitigations,
+            [mitigationToDelete.riskId]:
+              userMitigations[mitigationToDelete.riskId]?.filter(
+                (m) => m.id !== mitigationToDelete.mitigationId,
+              ) || [],
+          });
+          setMitigationToDelete(null);
+        }}
+        title="Are you sure you want to delete?"
+        description="This mitigation will be permanently removed. This action cannot be undone."
+      />
     </div>
   );
 }

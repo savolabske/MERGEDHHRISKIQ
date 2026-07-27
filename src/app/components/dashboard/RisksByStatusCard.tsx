@@ -2,7 +2,11 @@ import type { KeyboardEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Sector } from 'recharts';
 import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
-import { buildRiskStatusChatPayload, dashboardCardClass } from '../../utils/dashboardChatContext';
+import {
+  buildRiskStatusChatPayload,
+  dashboardCardClass,
+  interactiveCardProps,
+} from '../../utils/dashboardChatContext';
 import { DASHBOARD_BRIEFING, DASHBOARD_RISK_STATUS } from '../../data/dashboardMock';
 
 function activateOnKeyDown(e: KeyboardEvent, onActivate: () => void) {
@@ -113,6 +117,7 @@ export function RisksByStatusCard({
       onClick={open}
       onKeyDown={(e) => activateOnKeyDown(e, open)}
       className={`bg-card rounded-2xl border border-border p-5 sm:p-6 text-left ${dashboardCardClass.white}`}
+      {...interactiveCardProps}
     >
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-foreground">Risks by Status</h3>

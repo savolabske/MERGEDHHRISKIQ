@@ -10,6 +10,7 @@ import {
 } from '../../data/homeDashboardMock';
 import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
 import { buildHubKeyInsightChatPayload } from '../../utils/dashboardChatContext';
+import { iconButtonSmClass } from '../ui/interaction';
 import { hubCard } from './hubStyles';
 
 function activateOnKeyDown(e: KeyboardEvent, onActivate: () => void) {
@@ -145,7 +146,7 @@ function InsightPageNav({
             onClick={() => onPageChange(pageIndex - 1)}
             disabled={!canGoBack}
             aria-label="Previous insights"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+            className={iconButtonSmClass}
           >
             <ChevronLeft size={16} strokeWidth={2.25} aria-hidden />
           </button>
@@ -175,7 +176,7 @@ function InsightPageNav({
             onClick={() => onPageChange(pageIndex + 1)}
             disabled={!canGoForward}
             aria-label="Next insights"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+            className={iconButtonSmClass}
           >
             <ChevronRight size={16} strokeWidth={2.25} aria-hidden />
           </button>

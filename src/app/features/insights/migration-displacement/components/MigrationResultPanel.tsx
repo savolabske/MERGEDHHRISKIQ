@@ -1,6 +1,8 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
 import { AnimatedAIResponse, ReportChipButton } from '../../shared';
+import { outlineControlClass } from '../../../../components/ui/interaction';
+import { cn } from '../../../../components/ui/utils';
 import type { MigrationRecipeResult } from '../types';
 import { MigrationChartRenderer } from './MigrationCharts';
 
@@ -47,8 +49,9 @@ export function MigrationResultPanel({
           </div>
         </div>
         <button
+          type="button"
           onClick={onBack}
-          className="rounded-lg border border-[#f0d8c5] bg-white px-3 py-2 text-[12px] font-semibold text-[#c2562a]"
+          className={cn(outlineControlClass, 'border-[#f0d8c5] text-[#c2562a]')}
         >
           Back
         </button>

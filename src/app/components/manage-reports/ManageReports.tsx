@@ -96,7 +96,9 @@ export function ManageReports({ onAttachSources }: ManageReportsProps) {
   );
 
   const handlePublish = useCallback(
-    (updated: ManagedReport) => {
+    async (updated: ManagedReport) => {
+      await new Promise((resolve) => setTimeout(resolve, 650));
+
       const published = {
         ...updated,
         status: 'published' as const,

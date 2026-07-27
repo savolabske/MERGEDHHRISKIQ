@@ -54,6 +54,7 @@ import {
 } from '../../shared';
 import { ReportExportButton, useReportExport } from '../../shared/export';
 import { cn } from '../../../../components/ui/utils';
+import { filterTriggerClass, textLinkActionClass } from '../../../../components/ui/interaction';
 import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
 export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps) {
@@ -282,7 +283,12 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                   type="button"
                   disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'time' ? null : 'time'))}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'time' || startYear !== 2023 || endYear !== 2026 ? 'border-[#d8b9a2] bg-[#fbeee5] text-[#a3461f]' : 'border-[#ece6df] bg-white text-[#4a3f38]'}`}
+                  className={filterTriggerClass(
+                    openMenu === 'time' || startYear !== 2023 || endYear !== 2026,
+                    'border-[#ece6df] bg-white text-[#4a3f38]',
+                    'border-[#d8b9a2] bg-[#fbeee5] text-[#a3461f]',
+                    'gap-2',
+                  )}
                 >
                   {yearLabel}
                   <ChevronDown size={13} />
@@ -294,7 +300,11 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                         Year Range
                       </span>
                       {(startYear !== 2023 || endYear !== 2026) && (
-                        <button onClick={() => clearMenu('time')} className="text-[11px] text-[#c2562a]">
+                        <button
+                          type="button"
+                          onClick={() => clearMenu('time')}
+                          className={cn(textLinkActionClass, 'text-[#c2562a]')}
+                        >
                           Clear Filters
                         </button>
                       )}
@@ -337,7 +347,11 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                   type="button"
                   disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'regions' ? null : 'regions'))}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'regions' || regions.length > 0 ? 'border-[#d8b9a2] bg-[#fbeee5] text-[#a3461f]' : 'border-[#ece6df] bg-white text-[#4a3f38]'}`}
+                  className={filterTriggerClass(
+                    openMenu === 'regions' || regions.length > 0,
+                    'border-[#ece6df] bg-white text-[#4a3f38]',
+                    'border-[#d8b9a2] bg-[#fbeee5] text-[#a3461f]',
+                  )}
                 >
                   {regions.length > 0 ? `Regions (${regions.length})` : 'All Regions'}
                   <ChevronDown size={13} />
@@ -357,7 +371,11 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                   type="button"
                   disabled={!filtersInteractive}
                   onClick={() => setOpenMenu((prev) => (prev === 'causes' ? null : 'causes'))}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50 ${openMenu === 'causes' || causes.length > 0 ? 'border-[#d8b9a2] bg-[#fbeee5] text-[#a3461f]' : 'border-[#ece6df] bg-white text-[#4a3f38]'}`}
+                  className={filterTriggerClass(
+                    openMenu === 'causes' || causes.length > 0,
+                    'border-[#ece6df] bg-white text-[#4a3f38]',
+                    'border-[#d8b9a2] bg-[#fbeee5] text-[#a3461f]',
+                  )}
                 >
                   {causes.length > 0 ? `Causes (${causes.length})` : 'All Causes'}
                   <ChevronDown size={13} />

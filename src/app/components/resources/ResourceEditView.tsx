@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import type { PlatformResource, ResourceUserGroup } from '../../data/resourcesMock';
 import { INITIAL_RESOURCE_USER_GROUPS } from '../../data/resourcesMock';
 import { Checkbox } from '../ui/checkbox';
+import { chipRemoveClass } from '../ui/interaction';
 import { DetailFieldLabel, DetailSectionTitle, inputClass } from './resourceShared';
 import { ResourceDocumentsList } from './ResourceDocumentsList';
 import { UserGroupModal } from './UserGroupModal';
@@ -324,7 +325,8 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
                   <button
                     type="button"
                     onClick={() => setWebLinks(webLinks.filter((l) => l.id !== link.id))}
-                    className="text-muted-foreground hover:text-destructive-text p-1"
+                    className={chipRemoveClass}
+                    aria-label={`Remove link ${link.url}`}
                   >
                     <X size={16} />
                   </button>
@@ -431,6 +433,8 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
                       <button
                         type="button"
                         onClick={() => setUserGroups(userGroups.filter((x) => x !== g))}
+                        className={chipRemoveClass}
+                        aria-label={`Remove group ${g}`}
                       >
                         <X size={12} />
                       </button>
@@ -473,7 +477,8 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
                         onClick={() =>
                           setIndividualUsers(individualUsers.filter((e) => e !== email))
                         }
-                        className="text-muted-foreground hover:text-destructive-text shrink-0"
+                        className={chipRemoveClass}
+                        aria-label={`Remove ${email}`}
                       >
                         <X size={16} />
                       </button>
@@ -511,7 +516,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
                           e.stopPropagation();
                           toggleTag(tag);
                         }}
-                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        className={chipRemoveClass}
                         aria-label={`Remove ${tag}`}
                       >
                         <X size={12} strokeWidth={2} />

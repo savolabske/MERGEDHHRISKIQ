@@ -6,6 +6,7 @@ import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
 import {
   buildHubPredictiveInsightChatPayload,
   dashboardCardClass,
+  interactiveCardProps,
 } from '../../utils/dashboardChatContext';
 
 interface HubPredictiveInsightsProps {
@@ -40,6 +41,7 @@ function PredictiveInsightCard({
       onKeyDown={interactive ? (e) => activateOnKeyDown(e, open) : undefined}
       style={{ background: insight.background }}
       className={`relative flex flex-col rounded-2xl border ${insight.borderClass} p-5 sm:p-6 text-white overflow-hidden min-h-[220px] text-left group ${interactive ? dashboardCardClass.gradient : ''}`}
+      {...(interactive ? interactiveCardProps : {})}
     >
       <div
         className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-card/10 blur-2xl pointer-events-none"

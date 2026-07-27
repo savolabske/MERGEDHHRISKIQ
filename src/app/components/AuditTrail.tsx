@@ -4,6 +4,13 @@ import { useProgressiveList } from '../hooks/useProgressiveList';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { TableSkeleton } from './ui/table-skeleton';
+import { cn } from './ui/utils';
+import {
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+} from './ui/interaction';
 
 interface AuditEvent {
   id: string;
@@ -379,7 +386,7 @@ export function AuditTrail() {
               </div>
               <button
                 onClick={() => toast.success('Export started')}
-                className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0"
+                className={cn(listFilterTriggerClass, 'shrink-0')}
               >
                 <Download size={18} />
                 Export Log
@@ -401,11 +408,13 @@ export function AuditTrail() {
                 </div>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0 ${
-                    showFilters || activeFiltersCount > 0
-                      ? 'border-primary bg-primary-subtle text-primary'
-                      : 'border-border bg-card text-muted-foreground hover:bg-muted'
-                  }`}
+                  className={cn(
+                    listFilterTriggerClass,
+                    'shrink-0',
+                    (showFilters || activeFiltersCount > 0) &&
+                      'border-primary bg-primary-subtle text-primary',
+                    !(showFilters || activeFiltersCount > 0) && 'text-muted-foreground',
+                  )}
                 >
                   <Filter size={18} />
                   Filters
@@ -429,7 +438,7 @@ export function AuditTrail() {
                           setShowUserDropdown(!showUserDropdown);
                           setShowActionDropdown(false);
                         }}
-                        className="w-full px-4 py-2.5 border border-border rounded-lg text-sm text-left hover:bg-muted transition-colors flex items-center justify-between"
+                        className={cn(listFilterTriggerClass, 'w-full justify-between')}
                       >
                         <span className={selectedUser ? 'text-foreground font-medium' : 'text-text-subtle'}>
                           {selectedUser || 'All Users'}
@@ -444,7 +453,7 @@ export function AuditTrail() {
                               setSelectedUser('');
                               setShowUserDropdown(false);
                             }}
-                            className="w-full px-4 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted transition-colors border-b border-border"
+                            className={cn(menuItemClass, 'text-muted-foreground border-b border-border')}
                           >
                             All Users
                           </button>
@@ -457,7 +466,7 @@ export function AuditTrail() {
                                   setSelectedUser(user);
                                   setShowUserDropdown(false);
                                 }}
-                                className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors flex items-center gap-3"
+                                className={cn(menuItemClass, 'flex items-center gap-3')}
                               >
                                 {avatar && (
                                   <div
@@ -482,7 +491,7 @@ export function AuditTrail() {
                           setShowActionDropdown(!showActionDropdown);
                           setShowUserDropdown(false);
                         }}
-                        className="w-full px-4 py-2.5 border border-border rounded-lg text-sm text-left hover:bg-muted transition-colors flex items-center justify-between"
+                        className={cn(listFilterTriggerClass, 'w-full justify-between')}
                       >
                         <span className={selectedAction ? 'text-foreground font-medium' : 'text-text-subtle'}>
                           {selectedAction || 'All Actions'}
@@ -497,7 +506,7 @@ export function AuditTrail() {
                               setSelectedAction('');
                               setShowActionDropdown(false);
                             }}
-                            className="w-full px-4 py-2.5 text-left text-sm text-muted-foreground hover:bg-muted transition-colors border-b border-border"
+                            className={cn(menuItemClass, 'text-muted-foreground border-b border-border')}
                           >
                             All Actions
                           </button>
@@ -508,7 +517,7 @@ export function AuditTrail() {
                                 setSelectedAction(action);
                                 setShowActionDropdown(false);
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors"
+                              className={cn(menuItemClass, 'text-foreground')}
                             >
                               {action}
                             </button>
@@ -629,7 +638,7 @@ export function AuditTrail() {
                     <div className="relative" ref={itemsPerPageDropdownRef}>
                       <button
                         onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                        className="px-3 py-1.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 min-w-[70px] justify-between"
+                        className={cn(listFilterTriggerClass, 'min-w-[70px] justify-between px-3 py-1.5')}
                       >
                         {itemsPerPage}
                         <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
@@ -644,9 +653,11 @@ export function AuditTrail() {
                                 setCurrentPage(1);
                                 setShowItemsPerPageDropdown(false);
                               }}
-                              className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                                itemsPerPage === count ? 'bg-secondary font-medium' : ''
-                              }`}
+                              className={cn(
+                                menuItemClass,
+                                'px-3',
+                                itemsPerPage === count && 'bg-secondary font-medium',
+                              )}
                             >
                               {count}
                             </button>
@@ -667,11 +678,7 @@ export function AuditTrail() {
                       <button 
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          currentPage === 1
-                            ? 'text-border-muted cursor-not-allowed'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        className={paginationControlClass}
                         title="Previous page"
                       >
                         <ChevronLeft size={16} />
@@ -687,11 +694,11 @@ export function AuditTrail() {
                           <button 
                             key={page}
                             onClick={() => handlePageChange(typeof page === 'number' ? page : currentPage)}
-                            className={`min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 rounded-lg text-sm sm:text-sm font-medium transition-colors ${
-                              currentPage === page
-                                ? 'bg-primary text-white'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            }`}
+                            className={cn(
+                              paginationControlClass,
+                              'min-w-[30px] h-[30px] sm:min-w-[32px] sm:h-[32px] px-2 text-sm font-medium',
+                              currentPage === page && 'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                            )}
                           >
                             {page}
                           </button>
@@ -702,11 +709,7 @@ export function AuditTrail() {
                       <button 
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          currentPage === totalPages
-                            ? 'text-border-muted cursor-not-allowed'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        className={paginationControlClass}
                         title="Next page"
                       >
                         <ChevronRight size={16} />

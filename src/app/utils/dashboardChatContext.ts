@@ -52,14 +52,8 @@ export type DashboardChatPayload = {
   data?: { headers: string[]; rows: string[][] };
 };
 
-const cardInteractiveClass =
-  'cursor-pointer transition-all duration-150 hover:shadow-md active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25';
-
-export const dashboardCardClass = {
-  white: `${cardInteractiveClass} hover:border-primary active:border-primary`,
-  gradient: `${cardInteractiveClass} hover:brightness-[1.03] active:brightness-[0.98]`,
-  row: `${cardInteractiveClass} hover:bg-primary-subtle active:bg-primary-subtle rounded-xl -mx-2 px-2`,
-} as const;
+/** @deprecated Import from `../components/ui/interaction` — kept for existing consumers. */
+export { interactiveSurfaceClass as dashboardCardClass, interactiveCardProps } from '../components/ui/interaction';
 
 export function buildDashboardThreadMessages(payload: DashboardChatPayload) {
   return [

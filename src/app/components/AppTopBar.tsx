@@ -11,15 +11,12 @@ import {
 import { NotificationsPanel } from './NotificationsPanel';
 import type { AppNotification } from '../types/notifications';
 import { cn } from './ui/utils';
+import { brandHomeButtonClass, iconButtonClass } from './ui/interaction';
 
 const HELP_CENTRE_EMAIL = 'alerts.rmu@undp.org';
 
 const helpCentreItemClass =
   'cursor-pointer justify-center rounded-md bg-secondary px-3 py-2.5 text-sm font-medium text-secondary-foreground hover:bg-secondary/80 focus:bg-secondary/80 focus:text-secondary-foreground data-[highlighted]:bg-secondary/80 data-[highlighted]:text-secondary-foreground';
-
-/** Matches icon controls across lists, modals, and admin screens (rounded-lg + muted hover). */
-const topBarIconButtonClass =
-  'inline-flex items-center justify-center size-10 shrink-0 rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-muted data-[state=open]:text-foreground';
 
 interface AppTopBarProps {
   onNavigateHome?: () => void;
@@ -66,7 +63,7 @@ export function AppTopBar({
             {showMobileMenuButton && onMobileMenuToggle && (
               <button
                 type="button"
-                className={cn(topBarIconButtonClass, 'lg:hidden -ml-1')}
+                className={cn(iconButtonClass, 'lg:hidden -ml-1')}
                 onClick={onMobileMenuToggle}
                 aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
                 aria-expanded={isMobileMenuOpen}
@@ -82,7 +79,7 @@ export function AppTopBar({
             <button
               type="button"
               onClick={onNavigateHome}
-              className="group min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 rounded-md px-0.5 -mx-0.5"
+              className={brandHomeButtonClass}
             >
               <span className="block truncate text-sm font-semibold tracking-tight text-primary uppercase">
                 HUMANITY HUB
@@ -94,7 +91,7 @@ export function AppTopBar({
             <button
               type="button"
               className={cn(
-                topBarIconButtonClass,
+                iconButtonClass,
                 'relative text-muted-foreground hover:text-foreground hover:bg-muted',
                 panelOpen && 'bg-muted text-foreground',
                 badge && 'text-primary',
@@ -124,7 +121,7 @@ export function AppTopBar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className={topBarIconButtonClass}
+                  className={iconButtonClass}
                   aria-label="Help and support"
                 >
                   <CircleHelp size={20} strokeWidth={1.75} aria-hidden />

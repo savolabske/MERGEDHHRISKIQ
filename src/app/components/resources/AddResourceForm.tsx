@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import type { PlatformResource, ResourceUserGroup } from '../../data/resourcesMock';
 import { INITIAL_RESOURCE_USER_GROUPS } from '../../data/resourcesMock';
 import { Checkbox } from '../ui/checkbox';
+import { chipRemoveClass } from '../ui/interaction';
 import { inputClass, textareaClass } from './resourceShared';
 import { UserGroupModal } from './UserGroupModal';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
@@ -296,8 +297,13 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
               {webLinks.map((link) => (
                 <li key={link} className="flex items-center justify-between text-sm text-primary">
                   <span className="truncate">{link}</span>
-                  <button type="button" onClick={() => setWebLinks(webLinks.filter((l) => l !== link))}>
-                    <X size={14} className="text-muted-foreground" />
+                  <button
+                    type="button"
+                    onClick={() => setWebLinks(webLinks.filter((l) => l !== link))}
+                    className={chipRemoveClass}
+                    aria-label={`Remove link ${link}`}
+                  >
+                    <X size={14} />
                   </button>
                 </li>
               ))}
@@ -319,7 +325,12 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-subtle text-primary text-xs font-medium"
                 >
                   {tag}
-                  <button type="button" onClick={() => setTags(tags.filter((t) => t !== tag))}>
+                  <button
+                    type="button"
+                    onClick={() => setTags(tags.filter((t) => t !== tag))}
+                    className={chipRemoveClass}
+                    aria-label={`Remove tag ${tag}`}
+                  >
                     <X size={12} />
                   </button>
                 </span>
@@ -507,7 +518,12 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-subtle text-primary text-xs"
                     >
                       {g}
-                      <button type="button" onClick={() => setUserGroups(userGroups.filter((x) => x !== g))}>
+                      <button
+                        type="button"
+                        onClick={() => setUserGroups(userGroups.filter((x) => x !== g))}
+                        className={chipRemoveClass}
+                        aria-label={`Remove group ${g}`}
+                      >
                         <X size={12} />
                       </button>
                     </span>
@@ -547,6 +563,8 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
                         onClick={() =>
                           setIndividualUsers(individualUsers.filter((e) => e !== email))
                         }
+                        className={chipRemoveClass}
+                        aria-label={`Remove ${email}`}
                       >
                         <X size={12} />
                       </button>

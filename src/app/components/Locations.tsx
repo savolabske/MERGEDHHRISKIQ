@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, X, Search, MapPin, Trash2, Edit, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 
 interface Location {
   id: string;
@@ -101,6 +102,7 @@ export function Locations() {
   const [locations, setLocations] = useState<Location[]>(mockLocations);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   
   // Form state
   const [name, setName] = useState('');
@@ -265,7 +267,7 @@ export function Locations() {
                     {/* Actions */}
                     <div className="lg:col-span-1 flex items-center gap-2 lg:justify-end">
                       <button 
-                        onClick={() => handleDeleteLocation(location.id)}
+                        onClick={() => setDeleteId(location.id)}
                         className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-destructive-subtle text-muted-foreground hover:text-destructive-text transition-colors"
                         title="Delete location"
                       >
@@ -409,6 +411,22 @@ export function Locations() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={Boolean(deleteId)}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={() => {
+          if (!deleteId) return;
+          handleDeleteLocation(deleteId);
+          setDeleteId(null);
+        }}
+        title="Are you sure you want to delete?"
+        description={
+          deleteId
+            ? `"${locations.find((l) => l.id === deleteId)?.name ?? 'This location'}" will be permanently removed. This action cannot be undone.`
+            : 'This location will be permanently removed. This action cannot be undone.'
+        }
+      />
     </>
   );
 }

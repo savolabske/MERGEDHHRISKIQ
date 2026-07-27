@@ -1,5 +1,6 @@
 import React from 'react';
 import { Check, X } from 'lucide-react';
+import { textLinkActionClass } from '../../../../components/ui/interaction';
 
 interface MultiSelectMenuProps {
   title: string;
@@ -15,7 +16,11 @@ export function MultiSelectMenu({ title, options, selected, onToggle, onClear }:
       <div className="flex items-center justify-between border-b border-[#eef1f6] px-3 py-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#6b7a8d]">{title}</span>
         {selected.length > 0 && (
-          <button onClick={onClear} className="inline-flex items-center gap-1 text-[11px] text-[#1f6feb]">
+          <button
+            type="button"
+            onClick={onClear}
+            className={`${textLinkActionClass} text-[#1f6feb]`}
+          >
             <X size={11} />
             Clear Filters
           </button>
@@ -27,8 +32,9 @@ export function MultiSelectMenu({ title, options, selected, onToggle, onClear }:
           return (
             <button
               key={option}
+              type="button"
               onClick={() => onToggle(option)}
-              className={`flex w-full items-center justify-between px-3 py-2 text-left text-[12px] text-[#3a4a5c] hover:bg-[#f8f9fb] ${index !== options.length - 1 ? 'border-b border-[#eef1f6]' : ''}`}
+              className={`flex w-full items-center justify-between px-3 py-2 text-left text-[12px] text-[#3a4a5c] transition-colors hover:bg-[#f8f9fb] ${index !== options.length - 1 ? 'border-b border-[#eef1f6]' : ''}`}
             >
               <span>{option}</span>
               <span className={`inline-flex h-4 w-4 items-center justify-center rounded border ${checked ? 'border-[#2a7fe0] bg-[#2a7fe0] text-white' : 'border-[#cdd5e0]'}`}>

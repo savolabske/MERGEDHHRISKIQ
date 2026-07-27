@@ -1,4 +1,5 @@
-import { Settings, Eye } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Settings, Eye, Loader2, Check } from 'lucide-react';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
 import type { ManagedReport } from '../../data/reportsAdminMock';
 import { cn } from '../ui/utils';
@@ -17,7 +18,7 @@ interface ReportBuilderHeaderProps {
   onTitleChange: (title: string) => void;
   onDescriptionChange: (description: string) => void;
   onOpenSettings: () => void;
-  onPublish: () => void;
+  onPublish: () => void | Promise<void>;
 }
 
 export function ReportBuilderHeader({
@@ -30,6 +31,25 @@ export function ReportBuilderHeader({
   onOpenSettings,
   onPublish,
 }: ReportBuilderHeaderProps) {
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [justPublished, setJustPublished] = useState(false);
+
+  const isPublishedClean = report.status === 'published' && !isDirty;
+  const isPublishChanges = report.status === 'published' && isDirty;
+
+  const handlePublishClick = useCallback(async () => {
+    if (isPublishing || isPublishedClean) return;
+
+    setIsPublishing(true);
+    try {
+      await Promise.resolve(onPublish());
+      setJustPublished(true);
+      window.setTimeout(() => setJustPublished(false), 1200);
+    } finally {
+      setIsPublishing(false);
+    }
+  }, [isPublishing, isPublishedClean, onPublish]);
+
   const statusLabel = isDirty
     ? report.status === 'published'
       ? 'Published — unsaved changes'
@@ -65,10 +85,11 @@ export function ReportBuilderHeader({
           </button>
           <span
             className={cn(
-              'px-3 py-1.5 rounded-full text-xs font-medium',
+              'px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300',
               statusTone === 'success'
                 ? 'bg-success-subtle text-success-text'
                 : 'bg-warning-subtle text-warning-text',
+              justPublished && 'ring-2 ring-success/30',
             )}
           >
             {statusLabel}
@@ -90,10 +111,33 @@ export function ReportBuilderHeader({
           </TooltipProvider>
           <button
             type="button"
-            onClick={onPublish}
-            className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            onClick={handlePublishClick}
+            disabled={isPublishing || isPublishedClean}
+            className={cn(
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-w-[7.5rem] justify-center',
+              isPublishing
+                ? 'bg-primary text-white cursor-wait opacity-90'
+                : isPublishedClean || justPublished
+                  ? 'bg-success-subtle text-success-text cursor-default'
+                  : 'bg-primary hover:bg-primary-hover text-white',
+              (isPublishing || isPublishedClean) && 'disabled:opacity-100',
+            )}
           >
-            Publish
+            {isPublishing ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Publishing…
+              </>
+            ) : justPublished || isPublishedClean ? (
+              <>
+                <Check size={16} />
+                Published
+              </>
+            ) : isPublishChanges ? (
+              'Publish changes'
+            ) : (
+              'Publish'
+            )}
           </button>
         </div>
       </div>

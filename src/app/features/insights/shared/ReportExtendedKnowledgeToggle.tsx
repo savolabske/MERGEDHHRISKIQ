@@ -1,5 +1,6 @@
 import { Shield } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
+import { filterTriggerIdleHoverClass } from '../../../components/ui/interaction';
 
 export interface ReportExtendedKnowledgeTheme {
   borderClass: string;
@@ -57,9 +58,10 @@ export function ReportExtendedKnowledgeToggle({
       type="button"
       onClick={onToggle}
       className={cn(
-        'mt-2.5 flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left',
+        'mt-2.5 flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors',
         theme.borderClass,
         theme.bgClass,
+        filterTriggerIdleHoverClass,
       )}
     >
       <div>

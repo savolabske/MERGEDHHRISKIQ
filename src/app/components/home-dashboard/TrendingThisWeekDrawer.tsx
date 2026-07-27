@@ -10,6 +10,8 @@ import {
   X,
 } from 'lucide-react';
 import type { HubTrendingDocument } from '../../data/homeDashboardMock';
+import { cn } from '../ui/utils';
+import { iconButtonClass, interactiveCardProps, interactiveSurfaceClass } from '../ui/interaction';
 
 const RESOURCE_TYPE_META = {
   document: {
@@ -107,7 +109,7 @@ export function TrendingThisWeekDrawer({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className={cn(iconButtonClass, 'size-8')}
             >
               <X size={18} strokeWidth={2.25} />
             </button>
@@ -123,7 +125,11 @@ export function TrendingThisWeekDrawer({
                 key={doc.id}
                 type="button"
                 onClick={() => handleOpen(doc.id)}
-                className="group w-full text-left rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:shadow-sm"
+                className={cn(
+                  'group w-full text-left rounded-xl border border-border bg-card p-4',
+                  interactiveSurfaceClass.white,
+                )}
+                {...interactiveCardProps}
               >
                 <div className="flex gap-3">
                   <div

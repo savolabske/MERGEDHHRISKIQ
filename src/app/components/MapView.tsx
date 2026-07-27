@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MapPin, PanelRightClose, MessageSquare, Send, Sparkles, AlertTriangle, Utensils, Tent, ShieldAlert, ChevronRight, ChevronUp, ChevronDown, Users, X, Zap, TrendingDown, Package, Route, Crosshair, Calendar, Filter as FilterIcon, History, Clock } from 'lucide-react';
 import { cn } from './ui/utils';
+import {
+  chipRemoveClass,
+  iconButtonSmClass,
+  outlineControlClass,
+  textLinkActionClass,
+} from './ui/interaction';
 import { hasMapboxAccessToken, mapboxgl } from '../config/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -1880,7 +1886,10 @@ export function MapView() {
             onClick={closeMobilePanel}
             aria-label="Minimize to map"
             title="Show map"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]"
+            className={cn(
+              iconButtonSmClass,
+              'size-9 rounded-xl border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]',
+            )}
           >
             <ChevronDown size={18} />
           </button>
@@ -1916,7 +1925,9 @@ export function MapView() {
             className={cn(
               'absolute right-2 rounded-full flex items-center justify-center transition-all',
               compact ? 'w-7 h-7' : 'w-8 h-8',
-              mapQuery.trim() ? 'bg-[#2463EB] text-white cursor-pointer' : 'text-[#D1D5DB] cursor-not-allowed',
+              mapQuery.trim()
+                ? 'bg-[#2463EB] text-white cursor-pointer hover:bg-[#1D4ED8] active:bg-[#1E40AF]'
+                : 'text-[#D1D5DB] cursor-not-allowed',
             )}
           >
             <Send size={compact ? 12 : 14} />
@@ -2001,7 +2012,7 @@ export function MapView() {
                 <span className="text-[0.75rem] text-[#E2E8F0] font-medium">{filter.label}</span>
                 <button
                   onClick={() => removeFilter(filter.id)}
-                  className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-[#334155] transition-colors"
+                  className={cn(chipRemoveClass, 'ml-0.5 size-4 rounded-full hover:bg-[#334155]')}
                 >
                   <X size={10} className="text-[#94A3B8]" />
                 </button>
@@ -2015,7 +2026,10 @@ export function MapView() {
           <div className="absolute top-14 left-4 z-10 bg-[#0F172A]/90 backdrop-blur-sm rounded-xl border border-[#1E293B] shadow-lg p-4 min-w-[200px]" style={{ marginTop: activeFilters.length > 0 ? '8px' : '0' }}>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-[0.6875rem] font-semibold text-[#64748B]">{currentStep.legendTitle}</h4>
-              <button onClick={handleReset} className="text-[#64748B] hover:text-[#CBD5E1] transition-colors">
+              <button
+                onClick={handleReset}
+                className={cn(iconButtonSmClass, 'size-5 text-[#64748B] hover:bg-transparent hover:text-[#CBD5E1]')}
+              >
                 <X size={14} />
               </button>
             </div>
@@ -2065,7 +2079,10 @@ export function MapView() {
                 type="button"
                 onClick={closeMobilePanel}
                 aria-label="Collapse assistant to map"
-                className="flex flex-col items-center gap-1 py-0.5"
+                className={cn(
+                  iconButtonSmClass,
+                  'h-auto w-auto flex-col gap-1 rounded-lg px-3 py-0.5 hover:bg-[#F3F4F6]',
+                )}
               >
                 <span className="h-1 w-10 rounded-full bg-[#E5E7EB]" />
                 <span className="text-[0.625rem] font-medium text-[#9CA3AF]">Show map</span>
@@ -2083,11 +2100,14 @@ export function MapView() {
               {!activeFlow ? (
                 <button
                   onClick={() => setIsHistoryOpen(true)}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E7EB] px-3 transition-all group hover:border-[#1D4ED8] hover:bg-[#F9FAFB]"
+                  className={cn(
+                    outlineControlClass,
+                    'inline-flex h-8 items-center gap-1.5 border-[#E5E7EB] px-3 text-[0.75rem] font-medium text-[#6B7280] group hover:border-[#1D4ED8] hover:bg-[#F9FAFB]',
+                  )}
                   title="View query history"
                 >
                   <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
-                  <span className="text-[0.75rem] font-medium text-[#6B7280] group-hover:text-[#2463EB]">History</span>
+                  <span className="group-hover:text-[#2463EB]">History</span>
                 </button>
               ) : (
                 <span className="h-8" aria-hidden />
@@ -2097,7 +2117,7 @@ export function MapView() {
                 onClick={() => setIsPanelMinimized(true)}
                 aria-label="Collapse assistant panel"
                 title="Collapse panel"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]"
+                className={cn(iconButtonSmClass, 'border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]')}
               >
                 <PanelRightClose size={16} />
               </button>
@@ -2111,11 +2131,14 @@ export function MapView() {
                 <div className="shrink-0 px-4 pt-4 pb-4">
                   <button
                     onClick={() => setIsHistoryOpen(true)}
-                    className="mb-6 inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E7EB] px-3 transition-all group hover:border-[#1D4ED8] hover:bg-[#F9FAFB]"
+                    className={cn(
+                      outlineControlClass,
+                      'mb-6 inline-flex h-8 items-center gap-1.5 border-[#E5E7EB] px-3 text-[0.75rem] font-medium text-[#6B7280] group hover:border-[#1D4ED8] hover:bg-[#F9FAFB]',
+                    )}
                     title="View query history"
                   >
                     <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
-                    <span className="text-[0.75rem] font-medium text-[#6B7280] group-hover:text-[#2463EB]">History</span>
+                    <span className="group-hover:text-[#2463EB]">History</span>
                   </button>
                 </div>
               )}
@@ -2159,7 +2182,10 @@ export function MapView() {
               {/* Header */}
               <div className="px-6 pt-6 pb-4 border-b border-[#E5E7EB] flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <button onClick={handleReset} className="text-[#9CA3AF] hover:text-[#374151] transition-colors">
+                  <button
+                    onClick={handleReset}
+                    className={cn(iconButtonSmClass, 'size-auto text-[#9CA3AF] hover:bg-transparent hover:text-[#374151]')}
+                  >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                   </button>
                   <div className="flex items-center gap-2">
@@ -2299,7 +2325,10 @@ export function MapView() {
             type="button"
             onClick={openMobilePanel}
             aria-label="Open analysis panel"
-            className="mb-2 flex w-full items-center justify-center gap-1.5 text-[0.6875rem] font-medium text-[#9CA3AF]"
+            className={cn(
+              textLinkActionClass,
+              'mb-2 w-full justify-center text-[0.6875rem] text-[#9CA3AF] hover:text-[#6B7280]',
+            )}
           >
             <ChevronUp size={14} />
             {activeFlow
@@ -2330,8 +2359,9 @@ export function MapView() {
                 <h2 className="text-[1rem] font-bold text-[#1f2937]">Query History</h2>
               </div>
               <button
+                type="button"
                 onClick={() => setIsHistoryOpen(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#F3F4F6] transition-colors"
+                className={cn(iconButtonSmClass, 'size-8 hover:bg-[#F3F4F6]')}
               >
                 <X size={18} className="text-[#6B7280]" />
               </button>
@@ -2410,7 +2440,10 @@ export function MapView() {
                       setQueryHistory([]);
                     }
                   }}
-                  className="w-full py-2.5 px-4 rounded-lg border border-[#E5E7EB] text-[0.8125rem] font-medium text-[#6B7280] hover:bg-[#F9FAFB] hover:border-[#DC2626] hover:text-[#DC2626] transition-all"
+                  className={cn(
+                    outlineControlClass,
+                    'w-full py-2.5 px-4 text-[0.8125rem] font-medium text-[#6B7280] border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#DC2626] hover:text-[#DC2626]',
+                  )}
                 >
                   Clear All History
                 </button>

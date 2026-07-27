@@ -9,6 +9,7 @@ import {
   buildHubInsightChatPayload,
   buildSummaryChatPayload,
   dashboardCardClass,
+  interactiveCardProps,
 } from '../../utils/dashboardChatContext';
 
 const SUMMARY_CARD_BACKGROUND =
@@ -107,6 +108,7 @@ export function RiskIntelligenceSummaryCard({
       onKeyDown={onCardKeyDown}
       className={`relative overflow-hidden rounded-2xl border border-white/20 p-6 sm:p-8 text-white shadow-sm text-left ${interactive ? dashboardCardClass.gradient : ''}`}
       style={{ background: SUMMARY_CARD_BACKGROUND }}
+      {...(interactive ? interactiveCardProps : {})}
     >
       <SummaryCardDecoration />
 

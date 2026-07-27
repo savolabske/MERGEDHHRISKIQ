@@ -58,6 +58,7 @@ import {
 } from '../../shared';
 import { ReportExportButton, useReportExport } from '../../shared/export';
 import { cn } from '../../../../components/ui/utils';
+import { filterTriggerClass, textLinkActionClass } from '../../../../components/ui/interaction';
 import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
 const FORWARD_ICONS = [Sparkles, AlertTriangle, Calendar, Shield, Sparkles, Shield];
@@ -279,11 +280,11 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     type="button"
                     disabled={!filtersInteractive}
                     onClick={() => setOpenMenu((prev) => (prev === 'time' ? null : 'time'))}
-                    className={cn(
-                      'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50',
-                      openMenu === 'time' || startYear !== 2014 || endYear !== 2025
-                        ? filterActiveClass
-                        : filterIdleClass,
+                    className={filterTriggerClass(
+                      openMenu === 'time' || startYear !== 2014 || endYear !== 2025,
+                      filterIdleClass,
+                      filterActiveClass,
+                      'gap-2',
                     )}
                   >
                     <Calendar size={13} />
@@ -297,7 +298,11 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                           Year Range
                         </span>
                         {(startYear !== 2014 || endYear !== 2025) && (
-                          <button onClick={() => clearMenu('time')} className="text-[11px] text-[#00689D]">
+                          <button
+                            type="button"
+                            onClick={() => clearMenu('time')}
+                            className={cn(textLinkActionClass, 'text-[#00689D]')}
+                          >
                             Clear Filters
                           </button>
                         )}
@@ -341,9 +346,10 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     type="button"
                     disabled={!filtersInteractive}
                     onClick={() => setOpenMenu((prev) => (prev === 'windows' ? null : 'windows'))}
-                    className={cn(
-                      'inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50',
-                      openMenu === 'windows' || selectedWindows.length > 0 ? filterActiveClass : filterIdleClass,
+                    className={filterTriggerClass(
+                      openMenu === 'windows' || selectedWindows.length > 0,
+                      filterIdleClass,
+                      filterActiveClass,
                     )}
                   >
                     {selectedWindows.length > 0 ? `Windows (${selectedWindows.length})` : 'All Windows'}
@@ -365,9 +371,10 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     type="button"
                     disabled={!filtersInteractive}
                     onClick={() => setOpenMenu((prev) => (prev === 'donors' ? null : 'donors'))}
-                    className={cn(
-                      'inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50',
-                      openMenu === 'donors' || selectedDonors.length > 0 ? filterActiveClass : filterIdleClass,
+                    className={filterTriggerClass(
+                      openMenu === 'donors' || selectedDonors.length > 0,
+                      filterIdleClass,
+                      filterActiveClass,
                     )}
                   >
                     {selectedDonors.length > 0 ? `Donors (${selectedDonors.length})` : 'All Donors'}
@@ -389,9 +396,10 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                     type="button"
                     disabled={!filtersInteractive}
                     onClick={() => setOpenMenu((prev) => (prev === 'entities' ? null : 'entities'))}
-                    className={cn(
-                      'inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50',
-                      openMenu === 'entities' || selectedUnEntities.length > 0 ? filterActiveClass : filterIdleClass,
+                    className={filterTriggerClass(
+                      openMenu === 'entities' || selectedUnEntities.length > 0,
+                      filterIdleClass,
+                      filterActiveClass,
                     )}
                   >
                     {selectedUnEntities.length > 0

@@ -17,6 +17,7 @@ import {
   buildCategoryChatPayload,
   buildMetricChatPayload,
   dashboardCardClass,
+  interactiveCardProps,
 } from '../utils/dashboardChatContext';
 import { DashboardEmergingSection, EmergingRiskCard } from './dashboard/DashboardEmergingSection';
 import { PageScrollShell } from './PageScrollShell';
@@ -99,6 +100,7 @@ function MetricCard({
       onClick={open}
       onKeyDown={(e) => activateOnKeyDown(e, open)}
       className={`relative bg-card rounded-2xl border border-border p-5 overflow-hidden text-left group ${dashboardCardClass.white}`}
+      {...interactiveCardProps}
     >
       <div className={`absolute inset-x-0 top-0 h-16 bg-gradient-to-b ${tintClass} to-transparent pointer-events-none`} />
       <Sparkline points={metric.sparkline} stroke={metric.sparklineColor} />
@@ -205,6 +207,7 @@ export function Dashboard({ embedded = false, onOpenChat, onOpenBriefing }: Dash
                     onClick={open}
                     onKeyDown={(e) => activateOnKeyDown(e, open)}
                     className={dashboardCardClass.row}
+                    {...interactiveCardProps}
                   >
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2 min-w-0">

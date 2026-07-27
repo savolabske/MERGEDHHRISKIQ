@@ -20,6 +20,13 @@ import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
+import { cn } from './ui/utils';
+import {
+  iconButtonSmClass,
+  listFilterTriggerClass,
+  menuItemClass,
+  paginationControlClass,
+} from './ui/interaction';
 import {
   type ApiCollection,
   type ApiDataset,
@@ -374,7 +381,7 @@ export function Api() {
               <button
                 onClick={handleSyncCollections}
                 disabled={isSyncing}
-                className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className={cn(listFilterTriggerClass, 'disabled:opacity-60 disabled:cursor-not-allowed')}
               >
                 <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} />
                 Refresh All
@@ -470,7 +477,7 @@ export function Api() {
             <div className="relative" ref={orgDropdownRef}>
               <button
                 onClick={() => setShowOrgDropdown(!showOrgDropdown)}
-                className="w-full sm:w-auto px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+                className={cn(listFilterTriggerClass, 'w-full sm:w-auto')}
               >
                 {orgFilter}
                 <ChevronDown
@@ -487,7 +494,7 @@ export function Api() {
                         setOrgFilter(org);
                         setShowOrgDropdown(false);
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
+                      className={menuItemClass}
                     >
                       {org}
                     </button>
@@ -500,7 +507,7 @@ export function Api() {
               <div className="relative" ref={statusDropdownRef}>
                 <button
                   onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                  className="w-full sm:w-auto px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
+                  className={cn(listFilterTriggerClass, 'w-full sm:w-auto')}
                 >
                   {statusFilter}
                   <ChevronDown
@@ -517,7 +524,7 @@ export function Api() {
                           setStatusFilter(status);
                           setShowStatusDropdown(false);
                         }}
-                        className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
+                        className={menuItemClass}
                       >
                         {status}
                       </button>
@@ -596,7 +603,7 @@ export function Api() {
                             onClick={(e) => {
                               if (!externalUrl) e.preventDefault();
                             }}
-                            className="h-8 w-8 border border-border bg-card hover:bg-muted rounded-full transition-colors inline-flex items-center justify-center"
+                            className={cn(iconButtonSmClass, 'size-8 border border-border rounded-full')}
                             title="Open in new page"
                           >
                             <ExternalLink size={14} />
@@ -659,7 +666,7 @@ export function Api() {
                       <div className="lg:col-span-2 flex items-center gap-2 lg:justify-end">
                         <button
                           onClick={() => openEditModal(sub)}
-                          className="h-8 w-8 border border-border bg-card hover:bg-muted rounded-lg transition-colors inline-flex items-center justify-center"
+                          className={cn(iconButtonSmClass, 'size-8 border border-border')}
                           title="Edit subscription"
                         >
                           <Edit size={14} />
@@ -667,14 +674,17 @@ export function Api() {
                         <button
                           onClick={() => handleRefresh(sub)}
                           disabled={sub.status === 'syncing'}
-                          className="h-8 w-8 border border-border bg-card hover:bg-muted rounded-lg transition-colors inline-flex items-center justify-center disabled:opacity-60"
+                          className={cn(iconButtonSmClass, 'size-8 border border-border')}
                           title="Refresh subscription"
                         >
                           <RefreshCw size={14} className={sub.status === 'syncing' ? 'animate-spin' : ''} />
                         </button>
                         <button
                           onClick={() => setDeletingSubscription(sub)}
-                          className="h-8 w-8 border border-border bg-card hover:bg-destructive/10 text-destructive-text rounded-lg transition-colors inline-flex items-center justify-center"
+                          className={cn(
+                            iconButtonSmClass,
+                            'size-8 border border-border text-destructive-text hover:bg-destructive/10',
+                          )}
                           title="Delete subscription"
                         >
                           <Trash2 size={14} />
@@ -702,7 +712,7 @@ export function Api() {
                 <div className="relative" ref={itemsPerPageDropdownRef}>
                   <button
                     onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                    className="px-3 py-1.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors flex items-center gap-2 min-w-[70px] justify-between"
+                    className={cn(listFilterTriggerClass, 'min-w-[70px] justify-between px-3 py-1.5')}
                   >
                     {itemsPerPage}
                     <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
@@ -717,9 +727,11 @@ export function Api() {
                             setCurrentPage(1);
                             setShowItemsPerPageDropdown(false);
                           }}
-                          className={`w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                            itemsPerPage === count ? 'bg-secondary font-medium' : ''
-                          }`}
+                          className={cn(
+                            menuItemClass,
+                            'px-3',
+                            itemsPerPage === count && 'bg-secondary font-medium',
+                          )}
                         >
                           {count}
                         </button>
@@ -739,11 +751,8 @@ export function Api() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      currentPage === 1
-                        ? 'text-border-muted cursor-not-allowed'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
+                    className={paginationControlClass}
+                    title="Previous page"
                   >
                     <ChevronLeft size={20} />
                   </button>
@@ -752,11 +761,12 @@ export function Api() {
                       <button
                         key={idx}
                         onClick={() => setCurrentPage(page)}
-                        className={`min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-colors ${
-                          currentPage === page
-                            ? 'bg-primary text-white'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        className={cn(
+                          paginationControlClass,
+                          'min-w-[32px] h-8 px-2 text-sm font-medium',
+                          currentPage === page &&
+                            'bg-primary text-white hover:bg-primary-hover hover:text-white',
+                        )}
                       >
                         {page}
                       </button>
@@ -769,11 +779,8 @@ export function Api() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      currentPage === totalPages
-                        ? 'text-border-muted cursor-not-allowed'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
+                    className={paginationControlClass}
+                    title="Next page"
                   >
                     <ChevronRight size={20} />
                   </button>
@@ -799,7 +806,7 @@ export function Api() {
                   setSubscribeDatasetId('');
                   setSubscribeDatasetUrl('');
                 }}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                className={cn(iconButtonSmClass, 'size-8')}
               >
                 <X size={20} className="text-muted-foreground" />
               </button>
@@ -854,7 +861,7 @@ export function Api() {
                   setSubscribeDatasetId('');
                   setSubscribeDatasetUrl('');
                 }}
-                className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
+                className={listFilterTriggerClass}
               >
                 Cancel
               </button>
@@ -884,7 +891,7 @@ export function Api() {
               </div>
               <button
                 onClick={() => setEditingSubscription(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                className={cn(iconButtonSmClass, 'size-8')}
               >
                 <X size={20} className="text-muted-foreground" />
               </button>
@@ -917,7 +924,7 @@ export function Api() {
             <div className="border-t border-border px-6 py-4 flex items-center justify-end gap-3">
               <button
                 onClick={() => setEditingSubscription(null)}
-                className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
+                className={listFilterTriggerClass}
               >
                 Cancel
               </button>
