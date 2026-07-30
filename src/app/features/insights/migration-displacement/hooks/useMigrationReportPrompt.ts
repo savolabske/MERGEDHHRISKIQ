@@ -215,6 +215,7 @@ export function useMigrationReportPrompt(options?: { onChatLaneReady?: () => voi
     chatScrollRef,
     runPrompt,
     backToReport,
+    cancelQuery,
     restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,

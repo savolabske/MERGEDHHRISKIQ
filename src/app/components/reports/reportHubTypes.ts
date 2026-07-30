@@ -1,12 +1,15 @@
-import type { DollarSign } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { ReportCatalogId } from '../../data/reportsAdminMock';
 
 export interface ReportHubCardData {
-  id: ReportCatalogId;
+  id: string;
   title: string;
   description: string;
-  IconComponent: typeof DollarSign;
+  IconComponent: LucideIcon;
   iconBg: string;
   iconColor: string;
+  iconBgHex?: string;
+  iconColorHex?: string;
   available?: boolean;
+  catalogId?: ReportCatalogId;
 }

@@ -3,11 +3,12 @@ import { toast } from 'sonner';
 import type { DashboardPromptPrefs, DashboardSectionConfig } from '../data/dashboardCustomizeTypes';
 
 const REGENERATE_MS = 1400;
+const DISCARD_MESSAGE = 'You have unsaved prompt changes. Discard them and continue?';
 
-function confirmDiscard(message: string): boolean {
-  if (typeof window === 'undefined') return true;
-  return window.confirm(message);
-}
+type DiscardIntent<TSectionId extends string> =
+  | { type: 'stop' }
+  | { type: 'close' }
+  | { type: 'switch'; sectionId: TSectionId };
 
 export interface DashboardCustomizeConfig<TSectionId extends string> {
   sections: DashboardSectionConfig[];
@@ -30,6 +31,7 @@ export function useDashboardCustomize<TSectionId extends string>(
     {},
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [discardIntent, setDiscardIntent] = useState<DiscardIntent<TSectionId> | null>(null);
 
   useEffect(() => {
     const sync = () => setSavedPrompts(config.loadPrompts());
@@ -48,26 +50,47 @@ export function useDashboardCustomize<TSectionId extends string>(
     return draftPrompt.trim() !== activePrompt(editingSection).trim();
   }, [activePrompt, draftPrompt, editingSection]);
 
+  const clearEditor = useCallback(() => {
+    setEditingSection(null);
+    setDraftPrompt('');
+  }, []);
+
+  const applyDiscardIntent = useCallback(
+    (intent: DiscardIntent<TSectionId>) => {
+      if (intent.type === 'stop') {
+        clearEditor();
+        setIsCustomizing(false);
+        return;
+      }
+      if (intent.type === 'close') {
+        clearEditor();
+        return;
+      }
+      setEditingSection(intent.sectionId);
+      setDraftPrompt(activePrompt(intent.sectionId));
+    },
+    [activePrompt, clearEditor],
+  );
+
   const startCustomizing = useCallback(() => {
     setIsCustomizing(true);
   }, []);
 
   const stopCustomizing = useCallback(() => {
     if (editingSection && isDraftDirty) {
-      const discard = confirmDiscard('Discard unsaved prompt changes?');
-      if (!discard) return false;
+      setDiscardIntent({ type: 'stop' });
+      return false;
     }
-    setEditingSection(null);
-    setDraftPrompt('');
+    clearEditor();
     setIsCustomizing(false);
     return true;
-  }, [editingSection, isDraftDirty]);
+  }, [clearEditor, editingSection, isDraftDirty]);
 
   const openSectionEditor = useCallback(
     (sectionId: TSectionId) => {
       if (editingSection && editingSection !== sectionId && isDraftDirty) {
-        const discard = confirmDiscard('Discard unsaved prompt changes?');
-        if (!discard) return;
+        setDiscardIntent({ type: 'switch', sectionId });
+        return;
       }
       setEditingSection(sectionId);
       setDraftPrompt(activePrompt(sectionId));
@@ -77,13 +100,22 @@ export function useDashboardCustomize<TSectionId extends string>(
 
   const closeSectionEditor = useCallback(() => {
     if (isDraftDirty) {
-      const discard = confirmDiscard('Discard unsaved prompt changes?');
-      if (!discard) return false;
+      setDiscardIntent({ type: 'close' });
+      return false;
     }
-    setEditingSection(null);
-    setDraftPrompt('');
+    clearEditor();
     return true;
-  }, [isDraftDirty]);
+  }, [clearEditor, isDraftDirty]);
+
+  const confirmDiscard = useCallback(() => {
+    if (!discardIntent) return;
+    applyDiscardIntent(discardIntent);
+    setDiscardIntent(null);
+  }, [applyDiscardIntent, discardIntent]);
+
+  const cancelDiscard = useCallback(() => {
+    setDiscardIntent(null);
+  }, []);
 
   const resetDraftToDefault = useCallback(() => {
     if (!editingSection) return;
@@ -149,5 +181,9 @@ export function useDashboardCustomize<TSectionId extends string>(
     resetDraftToDefault,
     saveSectionPrompt,
     isSectionRegenerating,
+    discardConfirmOpen: discardIntent !== null,
+    discardConfirmDescription: DISCARD_MESSAGE,
+    confirmDiscard,
+    cancelDiscard,
   };
 }

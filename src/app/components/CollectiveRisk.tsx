@@ -1079,12 +1079,12 @@ export function CollectiveRisk() {
           <>
             {/* Overlay */}
             <div 
-              className="fixed inset-0 bg-black/40 z-[9998] transition-opacity duration-300"
+              className="fixed inset-0 bg-black/40 z-[1400] transition-opacity duration-300"
               onClick={() => { setSelectedRisk(null); setDrawerStatusOpen(false); setIsEditingResidual(false); setTempResidualValue(''); }}
             />
             
             {/* Drawer */}
-            <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] border-l border-border bg-card shadow-2xl z-[9999] flex flex-col">
+            <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] border-l border-border bg-card shadow-2xl z-[1410] flex flex-col">
             {/* Header */}
             <div className="flex-shrink-0 bg-card border-b border-border px-6 py-4">
               <div className="flex items-start justify-between">

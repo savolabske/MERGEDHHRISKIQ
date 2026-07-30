@@ -1070,12 +1070,12 @@ export function RiskRegister() {
         <>
           {/* Overlay */}
           <div 
-            className="fixed inset-0 bg-black/40 z-[9998] transition-opacity duration-300"
+            className="fixed inset-0 bg-black/40 z-[1400] transition-opacity duration-300"
             onClick={() => { setSelectedRisk(null); setDrawerStatusOpen(false); setIsEditingResidual(false); setTempResidualValue(''); }}
           />
           
           {/* Drawer */}
-          <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] border-l border-border bg-card shadow-2xl z-[9999] flex flex-col">
+          <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] border-l border-border bg-card shadow-2xl z-[1410] flex flex-col">
           {/* Header */}
           <div className="flex-shrink-0 bg-card border-b border-border px-6 py-4">
             <div className="flex items-start justify-between">
@@ -1338,6 +1338,7 @@ export function RiskRegister() {
                             setIsAddingMitigation(false);
                             setNewMitigationText('');
                             setNewMitigationOwner('');
+                            toast.success('Mitigation added');
                           }}
                           className="px-3 py-1.5 bg-primary text-white rounded-lg font-semibold text-xs hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
@@ -1412,6 +1413,7 @@ export function RiskRegister() {
                                     ...dismissedAiSuggestions,
                                     [selectedRisk.id]: [...dismissed, suggestion.id]
                                   });
+                                  toast.success('AI suggestion adopted');
                                 }}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary-hover transition-colors"
                               >
@@ -1424,6 +1426,7 @@ export function RiskRegister() {
                                     ...dismissedAiSuggestions,
                                     [selectedRisk.id]: [...dismissed, suggestion.id]
                                   });
+                                  toast.success('Suggestion dismissed');
                                 }}
                                 className="px-3 py-1.5 text-xs font-medium text-text-subtle hover:text-muted-foreground transition-colors"
                               >
@@ -1491,6 +1494,7 @@ export function RiskRegister() {
                           });
                           setIsAddingNote(false);
                           setNewNote('');
+                          toast.success('Note added');
                         }}
                         className="px-4 py-2 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary-hover transition-colors"
                       >
@@ -1517,30 +1521,19 @@ export function RiskRegister() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400]">
-          <div className="bg-card rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
-            <h3 className="text-lg font-semibold text-foreground mb-2">Delete Risk</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Are you sure you want to delete this risk? This action cannot be undone.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-destructive text-white rounded-xl text-sm font-semibold hover:bg-destructive-text transition-colors"
-              >
-                Delete Risk
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        open={isDeleteModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsDeleteModalOpen(false);
+            setRiskToDelete(null);
+          }
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Risk"
+        description="Are you sure you want to delete this risk? This action cannot be undone."
+        confirmLabel="Delete Risk"
+      />
 
       {/* Add/Edit Risk Modal (Upload or Form) */}
       {isModalOpen && (
@@ -1695,6 +1688,7 @@ export function RiskRegister() {
                 (m) => m.id !== mitigationToDelete.mitigationId,
               ) || [],
           });
+          toast.success('Mitigation removed');
           setMitigationToDelete(null);
         }}
         title="Are you sure you want to delete?"

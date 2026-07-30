@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { DollarSign, Users, Search, Clock, Landmark, SlidersHorizontal } from 'lucide-react';
+import { Search, Clock, SlidersHorizontal } from 'lucide-react';
+import { toast } from 'sonner';
 import { AidFlowScrollytelling } from '../features/insights/aid-flow';
 import { MigrationDataScrollytelling } from './MigrationDataScrollytelling';
 import { SomaliaJointFundScrollytelling } from './SomaliaJointFundScrollytelling';
 import { PageScrollShell } from './PageScrollShell';
 import { ReportDetailShell } from '../features/insights/shared/ReportDetailShell';
-import { loadManagedReports, MANAGED_REPORTS_CHANGED_EVENT, type ReportCatalogId } from '../data/reportsAdminMock';
+import { loadManagedReports, MANAGED_REPORTS_CHANGED_EVENT } from '../data/reportsAdminMock';
+import {
+  buildReportsHubCards,
+  hubIdToActiveBuiltinReport,
+} from '../data/reportsHubCatalog';
 import {
   buildPreferencesFromVisibleOrder,
   loadReportsHubPreferences,
@@ -20,53 +25,18 @@ import {
   type ReportsHubPreferences,
 } from '../data/reportsHubPreferences';
 import { Button } from './ui/button';
+import { ManagedReportView } from './reports/ManagedReportView';
 import { ReportHubCard } from './reports/ReportHubCard';
 import { ReportsCustomizeBar } from './reports/ReportsCustomizeBar';
 import { ReportsHiddenSection } from './reports/ReportsHiddenSection';
 import { ReportsSortableGrid } from './reports/ReportsSortableGrid';
 import type { ReportHubCardData } from './reports/reportHubTypes';
 
-const REPORT_CARD_META: Record<
-  ReportCatalogId,
-  {
-    IconComponent: typeof DollarSign;
-    iconBg: string;
-    iconColor: string;
-  }
-> = {
-  'aid-flow': {
-    IconComponent: DollarSign,
-    iconBg: 'bg-primary-subtle',
-    iconColor: 'text-primary',
-  },
-  'migration-displacement': {
-    IconComponent: Users,
-    iconBg: 'bg-chart-3/10',
-    iconColor: 'text-chart-3',
-  },
-  'somalia-joint-fund': {
-    IconComponent: Landmark,
-    iconBg: 'bg-emerald-500/10',
-    iconColor: 'text-emerald-700',
-  },
-};
-
-export type ActiveReport = 'aid-flow' | 'migration-data' | 'somalia-joint-fund' | null;
+/** Built-in scrollytelling keys, or a managed report id. */
+export type ActiveReport = 'aid-flow' | 'migration-data' | 'somalia-joint-fund' | string | null;
 
 function buildReportCards(): ReportHubCardData[] {
-  const managed = loadManagedReports().filter((r) => r.catalogId);
-  return managed.map((report) => {
-    const meta = REPORT_CARD_META[report.catalogId!];
-    return {
-      id: report.catalogId!,
-      title: report.title,
-      description: report.description,
-      IconComponent: meta.IconComponent,
-      iconBg: meta.iconBg,
-      iconColor: meta.iconColor,
-      available: report.status === 'published',
-    };
-  });
+  return buildReportsHubCards();
 }
 
 function matchesSearch(report: ReportHubCardData, query: string): boolean {
@@ -106,14 +76,14 @@ export function Reports({
 
   useEffect(() => {
     refreshCatalog();
+    const syncPrefs = () => setSavedPrefs(loadReportsHubPreferences());
     window.addEventListener('focus', refreshCatalog);
     window.addEventListener(MANAGED_REPORTS_CHANGED_EVENT, refreshCatalog);
-    window.addEventListener(REPORTS_HUB_LAYOUT_CHANGED_EVENT, () => {
-      setSavedPrefs(loadReportsHubPreferences());
-    });
+    window.addEventListener(REPORTS_HUB_LAYOUT_CHANGED_EVENT, syncPrefs);
     return () => {
       window.removeEventListener('focus', refreshCatalog);
       window.removeEventListener(MANAGED_REPORTS_CHANGED_EVENT, refreshCatalog);
+      window.removeEventListener(REPORTS_HUB_LAYOUT_CHANGED_EVENT, syncPrefs);
     };
   }, [refreshCatalog]);
 
@@ -153,17 +123,15 @@ export function Reports({
     onInitialReportConsumed?.();
   }, [initialReport, onReportOpen, onInitialReportConsumed]);
 
-  const handleReportClick = (reportId: ReportCatalogId) => {
-    if (reportId === 'aid-flow') {
-      setActiveReport('aid-flow');
+  const handleReportClick = (reportId: string) => {
+    const builtin = hubIdToActiveBuiltinReport(reportId);
+    if (builtin) {
+      setActiveReport(builtin);
       onReportOpen?.();
-    } else if (reportId === 'migration-displacement') {
-      setActiveReport('migration-data');
-      onReportOpen?.();
-    } else if (reportId === 'somalia-joint-fund') {
-      setActiveReport('somalia-joint-fund');
-      onReportOpen?.();
+      return;
     }
+    setActiveReport(reportId);
+    onReportOpen?.();
   };
 
   const handleReportBack = () => {
@@ -182,6 +150,7 @@ export function Reports({
     saveReportsHubPreferences(next);
     setSavedPrefs(next);
     setIsCustomizing(false);
+    toast.success('Reports layout saved');
   };
 
   const handleCancel = () => {
@@ -199,6 +168,7 @@ export function Reports({
       setDraftVisible(visible);
       setDraftHidden(hidden);
     }
+    toast.success('Reports layout reset to default');
   };
 
   const handleHide = (id: string) => {
@@ -242,6 +212,17 @@ export function Reports({
         <SomaliaJointFundScrollytelling onBack={handleReportBack} />
       </ReportDetailShell>
     );
+  }
+
+  if (activeReport) {
+    const managed = loadManagedReports().find((r) => r.id === activeReport && !r.catalogId);
+    if (managed) {
+      return (
+        <ReportDetailShell>
+          <ManagedReportView report={managed} onBack={handleReportBack} />
+        </ReportDetailShell>
+      );
+    }
   }
 
   const browseEmptyAllHidden = !isCustomizing && visibleCards.length === 0;

@@ -22,6 +22,7 @@ import { Button } from './ui/button';
 import { BackLink } from './ui/back-link';
 import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { ChatStopButton } from './ui/ChatStopButton';
 import { cn } from './ui/utils';
 import { getDocumentContent, type DocumentContent } from '../data/documentDetailData';
 import type { AppView } from '../types/navigation';
@@ -147,6 +148,7 @@ function DocumentChatComposer({
   onChange,
   onFocus,
   onSubmit,
+  onStop,
 }: {
   chatQuery: string;
   isTyping: boolean;
@@ -157,6 +159,7 @@ function DocumentChatComposer({
   onChange: (value: string) => void;
   onFocus: () => void;
   onSubmit: (e: FormEvent) => void;
+  onStop: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const canSend = Boolean(chatQuery.trim()) && !isTyping;
@@ -233,17 +236,24 @@ function DocumentChatComposer({
           disabled={isTyping}
           className="focus-ring-container-control h-[96px] w-full border-0 bg-transparent pl-6 pr-16 pt-4 pb-12 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 disabled:opacity-60"
         />
-        <button
-          type="submit"
-          disabled={!canSend}
-          className={cn(
-            'absolute right-2 bottom-3 inline-flex h-10 w-10 items-center justify-center rounded-xl text-white transition-colors',
-            canSend ? 'bg-primary hover:bg-primary-hover' : 'bg-muted cursor-not-allowed',
-          )}
-          aria-label="Send message"
-        >
-          <Send size={16} className={canSend ? 'text-white' : 'text-text-subtle'} />
-        </button>
+        {isTyping ? (
+          <ChatStopButton
+            onClick={onStop}
+            className="absolute right-2 bottom-3"
+          />
+        ) : (
+          <button
+            type="submit"
+            disabled={!canSend}
+            className={cn(
+              'absolute right-2 bottom-3 inline-flex h-10 w-10 items-center justify-center rounded-xl text-white transition-colors',
+              canSend ? 'bg-primary hover:bg-primary-hover' : 'bg-muted cursor-not-allowed',
+            )}
+            aria-label="Send message"
+          >
+            <Send size={16} className={canSend ? 'text-white' : 'text-text-subtle'} />
+          </button>
+        )}
       </div>
       {isExtendedKnowledgeMode && (
         <p className="mt-2 text-center text-xs text-muted-foreground">
@@ -303,6 +313,20 @@ export function DocumentDetail({
   const [isChatOpen, setIsChatOpen] = useState(initialChatOpen);
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const responseTimeoutsRef = useRef<number[]>([]);
+
+  const clearResponseTimeouts = () => {
+    responseTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    responseTimeoutsRef.current = [];
+  };
+
+  const scheduleResponseTimeout = (callback: () => void, delay: number) => {
+    const id = window.setTimeout(() => {
+      responseTimeoutsRef.current = responseTimeoutsRef.current.filter((timeoutId) => timeoutId !== id);
+      callback();
+    }, delay);
+    responseTimeoutsRef.current.push(id);
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -311,9 +335,15 @@ export function DocumentDetail({
     setIsChatExpanded(false);
     setMessages(initialMessages ?? []);
     setChatQuery('');
+    clearResponseTimeouts();
+    setIsTyping(false);
     // Remount via `key` handles thread switches; only sync when the document id changes in-place.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
+
+  useEffect(() => {
+    return () => clearResponseTimeouts();
+  }, []);
 
   useEffect(() => {
     if (chatScrollRef.current) {
@@ -325,6 +355,12 @@ export function DocumentDetail({
     if (!onMessagesChange || messages.length === 0) return;
     onMessagesChange(messages, content.title);
   }, [messages, content.title, onMessagesChange]);
+
+  const stopGeneration = () => {
+    clearResponseTimeouts();
+    setMessages((prev) => prev.filter((message) => !message.isThinking));
+    setIsTyping(false);
+  };
 
   const handleSendMessage = (e: FormEvent) => {
     e.preventDefault();
@@ -348,7 +384,7 @@ export function DocumentDetail({
         },
       ]);
 
-      window.setTimeout(() => {
+      scheduleResponseTimeout(() => {
         setMessages((prev) =>
           prev.map((message, index) =>
             index === prev.length - 1 && message.isThinking
@@ -358,7 +394,7 @@ export function DocumentDetail({
         );
       }, 900);
 
-      window.setTimeout(() => {
+      scheduleResponseTimeout(() => {
         setMessages((prev) =>
           prev.map((message, index) =>
             index === prev.length - 1 && message.isThinking
@@ -368,7 +404,7 @@ export function DocumentDetail({
         );
       }, 1800);
 
-      window.setTimeout(() => {
+      scheduleResponseTimeout(() => {
         setMessages((prev) => {
           const withoutThinking = prev.filter((message) => !message.isThinking);
           return [
@@ -386,7 +422,7 @@ export function DocumentDetail({
       return;
     }
 
-    setTimeout(() => {
+    scheduleResponseTimeout(() => {
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: generateDocumentResponse(userQuery, content) },
@@ -470,7 +506,7 @@ export function DocumentDetail({
   };
 
   const handleFileDownload = (fileName: string) => {
-    toast.success(`Download started for ${fileName}`);
+    toast.info(`Download started for ${fileName}`);
   };
 
   return (
@@ -675,6 +711,7 @@ export function DocumentDetail({
                     onChange={setChatQuery}
                     onFocus={() => setIsChatOpen(true)}
                     onSubmit={handleSendMessage}
+                    onStop={stopGeneration}
                   />
                 </div>
               ) : (
@@ -687,6 +724,7 @@ export function DocumentDetail({
                   onChange={setChatQuery}
                   onFocus={() => setIsChatOpen(true)}
                   onSubmit={handleSendMessage}
+                  onStop={stopGeneration}
                 />
               )}
             </div>
@@ -728,6 +766,7 @@ export function DocumentDetail({
               onChange={setChatQuery}
               onFocus={() => setIsChatOpen(true)}
               onSubmit={handleSendMessage}
+              onStop={stopGeneration}
             />
           </div>
         </div>

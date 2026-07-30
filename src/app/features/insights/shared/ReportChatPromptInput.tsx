@@ -1,5 +1,6 @@
 import { ChevronDown, Send } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
+import { ChatStopButton } from '../../../components/ui/ChatStopButton';
 import { useReportChatPanel } from './ReportChatLayout';
 
 export interface ReportChatPromptTheme {
@@ -50,6 +51,8 @@ interface ReportChatPromptInputProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  onStop?: () => void;
+  isGenerating?: boolean;
   disabled?: boolean;
   placeholder?: string;
   theme: ReportChatPromptTheme;
@@ -59,6 +62,8 @@ export function ReportChatPromptInput({
   value,
   onChange,
   onSubmit,
+  onStop,
+  isGenerating = false,
   disabled = false,
   placeholder,
   theme,
@@ -66,6 +71,7 @@ export function ReportChatPromptInput({
   const { variant, mobileChatOpen, openMobileChat, closeMobileChat } = useReportChatPanel();
   const showMinimize = variant === 'sheet' && mobileChatOpen;
   const showDisclaimer = variant !== 'sheet' || mobileChatOpen;
+  const inputDisabled = disabled && !isGenerating;
 
   const handleFocus = () => {
     if (variant === 'sheet' && !mobileChatOpen) {
@@ -74,6 +80,7 @@ export function ReportChatPromptInput({
   };
 
   const handleSubmit = () => {
+    if (isGenerating) return;
     if (variant === 'sheet' && !mobileChatOpen) {
       openMobileChat();
     }
@@ -83,6 +90,7 @@ export function ReportChatPromptInput({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      if (isGenerating) return;
       handleSubmit();
     }
   };
@@ -116,25 +124,29 @@ export function ReportChatPromptInput({
             onChange={(e) => onChange(e.target.value)}
             onFocus={handleFocus}
             onKeyDown={handleKeyDown}
-            disabled={disabled}
+            disabled={inputDisabled}
             placeholder={placeholder}
             className={cn(
               'focus-ring-container-control min-h-[36px] max-h-[90px] flex-1 resize-none bg-transparent text-[12.8px] outline-none disabled:opacity-50',
               theme.text,
             )}
           />
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={disabled}
-            className={cn(
-              'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white disabled:opacity-50',
-              theme.buttonBg,
-              theme.buttonHover,
-            )}
-          >
-            <Send size={14} />
-          </button>
+          {isGenerating && onStop ? (
+            <ChatStopButton onClick={onStop} size="sm" className="shrink-0" />
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={disabled || !value.trim()}
+              className={cn(
+                'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white disabled:opacity-50',
+                theme.buttonBg,
+                theme.buttonHover,
+              )}
+            >
+              <Send size={14} />
+            </button>
+          )}
         </div>
       </div>
       {showDisclaimer && (

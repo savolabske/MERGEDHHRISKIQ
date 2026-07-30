@@ -110,6 +110,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
     chatScrollRef,
     runPrompt,
     backToReport,
+    cancelQuery,
     restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,
@@ -474,6 +475,8 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
               value={promptInput}
               onChange={setPromptInput}
               onSubmit={runPrompt}
+              onStop={cancelQuery}
+              isGenerating={isQuerying}
               disabled={isQuerying}
               placeholder="Ask anything about aid flows..."
               theme={AID_FLOW_CHAT_PROMPT_THEME}

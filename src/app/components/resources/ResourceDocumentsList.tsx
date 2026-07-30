@@ -14,6 +14,7 @@ import {
   DetailSectionTitle,
   PlatformFileStatusCell,
 } from './resourceShared';
+import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50] as const;
 
@@ -454,43 +455,23 @@ export function ResourceDocumentsList({
         </div>
       )}
 
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1500] p-4">
-          <div className="bg-card rounded-xl max-w-[460px] w-full shadow-2xl">
-            <div className="p-6 border-b border-border">
-              <h3 className="text-lg font-semibold text-foreground">
-                Delete file{pendingDeleteIds.length > 1 ? 's' : ''}?
-              </h3>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {pendingDeleteIds.length > 1
-                  ? `Are you sure you want to delete ${pendingDeleteIds.length} files? This action cannot be undone.`
-                  : 'Are you sure you want to delete this file? This action cannot be undone.'}
-              </p>
-            </div>
-            <div className="p-6 border-t border-border flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setPendingDeleteIds([]);
-                }}
-                className="px-4 py-2.5 border border-border hover:bg-muted rounded-lg text-sm font-medium text-muted-foreground transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteFiles}
-                className="px-4 py-2.5 bg-destructive hover:opacity-90 text-white rounded-lg text-sm font-semibold transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowDeleteConfirm(false);
+            setPendingDeleteIds([]);
+          }
+        }}
+        onConfirm={confirmDeleteFiles}
+        title={`Delete file${pendingDeleteIds.length > 1 ? 's' : ''}?`}
+        description={
+          pendingDeleteIds.length > 1
+            ? `Are you sure you want to delete ${pendingDeleteIds.length} files? This action cannot be undone.`
+            : 'Are you sure you want to delete this file? This action cannot be undone.'
+        }
+        confirmLabel="Delete"
+      />
 
       {canEdit && (
         <div className="mt-5 border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors">

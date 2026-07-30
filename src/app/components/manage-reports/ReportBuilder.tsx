@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import type { ManagedReport, ReportSection } from '../../data/reportsAdminMock';
 import { hasLinkedKnowledgeSources } from '../../data/reportsAdminMock';
 import { ReportBuilderHeader } from './ReportBuilderHeader';
@@ -251,6 +252,7 @@ export function ReportBuilder({
           if (!sectionToDelete) return;
           handleDeleteSection(sectionToDelete);
           setSectionToDelete(null);
+          toast.success('Section removed');
         }}
         title="Are you sure you want to delete?"
         description={

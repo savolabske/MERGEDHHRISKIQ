@@ -23,7 +23,7 @@ interface URLSource {
   crawlMethod: string;
   knowledgeBase: string;
   crawlSchedule: CrawlSchedule;
-  status: 'active' | 'pending' | 'error';
+  status: 'active' | 'pending' | 'recrawling' | 'error';
   lastCrawled: string;
   pagesIndexed: number;
   dateAdded: string;
@@ -333,9 +333,10 @@ export function URLSources() {
       source.knowledgeBase.toLowerCase().includes(searchQuery.toLowerCase()) ||
       source.crawlSchedule.toLowerCase().includes(searchQuery.toLowerCase()) ||
       source.dateAdded.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'All Status' || 
+    const matchesStatus = statusFilter === 'All Status' ||
       (statusFilter === 'Active' && source.status === 'active') ||
       (statusFilter === 'Pending' && source.status === 'pending') ||
+      (statusFilter === 'Recrawling' && source.status === 'recrawling') ||
       (statusFilter === 'Error' && source.status === 'error');
     return matchesSearch && matchesStatus;
   });
@@ -407,7 +408,7 @@ export function URLSources() {
     setSources([newSource, ...sources]);
     closeAddModal();
 
-    toast.loading('Crawling URL source...', { duration: 3000 });
+    toast.info('Crawl started');
 
     setTimeout(() => {
       setSources(prevSources => 
@@ -446,19 +447,19 @@ export function URLSources() {
   };
 
   const handleRecrawl = (id: string) => {
-    toast.loading('Recrawling URL source...', { duration: 2500 });
+    toast.info('Recrawl started');
 
     setSources(prev =>
       prev.map(s =>
         s.id === id
-          ? { ...s, status: 'pending' as const, lastCrawled: 'Crawling in progress...' }
+          ? { ...s, status: 'recrawling' as const, lastCrawled: 'Recrawling in progress...' }
           : s
       )
     );
 
     if (selectedSource?.id === id) {
       setSelectedSource(prev =>
-        prev ? { ...prev, status: 'pending', lastCrawled: 'Crawling in progress...' } : prev
+        prev ? { ...prev, status: 'recrawling', lastCrawled: 'Recrawling in progress...' } : prev
       );
     }
 
@@ -551,18 +552,26 @@ export function URLSources() {
     );
   };
 
+  const getStatusLabel = (status: URLSource['status']) => {
+    if (status === 'active') return 'Active';
+    if (status === 'pending') return 'Pending';
+    if (status === 'recrawling') return 'Recrawling';
+    return 'Error';
+  };
+
   const getTableStatusBadge = (status: URLSource['status']) => {
-    const label = status === 'active' ? 'Active' : status === 'pending' ? 'Pending' : 'Error';
+    const label = getStatusLabel(status);
+    const isInProgress = status === 'pending' || status === 'recrawling';
     const dotColor =
       status === 'active'
         ? 'bg-success'
-        : status === 'pending'
+        : isInProgress
           ? 'bg-warning-text'
           : 'bg-destructive-text';
     const textColor =
       status === 'active'
         ? 'text-success-text'
-        : status === 'pending'
+        : isInProgress
           ? 'text-warning-text'
           : 'text-destructive-text';
 
@@ -575,11 +584,12 @@ export function URLSources() {
   };
 
   const getDrawerStatusBadge = (status: URLSource['status']) => {
-    const label = status === 'active' ? 'Active' : status === 'pending' ? 'Pending' : 'Error';
+    const label = getStatusLabel(status);
+    const isInProgress = status === 'pending' || status === 'recrawling';
     const styles =
       status === 'active'
         ? { pill: 'bg-success-subtle text-success-text', dot: 'bg-success' }
-        : status === 'pending'
+        : isInProgress
           ? { pill: 'bg-warning-subtle text-warning-text', dot: 'bg-warning-text' }
           : { pill: 'bg-destructive-subtle text-destructive-text', dot: 'bg-destructive-text' };
 
@@ -682,7 +692,7 @@ export function URLSources() {
                   </button>
                   {showStatusDropdown && (
                     <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
-                      {['All Status', 'Active', 'Pending', 'Error'].map((status) => (
+                      {['All Status', 'Active', 'Pending', 'Recrawling', 'Error'].map((status) => (
                         <button
                           key={status}
                           onClick={() => {

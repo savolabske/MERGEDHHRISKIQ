@@ -4,16 +4,7 @@ import { toast } from 'sonner';
 import type { ManagedReport } from '../../data/reportsAdminMock';
 import { isBuiltinReport } from '../../data/reportsAdminMock';
 import { PageScrollShell } from '../PageScrollShell';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../ui/alert-dialog';
+import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
 import { cn } from '../ui/utils';
 
 interface ManageReportsListProps {
@@ -266,47 +257,31 @@ export function ManageReportsList({
         </div>
       </PageScrollShell>
 
-      <AlertDialog open={Boolean(deleteId)} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete report?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteTarget
-                ? `"${deleteTarget.title}" will be permanently removed. This cannot be undone.`
-                : 'This report will be permanently removed.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive hover:bg-destructive-text"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={Boolean(deleteId)}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete report?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.title}" will be permanently removed. This cannot be undone.`
+            : 'This report will be permanently removed.'
+        }
+        confirmLabel="Delete"
+      />
 
-      <AlertDialog
+      <ConfirmDeleteDialog
         open={Boolean(unpublishId)}
         onOpenChange={(open) => !open && setUnpublishId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Unpublish report?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {unpublishTarget
-                ? `"${unpublishTarget.title}" will be hidden from the Reports hub and moved to draft. You can publish it again later.`
-                : 'This report will be hidden from the Reports hub.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmUnpublish}>Unpublish</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onConfirm={confirmUnpublish}
+        title="Unpublish report?"
+        description={
+          unpublishTarget
+            ? `"${unpublishTarget.title}" will be hidden from the Reports hub and moved to draft. You can publish it again later.`
+            : 'This report will be hidden from the Reports hub.'
+        }
+        confirmLabel="Unpublish"
+      />
     </>
   );
 }

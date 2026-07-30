@@ -249,12 +249,12 @@ export function BriefingContent({ onFollowUp, mode = 'briefing' }: BriefingConte
         <>
           {/* Overlay */}
           <div 
-            className="fixed inset-0 bg-black/40 z-[9998] transition-opacity duration-300"
+            className="fixed inset-0 bg-black/40 z-[1400] transition-opacity duration-300"
             onClick={() => setSelectedCell(null)}
           />
           
           {/* Drawer */}
-          <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] border-l border-border bg-card overflow-auto shadow-2xl z-[9999]">
+          <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] border-l border-border bg-card overflow-auto shadow-2xl z-[1410]">
           {/* Header */}
           <div className="sticky top-0 bg-card border-b border-border px-6 py-6 flex items-start justify-between">
             <div className="flex-1">

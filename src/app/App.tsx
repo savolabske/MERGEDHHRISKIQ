@@ -3,7 +3,6 @@ import { AppTopBar } from "./components/AppTopBar";
 import { Auth } from "./components/Auth";
 import { Chat } from "./components/Chat";
 import { Reports, type ActiveReport } from "./components/Reports";
-import type { HubReportHighlightId } from "./data/homeDashboardMock";
 import { MapView } from "./components/MapView";
 import { Insights } from "./components/Insights";
 import { Profile } from "./components/Profile";
@@ -916,14 +915,16 @@ export default function App() {
   }, [documentReturnView]);
 
   const handleOpenHubReport = useCallback(
-    (reportId: HubReportHighlightId) => {
-      const active: ActiveReport =
+    (reportId: string) => {
+      const builtin =
         reportId === 'migration-displacement'
           ? 'migration-data'
           : reportId === 'somalia-joint-fund'
             ? 'somalia-joint-fund'
-            : 'aid-flow';
-      setPendingHubReport(active);
+            : reportId === 'aid-flow'
+              ? 'aid-flow'
+              : null;
+      setPendingHubReport(builtin ?? reportId);
       sidebarCollapsedBeforeReportRef.current = isSidebarCollapsed;
       setIsSidebarCollapsed(true);
       setCurrentView('reports');
@@ -1913,11 +1914,15 @@ export default function App() {
         ) : null}
         </div>
       </main>
-      <Toaster 
+      <Toaster
         position="top-right"
         closeButton
         duration={4000}
-        toastOptions={{ className: 'sonner-toast' }}
+        toastOptions={{
+          className: 'sonner-toast',
+          closeButton: true,
+          duration: 4000,
+        }}
       />
     </div>
   );

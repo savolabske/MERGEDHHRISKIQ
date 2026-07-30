@@ -385,7 +385,7 @@ export function AuditTrail() {
                 </p>
               </div>
               <button
-                onClick={() => toast.success('Export started')}
+                onClick={() => toast.info('Export started')}
                 className={cn(listFilterTriggerClass, 'shrink-0')}
               >
                 <Download size={18} />

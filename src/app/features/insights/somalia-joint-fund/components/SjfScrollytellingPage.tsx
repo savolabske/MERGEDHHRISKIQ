@@ -108,6 +108,7 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
     chatScrollRef,
     runPrompt,
     backToReport,
+    cancelQuery,
     restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,
@@ -491,6 +492,8 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
               value={promptInput}
               onChange={setPromptInput}
               onSubmit={runPrompt}
+              onStop={cancelQuery}
+              isGenerating={isQuerying}
               disabled={isQuerying}
               placeholder="Ask about the SJF…"
               theme={SJF_CHAT_PROMPT_THEME}

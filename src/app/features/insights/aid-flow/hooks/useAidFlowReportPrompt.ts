@@ -215,6 +215,7 @@ export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void 
     chatScrollRef,
     runPrompt,
     backToReport,
+    cancelQuery,
     restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,

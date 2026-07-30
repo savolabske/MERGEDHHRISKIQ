@@ -211,7 +211,7 @@ export function AllUsers() {
                 Filter
               </button>
               <button
-                onClick={() => toast.success('Export started')}
+                onClick={() => toast.info('Export started')}
                 className="px-4 py-2.5 border border-border rounded-lg text-base font-medium hover:bg-muted transition-colors flex items-center gap-2"
               >
                 <Download size={18} />

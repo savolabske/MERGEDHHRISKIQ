@@ -7,6 +7,8 @@ import {
   outlineControlClass,
   textLinkActionClass,
 } from './ui/interaction';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { ChatStopButton } from './ui/ChatStopButton';
 import { hasMapboxAccessToken, mapboxgl } from '../config/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -1005,6 +1007,7 @@ export function MapView() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [queryHistory, setQueryHistory] = useState<HistoryItem[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -1823,6 +1826,27 @@ export function MapView() {
     setMapQuery('');
   };
 
+  const stopGeneration = useCallback(() => {
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    setChatMessages((prev) => {
+      if (prev.length === 0) return prev;
+      const updated = [...prev];
+      const last = updated[updated.length - 1];
+      if (last?.role === 'assistant' && last.isTyping) {
+        updated[updated.length - 1] = {
+          ...last,
+          displayedText: last.displayedText ?? '',
+          isTyping: false,
+        };
+      }
+      return updated;
+    });
+    setIsTransitioning(false);
+  }, []);
+
   // ── Save to History ──
   const saveToHistory = () => {
     if (!activeFlowId || chatMessages.length === 0) return;
@@ -1866,6 +1890,7 @@ export function MapView() {
 
   // Check if last message is done typing
   const isLastMessageDone = chatMessages.length > 0 && !chatMessages[chatMessages.length - 1]?.isTyping;
+  const isGenerating = chatMessages.some((msg) => msg.isTyping) || isTransitioning;
 
   const promptPlaceholder = activeFlow
     ? 'Ask a follow-up question...'
@@ -1897,7 +1922,7 @@ export function MapView() {
         <div
           data-composite-field
           className={cn(
-            'relative flex flex-1 items-center focus-within:ring-2 focus-within:ring-[#1D4ED8]/20',
+            'relative flex flex-1 items-center',
             showMinimize && 'min-w-0',
           )}
         >
@@ -1914,24 +1939,35 @@ export function MapView() {
               }
             }}
             placeholder={promptPlaceholder}
+            disabled={isGenerating}
             className={cn(
-              'focus-ring-container-control w-full rounded-[16px] border border-[#E5E7EB] bg-[#F9FAFB] text-[0.8125rem] transition-all placeholder:text-[#9CA3AF] focus:border-[#1D4ED8]',
+              'focus-ring-container-control w-full rounded-[16px] border border-[#E5E7EB] bg-[#F9FAFB] text-[0.8125rem] transition-all placeholder:text-[#9CA3AF] focus:border-[#1D4ED8] disabled:opacity-70',
               compact ? 'pl-9 pr-11 py-2.5' : 'pl-10 pr-12 py-3',
             )}
           />
-          <button
-            type="submit"
-            disabled={!mapQuery.trim()}
-            className={cn(
-              'absolute right-2 rounded-full flex items-center justify-center transition-all',
-              compact ? 'w-7 h-7' : 'w-8 h-8',
-              mapQuery.trim()
-                ? 'bg-[#2463EB] text-white cursor-pointer hover:bg-[#1D4ED8] active:bg-[#1E40AF]'
-                : 'text-[#D1D5DB] cursor-not-allowed',
-            )}
-          >
-            <Send size={compact ? 12 : 14} />
-          </button>
+          {isGenerating ? (
+            <span className="absolute right-2 top-1/2 z-10 -translate-y-1/2">
+              <ChatStopButton
+                onClick={stopGeneration}
+                size="sm"
+                className={compact ? 'size-7' : 'size-8'}
+              />
+            </span>
+          ) : (
+            <button
+              type="submit"
+              disabled={!mapQuery.trim()}
+              className={cn(
+                'absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center transition-all',
+                compact ? 'w-7 h-7' : 'w-8 h-8',
+                mapQuery.trim()
+                  ? 'bg-[#2463EB] text-white cursor-pointer hover:bg-[#1D4ED8] active:bg-[#1E40AF]'
+                  : 'text-[#D1D5DB] cursor-not-allowed',
+              )}
+            >
+              <Send size={compact ? 12 : 14} />
+            </button>
+          )}
         </div>
       </div>
     </form>
@@ -2126,7 +2162,7 @@ export function MapView() {
 
           {!activeFlow ? (
             /* ── Default State: Suggested Prompts ── */
-            <div className={cn('flex flex-col', isMobileViewport ? 'min-h-0 flex-1' : 'h-full')}>
+            <div className="flex min-h-0 flex-1 flex-col">
               {isMobileViewport && (
                 <div className="shrink-0 px-4 pt-4 pb-4">
                   <button
@@ -2178,7 +2214,7 @@ export function MapView() {
             </div>
           ) : (
             /* ── Active Flow: Chat + Data Panel ── */
-            <div className={cn('flex flex-col', isMobileViewport ? 'min-h-0 flex-1' : 'h-full')}>
+            <div className="flex min-h-0 flex-1 flex-col">
               {/* Header */}
               <div className="px-6 pt-6 pb-4 border-b border-[#E5E7EB] flex-shrink-0">
                 <div className="flex items-center gap-3">
@@ -2296,9 +2332,9 @@ export function MapView() {
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Bottom Input */}
-              <div className="shrink-0 border-t border-[#F3F4F6] bg-white px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-                {renderPromptInput({ compact: true, showMinimize: true })}
+              {/* Bottom Input — always pinned while a flow is active */}
+              <div className="relative z-10 shrink-0 border-t border-[#F3F4F6] bg-white px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+                {renderPromptInput({ compact: true, showMinimize: isMobileViewport })}
               </div>
             </div>
           )}
@@ -2435,11 +2471,7 @@ export function MapView() {
             {queryHistory.length > 0 && (
               <div className="px-6 py-4 border-t border-[#E5E7EB] flex-shrink-0">
                 <button
-                  onClick={() => {
-                    if (confirm('Clear all query history?')) {
-                      setQueryHistory([]);
-                    }
-                  }}
+                  onClick={() => setShowClearHistoryConfirm(true)}
                   className={cn(
                     outlineControlClass,
                     'w-full py-2.5 px-4 text-[0.8125rem] font-medium text-[#6B7280] border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#DC2626] hover:text-[#DC2626]',
@@ -2452,6 +2484,18 @@ export function MapView() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={showClearHistoryConfirm}
+        onOpenChange={setShowClearHistoryConfirm}
+        onConfirm={() => {
+          setQueryHistory([]);
+          setShowClearHistoryConfirm(false);
+        }}
+        title="Are you sure you want to clear history?"
+        description="All map query history will be permanently removed. This action cannot be undone."
+        confirmLabel="Clear history"
+      />
     </div>
   );
 }

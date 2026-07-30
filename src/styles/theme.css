@@ -480,7 +480,8 @@
     animation: shimmer 2.5s infinite linear;
   }
 
-  /* Toast Notification Styles */
+  /* Toast Notification Styles
+     info/loading = blue, success = green, error = red; all share close (X) + 4s default */
   [data-sonner-toast] {
     box-shadow: var(--shadow-md) !important;
   }
@@ -521,14 +522,16 @@
     color: var(--destructive) !important;
   }
 
-  [data-sonner-toast][data-type="info"] {
+  [data-sonner-toast][data-type="info"],
+  [data-sonner-toast][data-type="loading"] {
     background: var(--card) !important;
-    border: 1px solid var(--primary) !important;
+    border: 1px solid var(--info) !important;
     color: var(--foreground) !important;
   }
 
-  [data-sonner-toast][data-type="info"] [data-icon] {
-    color: var(--primary) !important;
+  [data-sonner-toast][data-type="info"] [data-icon],
+  [data-sonner-toast][data-type="loading"] [data-icon] {
+    color: var(--info) !important;
   }
 
   /* Leaflet hover tooltips for MapIntelligence overlays */

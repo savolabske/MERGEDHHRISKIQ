@@ -1,15 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Clock, MoreVertical, Pin, PinOff, Trash2 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../../../components/ui/alert-dialog';
+import { toast } from 'sonner';
+import { ConfirmDeleteDialog } from '../../../components/ui/ConfirmDeleteDialog';
 import { cn } from '../../../components/ui/utils';
 import {
   formatReportHistoryTimeAgo,
@@ -84,6 +76,7 @@ function HistoryItemMenu({
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
+                toast.success(item.pinned ? 'Chat unpinned' : 'Chat pinned');
                 onTogglePin(item.id);
                 setOpen(false);
               }}
@@ -126,6 +119,7 @@ export function ReportChatHistoryPanel({
     if (!deleteId) return;
     onDelete(deleteId);
     setDeleteId(null);
+    toast.success('Chat removed from history');
   };
 
   if (items.length === 0) {
@@ -185,27 +179,18 @@ export function ReportChatHistoryPanel({
       ))}
       </div>
 
-      <AlertDialog open={Boolean(deleteId)} onOpenChange={(open) => !open && setDeleteId(null)}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete chat from history?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {deleteTarget
-              ? `"${deleteTarget.title}" will be permanently removed from your chat history.`
-              : 'This chat will be permanently removed from your chat history.'}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={confirmDelete}
-            className="bg-destructive hover:bg-destructive-text"
-          >
-            Delete
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteDialog
+        open={Boolean(deleteId)}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete chat from history?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.title}" will be permanently removed from your chat history.`
+            : 'This chat will be permanently removed from your chat history.'
+        }
+        confirmLabel="Delete"
+      />
     </>
   );
 }

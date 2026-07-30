@@ -172,9 +172,13 @@ export function ShareThreadModal({ open, threadTitle, threadId, initialSelectedU
       'riskiq.demo.pendingInvite',
       JSON.stringify({ threadId, inviteMode: true, threadTitle: threadTitle || undefined })
     );
-    await navigator.clipboard.writeText(url.toString());
-    toast.success('Invite link copied.');
-    onClose();
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      toast.success('Invite link copied.');
+      onClose();
+    } catch {
+      toast.error('Could not copy invite link. Please try again.');
+    }
   };
 
   if (!open) return null;

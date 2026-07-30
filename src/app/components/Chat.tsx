@@ -8,6 +8,7 @@ import { SomaliaMap } from './SomaliaMap';
 import { LowerShabelleIncidentMap, incidents } from './LowerShabelleIncidentMap';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { ChatStopButton } from './ui/ChatStopButton';
 import { ShareThreadModal } from './ShareThreadModal';
 import { CURRENT_USER, RISK_IQ_USER, getUserById } from '../utils/mockUsers';
 import { toast } from 'sonner';
@@ -236,11 +237,61 @@ export function Chat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sharedPopoverRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
+  const generationIdRef = useRef(0);
+  const activeTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearActiveTimeouts = () => {
+    activeTimeoutsRef.current.forEach(clearTimeout);
+    activeTimeoutsRef.current = [];
+  };
+
+  const waitForGeneration = (ms: number, generationId: number) =>
+    new Promise<boolean>((resolve) => {
+      const timeoutId = setTimeout(() => {
+        activeTimeoutsRef.current = activeTimeoutsRef.current.filter((id) => id !== timeoutId);
+        resolve(isMountedRef.current && generationIdRef.current === generationId);
+      }, ms);
+      activeTimeoutsRef.current.push(timeoutId);
+    });
+
+  const stopGeneration = () => {
+    generationIdRef.current += 1;
+    clearActiveTimeouts();
+    setMessages((prev) =>
+      prev
+        .filter((msg) => msg.type !== 'searching')
+        .map((msg) => {
+          if (!msg.isTyping && !msg.isWebIntelTyping) return msg;
+
+          const partialContent =
+            msg.isTyping && msg.displayedContent !== undefined
+              ? msg.displayedContent
+              : msg.content;
+          const partialWebIntel =
+            msg.isWebIntelTyping && msg.displayedWebIntelligence !== undefined
+              ? msg.displayedWebIntelligence
+              : msg.webIntelligenceSummary;
+
+          return {
+            ...msg,
+            content: partialContent || msg.content,
+            displayedContent: partialContent,
+            webIntelligenceSummary: partialWebIntel,
+            displayedWebIntelligence: partialWebIntel,
+            isTyping: false,
+            isWebIntelTyping: false,
+          };
+        })
+    );
+    setIsProcessing(false);
+  };
 
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      generationIdRef.current += 1;
+      clearActiveTimeouts();
     };
   }, []);
   const initialUserMessageCount = startEmpty
@@ -312,14 +363,17 @@ export function Chat({
   const streamTextOntoMessage = async (
     messageId: string,
     fullText: string,
-    applyPartial: (partialText: string) => Partial<Message>
+    applyPartial: (partialText: string) => Partial<Message>,
+    generationId: number
   ) => {
     const cleanedText = fullText.replace(/\\n/g, '\n');
     const CHUNK_SIZE = 3;
     const BASE_DELAY_MS = 14;
 
     for (let charIndex = CHUNK_SIZE; charIndex <= cleanedText.length + CHUNK_SIZE; charIndex += CHUNK_SIZE) {
-      if (!isMountedRef.current) return cleanedText;
+      if (!isMountedRef.current || generationIdRef.current !== generationId) {
+        return cleanedText.slice(0, Math.min(charIndex, cleanedText.length));
+      }
 
       const partialText = cleanedText.slice(0, Math.min(charIndex, cleanedText.length));
       setMessages(prev => prev.map(msg =>
@@ -333,7 +387,10 @@ export function Chat({
       if (lastChar === '\n') delay = 35;
       else if (lastChar === '.' || lastChar === '!' || lastChar === '?') delay = 55;
 
-      await new Promise(resolve => setTimeout(resolve, delay));
+      const stillActive = await waitForGeneration(delay, generationId);
+      if (!stillActive) {
+        return cleanedText.slice(0, Math.min(charIndex + CHUNK_SIZE, cleanedText.length));
+      }
     }
 
     return cleanedText;
@@ -366,6 +423,8 @@ export function Chat({
       sources: Source[];
     }
   ) => {
+    const generationId = ++generationIdRef.current;
+    clearActiveTimeouts();
     setIsProcessing(true);
     const responseConfig = prebuiltResponse ? null : getAIResponse(query, messageCountRef.current);
     
@@ -393,7 +452,7 @@ export function Chat({
     }]);
 
     // First phase
-    await new Promise(resolve => setTimeout(resolve, 1800));
+    if (!(await waitForGeneration(1800, generationId))) return;
     
     // Switch to second phase
     const shouldRunSecondPhase = isBriefing || useExtendedKnowledge;
@@ -403,7 +462,7 @@ export function Chat({
           ? { ...msg, data: { ...msg.data, currentPhase: trigger === 'extend' ? 'web-sources' : (isBriefing ? 'comparing-trends' : 'web-sources') } }
           : msg
       ));
-      await new Promise(resolve => setTimeout(resolve, 1800));
+      if (!(await waitForGeneration(1800, generationId))) return;
     }
     
     // Switch to third phase
@@ -413,7 +472,7 @@ export function Chat({
         : msg
     ));
 
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    if (!(await waitForGeneration(1200, generationId))) return;
 
     // Remove searching message
     setMessages(prev => prev.filter(msg => msg.id !== searchingId));
@@ -511,10 +570,11 @@ export function Chat({
     const cleanedText = await streamTextOntoMessage(
       responseId,
       responseContent,
-      (partialText) => ({ displayedContent: partialText })
+      (partialText) => ({ displayedContent: partialText }),
+      generationId
     );
 
-    if (!isMountedRef.current) return;
+    if (!isMountedRef.current || generationIdRef.current !== generationId) return;
 
     setMessages(prev => prev.map(msg =>
       msg.id === responseId ? { ...msg, isTyping: false, displayedContent: cleanedText } : msg
@@ -538,10 +598,11 @@ export function Chat({
       const cleanedWebIntel = await streamTextOntoMessage(
         responseId,
         webIntelText,
-        (partialText) => ({ displayedWebIntelligence: partialText })
+        (partialText) => ({ displayedWebIntelligence: partialText }),
+        generationId
       );
 
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current || generationIdRef.current !== generationId) return;
 
       setMessages(prev => prev.map(msg =>
         msg.id === responseId
@@ -2026,21 +2087,33 @@ export function Chat({
                   : 'h-[96px] pl-6 pr-16 pt-4 pb-12',
               )}
             />
-            <button
-              onClick={handleSend}
-              disabled={!inputValue.trim() || isProcessing}
-              className={`absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                sharedComposerCompact ? 'top-1/2 -translate-y-1/2' : 'bottom-3'
-              } ${
-                inputValue.trim() && !isProcessing
-                  ? 'bg-primary hover:bg-primary-hover cursor-pointer'
-                  : 'bg-muted cursor-not-allowed'
-              }`}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke={inputValue.trim() && !isProcessing ? "white" : "var(--text-subtle)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
+            {isProcessing ? (
+              <ChatStopButton
+                onClick={stopGeneration}
+                className={cn(
+                  'absolute right-2',
+                  sharedComposerCompact ? 'top-1/2 -translate-y-1/2' : 'bottom-3',
+                )}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={!inputValue.trim()}
+                aria-label="Send message"
+                className={`absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                  sharedComposerCompact ? 'top-1/2 -translate-y-1/2' : 'bottom-3'
+                } ${
+                  inputValue.trim()
+                    ? 'bg-primary hover:bg-primary-hover cursor-pointer'
+                    : 'bg-muted cursor-not-allowed'
+                }`}
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke={inputValue.trim() ? "white" : "var(--text-subtle)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            )}
             </div>
           </div>
           {isExtendedInputActive && (

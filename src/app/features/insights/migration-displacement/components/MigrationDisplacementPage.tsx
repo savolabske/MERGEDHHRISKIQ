@@ -109,6 +109,7 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
     chatScrollRef,
     runPrompt,
     backToReport,
+    cancelQuery,
     restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,
@@ -461,6 +462,8 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
               value={promptInput}
               onChange={setPromptInput}
               onSubmit={runPrompt}
+              onStop={cancelQuery}
+              isGenerating={isQuerying}
               disabled={isQuerying}
               placeholder="Ask anything about displacement..."
               theme={MIGRATION_CHAT_PROMPT_THEME}

@@ -935,12 +935,12 @@ export function ReportsDashboard() {
         <>
           {/* Overlay */}
           <div 
-            className="fixed inset-0 bg-black/40 z-[9998] transition-opacity duration-300"
+            className="fixed inset-0 bg-black/40 z-[1400] transition-opacity duration-300"
             onClick={closeDrawer}
           />
           
           {/* Drawer */}
-          <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] bg-card z-[9999] shadow-xl transform transition-transform duration-300 ease-out overflow-y-auto">
+          <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] bg-card z-[1410] shadow-xl transform transition-transform duration-300 ease-out overflow-y-auto">
             {/* Drawer Header */}
             <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between z-10">
               <h3 className="text-lg font-bold text-foreground">Risk Details</h3>

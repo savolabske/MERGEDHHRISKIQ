@@ -21,6 +21,7 @@ import { PageScrollShell } from './PageScrollShell';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
 import { cn } from './ui/utils';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import {
   iconButtonSmClass,
   listFilterTriggerClass,
@@ -211,7 +212,7 @@ export function Api() {
   const handleSyncCollections = () => {
     if (isSyncing) return;
     setIsSyncing(true);
-    const loadingToast = toast.loading('Syncing collections...');
+    const toastId = toast.info('Syncing collections...');
 
     setTimeout(() => {
       const now = new Date();
@@ -224,8 +225,7 @@ export function Api() {
         ),
       );
       setIsSyncing(false);
-      toast.dismiss(loadingToast);
-      toast.success('Collections synced successfully');
+      toast.success('Collections synced successfully', { id: toastId });
     }, 2500);
   };
 
@@ -313,7 +313,7 @@ export function Api() {
     setSubscriptions((prev) =>
       prev.map((s) => (s.id === sub.id ? { ...s, status: 'syncing' } : s)),
     );
-    const loadingToast = toast.loading(`Refreshing ${sub.title}...`);
+    const toastId = toast.info(`Refreshing ${sub.title}...`);
 
     setTimeout(() => {
       setSubscriptions((prev) =>
@@ -323,8 +323,7 @@ export function Api() {
             : s,
         ),
       );
-      toast.dismiss(loadingToast);
-      toast.success('Dataset refreshed successfully');
+      toast.success('Dataset refreshed successfully', { id: toastId });
     }, 2000);
   };
 
@@ -939,31 +938,18 @@ export function Api() {
         </div>
       )}
 
-      {deletingSubscription && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400] p-4">
-          <div className="bg-card rounded-2xl max-w-[500px] w-full p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-3">Confirm Delete Subscription</h3>
-            <p className="text-base text-muted-foreground mb-6">
-              Are you sure you want to remove the subscription to &ldquo;{deletingSubscription.title}
-              &rdquo;? This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeletingSubscription(null)}
-                className="flex-1 px-5 py-3 bg-card hover:bg-muted text-muted-foreground border border-border rounded-lg text-base font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="flex-1 px-5 py-3 bg-destructive hover:bg-destructive-text text-white rounded-lg text-base font-medium transition-colors"
-              >
-                Delete Subscription
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        open={Boolean(deletingSubscription)}
+        onOpenChange={(open) => !open && setDeletingSubscription(null)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Delete Subscription"
+        description={
+          deletingSubscription
+            ? `Are you sure you want to remove the subscription to "${deletingSubscription.title}"? This action cannot be undone.`
+            : 'This action cannot be undone.'
+        }
+        confirmLabel="Delete Subscription"
+      />
     </>
   );
 }

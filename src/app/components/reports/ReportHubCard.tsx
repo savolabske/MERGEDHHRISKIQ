@@ -118,9 +118,16 @@ export const ReportHubCard = forwardRef<HTMLDivElement, ReportHubCardProps>(func
 
       <div className={cn(isEdit && 'mt-8')}>
         <div
-          className={`w-11 h-11 ${report.iconBg} rounded-xl flex items-center justify-center mb-5`}
+          className={`mb-5 flex h-11 w-11 items-center justify-center rounded-xl ${
+            report.iconBgHex ? '' : report.iconBg
+          }`}
+          style={report.iconBgHex ? { backgroundColor: report.iconBgHex } : undefined}
         >
-          <Icon size={22} className={report.iconColor} />
+          <Icon
+            size={22}
+            className={report.iconColorHex ? undefined : report.iconColor}
+            style={report.iconColorHex ? { color: report.iconColorHex } : undefined}
+          />
         </div>
 
         <h3

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { User, Mail, Lock, MapPin, Briefcase, Phone, Save, Eye, EyeOff, Camera, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 
 export function Profile() {
   const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ export function Profile() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [showRemoveImageConfirm, setShowRemoveImageConfirm] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -88,6 +90,7 @@ export function Profile() {
 
   const handleRemoveImage = () => {
     setProfileImage(null);
+    setShowRemoveImageConfirm(false);
     toast.success('Profile picture removed');
   };
 
@@ -139,7 +142,7 @@ export function Profile() {
                 />
                 {profileImage && (
                   <button
-                    onClick={handleRemoveImage}
+                    onClick={() => setShowRemoveImageConfirm(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-destructive text-white rounded-xl text-base font-medium hover:bg-destructive-text transition-colors cursor-pointer ml-2"
                   >
                     <X size={18} />
@@ -356,6 +359,15 @@ export function Profile() {
           </button>
         </div>
       </div>
+
+      <ConfirmDeleteDialog
+        open={showRemoveImageConfirm}
+        onOpenChange={setShowRemoveImageConfirm}
+        onConfirm={handleRemoveImage}
+        title="Are you sure you want to remove?"
+        description="Your profile picture will be removed and initials will be shown instead. This action cannot be undone."
+        confirmLabel="Remove image"
+      />
     </div>
   );
 }

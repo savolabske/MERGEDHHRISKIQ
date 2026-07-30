@@ -2,6 +2,7 @@ import { ExternalLink, FileText, Edit, Trash2, Download, Globe, Lock, Tag as Tag
 import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 
 interface ResourceDetailProps {
   resourceId: string;
@@ -77,7 +78,7 @@ export function ResourceDetail({ resourceId, onBack, onEdit, onSave, onDelete, i
               <button
                 onClick={() => {
                   onEdit();
-                  toast.success('Opening edit mode...');
+                  toast.info('Opening edit mode...');
                 }}
                 className="flex items-center gap-2 px-4 py-2.5 border border-border bg-card text-foreground rounded-lg hover:bg-muted transition-colors"
               >
@@ -222,37 +223,19 @@ export function ResourceDetail({ resourceId, onBack, onEdit, onSave, onDelete, i
       </div>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1400] p-4">
-          <div className="bg-card rounded-lg shadow-2xl max-w-[440px] w-full">
-            <div className="px-6 py-5 border-b border-border">
-              <h3 className="text-lg font-semibold text-foreground">Delete Resource?</h3>
-            </div>
-            <div className="px-6 py-5">
-              <p className="text-sm text-muted-foreground leading-relaxed mb-1">
-                Are you sure you want to delete this resource? This action cannot be undone.
-              </p>
-              <p className="text-sm font-medium text-foreground">
-                "{resource.name}"
-              </p>
-            </div>
-            <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-5 py-2.5 border border-border text-muted-foreground rounded-lg hover:bg-muted transition-colors font-medium text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                className="px-5 py-2.5 bg-destructive text-white rounded-lg hover:bg-destructive-text transition-colors font-semibold text-sm"
-              >
-                Delete Resource
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Resource?"
+        description={
+          <>
+            <p>Are you sure you want to delete this resource? This action cannot be undone.</p>
+            <p className="font-medium text-foreground">&ldquo;{resource.name}&rdquo;</p>
+          </>
+        }
+        confirmLabel="Delete Resource"
+      />
     </div>
   );
 }

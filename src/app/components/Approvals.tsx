@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Check, X, Clock, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 
 interface PendingUser {
   id: string;
@@ -508,40 +509,20 @@ export function Approvals() {
       )}
 
       {/* Decline Confirmation Modal */}
-      {showDeclineConfirm && usersToDecline.length > 0 && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/30 z-[1400]"
-            onClick={cancelDecline}
-          ></div>
-
-          {/* Modal */}
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card z-[1410] shadow-2xl rounded-2xl p-6 w-[90%] max-w-[420px]">
-            <h3 className="text-lg font-semibold text-foreground mb-3">Confirm Decline</h3>
-            <p className="text-base text-muted-foreground mb-6">
-              {usersToDecline.length === 1 
-                ? `Are you sure you want to decline ${usersToDecline[0].name}'s registration request?`
-                : `Are you sure you want to decline ${usersToDecline.length} registration requests?`
-              }
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={cancelDecline}
-                className="flex-1 px-5 py-3 bg-card hover:bg-muted text-muted-foreground border border-border rounded-lg text-base font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDecline}
-                className="flex-1 px-5 py-3 bg-destructive hover:bg-destructive-text text-white rounded-lg text-base font-medium transition-colors"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <ConfirmDeleteDialog
+        open={showDeclineConfirm && usersToDecline.length > 0}
+        onOpenChange={(open) => {
+          if (!open) cancelDecline();
+        }}
+        onConfirm={confirmDecline}
+        title="Confirm Decline"
+        description={
+          usersToDecline.length === 1
+            ? `Are you sure you want to decline ${usersToDecline[0].name}'s registration request?`
+            : `Are you sure you want to decline ${usersToDecline.length} registration requests?`
+        }
+        confirmLabel="Confirm"
+      />
     </>
   );
 }

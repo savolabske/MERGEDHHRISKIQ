@@ -5,7 +5,6 @@ import {
   resolveMainInsightBody,
   resolvePredictiveInsights,
 } from '../data/homeDashboardCustomize';
-import type { HubReportHighlightId } from '../data/homeDashboardMock';
 import { useHomeDashboardCustomize } from '../hooks/useHomeDashboardCustomize';
 import type { DashboardChatPayload } from '../utils/dashboardChatContext';
 import { DashboardHeroSection } from './dashboard/DashboardHeroSection';
@@ -18,6 +17,7 @@ import { HubSearchRow } from './home-dashboard/HubSearchRow';
 import { HubReportsSection } from './home-dashboard/HubReportsSection';
 import { DashboardSectionEditPanel } from './home-dashboard/HomeSectionEditPanel';
 import { PageScrollShell } from './PageScrollShell';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { cn } from './ui/utils';
 
 interface HomeDashboardProps {
@@ -26,7 +26,7 @@ interface HomeDashboardProps {
   onNavigate: (view: AppView) => void;
   onSearch: (query: string, options?: { extendedKnowledge?: boolean; privateToMe?: boolean }) => void;
   onOpenDocument?: (documentId: string) => void;
-  onOpenReport?: (reportId: HubReportHighlightId) => void;
+  onOpenReport?: (reportId: string) => void;
 }
 
 export function HomeDashboard({
@@ -137,6 +137,7 @@ export function HomeDashboard({
           onOpenReport={(id) =>
             onOpenReport ? onOpenReport(id) : onNavigate('reports')
           }
+          onViewAllReports={() => onNavigate('reports')}
         />
       </PageScrollShell>
 
@@ -164,6 +165,15 @@ export function HomeDashboard({
           />
         </>
       )}
+
+      <ConfirmDeleteDialog
+        open={customize.discardConfirmOpen}
+        onOpenChange={(open) => !open && customize.cancelDiscard()}
+        onConfirm={customize.confirmDiscard}
+        title="Are you sure you want to discard?"
+        description={customize.discardConfirmDescription}
+        confirmLabel="Discard changes"
+      />
     </>
   );
 }

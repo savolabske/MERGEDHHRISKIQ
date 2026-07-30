@@ -19,7 +19,7 @@ export function useReportExport(buildDocument: () => ReportExportDocument) {
     const label = format === 'pdf' ? 'PDF' : 'PowerPoint';
     let toastId: string | number | undefined;
     const loadingTimer = window.setTimeout(() => {
-      toastId = toast.loading(`Generating ${label}…`);
+      toastId = toast.info(`Generating ${label}…`, { duration: Infinity });
     }, LOADING_TOAST_DELAY_MS);
 
     try {

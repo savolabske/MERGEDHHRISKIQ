@@ -3,6 +3,7 @@ import { Search, Plus, MoreVertical, ChevronLeft, Check, Shield, Users, Trash2, 
 import { toast } from 'sonner';
 import { PageFooter } from './PageFooter';
 import { cn } from './ui/utils';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import {
   iconButtonSmClass,
   listFilterTriggerClass,
@@ -193,6 +194,7 @@ export function RolesPermissions() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewingRole, setViewingRole] = useState<Role | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [activeTab, setActiveTab] = useState<'permissions' | 'users'>('permissions');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -760,9 +762,7 @@ export function RolesPermissions() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenMenuId(null);
-                            if (confirm(`Delete role "${role.name}"? This will affect ${role.users} user(s).`)) {
-                              // Delete role functionality
-                            }
+                            setRoleToDelete(role);
                           }}
                           className={cn(menuItemClass, 'flex items-center gap-2 text-destructive-text hover:bg-destructive-subtle')}
                         >
@@ -818,7 +818,7 @@ export function RolesPermissions() {
                     setViewingRole(null);
                     setIsEditing(true);
                     setShowCreateRole(true);
-                    toast.success('Opening edit mode...');
+                    toast.info('Opening edit mode...');
                   }}
                   className={listFilterTriggerClass}
                 >
@@ -973,6 +973,22 @@ export function RolesPermissions() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={Boolean(roleToDelete)}
+        onOpenChange={(open) => !open && setRoleToDelete(null)}
+        onConfirm={() => {
+          // Delete role functionality
+          setRoleToDelete(null);
+        }}
+        title="Are you sure you want to delete?"
+        description={
+          roleToDelete
+            ? `Delete role "${roleToDelete.name}"? This will affect ${roleToDelete.users} user(s). This action cannot be undone.`
+            : 'This action cannot be undone.'
+        }
+        confirmLabel="Delete role"
+      />
     </div>
   );
 }

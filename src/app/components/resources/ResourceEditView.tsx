@@ -17,6 +17,7 @@ import type { PlatformResource, ResourceUserGroup } from '../../data/resourcesMo
 import { INITIAL_RESOURCE_USER_GROUPS } from '../../data/resourcesMock';
 import { Checkbox } from '../ui/checkbox';
 import { chipRemoveClass } from '../ui/interaction';
+import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
 import { DetailFieldLabel, DetailSectionTitle, inputClass } from './resourceShared';
 import { ResourceDocumentsList } from './ResourceDocumentsList';
 import { UserGroupModal } from './UserGroupModal';
@@ -57,6 +58,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groupModalMode, setGroupModalMode] = useState<'create' | 'edit'>('create');
   const [editingGroup, setEditingGroup] = useState<ResourceUserGroup | null>(null);
+  const [groupToDelete, setGroupToDelete] = useState<ResourceUserGroup | null>(null);
   const [files, setFiles] = useState([...resource.files]);
 
   const tagInputRef = useRef<HTMLInputElement>(null);
@@ -201,12 +203,14 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
   };
 
   const handleDeleteGroup = (group: ResourceUserGroup) => {
-    const confirmed = window.confirm(
-      `Delete "${group.name}"? This group will be removed from your selection.`,
-    );
-    if (!confirmed) return;
-    setGroups((prev) => prev.filter((g) => g.id !== group.id));
-    setUserGroups((prev) => prev.filter((name) => name !== group.name));
+    setGroupToDelete(group);
+  };
+
+  const confirmDeleteGroup = () => {
+    if (!groupToDelete) return;
+    setGroups((prev) => prev.filter((g) => g.id !== groupToDelete.id));
+    setUserGroups((prev) => prev.filter((name) => name !== groupToDelete.name));
+    setGroupToDelete(null);
     toast.success('Group deleted');
   };
 
@@ -649,6 +653,19 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
           setEditingGroup(null);
         }}
         onSave={handleSaveGroup}
+      />
+
+      <ConfirmDeleteDialog
+        open={Boolean(groupToDelete)}
+        onOpenChange={(open) => !open && setGroupToDelete(null)}
+        onConfirm={confirmDeleteGroup}
+        title="Are you sure you want to delete?"
+        description={
+          groupToDelete
+            ? `Delete "${groupToDelete.name}"? This group will be removed from your selection. This action cannot be undone.`
+            : 'This action cannot be undone.'
+        }
+        confirmLabel="Delete group"
       />
     </div>
   );

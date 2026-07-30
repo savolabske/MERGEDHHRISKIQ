@@ -217,6 +217,7 @@ export function useSjfReportPrompt(options?: { onChatLaneReady?: () => void }) {
     chatScrollRef,
     runPrompt,
     backToReport,
+    cancelQuery,
     restoreSession,
     extendedKnowledge,
     toggleExtendedKnowledge,

@@ -6,6 +6,7 @@ import { PageScrollShell } from './PageScrollShell';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
 import { cn } from './ui/utils';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import {
   iconButtonSmClass,
   listFilterTriggerClass,
@@ -272,6 +273,7 @@ export function UsersAccess() {
   // Bulk action states
   const [showBulkBlockConfirm, setShowBulkBlockConfirm] = useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [showBulkDeleteGroupsConfirm, setShowBulkDeleteGroupsConfirm] = useState(false);
   const [showBulkGroupModal, setShowBulkGroupModal] = useState(false);
   const [showBulkRoleModal, setShowBulkRoleModal] = useState(false);
   const [bulkSelectedGroup, setBulkSelectedGroup] = useState('');
@@ -423,22 +425,24 @@ export function UsersAccess() {
   };
 
   const handleBulkDeleteGroups = () => {
-    const groupNames = selectedGroups.map(id => userGroups.find(g => g.id === id)?.name).join(', ');
-    const confirmed = confirm(`Are you sure you want to delete ${selectedGroups.length} group(s)?\n\n${groupNames}`);
-    if (confirmed) {
-      const count = selectedGroups.length;
-      toast.promise(
-        Promise.resolve().then(() => {
-          setUserGroups(prev => prev.filter(g => !selectedGroups.includes(g.id)));
-          setSelectedGroups([]);
-        }),
-        {
-          loading: `Deleting ${count} group${count > 1 ? 's' : ''}...`,
-          success: `${count} group${count > 1 ? 's' : ''} deleted successfully.`,
-          error: 'We could not delete the selected groups. Please try again.',
-        }
-      );
-    }
+    if (selectedGroups.length === 0) return;
+    setShowBulkDeleteGroupsConfirm(true);
+  };
+
+  const confirmBulkDeleteGroups = () => {
+    const count = selectedGroups.length;
+    toast.promise(
+      Promise.resolve().then(() => {
+        setUserGroups(prev => prev.filter(g => !selectedGroups.includes(g.id)));
+        setSelectedGroups([]);
+      }),
+      {
+        loading: `Deleting ${count} group${count > 1 ? 's' : ''}...`,
+        success: `${count} group${count > 1 ? 's' : ''} deleted successfully.`,
+        error: 'We could not delete the selected groups. Please try again.',
+      }
+    );
+    setShowBulkDeleteGroupsConfirm(false);
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -703,7 +707,7 @@ export function UsersAccess() {
                       <div className="flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => {
-                            toast.success(`Exporting ${selectedUsers.length} user(s)...`);
+                            toast.info(`Exporting ${selectedUsers.length} user(s)...`);
                           }}
                           className="px-3 py-1.5 border border-border bg-card hover:bg-muted text-foreground rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                         >
@@ -1485,56 +1489,24 @@ export function UsersAccess() {
       )}
 
       {/* Bulk Block Confirmation Modal */}
-      {showBulkBlockConfirm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400] p-4">
-          <div className="bg-card rounded-2xl max-w-[500px] w-full p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-3">Confirm Block Users</h3>
-            <p className="text-base text-muted-foreground mb-6">
-              Are you sure you want to block {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''}? They will lose access to the platform.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowBulkBlockConfirm(false)}
-                className="flex-1 px-5 py-3 bg-card hover:bg-muted text-muted-foreground border border-border rounded-lg text-base font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmBulkBlock}
-                className="flex-1 px-5 py-3 bg-warning hover:bg-warning-text text-white rounded-lg text-base font-medium transition-colors"
-              >
-                Block Users
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        open={showBulkBlockConfirm}
+        onOpenChange={setShowBulkBlockConfirm}
+        onConfirm={confirmBulkBlock}
+        title="Confirm Block Users"
+        description={`Are you sure you want to block ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}? They will lose access to the platform.`}
+        confirmLabel="Block Users"
+      />
 
       {/* Bulk Delete Confirmation Modal */}
-      {showBulkDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400] p-4">
-          <div className="bg-card rounded-2xl max-w-[500px] w-full p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-3">Confirm Delete Users</h3>
-            <p className="text-base text-muted-foreground mb-6">
-              Are you sure you want to permanently delete {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''}? This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowBulkDeleteConfirm(false)}
-                className="flex-1 px-5 py-3 bg-card hover:bg-muted text-muted-foreground border border-border rounded-lg text-base font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmBulkDelete}
-                className="flex-1 px-5 py-3 bg-destructive hover:bg-destructive-text text-white rounded-lg text-base font-medium transition-colors"
-              >
-                Delete Users
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+        onConfirm={confirmBulkDelete}
+        title="Confirm Delete Users"
+        description={`Are you sure you want to permanently delete ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}? This action cannot be undone.`}
+        confirmLabel="Delete Users"
+      />
 
       {/* Bulk Assign Group Modal */}
       {showBulkGroupModal && (
@@ -1638,6 +1610,25 @@ export function UsersAccess() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={showBulkDeleteGroupsConfirm}
+        onOpenChange={setShowBulkDeleteGroupsConfirm}
+        onConfirm={confirmBulkDeleteGroups}
+        title="Are you sure you want to delete?"
+        description={
+          <>
+            <p>
+              Are you sure you want to delete {selectedGroups.length} group
+              {selectedGroups.length > 1 ? 's' : ''}? This action cannot be undone.
+            </p>
+            <p className="font-medium text-foreground">
+              {selectedGroups.map(id => userGroups.find(g => g.id === id)?.name).filter(Boolean).join(', ')}
+            </p>
+          </>
+        }
+        confirmLabel="Delete groups"
+      />
     </>
   );
 }

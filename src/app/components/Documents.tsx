@@ -1972,7 +1972,7 @@ export function Documents({
     if (completingReportLink && onReportLinkComplete) {
       onReportLinkComplete(docId);
     } else {
-      toast.success(fileCount === 1 ? 'Uploading 1 file' : `Uploading ${fileCount} files`, {
+      toast.info(fileCount === 1 ? 'Uploading 1 file' : `Uploading ${fileCount} files`, {
         description: trimmedTitle,
       });
     }
@@ -2077,22 +2077,22 @@ export function Documents({
         setShowBulkDeleteConfirm(true);
         break;
       case 'process':
-        toast.success(`Processing ${count} resource${count > 1 ? 's' : ''}...`);
+        toast.info(`Processing ${count} resource${count > 1 ? 's' : ''}...`);
         setSelectedDocuments(new Set());
         setShowBulkActionsDropdown(false);
         break;
       case 'reembed':
-        toast.success(`Re-embedding ${count} resource${count > 1 ? 's' : ''}...`);
+        toast.info(`Re-embedding ${count} resource${count > 1 ? 's' : ''}...`);
         setSelectedDocuments(new Set());
         setShowBulkActionsDropdown(false);
         break;
       case 'cleanup':
-        toast.success(`Cleaning up ${count} resource${count > 1 ? 's' : ''}...`);
+        toast.info(`Cleaning up ${count} resource${count > 1 ? 's' : ''}...`);
         setSelectedDocuments(new Set());
         setShowBulkActionsDropdown(false);
         break;
       case 'rebuild':
-        toast.success(`Force rebuilding ${count} resource${count > 1 ? 's' : ''}...`);
+        toast.info(`Force rebuilding ${count} resource${count > 1 ? 's' : ''}...`);
         setSelectedDocuments(new Set());
         setShowBulkActionsDropdown(false);
         break;
@@ -3608,73 +3608,43 @@ export function Documents({
           </div>
 
           {showDetailDeleteConfirm && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1500] p-4">
-              <div className="bg-card rounded-xl max-w-[460px] w-full shadow-2xl">
-                <div className="p-6 border-b border-border">
-                  <h3 className="text-lg font-semibold text-foreground">Delete file{pendingDetailDeleteIds.length > 1 ? 's' : ''}?</h3>
-                </div>
-                <div className="p-6">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {pendingDetailDeleteIds.length > 1
-                      ? `Are you sure you want to delete ${pendingDetailDeleteIds.length} files? This action cannot be undone.`
-                      : 'Are you sure you want to delete this file? This action cannot be undone.'}
-                  </p>
-                </div>
-                <div className="p-6 border-t border-border flex items-center justify-end gap-3">
-                  <button
-                    onClick={() => {
-                      setShowDetailDeleteConfirm(false);
-                      setPendingDetailDeleteIds([]);
-                    }}
-                    className="px-4 py-2.5 border border-border hover:bg-muted rounded-lg text-sm font-medium text-muted-foreground transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmDeleteDetailFiles}
-                    className="px-4 py-2.5 bg-destructive hover:bg-destructive-text text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
+            <ConfirmDeleteDialog
+              open={showDetailDeleteConfirm}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setShowDetailDeleteConfirm(false);
+                  setPendingDetailDeleteIds([]);
+                }
+              }}
+              onConfirm={confirmDeleteDetailFiles}
+              title={`Delete file${pendingDetailDeleteIds.length > 1 ? 's' : ''}?`}
+              description={
+                pendingDetailDeleteIds.length > 1
+                  ? `Are you sure you want to delete ${pendingDetailDeleteIds.length} files? This action cannot be undone.`
+                  : 'Are you sure you want to delete this file? This action cannot be undone.'
+              }
+              confirmLabel="Delete"
+            />
           )}
 
-          {showMainDeleteConfirm && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1500] p-4">
-              <div className="bg-card rounded-xl max-w-[460px] w-full shadow-2xl">
-                <div className="p-6 border-b border-border">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    {viewingReportHub ? 'Delete report hub?' : 'Delete resource?'}
-                  </h3>
-                </div>
-                <div className="p-6">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+          {showMainDeleteConfirm && selectedGroup && (
+            <ConfirmDeleteDialog
+              open={showMainDeleteConfirm}
+              onOpenChange={setShowMainDeleteConfirm}
+              onConfirm={confirmDeleteMainDocument}
+              title={viewingReportHub ? 'Delete report hub?' : 'Delete resource?'}
+              description={
+                <>
+                  <p>
                     {viewingReportHub
                       ? 'This report will lose its central knowledge source. The report type will become available again when creating a new hub. This action cannot be undone.'
                       : 'Are you sure you want to delete this resource? This action cannot be undone.'}
                   </p>
-                  <p className="text-sm font-medium text-foreground mt-2">
-                    {selectedGroup.title}
-                  </p>
-                </div>
-                <div className="p-6 border-t border-border flex items-center justify-end gap-3">
-                  <button
-                    onClick={() => setShowMainDeleteConfirm(false)}
-                    className="px-4 py-2.5 border border-border hover:bg-muted rounded-lg text-sm font-medium text-muted-foreground transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmDeleteMainDocument}
-                    className="px-4 py-2.5 bg-destructive hover:bg-destructive-text text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
+                  <p className="font-medium text-foreground">{selectedGroup.title}</p>
+                </>
+              }
+              confirmLabel="Delete"
+            />
           )}
 
           {typeof document !== 'undefined' &&

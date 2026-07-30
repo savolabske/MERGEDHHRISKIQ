@@ -134,7 +134,7 @@ export function Auth({ onLogin }: AuthProps) {
   const [resetEmail, setResetEmail] = useState('');
 
   const handleLogin = () => {
-    toast.success('Welcome back! Logging you in...');
+    toast.info('Welcome back! Logging you in...');
     onLogin();
   };
 

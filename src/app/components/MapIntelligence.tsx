@@ -16,6 +16,8 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { cn } from "./ui/utils";
 import { iconButtonSmClass } from "./ui/interaction";
+import { ConfirmDeleteDialog } from "./ui/ConfirmDeleteDialog";
+import { ChatStopButton } from "./ui/ChatStopButton";
 
 const riskPrompts = [
   {
@@ -1449,6 +1451,7 @@ export function MapIntelligence() {
   const [isMobilePromptOpen, setIsMobilePromptOpen] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [lastQuerySummary, setLastQuerySummary] = useState(
     "Ask a map question to highlight areas of interest."
@@ -1824,6 +1827,14 @@ export function MapIntelligence() {
     setMapQuery("");
   };
 
+  const stopGeneration = () => {
+    if (streamTimerRef.current) {
+      window.clearTimeout(streamTimerRef.current);
+      streamTimerRef.current = null;
+    }
+    setIsAssistantStreaming(false);
+  };
+
   const handleBackToBaseScreen = () => {
     setChatMessages([]);
     setMapQuery("");
@@ -1836,6 +1847,10 @@ export function MapIntelligence() {
     setContextAnchorQuery(null);
     setSelectedListItemId(null);
     setIsAssistantStreaming(false);
+    if (streamTimerRef.current) {
+      window.clearTimeout(streamTimerRef.current);
+      streamTimerRef.current = null;
+    }
     if (overlayLayerGroupRef.current) {
       overlayLayerGroupRef.current.clearLayers();
     }
@@ -1985,7 +2000,7 @@ export function MapIntelligence() {
 
                     <div className="mt-auto pt-5">
                       <button
-                        onClick={() => setHistoryItems([])}
+                        onClick={() => setShowClearHistoryConfirm(true)}
                         disabled={historyItems.length === 0}
                         className="w-full h-12 rounded-2xl border border-border text-base font-medium text-muted-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                       >
@@ -2109,20 +2124,29 @@ export function MapIntelligence() {
                     value={mapQuery}
                     onChange={(e) => setMapQuery(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") {
+                      if (e.key === "Enter" && !isAssistantStreaming) {
                         submitMapQuery(mapQuery, { isFollowUp: chatMessages.length > 0 });
                       }
                     }}
                     placeholder="Ask a question about map risks..."
-                    className="w-full h-11 border border-border rounded-xl pl-4 pr-11 text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary"
+                    disabled={isAssistantStreaming}
+                    className="w-full h-11 border border-border rounded-xl pl-4 pr-11 text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary disabled:opacity-70"
                   />
-                  <button
-                    onClick={() => submitMapQuery(mapQuery, { isFollowUp: chatMessages.length > 0 })}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle hover:text-muted-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-                    disabled={!mapQuery.trim()}
-                  >
-                    <SendHorizontal size={18} />
-                  </button>
+                  {isAssistantStreaming ? (
+                    <ChatStopButton
+                      onClick={stopGeneration}
+                      size="sm"
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                    />
+                  ) : (
+                    <button
+                      onClick={() => submitMapQuery(mapQuery, { isFollowUp: chatMessages.length > 0 })}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle hover:text-muted-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                      disabled={!mapQuery.trim()}
+                    >
+                      <SendHorizontal size={18} />
+                    </button>
+                  )}
                 </div>
               </div>
             </>
@@ -2139,6 +2163,18 @@ export function MapIntelligence() {
           </button>
         )}
       </div>
+
+      <ConfirmDeleteDialog
+        open={showClearHistoryConfirm}
+        onOpenChange={setShowClearHistoryConfirm}
+        onConfirm={() => {
+          setHistoryItems([]);
+          setShowClearHistoryConfirm(false);
+        }}
+        title="Are you sure you want to clear history?"
+        description="All map query history will be permanently removed. This action cannot be undone."
+        confirmLabel="Clear history"
+      />
     </div>
   );
 }

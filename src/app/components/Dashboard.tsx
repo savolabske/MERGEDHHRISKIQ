@@ -27,6 +27,7 @@ import { DashboardCustomizeBanner } from './home-dashboard/HomeDashboardCustomiz
 import { DashboardEditableSection } from './home-dashboard/HomeEditableSection';
 import { DashboardSectionEditPanel } from './home-dashboard/HomeSectionEditPanel';
 import { cn } from './ui/utils';
+import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 
 interface DashboardProps {
   embedded?: boolean;
@@ -306,6 +307,15 @@ export function Dashboard({ embedded = false, onOpenChat, onOpenBriefing }: Dash
           />
         </>
       )}
+
+      <ConfirmDeleteDialog
+        open={customize.discardConfirmOpen}
+        onOpenChange={(open) => !open && customize.cancelDiscard()}
+        onConfirm={customize.confirmDiscard}
+        title="Are you sure you want to discard?"
+        description={customize.discardConfirmDescription}
+        confirmLabel="Discard changes"
+      />
     </div>
   );
 }
