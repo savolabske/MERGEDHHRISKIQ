@@ -111,6 +111,26 @@ export function linkReportResource(reportId: string, resourceId: string): Manage
   return updated;
 }
 
+/** Reports that already use this resource (resources may be shared). */
+export function getReportsUsingResource(
+  resourceId: string,
+  reports: ManagedReport[] = loadManagedReports(),
+): Pick<ManagedReport, 'id' | 'title'>[] {
+  return reports
+    .filter((r) => r.resourceId === resourceId)
+    .map((r) => ({ id: r.id, title: r.title }));
+}
+
+/** Secondary dropdown copy — informative, not blocking. */
+export function formatAlsoLinkedToLabel(reportTitles: string[]): string | null {
+  if (reportTitles.length === 0) return null;
+  const first = reportTitles[0];
+  const others = reportTitles.length - 1;
+  if (others === 0) return `Also linked to ${first}`;
+  if (others === 1) return `Also linked to ${first} and 1 other report`;
+  return `Also linked to ${first} and ${others} other reports`;
+}
+
 export interface ReportChartTypeOption {
   value: ReportChartType;
   label: string;
@@ -280,7 +300,11 @@ export function createBuiltinManagedReport(
 }
 
 export function buildInitialManagedReports(): ManagedReport[] {
-  return BUILTIN_REPORT_DEFINITIONS.map((def) => createBuiltinManagedReport(def.catalogId));
+  return [
+    createBuiltinManagedReport('aid-flow', { resourceId: '2' }),
+    createBuiltinManagedReport('migration-displacement', { resourceId: '2' }),
+    createBuiltinManagedReport('somalia-joint-fund', { resourceId: '3' }),
+  ];
 }
 
 export function isBuiltinReport(report: ManagedReport): boolean {
@@ -309,6 +333,8 @@ function mergeWithBuiltins(stored: ManagedReport[]): ManagedReport[] {
       ...existing,
       id: builtin.id,
       catalogId: builtin.catalogId,
+      // Keep seeded resource links unless the stored report already has one
+      resourceId: existing.resourceId ?? builtin.resourceId,
       themeId: resolveThemeId(existing.themeId ?? builtin.themeId),
       kpiTiles: existing.kpiTiles?.length ? existing.kpiTiles : builtin.kpiTiles,
       sections: existing.sections?.length ? existing.sections : builtin.sections,

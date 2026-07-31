@@ -230,6 +230,7 @@ export function ManageReports({ onAttachSources }: ManageReportsProps) {
       />
       <ReportAddModal
         open={showAddModal}
+        reports={reports}
         onClose={() => setShowAddModal(false)}
         onCreate={handleCreate}
       />

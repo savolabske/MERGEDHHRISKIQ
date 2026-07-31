@@ -1,6 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, X } from 'lucide-react';
+import {
+  formatAlsoLinkedToLabel,
+  getReportsUsingResource,
+  type ManagedReport,
+} from '../../data/reportsAdminMock';
 import { LINKABLE_KNOWLEDGE_SOURCES } from '../../data/reportResourceLink';
 import { inputClass, textareaClass } from '../resources/resourceShared';
 import { cn } from '../ui/utils';
@@ -8,6 +13,7 @@ import { ReportUserGroupSelect } from './ReportUserGroupSelect';
 
 interface ReportAddModalProps {
   open: boolean;
+  reports: ManagedReport[];
   onClose: () => void;
   onCreate: (input: {
     title: string;
@@ -17,7 +23,14 @@ interface ReportAddModalProps {
   }) => void;
 }
 
-export function ReportAddModal({ open, onClose, onCreate }: ReportAddModalProps) {
+function linkedTitlesForResource(resourceId: string, reports: ManagedReport[]): string[] {
+  const fromLive = getReportsUsingResource(resourceId, reports).map((r) => r.title);
+  const source = LINKABLE_KNOWLEDGE_SOURCES.find((r) => r.id === resourceId);
+  const fromCatalog = source ? [...source.usedByReports] : [];
+  return [...new Set([...fromLive, ...fromCatalog])];
+}
+
+export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [userGroups, setUserGroups] = useState<string[]>([]);
@@ -33,11 +46,23 @@ export function ReportAddModal({ open, onClose, onCreate }: ReportAddModalProps)
 
   const selectedResource = LINKABLE_KNOWLEDGE_SOURCES.find((r) => r.id === selectedResourceId);
 
+  const linkedReportsByResourceId = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const source of LINKABLE_KNOWLEDGE_SOURCES) {
+      map.set(source.id, linkedTitlesForResource(source.id, reports));
+    }
+    return map;
+  }, [reports]);
+
   const filteredResources = useMemo(() => {
     const q = resourceQuery.trim().toLowerCase();
     if (!q) return [...LINKABLE_KNOWLEDGE_SOURCES];
     return LINKABLE_KNOWLEDGE_SOURCES.filter((r) => r.title.toLowerCase().includes(q));
   }, [resourceQuery]);
+
+  const selectedLinkedLabel = selectedResourceId
+    ? formatAlsoLinkedToLabel(linkedReportsByResourceId.get(selectedResourceId) ?? [])
+    : null;
 
   const resetForm = () => {
     setTitle('');
@@ -149,6 +174,9 @@ export function ReportAddModal({ open, onClose, onCreate }: ReportAddModalProps)
               ) : (
                 filteredResources.map((resource) => {
                   const isSelected = selectedResourceId === resource.id;
+                  const linkedLabel = formatAlsoLinkedToLabel(
+                    linkedReportsByResourceId.get(resource.id) ?? [],
+                  );
                   return (
                     <button
                       key={resource.id}
@@ -165,7 +193,17 @@ export function ReportAddModal({ open, onClose, onCreate }: ReportAddModalProps)
                           : 'text-foreground',
                       )}
                     >
-                      {resource.title}
+                      <span className="block truncate">{resource.title}</span>
+                      {linkedLabel ? (
+                        <span
+                          className={cn(
+                            'mt-0.5 block truncate text-xs font-normal',
+                            isSelected ? 'text-primary/70' : 'text-muted-foreground',
+                          )}
+                        >
+                          {linkedLabel}
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })
@@ -276,6 +314,9 @@ export function ReportAddModal({ open, onClose, onCreate }: ReportAddModalProps)
               </div>
               {resourceMenu}
             </div>
+            {selectedLinkedLabel ? (
+              <p className="mt-2 text-xs text-muted-foreground">{selectedLinkedLabel}</p>
+            ) : null}
           </div>
 
           <ReportUserGroupSelect

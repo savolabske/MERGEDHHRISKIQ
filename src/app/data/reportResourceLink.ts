@@ -1,8 +1,21 @@
 /** Knowledge sources that can be linked when creating a report (standard admin resources). */
 export const LINKABLE_KNOWLEDGE_SOURCES = [
-  { id: '2', title: 'Humanitarian Access Incident Tracker — regional annexes' },
-  { id: '3', title: 'IPC Food Security Phase Classification Bay & Bakool' },
-  { id: '4', title: 'WASH Cluster Assessment — Baidoa & Dollow' },
+  {
+    id: '2',
+    title: 'Humanitarian Access Incident Tracker — regional annexes',
+    /** Reports already using this resource — shown in the create-report picker */
+    usedByReports: ['Aid Flow Intelligence', 'Migration & Displacement Intelligence'],
+  },
+  {
+    id: '3',
+    title: 'IPC Food Security Phase Classification Bay & Bakool',
+    usedByReports: ['Somalia Joint Fund Intelligence'],
+  },
+  {
+    id: '4',
+    title: 'WASH Cluster Assessment — Baidoa & Dollow',
+    usedByReports: [] as string[],
+  },
 ] as const;
 
 export interface ReportResourceLinkContext {
