@@ -74,7 +74,12 @@ export function ManageReports({ onAttachSources }: ManageReportsProps) {
   const savedSnapshot = activeReportId ? savedSnapshots[activeReportId] ?? '' : '';
 
   const handleCreate = useCallback(
-    (input: { title: string; description: string; userGroups: string[]; resourceId?: string }) => {
+    (input: {
+      title: string;
+      description: string;
+      userGroups: string[];
+      resourceId?: string;
+    }) => {
       const report = createDefaultReportSkeleton(input);
       persistReports((prev) => [report, ...prev]);
       setSavedSnapshots((prev) => ({ ...prev, [report.id]: JSON.stringify(report) }));
@@ -82,7 +87,9 @@ export function ManageReports({ onAttachSources }: ManageReportsProps) {
       setShowAddModal(false);
       setView('builder');
       toast.success(
-        input.resourceId ? 'Report created and linked to resource' : 'Report created as draft',
+        input.resourceId
+          ? 'Report linked. Choose how you want to build it.'
+          : 'Draft created. Choose how you want to build it.',
       );
     },
     [persistReports],
@@ -135,16 +142,24 @@ export function ManageReports({ onAttachSources }: ManageReportsProps) {
 
   const handleUnpublish = useCallback(
     (id: string) => {
+      let unpublished: ManagedReport | null = null;
       persistReports((prev) =>
-        prev.map((r) =>
-          r.id === id
-            ? { ...r, status: 'draft' as const, updatedAt: formatDate(new Date()) }
-            : r,
-        ),
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          unpublished = {
+            ...r,
+            status: 'draft' as const,
+            updatedAt: formatDate(new Date()),
+          };
+          return unpublished;
+        }),
       );
-      toast.success('Report unpublished');
+      if (unpublished) {
+        commitSnapshot(unpublished);
+        toast.success('Report unpublished');
+      }
     },
-    [persistReports],
+    [commitSnapshot, persistReports],
   );
 
   const handleDelete = useCallback(
@@ -212,6 +227,7 @@ export function ManageReports({ onAttachSources }: ManageReportsProps) {
         onBack={backToList}
         onUpdate={handleUpdate}
         onPublish={handlePublish}
+        onUnpublish={handleUnpublish}
         onCommit={commitSnapshot}
         onAttachSources={() => handleAttachSources(activeReport)}
       />

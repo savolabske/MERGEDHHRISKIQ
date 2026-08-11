@@ -20,6 +20,7 @@ import {
   PanelLeft,
   Shield,
   LayoutTemplate,
+  Workflow,
   type LucideIcon,
 } from 'lucide-react';
 import type { AppView } from '../types/navigation';
@@ -43,6 +44,7 @@ const ADMIN_NAV_ITEMS: {
   { view: 'usersAccess', label: 'Users and Access', icon: Users },
   { view: 'definitions', label: 'Definitions', icon: BookOpen },
   { view: 'manageReports', label: 'Manage Reports', icon: LayoutTemplate },
+  { view: 'manageWorkflows', label: 'Manage Workflows', icon: Workflow },
   { view: 'resources', label: 'Resources', icon: FileText },
   { view: 'links', label: 'URL Sources', icon: Link },
   { view: 'api', label: 'API', icon: Braces },
@@ -238,7 +240,8 @@ export function Sidebar({
     currentView === 'resources' ||
     currentView === 'links' ||
     currentView === 'api' ||
-    currentView === 'auditTrails';
+    currentView === 'auditTrails' ||
+    currentView === 'manageWorkflows';
 
   const setCollapsed = (next: boolean) => {
     if (controlledCollapsed === undefined) {
@@ -411,6 +414,13 @@ export function Sidebar({
                   isActive={currentView === 'reports'}
                   collapsed={displayCollapsed}
                   onClick={() => handleNavigate('reports')}
+                />
+                <SidebarNavItem
+                  label="Custom Workflows"
+                  icon={Workflow}
+                  isActive={currentView === 'customWorkflows'}
+                  collapsed={displayCollapsed}
+                  onClick={() => handleNavigate('customWorkflows')}
                 />
               </SidebarNavGroup>
 

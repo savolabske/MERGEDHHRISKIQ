@@ -161,8 +161,15 @@ function DocumentChatComposer({
   onSubmit: (e: FormEvent) => void;
   onStop: () => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const canSend = Boolean(chatQuery.trim()) && !isTyping;
+
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [chatQuery]);
 
   return (
     <form
@@ -174,86 +181,93 @@ function DocumentChatComposer({
         data-composite-field
         onClick={() => inputRef.current?.focus()}
         className={cn(
-          'relative w-full rounded-2xl border border-border bg-card transition-colors cursor-text',
+          'flex w-full flex-col rounded-2xl border border-border bg-card px-3 py-2.5 sm:px-4 sm:py-3 transition-colors cursor-text',
           'hover:border-primary',
           'focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10',
-          'min-h-[96px]',
         )}
       >
-        <div className="absolute bottom-3 left-4 z-10 flex max-w-[calc(100%-4.5rem)] flex-wrap items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                aria-pressed={isExtendedKnowledgeMode}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  const nextState = !isExtendedKnowledgeMode;
-                  onExtendedKnowledgeChange(nextState);
-                  toast.success(
-                    nextState ? 'Extended Knowledge is on' : 'Extended Knowledge is off',
-                  );
-                }}
-                className={cn(
-                  'inline-flex max-w-[230px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                  isExtendedKnowledgeMode
-                    ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
-                    : 'border-border bg-card text-foreground hover:bg-muted/30',
-                )}
-              >
-                <Sparkles size={12} />
-                <span className="truncate ml-1.5">
-                  {isExtendedKnowledgeMode ? 'Extended Knowledge ON' : 'Extended Knowledge'}
-                </span>
-                {isExtendedKnowledgeMode ? (
-                  <span className="ml-1.5">
-                    <X size={12} />
-                  </span>
-                ) : null}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent
-              variant="muted"
-              side="top"
-              sideOffset={8}
-              className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
-            >
-              Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
-            </TooltipContent>
-          </Tooltip>
-        </div>
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
+          rows={1}
           value={chatQuery}
           onChange={(e) => onChange(e.target.value)}
           onFocus={onFocus}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              if (canSend) {
+                e.currentTarget.form?.requestSubmit();
+              }
+            }
+          }}
           placeholder={
             isExtendedKnowledgeMode
               ? 'Ask in Extended Knowledge mode...'
               : 'Ask about this resource…'
           }
           disabled={isTyping}
-          className="focus-ring-container-control h-[96px] w-full border-0 bg-transparent pl-6 pr-16 pt-4 pb-12 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 disabled:opacity-60"
+          className="focus-ring-container-control max-h-[120px] min-h-6 w-full resize-none overflow-y-auto border-0 bg-transparent py-0.5 text-sm leading-6 text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 disabled:opacity-60"
         />
-        {isTyping ? (
-          <ChatStopButton
-            onClick={onStop}
-            className="absolute right-2 bottom-3"
-          />
-        ) : (
-          <button
-            type="submit"
-            disabled={!canSend}
-            className={cn(
-              'absolute right-2 bottom-3 inline-flex h-10 w-10 items-center justify-center rounded-xl text-white transition-colors',
-              canSend ? 'bg-primary hover:bg-primary-hover' : 'bg-muted cursor-not-allowed',
-            )}
-            aria-label="Send message"
-          >
-            <Send size={16} className={canSend ? 'text-white' : 'text-text-subtle'} />
-          </button>
-        )}
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-pressed={isExtendedKnowledgeMode}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    const nextState = !isExtendedKnowledgeMode;
+                    onExtendedKnowledgeChange(nextState);
+                    toast.success(
+                      nextState ? 'Extended Knowledge is on' : 'Extended Knowledge is off',
+                    );
+                  }}
+                  className={cn(
+                    'inline-flex max-w-[230px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                    isExtendedKnowledgeMode
+                      ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                      : 'border-border bg-card text-foreground hover:bg-muted/30',
+                  )}
+                >
+                  <Sparkles size={12} />
+                  <span className="ml-1.5 truncate sm:hidden">Extended</span>
+                  <span className="ml-1.5 hidden truncate sm:inline">
+                    {isExtendedKnowledgeMode ? 'Extended Knowledge ON' : 'Extended Knowledge'}
+                  </span>
+                  {isExtendedKnowledgeMode ? (
+                    <span className="ml-1.5">
+                      <X size={12} />
+                    </span>
+                  ) : null}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent
+                variant="muted"
+                side="top"
+                sideOffset={8}
+                className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+              >
+                Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          {isTyping ? (
+            <ChatStopButton onClick={onStop} className="shrink-0" />
+          ) : (
+            <button
+              type="submit"
+              disabled={!canSend}
+              className={cn(
+                'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white transition-colors',
+                canSend ? 'bg-primary hover:bg-primary-hover' : 'bg-muted cursor-not-allowed',
+              )}
+              aria-label="Send message"
+            >
+              <Send size={16} className={canSend ? 'text-white' : 'text-text-subtle'} />
+            </button>
+          )}
+        </div>
       </div>
       {isExtendedKnowledgeMode && (
         <p className="mt-2 text-center text-xs text-muted-foreground">
@@ -314,6 +328,8 @@ export function DocumentDetail({
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const responseTimeoutsRef = useRef<number[]>([]);
+  const onMessagesChangeRef = useRef(onMessagesChange);
+  onMessagesChangeRef.current = onMessagesChange;
 
   const clearResponseTimeouts = () => {
     responseTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
@@ -351,10 +367,12 @@ export function DocumentDetail({
     }
   }, [messages, isTyping, isChatOpen, isChatExpanded]);
 
+  // Notify via ref so parent inline callbacks don't retrigger this effect every render
+  // (that previously caused an infinite setState loop / RESULT_CODE_HUNG).
   useEffect(() => {
-    if (!onMessagesChange || messages.length === 0) return;
-    onMessagesChange(messages, content.title);
-  }, [messages, content.title, onMessagesChange]);
+    if (!onMessagesChangeRef.current || messages.length === 0) return;
+    onMessagesChangeRef.current(messages, content.title);
+  }, [messages, content.title]);
 
   const stopGeneration = () => {
     clearResponseTimeouts();

@@ -102,11 +102,11 @@ export function IntelligenceLoadingScreen({
           </motion.div>
         </div>
 
-        <p className="mt-8 label-caps tracking-[0.2em]">
-          {eyebrow}
-        </p>
+        {eyebrow && (
+          <p className="mt-8 label-caps tracking-[0.2em]">{eyebrow}</p>
+        )}
 
-        <div className="mt-3 h-7 min-w-[280px] text-center">
+        <div className={eyebrow ? 'mt-3 h-7 min-w-[280px] text-center' : 'mt-8 h-7 min-w-[280px] text-center'}>
           <AnimatePresence mode="wait">
             <motion.p
               key={activeStep.id}
@@ -114,12 +114,10 @@ export function IntelligenceLoadingScreen({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="text-base font-medium text-foreground shimmer-text"
+              className="inline-flex items-baseline gap-1 text-base font-medium"
             >
-              {activeStep.label}
-              <span className="intelligence-load-ellipsis" aria-hidden>
-                ...
-              </span>
+              <span className="shimmer-text">{activeStep.label}</span>
+              <span className="intelligence-load-ellipsis shimmer-text" aria-hidden>...</span>
             </motion.p>
           </AnimatePresence>
         </div>

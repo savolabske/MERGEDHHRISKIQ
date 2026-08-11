@@ -1,4 +1,4 @@
-import { Search, Trash2, MoreVertical, Pin, ChevronLeft, ChevronRight, ChevronDown, Plus } from 'lucide-react';
+import { Trash2, MoreVertical, Pin, ChevronLeft, ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState, useRef, useEffect } from 'react';
 import { useProgressiveList } from '../hooks/useProgressiveList';
@@ -8,6 +8,11 @@ import { PageScrollShell } from './PageScrollShell';
 import { Button } from './ui/button';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { cn } from './ui/utils';
+import {
+  ListPageHeader,
+  ListPageToolbar,
+  listHeaderActionClass,
+} from './ui/list-page';
 import {
   iconButtonSmClass,
   listFilterTriggerClass,
@@ -379,137 +384,138 @@ export function Chats({
       innerClassName="space-y-6"
     >
             {!embedded && (
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                <div>
-                  <h2 className="text-page-title mb-1">Chats</h2>
-                  <p className="text-sm sm:text-sm text-muted-foreground">
-                    {subtitle}
-                  </p>
-                </div>
-                {onNewChat && (
-                  <Button
-                    type="button"
-                    onClick={onNewChat}
-                    className="w-full sm:w-auto shrink-0 gap-2"
-                  >
-                    <Plus size={18} strokeWidth={2} />
-                    New Chat
-                  </Button>
-                )}
-              </div>
+              <ListPageHeader
+                title="Chats"
+                subtitle={subtitle}
+                action={
+                  onNewChat ? (
+                    <Button
+                      type="button"
+                      onClick={onNewChat}
+                      className={cn(
+                        listHeaderActionClass,
+                        'h-7 min-h-7 gap-1.5 rounded-md px-3 text-[12px] font-semibold leading-none',
+                      )}
+                    >
+                      <Plus size={14} strokeWidth={2} />
+                      New Chat
+                    </Button>
+                  ) : undefined
+                }
+              />
             )}
 
             {/* Search and scope filter */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:items-stretch">
-              <div className="flex gap-3 items-stretch min-w-0 flex-1">
-                <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search chats..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
-                />
-                </div>
-                {embedded && onNewChat && (
+            <ListPageToolbar
+              search={{
+                value: searchQuery,
+                onChange: setSearchQuery,
+                placeholder: 'Search chats...',
+              }}
+              trailing={
+                embedded && onNewChat ? (
                   <button
                     type="button"
                     onClick={onNewChat}
                     className="sm:hidden shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-hover transition-colors"
                   >
                     <Plus size={18} strokeWidth={2} />
-                    New chat
+                    New
                   </button>
-                )}
-              </div>
-              <div className="relative shrink-0 w-full sm:w-auto" ref={chatFilterDropdownRef}>
-                <button
-                  type="button"
-                  aria-expanded={showChatFilterDropdown}
-                  aria-haspopup="listbox"
-                  onClick={() => setShowChatFilterDropdown((open) => !open)}
-                  className={cn(listFilterTriggerClass, 'w-full sm:w-auto min-w-0 sm:min-w-[180px] justify-between py-2.5')}
-                >
-                  <span className="truncate">{chatScopeLabel(chatScopeFilter)}</span>
-                  <ChevronDown
-                    size={16}
-                    className={`text-muted-foreground shrink-0 transition-transform ${showChatFilterDropdown ? 'rotate-180' : ''}`}
-                  />
-                </button>
-                {showChatFilterDropdown && (
-                  <div
-                    className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 z-20 w-full sm:min-w-[220px] bg-card border border-border rounded-lg shadow-lg overflow-hidden"
-                    role="listbox"
-                    aria-label="Filter chats by scope"
-                  >
-                    {CHAT_SCOPE_OPTIONS.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        role="option"
-                        aria-selected={chatScopeFilter === option.id}
-                        onClick={() => {
-                          setChatScopeFilter(option.id);
-                          setShowChatFilterDropdown(false);
-                        }}
-                        className={cn(
-                          menuItemClass,
-                          'py-2.5',
-                          chatScopeFilter === option.id && 'bg-secondary font-medium',
-                        )}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {!hideSourceFilter && (
-                <div className="relative shrink-0 w-full sm:w-auto" ref={sourceFilterDropdownRef}>
-                  <button
-                    type="button"
-                    aria-expanded={showSourceFilterDropdown}
-                    aria-haspopup="listbox"
-                    onClick={() => setShowSourceFilterDropdown((open) => !open)}
-                    className={cn(listFilterTriggerClass, 'w-full sm:w-auto min-w-0 sm:min-w-[180px] justify-between py-2.5')}
-                  >
-                    <span className="truncate">{chatSourceFilterLabel(chatSourceFilter, sourceFilterOptions)}</span>
-                    <ChevronDown
-                      size={16}
-                      className={`text-muted-foreground shrink-0 transition-transform ${showSourceFilterDropdown ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                  {showSourceFilterDropdown && (
-                    <div
-                      className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 z-20 w-full sm:min-w-[220px] bg-card border border-border rounded-lg shadow-lg overflow-hidden"
-                      role="listbox"
-                      aria-label="Filter chats by source"
+                ) : undefined
+              }
+              filterCount={hideSourceFilter ? 1 : 2}
+              filters={
+                <>
+                  <div className="relative min-w-0 sm:min-w-[180px] sm:w-auto" ref={chatFilterDropdownRef}>
+                    <button
+                      type="button"
+                      aria-expanded={showChatFilterDropdown}
+                      aria-haspopup="listbox"
+                      onClick={() => setShowChatFilterDropdown((open) => !open)}
+                      className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
                     >
-                      {sourceFilterOptions.map((option) => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          role="option"
-                          aria-selected={chatSourceFilter === option.id}
-                          onClick={() => {
-                            setChatSourceFilter(option.id);
-                            setShowSourceFilterDropdown(false);
-                          }}
-                          className={cn(
-                            menuItemClass,
-                            'py-2.5',
-                            chatSourceFilter === option.id && 'bg-secondary font-medium',
-                          )}
+                      <span className="truncate">{chatScopeLabel(chatScopeFilter)}</span>
+                      <ChevronDown
+                        size={16}
+                        className={`text-muted-foreground shrink-0 transition-transform ${showChatFilterDropdown ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                    {showChatFilterDropdown && (
+                      <div
+                        className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 z-20 w-full sm:min-w-[220px] bg-card border border-border rounded-lg shadow-lg overflow-hidden"
+                        role="listbox"
+                        aria-label="Filter chats by scope"
+                      >
+                        {CHAT_SCOPE_OPTIONS.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            role="option"
+                            aria-selected={chatScopeFilter === option.id}
+                            onClick={() => {
+                              setChatScopeFilter(option.id);
+                              setShowChatFilterDropdown(false);
+                            }}
+                            className={cn(
+                              menuItemClass,
+                              'py-2.5',
+                              chatScopeFilter === option.id && 'bg-secondary font-medium',
+                            )}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {!hideSourceFilter && (
+                    <div className="relative min-w-0 sm:min-w-[180px] sm:w-auto" ref={sourceFilterDropdownRef}>
+                      <button
+                        type="button"
+                        aria-expanded={showSourceFilterDropdown}
+                        aria-haspopup="listbox"
+                        onClick={() => setShowSourceFilterDropdown((open) => !open)}
+                        className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
+                      >
+                        <span className="truncate">{chatSourceFilterLabel(chatSourceFilter, sourceFilterOptions)}</span>
+                        <ChevronDown
+                          size={16}
+                          className={`text-muted-foreground shrink-0 transition-transform ${showSourceFilterDropdown ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      {showSourceFilterDropdown && (
+                        <div
+                          className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 z-20 w-full sm:min-w-[220px] bg-card border border-border rounded-lg shadow-lg overflow-hidden"
+                          role="listbox"
+                          aria-label="Filter chats by source"
                         >
-                          {option.label}
-                        </button>
-                      ))}
+                          {sourceFilterOptions.map((option) => (
+                            <button
+                              key={option.id}
+                              type="button"
+                              role="option"
+                              aria-selected={chatSourceFilter === option.id}
+                              onClick={() => {
+                                setChatSourceFilter(option.id);
+                                setShowSourceFilterDropdown(false);
+                              }}
+                              className={cn(
+                                menuItemClass,
+                                'py-2.5',
+                                chatSourceFilter === option.id && 'bg-secondary font-medium',
+                              )}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
-            </div>
+                </>
+              }
+            />
 
             {/* Content */}
             <div className="bg-card rounded-xl border border-border">
@@ -618,52 +624,45 @@ export function Chats({
                             <Pin size={14} className="text-primary shrink-0" fill="var(--primary)" />
                           )}
                         </div>
-                        {/* Source pill, resource context, timestamp/meta below query */}
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {/* Meta row: badge · time · share — keep on one denser wrap */}
+                        <div className="flex items-center gap-x-2 gap-y-1 mt-1 flex-wrap">
                           {!(hideSourceFilter && chatSource === 'risk-iq') && chatSource !== 'resource' && (
                             <ChatSourceBadge source={chatSource} />
                           )}
                           {chatSource === 'resource' && chat.resourceTitle && (
                             <span
-                              className="text-xs text-muted-foreground truncate max-w-[240px] sm:max-w-[320px]"
+                              className="text-xs text-muted-foreground truncate max-w-[200px]"
                               title={chat.resourceTitle}
                             >
                               {chat.resourceTitle}
                             </span>
                           )}
                           {chatSource === 'report' && chat.reportTitle && (
-                            <>
-                              <span className="text-border-muted">•</span>
-                              <span
-                                className="text-xs text-muted-foreground truncate max-w-[240px] sm:max-w-[320px]"
-                                title={chat.reportTitle}
-                              >
-                                {chat.reportTitle}
-                              </span>
-                            </>
+                            <span
+                              className="text-xs text-muted-foreground truncate max-w-[200px]"
+                              title={chat.reportTitle}
+                            >
+                              {chat.reportTitle}
+                            </span>
                           )}
                           <p className="table-metadata-text">
-                            Last message {getRelativeDayLabel(chat.date)} at {chat.timestamp}
+                            {getRelativeDayLabel(chat.date)} · {chat.timestamp}
                           </p>
                           {chat.shareMode && (chat.sharedWith?.length || 0) > 0 && (
-                            <>
-                              <span className="text-border-muted">•</span>
-                              <span
-                                className={`text-xs font-medium ${
-                                  chat.shareMode === 'incoming' ? 'text-info' : 'text-primary'
-                                }`}
-                              >
-                                {chat.shareMode === 'incoming' ? 'Shared with me' : 'Shared by me'}
-                              </span>
-                            </>
+                            <span
+                              className={`text-xs font-medium ${
+                                chat.shareMode === 'incoming' ? 'text-info' : 'text-primary'
+                              }`}
+                            >
+                              {chat.shareMode === 'incoming' ? 'Shared with me' : 'Shared by me'}
+                            </span>
+                          )}
+                          {(chat.sharedWith?.length || 0) > 0 && (
+                            <span className="sm:hidden inline-flex items-center">
+                              <AvatarStack userIds={chat.sharedWith || []} compact />
+                            </span>
                           )}
                         </div>
-                        {(chat.sharedWith?.length || 0) > 0 && (
-                          <div className="sm:hidden mt-2 flex items-center gap-2">
-                            <span className="text-xs font-medium text-text-subtle uppercase tracking-wide">Shared</span>
-                            <AvatarStack userIds={chat.sharedWith || []} compact />
-                          </div>
-                        )}
                       </div>
                     </div>
                   </button>

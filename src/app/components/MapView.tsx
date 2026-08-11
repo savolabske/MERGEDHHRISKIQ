@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, PanelRightClose, MessageSquare, Send, Sparkles, AlertTriangle, Utensils, Tent, ShieldAlert, ChevronRight, ChevronUp, ChevronDown, Users, X, Zap, TrendingDown, Package, Route, Crosshair, Calendar, Filter as FilterIcon, History, Clock } from 'lucide-react';
+import { MapPin, PanelRightClose, MessageSquare, MessageSquarePlus, Send, Sparkles, AlertTriangle, Utensils, Tent, ShieldAlert, ChevronRight, ChevronUp, ChevronDown, Users, X, Zap, TrendingDown, Package, Route, Crosshair, Calendar, Filter as FilterIcon, History, Clock } from 'lucide-react';
 import { cn } from './ui/utils';
 import {
   chipRemoveClass,
@@ -9,6 +9,7 @@ import {
 } from './ui/interaction';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { ChatStopButton } from './ui/ChatStopButton';
+import { useKeyboardBottomInset } from '../hooks/useKeyboardBottomInset';
 import { hasMapboxAccessToken, mapboxgl } from '../config/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -1009,6 +1010,7 @@ export function MapView() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
 
+  const keyboardBottomInset = useKeyboardBottomInset();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<mapboxgl.Map | null>(null);
@@ -1017,6 +1019,8 @@ export function MapView() {
   const pinnedPopupRef = useRef<mapboxgl.Popup | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const promptInputRef = useRef<HTMLInputElement>(null);
+  const focusPromptAfterOpenRef = useRef(false);
   const typingIntervalRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
@@ -1038,6 +1042,15 @@ export function MapView() {
 
   const openMobilePanel = useCallback(() => setIsMobilePanelOpen(true), []);
   const closeMobilePanel = useCallback(() => setIsMobilePanelOpen(false), []);
+
+  useEffect(() => {
+    if (!isMobilePanelOpen || !focusPromptAfterOpenRef.current) return;
+    focusPromptAfterOpenRef.current = false;
+    const timer = window.setTimeout(() => {
+      promptInputRef.current?.focus({ preventScroll: true });
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [isMobilePanelOpen]);
 
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     const el = chatScrollRef.current;
@@ -1899,9 +1912,11 @@ export function MapView() {
   const renderPromptInput = ({
     compact = false,
     showMinimize = false,
+    inputRef,
   }: {
     compact?: boolean;
     showMinimize?: boolean;
+    inputRef?: React.RefObject<HTMLInputElement | null>;
   } = {}) => (
     <form onSubmit={handleCustomQuery}>
       <div className={cn('flex items-center', showMinimize ? 'gap-2' : '')}>
@@ -1930,11 +1945,13 @@ export function MapView() {
             <Sparkles size={compact ? 14 : 16} className="text-[#9CA3AF]" />
           </div>
           <input
+            ref={inputRef}
             type="text"
             value={mapQuery}
             onChange={(e) => setMapQuery(e.target.value)}
             onFocus={() => {
               if (isMobileViewport && !isMobilePanelOpen) {
+                focusPromptAfterOpenRef.current = true;
                 openMobilePanel();
               }
             }}
@@ -1974,6 +1991,21 @@ export function MapView() {
   );
 
   const showDesktopPanel = !isMobileViewport && !isPanelMinimized;
+  const mobileSheetStyle =
+    isMobileViewport
+      ? {
+          bottom: keyboardBottomInset,
+          maxHeight: keyboardBottomInset > 0
+            ? `min(68dvh, 560px, calc(100dvh - ${keyboardBottomInset}px))`
+            : 'min(68dvh, 560px)',
+          height: keyboardBottomInset > 0
+            ? `min(68dvh, 560px, calc(100dvh - ${keyboardBottomInset}px))`
+            : undefined,
+        }
+      : undefined;
+  const mobileDockStyle = isMobileViewport
+    ? { bottom: keyboardBottomInset }
+    : undefined;
 
   return (
     <div className="flex h-full min-h-0 relative overflow-hidden">
@@ -2103,12 +2135,17 @@ export function MapView() {
             'bg-white flex flex-col overflow-hidden',
             isMobileViewport
               ? cn(
-                  'fixed inset-x-0 bottom-0 z-[1220] flex h-[min(68dvh,560px)] max-h-[min(68dvh,560px)] flex-col rounded-t-2xl border-t border-[#E5E7EB] shadow-2xl transition-transform duration-300 ease-out',
+                  'fixed inset-x-0 z-[1220] flex max-h-[min(68dvh,560px)] flex-col rounded-t-2xl border-t border-[#E5E7EB] shadow-2xl transition-transform duration-300 ease-out',
+                  keyboardBottomInset > 0 ? 'h-auto' : 'h-[min(68dvh,560px)]',
                   isMobilePanelOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full',
                 )
               : 'relative flex h-full w-[420px] shrink-0 flex-col border-l border-[#E5E7EB]',
           )}
+          style={mobileSheetStyle}
+          aria-hidden={isMobileViewport ? !isMobilePanelOpen : undefined}
         >
+          {(!isMobileViewport || isMobilePanelOpen) && (
+            <>
           {isMobileViewport && (
             <div className="sticky top-0 z-10 flex shrink-0 flex-col items-center border-b border-[#F3F4F6] bg-white px-4 pb-2 pt-2">
               <button
@@ -2129,25 +2166,38 @@ export function MapView() {
           {!isMobileViewport && (
             <div
               className={cn(
-                'flex shrink-0 items-center justify-between px-4 pt-4',
-                !activeFlow && 'mb-6',
+                'flex shrink-0 items-center justify-between gap-2 px-4 pt-4',
+                activeFlow ? 'border-b border-[#E5E7EB] pb-3' : 'mb-6',
               )}
             >
-              {!activeFlow ? (
+              <div className="flex min-w-0 items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => setIsHistoryOpen(true)}
+                  aria-label="View query history"
+                  title="History"
                   className={cn(
-                    outlineControlClass,
-                    'inline-flex h-8 items-center gap-1.5 border-[#E5E7EB] px-3 text-[0.75rem] font-medium text-[#6B7280] group hover:border-[#1D4ED8] hover:bg-[#F9FAFB]',
+                    iconButtonSmClass,
+                    'border border-[#E5E7EB] text-[#6B7280] hover:border-[#1D4ED8] hover:bg-[#F9FAFB] hover:text-[#2463EB]',
                   )}
-                  title="View query history"
                 >
-                  <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
-                  <span className="group-hover:text-[#2463EB]">History</span>
+                  <History size={16} />
                 </button>
-              ) : (
-                <span className="h-8" aria-hidden />
-              )}
+                {activeFlow && (
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    aria-label="Start a new chat"
+                    title="New chat"
+                    className={cn(
+                      'inline-flex h-8 items-center gap-1.5 rounded-md bg-[#EFF6FF] px-3 text-[12px] font-medium leading-none text-[#2463EB] transition-colors hover:bg-[#E0EDFF]',
+                    )}
+                  >
+                    <MessageSquarePlus size={14} />
+                    <span>New Chat</span>
+                  </button>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setIsPanelMinimized(true)}
@@ -2164,85 +2214,97 @@ export function MapView() {
             /* ── Default State: Suggested Prompts ── */
             <div className="flex min-h-0 flex-1 flex-col">
               {isMobileViewport && (
-                <div className="shrink-0 px-4 pt-4 pb-4">
+                <div className="shrink-0 px-4 pt-4 pb-2">
                   <button
+                    type="button"
                     onClick={() => setIsHistoryOpen(true)}
+                    aria-label="View query history"
+                    title="History"
                     className={cn(
-                      outlineControlClass,
-                      'mb-6 inline-flex h-8 items-center gap-1.5 border-[#E5E7EB] px-3 text-[0.75rem] font-medium text-[#6B7280] group hover:border-[#1D4ED8] hover:bg-[#F9FAFB]',
+                      iconButtonSmClass,
+                      'border border-[#E5E7EB] text-[#6B7280] hover:border-[#1D4ED8] hover:bg-[#F9FAFB] hover:text-[#2463EB]',
                     )}
-                    title="View query history"
                   >
-                    <History size={14} className="text-[#6B7280] group-hover:text-[#2463EB]" />
-                    <span className="group-hover:text-[#2463EB]">History</span>
+                    <History size={16} />
                   </button>
                 </div>
               )}
 
-              <div className="min-h-0 flex-1" />
-
-              {/* Suggested Prompts — anchored above the input */}
-              <div className="shrink-0 px-6 pb-4">
-                <p className="text-[0.6875rem] font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3 px-2">
-                  SUGGESTED PROMPTS
-                </p>
-                <div className="space-y-2.5">
-                  {CONVERSATION_FLOWS.map(flow => (
-                    <button
-                      key={flow.id}
-                      onClick={() => startFlow(flow.id)}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#E5E7EB] hover:border-[#1D4ED8] hover:shadow-md transition-all text-left group"
-                    >
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: flow.bgColor, color: flow.color }}>
-                        {flow.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[0.8125rem] text-[#374151] leading-snug group-hover:text-[#2463EB] transition-colors">
-                          {flow.label}
-                        </p>
-                      </div>
-                      <ChevronRight size={16} className="text-[#D1D5DB] group-hover:text-[#1D4ED8] flex-shrink-0 transition-colors" />
-                    </button>
-                  ))}
+              {/* Suggested Prompts — scroll when keyboard compresses the sheet */}
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-4">
+                <div className={cn('flex min-h-full flex-col', !isMobileViewport && 'justify-end')}>
+                  <p className="text-[0.6875rem] font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3 px-2">
+                    SUGGESTED PROMPTS
+                  </p>
+                  <div className="space-y-2.5">
+                    {CONVERSATION_FLOWS.map(flow => (
+                      <button
+                        key={flow.id}
+                        onClick={() => startFlow(flow.id)}
+                        className="w-full flex items-center gap-3 p-4 rounded-xl border border-[#E5E7EB] hover:border-[#1D4ED8] hover:shadow-md transition-all text-left group"
+                      >
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: flow.bgColor, color: flow.color }}>
+                          {flow.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[0.8125rem] text-[#374151] leading-snug group-hover:text-[#2463EB] transition-colors">
+                            {flow.label}
+                          </p>
+                        </div>
+                        <ChevronRight size={16} className="text-[#D1D5DB] group-hover:text-[#1D4ED8] flex-shrink-0 transition-colors" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Input Area */}
-              <div className="shrink-0 border-t border-[#F3F4F6] bg-white px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
-                {renderPromptInput({ compact: true, showMinimize: isMobileViewport })}
+              {/* Input Area — always pinned above the keyboard */}
+              <div
+                className={cn(
+                  'shrink-0 border-t border-[#F3F4F6] bg-white px-6 pt-4',
+                  keyboardBottomInset > 0
+                    ? 'pb-3'
+                    : 'pb-[max(1rem,env(safe-area-inset-bottom))]',
+                )}
+              >
+                {renderPromptInput({
+                  compact: true,
+                  showMinimize: isMobileViewport,
+                  inputRef: promptInputRef,
+                })}
               </div>
             </div>
           ) : (
             /* ── Active Flow: Chat + Data Panel ── */
             <div className="flex min-h-0 flex-1 flex-col">
-              {/* Header */}
-              <div className="px-6 pt-6 pb-4 border-b border-[#E5E7EB] flex-shrink-0">
-                <div className="flex items-center gap-3">
+              {isMobileViewport && (
+                <div className="flex shrink-0 items-center gap-2 border-b border-[#E5E7EB] px-4 py-3">
                   <button
-                    onClick={handleReset}
-                    className={cn(iconButtonSmClass, 'size-auto text-[#9CA3AF] hover:bg-transparent hover:text-[#374151]')}
+                    type="button"
+                    onClick={() => setIsHistoryOpen(true)}
+                    aria-label="View query history"
+                    title="History"
+                    className={cn(
+                      iconButtonSmClass,
+                      'border border-[#E5E7EB] text-[#6B7280] hover:border-[#1D4ED8] hover:bg-[#F9FAFB] hover:text-[#2463EB]',
+                    )}
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    <History size={16} />
                   </button>
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: activeFlow.bgColor, color: activeFlow.color }}>
-                      {activeFlow.icon}
-                    </div>
-                    <span className="text-[0.75rem] font-semibold text-[#6B7280]">Analysis</span>
-                  </div>
-                  {/* Step indicator */}
-                  <div className="ml-auto flex items-center gap-1">
-                    {activeFlow.steps.map((_, idx) => (
-                      <div
-                        key={idx}
-                        className={`w-2 h-2 rounded-full transition-all ${
-                          idx <= currentStepIndex ? 'bg-[#2463EB]' : 'bg-[#E5E7EB]'
-                        }`}
-                      />
-                    ))}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    aria-label="Start a new chat"
+                    title="New chat"
+                    className={cn(
+                      'inline-flex h-8 items-center gap-1.5 rounded-md bg-[#EFF6FF] px-3 text-[12px] font-medium leading-none text-[#2463EB] transition-colors hover:bg-[#E0EDFF]',
+                    )}
+                  >
+                    <MessageSquarePlus size={14} />
+                    <span>New Chat</span>
+                  </button>
                 </div>
-              </div>
+              )}
 
               {/* Chat Messages */}
               <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
@@ -2333,10 +2395,23 @@ export function MapView() {
               </div>
 
               {/* Bottom Input — always pinned while a flow is active */}
-              <div className="relative z-10 shrink-0 border-t border-[#F3F4F6] bg-white px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-                {renderPromptInput({ compact: true, showMinimize: isMobileViewport })}
+              <div
+                className={cn(
+                  'relative z-10 shrink-0 border-t border-[#F3F4F6] bg-white px-6 pt-3',
+                  keyboardBottomInset > 0
+                    ? 'pb-3'
+                    : 'pb-[max(1rem,env(safe-area-inset-bottom))]',
+                )}
+              >
+                {renderPromptInput({
+                  compact: true,
+                  showMinimize: isMobileViewport,
+                  inputRef: promptInputRef,
+                })}
               </div>
             </div>
+          )}
+            </>
           )}
         </div>
       )}
@@ -2356,7 +2431,15 @@ export function MapView() {
 
       {/* Mobile: persistent prompt dock — single entry point when sheet is collapsed */}
       {isMobileViewport && !isMobilePanelOpen && (
-        <div className="fixed inset-x-0 bottom-0 z-[1215] border-t border-[#E5E7EB] bg-white/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_32px_rgba(15,23,42,0.12)] backdrop-blur-sm lg:hidden">
+        <div
+          className={cn(
+            'fixed inset-x-0 z-[1215] border-t border-[#E5E7EB] bg-white/95 px-4 pt-2 shadow-[0_-8px_32px_rgba(15,23,42,0.12)] backdrop-blur-sm lg:hidden',
+            keyboardBottomInset > 0
+              ? 'pb-3'
+              : 'pb-[max(1rem,env(safe-area-inset-bottom))]',
+          )}
+          style={mobileDockStyle}
+        >
           <button
             type="button"
             onClick={openMobilePanel}
@@ -2373,7 +2456,7 @@ export function MapView() {
                 : 'View analysis'
               : 'Suggested prompts'}
           </button>
-          {renderPromptInput({ compact: true })}
+          {renderPromptInput({ compact: true, inputRef: promptInputRef })}
         </div>
       )}
 

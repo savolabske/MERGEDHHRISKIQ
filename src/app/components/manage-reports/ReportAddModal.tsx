@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, X } from 'lucide-react';
 import {
-  formatAlsoLinkedToLabel,
   getReportsUsingResource,
   type ManagedReport,
 } from '../../data/reportsAdminMock';
@@ -23,11 +22,10 @@ interface ReportAddModalProps {
   }) => void;
 }
 
-function linkedTitlesForResource(resourceId: string, reports: ManagedReport[]): string[] {
-  const fromLive = getReportsUsingResource(resourceId, reports).map((r) => r.title);
+function isResourceLinkedToAnyReport(resourceId: string, reports: ManagedReport[]): boolean {
+  if (getReportsUsingResource(resourceId, reports).length > 0) return true;
   const source = LINKABLE_KNOWLEDGE_SOURCES.find((r) => r.id === resourceId);
-  const fromCatalog = source ? [...source.usedByReports] : [];
-  return [...new Set([...fromLive, ...fromCatalog])];
+  return Boolean(source && source.usedByReports.length > 0);
 }
 
 export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddModalProps) {
@@ -44,25 +42,21 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
     null,
   );
 
-  const selectedResource = LINKABLE_KNOWLEDGE_SOURCES.find((r) => r.id === selectedResourceId);
+  const availableResources = useMemo(
+    () =>
+      LINKABLE_KNOWLEDGE_SOURCES.filter(
+        (source) => !isResourceLinkedToAnyReport(source.id, reports),
+      ),
+    [reports],
+  );
 
-  const linkedReportsByResourceId = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const source of LINKABLE_KNOWLEDGE_SOURCES) {
-      map.set(source.id, linkedTitlesForResource(source.id, reports));
-    }
-    return map;
-  }, [reports]);
+  const selectedResource = availableResources.find((r) => r.id === selectedResourceId);
 
   const filteredResources = useMemo(() => {
     const q = resourceQuery.trim().toLowerCase();
-    if (!q) return [...LINKABLE_KNOWLEDGE_SOURCES];
-    return LINKABLE_KNOWLEDGE_SOURCES.filter((r) => r.title.toLowerCase().includes(q));
-  }, [resourceQuery]);
-
-  const selectedLinkedLabel = selectedResourceId
-    ? formatAlsoLinkedToLabel(linkedReportsByResourceId.get(selectedResourceId) ?? [])
-    : null;
+    if (!q) return availableResources;
+    return availableResources.filter((r) => r.title.toLowerCase().includes(q));
+  }, [availableResources, resourceQuery]);
 
   const resetForm = () => {
     setTitle('');
@@ -170,13 +164,14 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
             </div>
             <div className="max-h-48 overflow-y-auto py-1">
               {filteredResources.length === 0 ? (
-                <p className="px-4 py-3 text-sm text-muted-foreground">No resources found.</p>
+                <p className="px-4 py-3 text-sm text-muted-foreground">
+                  {resourceQuery.trim()
+                    ? 'No resources found.'
+                    : 'No unlinked resources available.'}
+                </p>
               ) : (
                 filteredResources.map((resource) => {
                   const isSelected = selectedResourceId === resource.id;
-                  const linkedLabel = formatAlsoLinkedToLabel(
-                    linkedReportsByResourceId.get(resource.id) ?? [],
-                  );
                   return (
                     <button
                       key={resource.id}
@@ -194,16 +189,6 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
                       )}
                     >
                       <span className="block truncate">{resource.title}</span>
-                      {linkedLabel ? (
-                        <span
-                          className={cn(
-                            'mt-0.5 block truncate text-xs font-normal',
-                            isSelected ? 'text-primary/70' : 'text-muted-foreground',
-                          )}
-                        >
-                          {linkedLabel}
-                        </span>
-                      ) : null}
                     </button>
                   );
                 })
@@ -217,120 +202,117 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[1400] p-4">
       <div className="bg-card rounded-2xl max-w-[560px] w-full max-h-[90vh] flex flex-col overflow-hidden">
-        <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between">
-          <div>
+        <div className="sticky top-0 bg-card border-b border-border px-4 sm:px-6 py-4 flex items-start sm:items-center justify-between gap-3">
+          <div className="min-w-0">
             <h3 className="text-lg font-semibold text-foreground">Add report</h3>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Create a new report shell with placeholder sections
+              Save report details first. You&apos;ll choose how to build it in the report screen.
             </p>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
           >
             <X size={20} className="text-muted-foreground" />
           </button>
         </div>
 
-        <div className="px-6 py-6 space-y-5 overflow-y-auto flex-1 min-h-0">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Title <span className="text-destructive-text">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Aid Flow Intelligence"
-              className={inputClass}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe this report's purpose..."
-              rows={3}
-              className={textareaClass}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Resources <span className="font-normal text-text-subtle">(optional)</span>
-            </label>
-            <p className="text-xs text-muted-foreground mb-3">
-              Link this report to existing resources, or add them after it&apos;s created.
-            </p>
-            <div className="relative">
-              <div
-                ref={triggerRef}
-                role="button"
-                tabIndex={0}
-                onClick={() => setResourceMenuOpen((v) => !v)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setResourceMenuOpen((v) => !v);
-                  }
-                }}
-                className={cn(
-                  inputClass,
-                  'cursor-pointer text-left flex items-center gap-2 min-h-[42px]',
-                  resourceMenuOpen && 'border-primary ring-2 ring-ring/10',
-                )}
-                aria-expanded={resourceMenuOpen}
-                aria-haspopup="listbox"
-              >
-                {selectedResource ? (
-                  <span className="inline-flex max-w-full items-center gap-0.5 rounded-xs bg-sidebar-accent px-2 py-0.5 text-xs font-medium text-primary-text">
-                    <span className="truncate">{selectedResource.title}</span>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedResourceId('');
-                      }}
-                      className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      aria-label="Clear selected resource"
-                    >
-                      <X size={12} strokeWidth={2} />
-                    </button>
-                  </span>
-                ) : (
-                  <span className="text-text-subtle">Select a resource...</span>
-                )}
-                <ChevronDown
-                  size={16}
-                  className={cn(
-                    'ml-auto shrink-0 text-text-subtle transition-transform',
-                    resourceMenuOpen && 'rotate-180',
-                  )}
+        <div className="px-4 sm:px-6 py-5 sm:py-6 space-y-5 overflow-y-auto flex-1 min-h-0">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Title <span className="text-destructive-text">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Aid Flow Intelligence"
+                  className={inputClass}
                 />
               </div>
-              {resourceMenu}
-            </div>
-            {selectedLinkedLabel ? (
-              <p className="mt-2 text-xs text-muted-foreground">{selectedLinkedLabel}</p>
-            ) : null}
-          </div>
 
-          <ReportUserGroupSelect
-            selected={userGroups}
-            onChange={setUserGroups}
-            placement="above"
-          />
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe this report's purpose..."
+                  rows={3}
+                  className={textareaClass}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Resources <span className="font-normal text-text-subtle">(optional)</span>
+                </label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Link this report to existing resources, or add them after it&apos;s created.
+                </p>
+                <div className="relative">
+                  <div
+                    ref={triggerRef}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setResourceMenuOpen((v) => !v)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setResourceMenuOpen((v) => !v);
+                      }
+                    }}
+                    className={cn(
+                      inputClass,
+                      'cursor-pointer text-left flex items-center gap-2 min-h-[42px]',
+                      resourceMenuOpen && 'border-primary ring-2 ring-ring/10',
+                    )}
+                    aria-expanded={resourceMenuOpen}
+                    aria-haspopup="listbox"
+                  >
+                    {selectedResource ? (
+                      <span className="inline-flex max-w-full items-center gap-0.5 rounded-xs bg-sidebar-accent px-2 py-0.5 text-xs font-medium text-primary-text">
+                        <span className="truncate">{selectedResource.title}</span>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedResourceId('');
+                          }}
+                          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          aria-label="Clear selected resource"
+                        >
+                          <X size={12} strokeWidth={2} />
+                        </button>
+                      </span>
+                    ) : (
+                      <span className="text-text-subtle">Select a resource...</span>
+                    )}
+                    <ChevronDown
+                      size={16}
+                      className={cn(
+                        'ml-auto shrink-0 text-text-subtle transition-transform',
+                        resourceMenuOpen && 'rotate-180',
+                      )}
+                    />
+                  </div>
+                  {resourceMenu}
+                </div>
+              </div>
+
+              <ReportUserGroupSelect
+                selected={userGroups}
+                onChange={setUserGroups}
+                placement="above"
+              />
         </div>
 
-        <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4 flex justify-end gap-3">
+        <div className="sticky bottom-0 bg-card border-t border-border px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
           <button
             type="button"
             onClick={handleClose}
-            className="px-4 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+            className="w-full sm:w-auto px-4 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
           >
             Cancel
           </button>
@@ -338,9 +320,9 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
             type="button"
             onClick={handleSubmit}
             disabled={!title.trim()}
-            className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create report
+            Save
           </button>
         </div>
       </div>

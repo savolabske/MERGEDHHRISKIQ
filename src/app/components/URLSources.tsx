@@ -1,11 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, X, Search, RefreshCw, Trash2, ChevronLeft, ChevronRight, ChevronDown, Eye, Edit } from 'lucide-react';
+import { Plus, X, RefreshCw, Trash2, ChevronLeft, ChevronRight, ChevronDown, Eye, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
 import { cn } from './ui/utils';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { Button } from './ui/button';
+import {
+  ListPageHeader,
+  ListPageToolbar,
+  listHeaderActionClass,
+  listRowClass,
+} from './ui/list-page';
 import {
   iconButtonSmClass,
   listFilterTriggerClass,
@@ -647,95 +654,87 @@ export function URLSources() {
   return (
     <>
     <PageScrollShell innerClassName="space-y-6">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-page-title mb-1">URL Sources</h2>
-                <p className="text-sm sm:text-sm text-muted-foreground">
-                  Manage web crawling sources for real-time intelligence gathering
-                </p>
-              </div>
-              <button 
-                onClick={() => {
-                  resetAddForm();
-                  setShowAddModal(true);
-                }}
-                className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0"
-              >
-                <Plus size={18} />
-                Add Source
-              </button>
-            </div>
+            <ListPageHeader
+              title="URL Sources"
+              subtitle="Manage web crawling sources for real-time intelligence gathering"
+              action={
+                <Button
+                  type="button"
+                  onClick={() => {
+                    resetAddForm();
+                    setShowAddModal(true);
+                  }}
+                  className={listHeaderActionClass}
+                >
+                  <Plus size={18} />
+                  Add Source
+                </Button>
+              }
+            />
 
-            {/* Search and Filter */}
-            <div className="mb-4">
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Search URL sources..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
-                  />
-                </div>
+            <ListPageToolbar
+              search={{
+                value: searchQuery,
+                onChange: setSearchQuery,
+                placeholder: 'Search URL sources...',
+              }}
+              filterCount={2}
+              filters={
+                <>
+                  <div className="relative min-w-0 sm:w-auto" ref={statusDropdownRef}>
+                    <button
+                      onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                      className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
+                    >
+                      <span className="truncate">{statusFilter}</span>
+                      <ChevronDown size={16} className={`text-muted-foreground shrink-0 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showStatusDropdown && (
+                      <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-48 bg-card border border-border rounded-lg shadow-lg z-10">
+                        {['All Status', 'Active', 'Pending', 'Recrawling', 'Error'].map((status) => (
+                          <button
+                            key={status}
+                            onClick={() => {
+                              setStatusFilter(status);
+                              setShowStatusDropdown(false);
+                            }}
+                            className={menuItemClass}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                {/* Status Filter Dropdown */}
-                <div className="relative" ref={statusDropdownRef}>
-                  <button
-                    onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                    className={listFilterTriggerClass}
-                  >
-                    {statusFilter}
-                    <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                  {showStatusDropdown && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
-                      {['All Status', 'Active', 'Pending', 'Recrawling', 'Error'].map((status) => (
-                        <button
-                          key={status}
-                          onClick={() => {
-                            setStatusFilter(status);
-                            setShowStatusDropdown(false);
-                          }}
-                          className={menuItemClass}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Items Per Page Dropdown */}
-                <div className="relative" ref={itemsPerPageDropdownRef}>
-                  <button
-                    onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
-                    className={listFilterTriggerClass}
-                  >
-                    {itemsPerPage} per page
-                    <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                  {showItemsPerPageDropdown && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
-                      {[10, 20, 50, 100].map((num) => (
-                        <button
-                          key={num}
-                          onClick={() => {
-                            setItemsPerPage(num);
-                            setShowItemsPerPageDropdown(false);
-                          }}
-                          className={menuItemClass}
-                        >
-                          {num} per page
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+                  <div className="relative min-w-0 sm:w-auto" ref={itemsPerPageDropdownRef}>
+                    <button
+                      onClick={() => setShowItemsPerPageDropdown(!showItemsPerPageDropdown)}
+                      className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
+                    >
+                      <span className="truncate">{itemsPerPage} per page</span>
+                      <ChevronDown size={16} className={`text-muted-foreground shrink-0 transition-transform ${showItemsPerPageDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showItemsPerPageDropdown && (
+                      <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-48 bg-card border border-border rounded-lg shadow-lg z-10">
+                        {[10, 20, 50, 100].map((num) => (
+                          <button
+                            key={num}
+                            onClick={() => {
+                              setItemsPerPage(num);
+                              setShowItemsPerPageDropdown(false);
+                            }}
+                            className={menuItemClass}
+                          >
+                            {num} per page
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              }
+            />
 
             {/* Sources Table */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -785,11 +784,11 @@ export function URLSources() {
                   visibleCurrentSources.map((source) => (
                   <div
                     key={source.id}
-                    className="table-row-entity grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 cursor-pointer"
+                    className={cn(listRowClass, 'relative cursor-pointer')}
                     onClick={() => openDetailDrawer(source)}
                   >
                     {/* Checkbox & URL */}
-                    <div className="lg:col-span-5 flex items-start gap-3">
+                    <div className="lg:col-span-5 flex items-start gap-3 min-w-0 pr-0 lg:pr-0">
                       <input
                         type="checkbox"
                         checked={selectedSources.has(source.id)}
@@ -798,7 +797,6 @@ export function URLSources() {
                         className="hidden lg:block w-4 h-4 mt-1 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="table-header-label mb-1 lg:hidden">URL</div>
                         <a 
                           href={source.url} 
                           target="_blank" 
@@ -811,24 +809,27 @@ export function URLSources() {
                         <div className="table-metadata-text mt-1">
                           Depth: {source.maxDepth} · Max pages: {source.maxPages} · {scheduleLabel(source.crawlSchedule)}
                         </div>
+                        {/* Mobile meta: status + last crawled */}
+                        <div className="flex flex-wrap items-center gap-2 mt-2 lg:hidden">
+                          {getTableStatusBadge(source.status)}
+                          <span className="table-metadata-text">{source.lastCrawled}</span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Status */}
-                    <div className="lg:col-span-2">
-                      <div className="table-header-label mb-1 lg:hidden">Status</div>
+                    {/* Status - desktop */}
+                    <div className="hidden lg:flex lg:col-span-2 items-center">
                       {getTableStatusBadge(source.status)}
                     </div>
 
-                    {/* Last Crawled */}
-                    <div className="lg:col-span-2">
-                      <div className="table-header-label mb-1 lg:hidden">Last Crawled</div>
+                    {/* Last Crawled - desktop */}
+                    <div className="hidden lg:flex lg:col-span-2 items-center">
                       <div className="table-metadata-text whitespace-nowrap">{source.lastCrawled}</div>
                     </div>
 
                     {/* Actions */}
                     <div
-                      className="lg:col-span-3 flex items-center gap-1 lg:justify-end"
+                      className="lg:col-span-3 flex items-center gap-1 lg:justify-end pt-1 lg:pt-0"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button

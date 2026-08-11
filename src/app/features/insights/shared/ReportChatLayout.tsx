@@ -5,10 +5,12 @@ import React, {
   useContext,
   useEffect,
   useImperativeHandle,
+  useRef,
   useState,
 } from 'react';
 import { ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
+import { useKeyboardBottomInset } from '../../../hooks/useKeyboardBottomInset';
 import { useIsBelowLg } from './useIsBelowLg';
 
 export const reportChatAsideClassName = 'flex h-full min-h-0 w-full flex-col overflow-hidden';
@@ -21,6 +23,11 @@ interface ReportChatPanelContextValue {
   mobileChatOpen: boolean;
   openMobileChat: () => void;
   closeMobileChat: () => void;
+  sheetMinimizeLabel: string;
+  /** Mark that the prompt should be focused after the sheet opens (dock → sheet). */
+  requestPromptFocus: () => void;
+  /** Returns true once if a focus was requested, then clears the flag. */
+  consumePromptFocusRequest: () => boolean;
 }
 
 const ReportChatPanelContext = createContext<ReportChatPanelContextValue | null>(null);
@@ -35,6 +42,7 @@ export function useReportChatPanel() {
 
 export interface ReportChatLayoutHandle {
   openChat: () => void;
+  collapseChat: () => void;
 }
 
 interface ReportChatLayoutProps {
@@ -48,10 +56,18 @@ interface ReportChatLayoutProps {
   chatLabel?: string;
   /** Chevron label when sheet is closed; defaults from messageCount. */
   dockHint?: string;
+  /** Label on the mobile sheet drag handle to collapse chat. Default "Show report". */
+  sheetMinimizeLabel?: string;
   messageCount?: number;
+  /** Start collapsed on desktop (expand rail). Default false. */
+  initialCollapsed?: boolean;
+  /** Desktop sidebar width in pixels. Default 320. */
+  sidebarWidthPx?: number;
   mainClassName?: string;
   className?: string;
   sidebarClassName?: string;
+  /** Fires when the chat panel opens or closes (desktop sidebar or mobile sheet). */
+  onChatOpenChange?: (open: boolean) => void;
 }
 
 export function ReportChatHeaderCollapse({
@@ -143,19 +159,33 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
       showPromptInput = true,
       chatLabel = 'Ask',
       dockHint,
+      sheetMinimizeLabel = 'Show report',
       messageCount = 0,
+      initialCollapsed = false,
+      sidebarWidthPx = 320,
       mainClassName,
       className,
       sidebarClassName,
+      onChatOpenChange,
     },
     ref,
   ) {
-    const [chatCollapsed, setChatCollapsed] = useState(false);
+    const [chatCollapsed, setChatCollapsed] = useState(initialCollapsed);
     const [mobileChatOpen, setMobileChatOpen] = useState(false);
     const isBelowLg = useIsBelowLg();
+    const keyboardBottomInset = useKeyboardBottomInset();
+    const focusPromptAfterOpenRef = useRef(false);
 
     const openMobileChat = useCallback(() => setMobileChatOpen(true), []);
     const closeMobileChat = useCallback(() => setMobileChatOpen(false), []);
+    const requestPromptFocus = useCallback(() => {
+      focusPromptAfterOpenRef.current = true;
+    }, []);
+    const consumePromptFocusRequest = useCallback(() => {
+      if (!focusPromptAfterOpenRef.current) return false;
+      focusPromptAfterOpenRef.current = false;
+      return true;
+    }, []);
 
     const openChat = useCallback(() => {
       if (isBelowLg) {
@@ -165,13 +195,27 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
       }
     }, [isBelowLg]);
 
-    useImperativeHandle(ref, () => ({ openChat }), [openChat]);
+    const collapseChat = useCallback(() => {
+      if (isBelowLg) {
+        setMobileChatOpen(false);
+      } else {
+        setChatCollapsed(true);
+      }
+    }, [isBelowLg]);
+
+    useImperativeHandle(ref, () => ({ openChat, collapseChat }), [openChat, collapseChat]);
 
     useEffect(() => {
       if (!isBelowLg) {
         setMobileChatOpen(false);
       }
     }, [isBelowLg]);
+
+    const chatOpen = isBelowLg ? mobileChatOpen : !chatCollapsed;
+
+    useEffect(() => {
+      onChatOpenChange?.(chatOpen);
+    }, [chatOpen, onChatOpenChange]);
 
     const resolvedDockHint =
       dockHint ??
@@ -187,7 +231,25 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
       mobileChatOpen,
       openMobileChat,
       closeMobileChat,
+      sheetMinimizeLabel,
+      requestPromptFocus,
+      consumePromptFocusRequest,
     };
+
+    const mobileSheetStyle = isBelowLg
+      ? {
+          bottom: keyboardBottomInset,
+          maxHeight:
+            keyboardBottomInset > 0
+              ? `min(68dvh, 560px, calc(100dvh - ${keyboardBottomInset}px))`
+              : 'min(68dvh, 560px)',
+          height:
+            keyboardBottomInset > 0
+              ? `min(68dvh, 560px, calc(100dvh - ${keyboardBottomInset}px))`
+              : undefined,
+        }
+      : undefined;
+    const mobileDockStyle = isBelowLg ? { bottom: keyboardBottomInset } : undefined;
 
     return (
       <ReportChatPanelContext.Provider value={panelContext}>
@@ -205,15 +267,13 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
 
           {/* Desktop sidebar (lg+) */}
           <div
-            className={cn(
-              'hidden shrink-0 self-stretch overflow-hidden transition-[width] duration-200 ease-out lg:block',
-              chatCollapsed ? 'w-10' : 'w-[320px]',
-            )}
+            className="hidden shrink-0 self-stretch overflow-hidden transition-[width] duration-200 ease-out lg:block"
+            style={{ width: chatCollapsed ? 40 : sidebarWidthPx }}
           >
             {chatCollapsed ? (
               <ReportChatExpandRail label={chatLabel} onClick={() => setChatCollapsed(false)} />
             ) : (
-              <div className="relative h-full w-[320px]">
+              <div className="relative h-full" style={{ width: sidebarWidthPx }}>
                 <DesktopChatSidebar
                   chatHeader={chatHeader}
                   chatFeed={chatFeed}
@@ -230,9 +290,11 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
             <>
               <div
                 className={cn(
-                  'fixed inset-x-0 bottom-0 z-[1220] flex h-[min(68dvh,560px)] max-h-[min(68dvh,560px)] flex-col rounded-t-2xl border-t border-border bg-card shadow-2xl transition-transform duration-300 ease-out lg:hidden',
+                  'fixed inset-x-0 z-[1220] flex max-h-[min(68dvh,560px)] flex-col rounded-t-2xl border-t border-border bg-card shadow-2xl transition-transform duration-300 ease-out lg:hidden',
+                  keyboardBottomInset > 0 ? 'h-auto' : 'h-[min(68dvh,560px)]',
                   mobileChatOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full',
                 )}
+                style={mobileSheetStyle}
                 aria-hidden={!mobileChatOpen}
               >
                 {mobileChatOpen && (
@@ -241,13 +303,13 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
                       <button
                         type="button"
                         onClick={closeMobileChat}
-                        aria-label="Minimize chat and show report"
+                        aria-label={`Minimize chat and ${sheetMinimizeLabel.toLowerCase()}`}
                         className="flex flex-1 flex-col items-center gap-1 py-0.5"
                       >
                         <span className="h-1 w-10 rounded-full bg-border" />
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
                           <ChevronDown size={14} />
-                          Show report
+                          {sheetMinimizeLabel}
                         </span>
                       </button>
                     </div>
@@ -255,7 +317,16 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
                       {chatHeader}
                       {chatFeed}
                       {showPromptInput && (
-                        <div className="shrink-0 border-t border-border bg-card p-3">{promptInput}</div>
+                        <div
+                          className={cn(
+                            'shrink-0 border-t border-border bg-card px-3 pt-3',
+                            keyboardBottomInset > 0
+                              ? 'pb-3'
+                              : 'pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+                          )}
+                        >
+                          {promptInput}
+                        </div>
                       )}
                     </div>
                   </>
@@ -263,7 +334,15 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
               </div>
 
               {!mobileChatOpen && (
-                <div className="fixed inset-x-0 bottom-0 z-[1215] border-t border-border bg-card/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_32px_rgba(15,23,42,0.12)] backdrop-blur-sm lg:hidden">
+                <div
+                  className={cn(
+                    'fixed inset-x-0 z-[1215] border-t border-border bg-card/95 px-4 pt-2 shadow-[0_-8px_32px_rgba(15,23,42,0.12)] backdrop-blur-sm lg:hidden',
+                    keyboardBottomInset > 0
+                      ? 'pb-3'
+                      : 'pb-[max(1rem,env(safe-area-inset-bottom))]',
+                  )}
+                  style={mobileDockStyle}
+                >
                   <button
                     type="button"
                     onClick={openMobileChat}

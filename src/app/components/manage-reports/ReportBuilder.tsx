@@ -1,8 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence } from 'motion/react';
+import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ManagedReport, ReportSection } from '../../data/reportsAdminMock';
-import { hasLinkedKnowledgeSources } from '../../data/reportsAdminMock';
+import {
+  applyMasterPromptGeneration,
+  hasLinkedKnowledgeSources,
+  reportHasGeneratedContent,
+} from '../../data/reportsAdminMock';
 import { ReportBuilderHeader } from './ReportBuilderHeader';
+import { ReportCreationModeSelector } from './ReportCreationModeSelector';
 import { ReportDraftSourcesEmpty } from './ReportDraftSourcesEmpty';
 import { ReportKpiTileGrid } from './ReportKpiTileGrid';
 import { ReportSectionCard } from './ReportSectionCard';
@@ -11,7 +18,18 @@ import { ReportSectionEditPanel, type SectionEditTarget } from './ReportSectionE
 import { ReportSettingsPanel } from './ReportSettingsPanel';
 import { getReportBuilderTheme } from './reportBuilderTokens';
 import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
+import { IntelligenceLoadingScreen } from '../ui/IntelligenceLoadingScreen';
 import { cn } from '../ui/utils';
+
+const REPORT_GENERATION_STEPS = [
+  { id: 'reading', label: 'Reading your knowledge sources' },
+  { id: 'structuring', label: 'Structuring report sections' },
+  { id: 'drafting', label: 'Drafting narrative content' },
+  { id: 'kpis', label: 'Generating KPI tiles' },
+  { id: 'finalising', label: 'Finalising your report' },
+] as const;
+
+const REPORT_GENERATION_DURATION_MS = 4500;
 
 function formatDate(d: Date): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -23,6 +41,7 @@ interface ReportBuilderProps {
   onBack: () => void;
   onUpdate: (report: ManagedReport) => void;
   onPublish: (report: ManagedReport) => void | Promise<void>;
+  onUnpublish: (id: string) => void;
   onCommit: (report: ManagedReport) => void;
   onAttachSources?: () => void;
 }
@@ -33,6 +52,7 @@ export function ReportBuilder({
   onBack,
   onUpdate,
   onPublish,
+  onUnpublish,
   onCommit,
   onAttachSources,
 }: ReportBuilderProps) {
@@ -40,11 +60,26 @@ export function ReportBuilder({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedHighlight, setSelectedHighlight] = useState<string | null>(null);
   const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const backfillAttempted = useRef(false);
 
   const theme = getReportBuilderTheme(report.themeId);
   const isDirty = JSON.stringify(report) !== savedSnapshot;
   const panelOpen = Boolean(editTarget) || settingsOpen;
   const showTemplate = hasLinkedKnowledgeSources(report);
+  const needsCreationModeChoice = showTemplate && report.status === 'draft' && !report.creationMode;
+
+  // Reports that saved creationMode before content was populated still need a draft fill.
+  useEffect(() => {
+    if (backfillAttempted.current) return;
+    if (report.creationMode !== 'master_prompt') return;
+    if (!report.masterPrompt?.trim()) return;
+    if (reportHasGeneratedContent(report)) return;
+    backfillAttempted.current = true;
+    const drafted = applyMasterPromptGeneration(report, report.masterPrompt);
+    onUpdate(drafted);
+    onCommit(drafted);
+  }, [report, onUpdate, onCommit]);
 
   const sortedSections = useMemo(
     () => [...report.sections].sort((a, b) => a.order - b.order),
@@ -126,7 +161,7 @@ export function ReportBuilder({
   };
 
   return (
-    <div className="h-full flex flex-col min-h-0" style={{ backgroundColor: theme.pageBg }}>
+    <div className="relative h-full flex flex-col min-h-0" style={{ backgroundColor: theme.pageBg }}>
       <div className="flex flex-1 min-h-0 overflow-hidden flex-col lg:flex-row">
         <div className="flex-1 min-w-0 overflow-y-auto">
           <div
@@ -140,63 +175,116 @@ export function ReportBuilder({
                 report={report}
                 isDirty={isDirty}
                 hasKnowledgeSources={showTemplate}
+                breadcrumbOnly={isGeneratingReport || needsCreationModeChoice}
                 onBack={onBack}
                 onTitleChange={(title) => touch({ title })}
                 onDescriptionChange={(description) => touch({ description })}
                 onOpenSettings={openSettings}
                 onPublish={() => onPublish({ ...report, status: 'published' })}
+                onUnpublish={() => onUnpublish(report.id)}
               />
 
-              {!showTemplate && onAttachSources ? (
-                <ReportDraftSourcesEmpty onAttachSources={onAttachSources} />
-              ) : (
-                <>
-              <ReportKpiTileGrid
-                tiles={report.kpiTiles}
-                theme={theme}
-                selectedId={editTarget?.kind === 'kpi' ? editTarget.tileId : null}
-                onTileClick={(tileId) => openSectionEdit({ kind: 'kpi', tileId })}
-              />
-
-              <div className="space-y-0">
-                <ReportSectionInsert onInsert={() => handleInsertSection(-1)} />
-
-                {sortedSections.map((section, index) => (
-                  <div key={section.id}>
-                    <ReportSectionCard
-                      section={section}
-                      index={index}
-                      total={sortedSections.length}
-                      theme={theme}
-                      isSelected={
-                        selectedHighlight === section.id ||
-                        (editTarget?.kind === 'forward_tile' &&
-                          editTarget.sectionId === section.id)
-                      }
-                      onClick={() => openSectionEdit({ kind: 'section', sectionId: section.id })}
-                      onMoveUp={
-                        index > 0 ? () => handleMoveSection(section.id, 'up') : undefined
-                      }
-                      onMoveDown={
-                        index < sortedSections.length - 1
-                          ? () => handleMoveSection(section.id, 'down')
-                          : undefined
-                      }
-                      onDelete={() => setSectionToDelete(section.id)}
-                      onTileClick={(tileId) =>
-                        openSectionEdit({
-                          kind: 'forward_tile',
-                          sectionId: section.id,
-                          tileId,
-                        })
-                      }
+              <div
+                className={cn(
+                  'relative',
+                  isGeneratingReport && 'min-h-[min(32rem,calc(100dvh-14rem))]',
+                )}
+              >
+                <AnimatePresence>
+                  {isGeneratingReport && (
+                    <IntelligenceLoadingScreen
+                      durationMs={REPORT_GENERATION_DURATION_MS}
+                      steps={REPORT_GENERATION_STEPS}
+                      eyebrow=""
+                      subtitle="Building your report from the prompt you provided"
+                      ariaLabel="Generating report"
+                      centerIcon={Sparkles}
+                      centerIconClassName="text-primary"
                     />
-                    <ReportSectionInsert onInsert={() => handleInsertSection(index)} />
-                  </div>
-                ))}
+                  )}
+                </AnimatePresence>
+
+                {!showTemplate && onAttachSources ? (
+                  <ReportDraftSourcesEmpty onAttachSources={onAttachSources} />
+                ) : needsCreationModeChoice ? (
+                  <ReportCreationModeSelector
+                    onSelectManual={() => {
+                      touch(
+                        {
+                          creationMode: 'manual',
+                          masterPrompt: undefined,
+                          reportContext: '',
+                        },
+                        true,
+                      );
+                      toast.success('Manual creation selected');
+                    }}
+                    onSelectMasterPrompt={(prompt) => {
+                      const nextPrompt = prompt.trim();
+                      if (!nextPrompt) return;
+                      setIsGeneratingReport(true);
+                      window.setTimeout(() => {
+                        const drafted = applyMasterPromptGeneration(report, nextPrompt);
+                        onUpdate(drafted);
+                        onCommit(drafted);
+                        setIsGeneratingReport(false);
+                        toast.success('Report drafted successfully');
+                      }, REPORT_GENERATION_DURATION_MS + 300);
+                    }}
+                  />
+                ) : (
+                  <>
+                    <ReportKpiTileGrid
+                      tiles={report.kpiTiles}
+                      theme={theme}
+                      selectedId={editTarget?.kind === 'kpi' ? editTarget.tileId : null}
+                      onTileClick={(tileId) => openSectionEdit({ kind: 'kpi', tileId })}
+                    />
+
+                    <div className="space-y-0">
+                      <ReportSectionInsert onInsert={() => handleInsertSection(-1)} />
+
+                      {sortedSections.map((section, index) => (
+                        <div key={section.id}>
+                          <ReportSectionCard
+                            section={section}
+                            index={index}
+                            total={sortedSections.length}
+                            theme={theme}
+                            isSelected={
+                              selectedHighlight === section.id ||
+                              (editTarget?.kind === 'forward_tile' &&
+                                editTarget.sectionId === section.id)
+                            }
+                            onClick={() =>
+                              openSectionEdit({ kind: 'section', sectionId: section.id })
+                            }
+                            onMoveUp={
+                              index > 0
+                                ? () => handleMoveSection(section.id, 'up')
+                                : undefined
+                            }
+                            onMoveDown={
+                              index < sortedSections.length - 1
+                                ? () => handleMoveSection(section.id, 'down')
+                                : undefined
+                            }
+                            onDelete={() => setSectionToDelete(section.id)}
+                            onTileClick={(tileId) =>
+                              openSectionEdit({
+                                kind: 'forward_tile',
+                                sectionId: section.id,
+                                tileId,
+                              })
+                            }
+                          />
+                          <ReportSectionInsert onInsert={() => handleInsertSection(index)} />
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
-                </>
-              )}
             </div>
           </div>
         </div>
@@ -232,6 +320,35 @@ export function ReportBuilder({
                     : s,
                 ),
               });
+            }}
+            onRegenerateSection={(section) => {
+              touch({
+                sections: report.sections.map((s) =>
+                  s.id === section.id ? section : s,
+                ),
+              });
+              toast.success('Section regenerated');
+            }}
+            onRegenerateKpiTile={(tile) => {
+              touch({
+                kpiTiles: report.kpiTiles.map((t) => (t.id === tile.id ? tile : t)),
+              });
+              toast.success('Tile regenerated');
+            }}
+            onRegenerateForwardTile={(sectionId, tile) => {
+              touch({
+                sections: report.sections.map((s) =>
+                  s.id === sectionId
+                    ? {
+                        ...s,
+                        tiles: (s.tiles ?? []).map((t) =>
+                          t.id === tile.id ? tile : t,
+                        ),
+                      }
+                    : s,
+                ),
+              });
+              toast.success('Tile regenerated');
             }}
           />
         )}

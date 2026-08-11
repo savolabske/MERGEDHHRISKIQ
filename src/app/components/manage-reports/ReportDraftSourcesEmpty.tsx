@@ -6,8 +6,8 @@ interface ReportDraftSourcesEmptyProps {
 
 export function ReportDraftSourcesEmpty({ onAttachSources }: ReportDraftSourcesEmptyProps) {
   return (
-    <div className="flex justify-center py-10">
-      <div className="max-w-md w-full bg-card rounded-2xl border border-border p-8 text-center shadow-sm">
+    <div className="flex justify-center py-6 sm:py-10">
+      <div className="max-w-md w-full bg-card rounded-2xl border border-border p-5 sm:p-8 text-center shadow-sm">
         <div className="w-12 h-12 rounded-xl bg-warning-subtle flex items-center justify-center mx-auto mb-4">
           <Paperclip size={22} className="text-primary" />
         </div>
@@ -21,7 +21,7 @@ export function ReportDraftSourcesEmpty({ onAttachSources }: ReportDraftSourcesE
         <button
           type="button"
           onClick={onAttachSources}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
         >
           <Paperclip size={16} />
           Attach Resources

@@ -1,8 +1,15 @@
 import { useState } from 'react';
-import { Plus, X, Search, MapPin, Trash2, Edit, ChevronDown } from 'lucide-react';
+import { Plus, X, MapPin, Trash2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { Button } from './ui/button';
+import {
+  ListPageHeader,
+  ListPageSearch,
+  listHeaderActionClass,
+  listRowClass,
+} from './ui/list-page';
 
 interface Location {
   id: string;
@@ -166,36 +173,26 @@ export function Locations() {
   return (
     <>
     <PageScrollShell innerClassName="space-y-6">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-page-title mb-1">Locations</h2>
-                <p className="text-sm sm:text-sm text-muted-foreground">
-                  Manage geographic locations for risk tracking and analysis
-                </p>
-              </div>
-              <button 
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0"
-              >
-                <Plus size={18} />
-                Add Location
-              </button>
-            </div>
+            <ListPageHeader
+              title="Locations"
+              subtitle="Manage geographic locations for risk tracking and analysis"
+              action={
+                <Button
+                  type="button"
+                  onClick={() => setShowAddModal(true)}
+                  className={listHeaderActionClass}
+                >
+                  <Plus size={18} />
+                  Add Location
+                </Button>
+              }
+            />
 
-            {/* Search Bar */}
-            <div className="bg-card rounded-xl border border-border p-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search locations..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
-            </div>
+            <ListPageSearch
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search locations..."
+            />
 
             {/* Locations Table */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -224,48 +221,53 @@ export function Locations() {
               {/* Table Rows */}
               <div className="divide-y divide-border">
                 {filteredLocations.map((location) => (
-                  <div key={location.id} className="table-row-standard grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors">
-                    {/* Location Name */}
-                    <div className="lg:col-span-3">
-                      <div className="table-header-label mb-1 lg:hidden">Location Name</div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-sidebar-accent rounded-lg flex items-center justify-center shrink-0">
-                          <MapPin size={20} className="text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="table-primary-text">{location.name}</h3>
+                  <div key={location.id} className={`${listRowClass} relative`}>
+                    {/* Mobile compact */}
+                    <div className="lg:hidden flex items-start gap-3 pr-10">
+                      <div className="w-9 h-9 bg-sidebar-accent rounded-lg flex items-center justify-center shrink-0">
+                        <MapPin size={18} className="text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="table-primary-text">{location.name}</h3>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                          <span className="table-status-text inline-flex items-center px-2 py-0.5 bg-secondary text-muted-foreground rounded-md">
+                            {location.level}
+                          </span>
+                          <span className="table-metadata-text font-mono">
+                            {location.latitude.toFixed(2)}°, {location.longitude.toFixed(2)}°
+                          </span>
+                          <span className="table-metadata-text">{location.dateAdded}</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Level */}
-                    <div className="lg:col-span-2">
-                      <div className="table-header-label mb-1 lg:hidden">Level</div>
+                    {/* Desktop columns */}
+                    <div className="hidden lg:flex lg:col-span-3 items-center gap-3">
+                      <div className="w-10 h-10 bg-sidebar-accent rounded-lg flex items-center justify-center shrink-0">
+                        <MapPin size={20} className="text-primary" />
+                      </div>
+                      <h3 className="table-primary-text">{location.name}</h3>
+                    </div>
+
+                    <div className="hidden lg:flex lg:col-span-2 items-center">
                       <span className="table-status-text inline-flex items-center px-2.5 py-1 bg-secondary text-muted-foreground rounded-md">
                         {location.level}
                       </span>
                     </div>
 
-                    {/* Latitude */}
-                    <div className="lg:col-span-2 lg:text-right">
-                      <div className="table-header-label mb-1 lg:hidden">Latitude</div>
+                    <div className="hidden lg:flex lg:col-span-2 items-center lg:justify-end">
                       <span className="table-numeric-text font-mono">{location.latitude.toFixed(4)}°</span>
                     </div>
 
-                    {/* Longitude */}
-                    <div className="lg:col-span-2 lg:text-right">
-                      <div className="table-header-label mb-1 lg:hidden">Longitude</div>
+                    <div className="hidden lg:flex lg:col-span-2 items-center lg:justify-end">
                       <span className="table-numeric-text font-mono">{location.longitude.toFixed(4)}°</span>
                     </div>
 
-                    {/* Date Added */}
-                    <div className="lg:col-span-2">
-                      <div className="table-header-label mb-1 lg:hidden">Date Added</div>
+                    <div className="hidden lg:flex lg:col-span-2 items-center">
                       <span className="table-metadata-text">{location.dateAdded}</span>
                     </div>
 
-                    {/* Actions */}
-                    <div className="lg:col-span-1 flex items-center gap-2 lg:justify-end">
+                    <div className="absolute top-3 right-3 lg:static lg:col-span-1 flex items-center lg:justify-end">
                       <button 
                         onClick={() => setDeleteId(location.id)}
                         className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-destructive-subtle text-muted-foreground hover:text-destructive-text transition-colors"

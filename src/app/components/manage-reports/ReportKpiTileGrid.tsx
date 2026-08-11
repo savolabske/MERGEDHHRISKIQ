@@ -21,6 +21,7 @@ export function ReportKpiTileGrid({
       {tiles.map((tile, index) => {
         const Icon = KPI_ICON_MAP[tile.iconKey];
         const hasPrompt = Boolean(tile.prompt.trim());
+        const isGenerated = Boolean(tile.value?.trim());
         const isSelected = selectedId === tile.id;
         const accent = theme.kpiAccents[index] ?? theme.accent;
         const iconBg = theme.kpiIconBgs[index] ?? theme.accentSubtle;
@@ -53,18 +54,42 @@ export function ReportKpiTileGrid({
               <Icon size={14} style={{ color: iconColor }} />
             </div>
             <div className="w-full min-w-0 pr-4">
-              <p
-                className="text-[10.5px] font-semibold uppercase tracking-wide"
-                style={{ color: theme.textMuted }}
-              >
-                {hasPrompt ? 'Prompt set' : 'No prompt yet'}
-              </p>
-              <p
-                className="text-[15px] font-semibold mt-1 leading-snug"
-                style={{ color: hasPrompt ? theme.textPrimary : theme.textMuted }}
-              >
-                {hasPrompt ? tile.prompt.slice(0, 48) : 'Click to define'}
-              </p>
+              {isGenerated ? (
+                <>
+                  <p
+                    className="text-[10.5px] font-semibold uppercase tracking-wide"
+                    style={{ color: theme.textMuted }}
+                  >
+                    {tile.label ?? 'Metric'}
+                  </p>
+                  <p
+                    className="text-[23px] font-semibold mt-1 leading-none tracking-tight"
+                    style={{ color: theme.textPrimary }}
+                  >
+                    {tile.value}
+                  </p>
+                  {tile.sub && (
+                    <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>
+                      {tile.sub}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p
+                    className="text-[10.5px] font-semibold uppercase tracking-wide"
+                    style={{ color: theme.textMuted }}
+                  >
+                    {hasPrompt ? 'Prompt set' : 'No prompt yet'}
+                  </p>
+                  <p
+                    className="text-[15px] font-semibold mt-1 leading-snug"
+                    style={{ color: hasPrompt ? theme.textPrimary : theme.textMuted }}
+                  >
+                    {hasPrompt ? tile.prompt.slice(0, 48) : 'Click to define'}
+                  </p>
+                </>
+              )}
             </div>
           </button>
         );

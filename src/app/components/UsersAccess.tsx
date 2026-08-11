@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Users, UserCog, Shield, Plus, Search, Filter, Download, Check, X, Calendar, MoreVertical, ChevronLeft, ChevronRight, Edit, Key, Activity, Ban, HelpCircle, UserPlus, Trash2, ChevronDown } from 'lucide-react';
+import { Users, UserCog, Shield, Plus, Download, Calendar, MoreVertical, ChevronLeft, ChevronRight, Ban, Trash2, ChevronDown, X, Edit, Key, Activity, HelpCircle, UserPlus } from 'lucide-react';
 import { RolesPermissions } from './RolesPermissions';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
@@ -7,6 +7,14 @@ import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
 import { cn } from './ui/utils';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { Button } from './ui/button';
+import {
+  ListPageHeader,
+  ListPageSearch,
+  ListPageToolbar,
+  listHeaderActionClass,
+  listRowClass,
+} from './ui/list-page';
 import {
   iconButtonSmClass,
   listFilterTriggerClass,
@@ -550,16 +558,13 @@ export function UsersAccess() {
   return (
     <>
     <PageScrollShell innerClassName="space-y-6">
-            {/* Page Header */}
-            <div>
-              <h1 className="text-page-title mb-1">Users & Access</h1>
-              <p className="text-sm sm:text-sm text-muted-foreground">
-                Manage platform users, groups, roles, and access permissions.
-              </p>
-            </div>
+            <ListPageHeader
+              title="Users & Access"
+              subtitle="Manage platform users, groups, roles, and access permissions."
+            />
 
             {/* Tabs with Badge Counts and Action Button */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div className="flex gap-4 sm:gap-8 border-b border-border overflow-x-auto pb-0 -mb-[1px]">
                 <button
                   onClick={() => setActiveTab('allUsers')}
@@ -621,80 +626,71 @@ export function UsersAccess() {
 
               {/* Action Button - Changes based on active tab */}
               {activeTab === 'allUsers' && (
-                <button 
-                  className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shrink-0"
-                >
+                <Button type="button" className={listHeaderActionClass}>
                   <Plus size={18} />
                   Invite User
-                </button>
+                </Button>
               )}
               {activeTab === 'userGroups' && (
-                <button 
+                <Button
+                  type="button"
                   onClick={() => setShowAddGroupModal(true)}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shrink-0"
+                  className={listHeaderActionClass}
                 >
                   <Plus size={18} />
                   Add Group
-                </button>
+                </Button>
               )}
             </div>
 
             {/* ALL USERS TAB */}
             {activeTab === 'allUsers' && (
               <>
-                {/* Search and Filters */}
-                <div className="mb-4">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    {/* Search */}
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={18} />
-                      <input
-                        type="text"
-                        placeholder="Search users..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:border-primary transition-colors"
-                      />
-                    </div>
+                <ListPageToolbar
+                  search={{
+                    value: searchQuery,
+                    onChange: setSearchQuery,
+                    placeholder: 'Search users...',
+                  }}
+                  filterCount={2}
+                  filters={
+                    <>
+                      <div className="relative min-w-0">
+                        <button
+                          onClick={() => setShowRoleDropdown(!showRoleDropdown)}
+                          className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
+                        >
+                          <span className="truncate">{roleFilter}</span>
+                          <ChevronDown size={16} className="text-muted-foreground shrink-0" />
+                        </button>
+                        {showRoleDropdown && (
+                          <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-48 bg-card border border-border rounded-lg shadow-lg z-10">
+                            {['All Users', 'Agency', 'Admin', 'Contributor', 'Viewer'].map((role) => (
+                              <button
+                                key={role}
+                                onClick={() => {
+                                  setRoleFilter(role);
+                                  setShowRoleDropdown(false);
+                                }}
+                                className={menuItemClass}
+                              >
+                                {role}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Role Filter Dropdown */}
-                    <div className="relative">
                       <button
-                        onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-                        className={listFilterTriggerClass}
+                        type="button"
+                        className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
                       >
-                        {roleFilter}
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-muted-foreground">
-                          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+                        <span className="truncate">All Status</span>
+                        <ChevronDown size={16} className="text-muted-foreground shrink-0" />
                       </button>
-                      {showRoleDropdown && (
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
-                          {['All Users', 'Agency', 'Admin', 'Contributor', 'Viewer'].map((role) => (
-                            <button
-                              key={role}
-                              onClick={() => {
-                                setRoleFilter(role);
-                                setShowRoleDropdown(false);
-                              }}
-                              className={menuItemClass}
-                            >
-                              {role}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Status Filter Dropdown */}
-                    <button className={listFilterTriggerClass}>
-                      All Status
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-muted-foreground">
-                        <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+                    </>
+                  }
+                />
 
                 {/* Users Table */}
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -779,14 +775,14 @@ export function UsersAccess() {
                       visibleCurrentUsers.map((user) => (
                       <div 
                         key={user.id} 
-                        className="table-row-entity grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors items-center cursor-pointer"
+                        className={cn(listRowClass, 'items-center cursor-pointer')}
                         onClick={() => {
                           setSelectedUser(user);
                           setShowUserDrawer(true);
                         }}
                       >
                         {/* Checkbox & User Info */}
-                        <div className="lg:col-span-4 flex items-center gap-3">
+                        <div className="lg:col-span-4 flex items-center gap-3 min-w-0">
                           <input
                             type="checkbox"
                             checked={selectedUsers.includes(user.id)}
@@ -797,53 +793,64 @@ export function UsersAccess() {
                             onClick={(e) => e.stopPropagation()}
                             className="hidden lg:block w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                           />
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
                             <div 
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0"
+                              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0"
                               style={{ backgroundColor: user.color }}
                             >
                               {user.initials}
                             </div>
                             <div className="min-w-0">
-                              <div className="table-header-label mb-1 lg:hidden">User</div>
                               <h3 className="table-primary-text truncate">{user.name}</h3>
                               <p className="table-supporting-text text-primary-text truncate">{user.email}</p>
+                              {/* Mobile meta */}
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 lg:hidden">
+                                <span className={`table-status-text inline-flex items-center px-2 py-0.5 rounded-md ${getRoleBadgeColor(user.role)}`}>
+                                  {user.role}
+                                </span>
+                                <span className="table-supporting-text">{user.group}</span>
+                                <span className="inline-flex items-center gap-1">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${
+                                    user.status === 'Active' ? 'bg-success' : 
+                                    user.status === 'Pending' ? 'bg-warning-text' : 
+                                    'bg-muted-foreground'
+                                  }`} />
+                                  <span className={`table-status-text ${getStatusColor(user.status)}`}>
+                                    {user.status}
+                                  </span>
+                                </span>
+                                <span className="table-metadata-text">{user.lastLogin}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Role */}
-                        <div className="lg:col-span-2">
-                          <div className="table-header-label mb-1 lg:hidden">Role</div>
+                        {/* Role - desktop */}
+                        <div className="hidden lg:block lg:col-span-2">
                           <span className={`table-status-text inline-flex items-center px-2.5 py-1 rounded-md ${getRoleBadgeColor(user.role)}`}>
                             {user.role}
                           </span>
                         </div>
 
-                        {/* Group */}
-                        <div className="lg:col-span-2">
-                          <div className="table-header-label mb-1 lg:hidden">Group</div>
+                        {/* Group - desktop */}
+                        <div className="hidden lg:block lg:col-span-2">
                           <span className="table-value-text">{user.group}</span>
                         </div>
 
-                        {/* Status */}
-                        <div className="lg:col-span-2">
-                          <div className="table-header-label mb-1 lg:hidden">Status</div>
-                          <div className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${
-                              user.status === 'Active' ? 'bg-success' : 
-                              user.status === 'Pending' ? 'bg-warning-text' : 
-                              'bg-muted-foreground'
-                            }`} />
-                            <span className={`table-status-text ${getStatusColor(user.status)}`}>
-                              {user.status}
-                            </span>
-                          </div>
+                        {/* Status - desktop */}
+                        <div className="hidden lg:flex lg:col-span-2 items-center gap-1.5">
+                          <div className={`w-2 h-2 rounded-full ${
+                            user.status === 'Active' ? 'bg-success' : 
+                            user.status === 'Pending' ? 'bg-warning-text' : 
+                            'bg-muted-foreground'
+                          }`} />
+                          <span className={`table-status-text ${getStatusColor(user.status)}`}>
+                            {user.status}
+                          </span>
                         </div>
 
-                        {/* Last Login */}
-                        <div className="lg:col-span-2">
-                          <div className="table-header-label mb-1 lg:hidden">Last Login</div>
+                        {/* Last Login - desktop */}
+                        <div className="hidden lg:block lg:col-span-2">
                           <span className={`table-supporting-text ${
                             user.lastLogin === 'Never' ? 'text-muted-foreground' :
                             user.lastLogin.includes('min') || user.lastLogin.includes('hr') ? 'text-primary' :
@@ -956,25 +963,17 @@ export function UsersAccess() {
             {/* USER GROUPS TAB */}
             {activeTab === 'userGroups' && (
               <>
-                {/* Search Bar */}
-                <div className="bg-card rounded-xl border border-border p-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={18} />
-                    <input
-                      type="text"
-                      placeholder="Search user groups..."
-                      value={groupSearchQuery}
-                      onChange={(e) => setGroupSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-primary transition-colors"
-                    />
-                  </div>
-                </div>
+                <ListPageSearch
+                  value={groupSearchQuery}
+                  onChange={setGroupSearchQuery}
+                  placeholder="Search user groups..."
+                />
 
                 {/* Groups Table */}
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
                   {/* Bulk Actions Bar */}
                   {selectedGroups.length > 0 && (
-                    <div className="px-6 py-3 bg-surface-subtle border-b border-border flex items-center justify-between">
+                    <div className="px-4 sm:px-6 py-3 bg-surface-subtle border-b border-border flex items-center justify-between gap-3">
                       <span className="text-sm text-muted-foreground font-medium">
                         {selectedGroups.length} group{selectedGroups.length > 1 ? 's' : ''} selected
                       </span>
@@ -1013,14 +1012,14 @@ export function UsersAccess() {
                     {filteredGroups.map((group) => (
                       <div 
                         key={group.id} 
-                        className="table-row-standard grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors cursor-pointer"
+                        className={cn(listRowClass, 'relative cursor-pointer')}
                         onClick={() => {
                           setSelectedGroup(group);
                           setShowGroupDrawer(true);
                         }}
                       >
                         {/* Group Name */}
-                        <div className="lg:col-span-5 flex items-center gap-3">
+                        <div className="lg:col-span-5 flex items-center gap-3 min-w-0 pr-10 lg:pr-0">
                           <input
                             type="checkbox"
                             checked={selectedGroups.includes(group.id)}
@@ -1031,40 +1030,40 @@ export function UsersAccess() {
                             onClick={(e) => e.stopPropagation()}
                             className="hidden lg:block w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                           />
-                          <div className="flex-1">
-                            <div className="table-header-label mb-1 lg:hidden">Group Name</div>
-                            <div className="flex items-center gap-3">
-                              <div 
-                                className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
-                                style={{ backgroundColor: group.color }}
-                              >
-                                {group.initials}
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div 
+                              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
+                              style={{ backgroundColor: group.color }}
+                            >
+                              {group.initials}
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="table-primary-text truncate">{group.name}</h3>
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 lg:hidden">
+                                <span className="table-metadata-text inline-flex items-center gap-1">
+                                  <Users size={14} className="text-text-subtle" />
+                                  {group.userCount}
+                                </span>
+                                <span className="table-metadata-text">{formatDate(group.dateCreated)}</span>
                               </div>
-                              <h3 className="text-sm font-medium text-foreground">{group.name}</h3>
                             </div>
                           </div>
                         </div>
 
-                        {/* Users */}
-                        <div className="lg:col-span-3">
-                          <div className="table-header-label mb-1 lg:hidden">Users</div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Users size={16} className="text-text-subtle" />
-                            <span>{group.userCount}</span>
-                          </div>
+                        {/* Users - desktop */}
+                        <div className="hidden lg:flex lg:col-span-3 items-center gap-2 text-sm text-muted-foreground">
+                          <Users size={16} className="text-text-subtle" />
+                          <span>{group.userCount}</span>
                         </div>
 
-                        {/* Date Created */}
-                        <div className="lg:col-span-3">
-                          <div className="table-header-label mb-1 lg:hidden">Date Created</div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar size={16} className="text-text-subtle" />
-                            <span>{formatDate(group.dateCreated)}</span>
-                          </div>
+                        {/* Date Created - desktop */}
+                        <div className="hidden lg:flex lg:col-span-3 items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar size={16} className="text-text-subtle" />
+                          <span>{formatDate(group.dateCreated)}</span>
                         </div>
 
                         {/* Actions */}
-                        <div className="lg:col-span-1 flex items-center justify-end">
+                        <div className="absolute top-3 right-3 lg:static lg:col-span-1 flex items-center lg:justify-end">
                           <button 
                             onClick={(e) => e.stopPropagation()}
                             className={cn(iconButtonSmClass, 'size-8')}

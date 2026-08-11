@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import { Search, Check, X, Clock, Edit } from 'lucide-react';
+import { Check, X, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import {
+  ListPageHeader,
+  ListPageSearch,
+  listRowClass,
+} from './ui/list-page';
 
 interface PendingUser {
   id: string;
@@ -173,27 +178,16 @@ export function Approvals() {
   return (
     <>
     <PageScrollShell innerClassName="space-y-6">
-            {/* Header */}
-            <div>
-              <h2 className="text-page-title mb-1">Pending Approvals</h2>
-              <p className="text-sm sm:text-sm text-muted-foreground">
-                Review registration requests below
-              </p>
-            </div>
+            <ListPageHeader
+              title="Pending Approvals"
+              subtitle="Review registration requests below"
+            />
 
-            {/* Search Bar */}
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search pending approvals..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
-            </div>
+            <ListPageSearch
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search pending approvals..."
+            />
 
             {/* Users Table */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -250,17 +244,17 @@ export function Approvals() {
               {/* Table Rows */}
               <div className="divide-y divide-border">
                 {filteredUsers.map((user) => (
-                  <div key={user.id} className="table-row-entity grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-4 sm:px-6 transition-colors">
+                  <div key={user.id} className={listRowClass}>
                     {/* Mobile & Desktop Layout */}
-                    <div className="lg:col-span-3 flex items-center gap-3">
+                    <div className="lg:col-span-3 flex items-center gap-3 min-w-0">
                       <input
                         type="checkbox"
                         checked={selectedUserIds.includes(user.id)}
                         onChange={() => toggleSelectUser(user.id)}
-                        className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                        className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer shrink-0"
                       />
                       <div 
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                         style={{ backgroundColor: user.avatarColor }}
                       >
                         {user.avatar}
@@ -268,8 +262,13 @@ export function Approvals() {
                       <div className="min-w-0 flex-1">
                         <div className="table-primary-text truncate">{user.name}</div>
                         <div className="table-supporting-text truncate">{user.email}</div>
-                        {/* Mobile: Show org inline */}
-                        <div className="text-sm text-muted-foreground mt-0.5 lg:hidden">{user.organization}</div>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 lg:hidden">
+                          <span className="table-supporting-text">{user.organization}</span>
+                          <span className="table-metadata-text inline-flex items-center gap-1 text-warning">
+                            <Clock size={12} />
+                            {user.waitingDays}d · {user.submitted}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {/* Desktop: Organization */}
@@ -280,17 +279,15 @@ export function Approvals() {
                     <div className="hidden lg:flex lg:col-span-2 items-center">
                       <span className="table-metadata-text">{user.submitted}</span>
                     </div>
-                    {/* Mobile & Desktop: Waiting */}
-                    <div className="lg:col-span-2 flex items-center">
+                    {/* Desktop: Waiting */}
+                    <div className="hidden lg:flex lg:col-span-2 items-center">
                       <div className="flex items-center gap-1.5 text-warning">
                         <Clock size={16} />
                         <span className="table-status-text">{user.waitingDays} days ago</span>
-                        {/* Mobile: Show submitted date */}
-                        <span className="lg:hidden text-sm text-text-subtle ml-1">• {user.submitted}</span>
                       </div>
                     </div>
-                    {/* Mobile & Desktop: Actions */}
-                    <div className="lg:col-span-3 flex items-center justify-start lg:justify-end gap-2 mt-2 lg:mt-0">
+                    {/* Actions */}
+                    <div className="lg:col-span-3 flex items-center justify-stretch lg:justify-end gap-2 mt-1 lg:mt-0">
                       <button
                         onClick={() => handleApprove(user)}
                         className="flex-1 lg:flex-none px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5"

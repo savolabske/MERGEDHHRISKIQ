@@ -46,6 +46,12 @@ import {
 import { cn } from './ui/utils';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { ResourceFileUploadModal } from './ResourceFileUploadModal';
+import { Button } from './ui/button';
+import {
+  ListPageHeader,
+  ListPageToolbar,
+  listHeaderActionClass,
+} from './ui/list-page';
 
 type DocumentFileProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -1492,6 +1498,7 @@ export function Documents({
   reportLinkContext = null,
   onReportLinkComplete,
   onReportLinkBack,
+
 }: DocumentsProps = {}) {
   const normalizeTagValue = (value: string) => value.replace(/^#+/, '').replace(/\s+/g, '').trim();
   const tagEquals = (a: string, b: string) =>
@@ -4071,48 +4078,42 @@ export function Documents({
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 sm:px-8 pt-6">
           <div className="max-w-[1400px] mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-page-title mb-1">Resources</h2>
-                <p className="text-sm sm:text-sm text-muted-foreground">
-                  Upload and manage knowledge base resources for AI chat
-                </p>
-              </div>
-              <button 
-                onClick={() => setShowUploadPage(true)}
-                className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0"
-              >
-                <Plus size={18} />
-                Upload Resource
-              </button>
-            </div>
+            <ListPageHeader
+              title="Resources"
+              subtitle="Upload and manage knowledge base resources for AI chat"
+              action={
+                <Button
+                  type="button"
+                  onClick={() => setShowUploadPage(true)}
+                  className={listHeaderActionClass}
+                >
+                  <Plus size={18} />
+                  Upload Resource
+                </Button>
+              }
+            />
 
             {/* Search and Filter */}
-            <div className="mb-4">
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Search resources..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
-
+            <ListPageToolbar
+              search={{
+                value: searchQuery,
+                onChange: setSearchQuery,
+                placeholder: 'Search resources...',
+              }}
+              filterCount={4}
+              filters={
+                <>
                 {/* Status Filter Dropdown */}
-                <div className="relative" ref={statusDropdownRef}>
+                <div className="relative min-w-0" ref={statusDropdownRef}>
                   <button
                     onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                    className={listFilterTriggerClass}
+                    className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
                   >
-                    {statusFilter}
-                    <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
+                    <span className="truncate">{statusFilter}</span>
+                    <ChevronDown size={16} className={`text-muted-foreground shrink-0 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
                   </button>
                   {showStatusDropdown && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
+                    <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-48 bg-card border border-border rounded-lg shadow-lg z-10">
                       {['All Status', 'Uploading', 'Completed', 'Processing', 'Pending', 'Failed'].map((status) => (
                         <button
                           key={status}
@@ -4130,24 +4131,25 @@ export function Documents({
                 </div>
 
                 {/* Availability Filter Dropdown */}
-                <div className="relative" ref={availabilityFilterDropdownRef}>
+                <div className="relative min-w-0" ref={availabilityFilterDropdownRef}>
                   <button
                     type="button"
                     onClick={() => setShowAvailabilityFilterDropdown(!showAvailabilityFilterDropdown)}
                     className={cn(
                       listFilterTriggerClass,
+                      'w-full justify-between py-2.5',
                       (showAvailabilityFilterDropdown || availabilityFilter !== 'All Destinations') &&
                         'border-primary',
                     )}
                   >
-                    {availabilityFilter}
+                    <span className="truncate">{availabilityFilter}</span>
                     <ChevronDown
                       size={16}
-                      className={`text-muted-foreground transition-transform ${showAvailabilityFilterDropdown ? 'rotate-180' : ''}`}
+                      className={`text-muted-foreground shrink-0 transition-transform ${showAvailabilityFilterDropdown ? 'rotate-180' : ''}`}
                     />
                   </button>
                   {showAvailabilityFilterDropdown && (
-                    <div className="absolute right-0 top-full mt-1 w-52 bg-card border border-border rounded-lg shadow-lg z-10">
+                    <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-52 bg-card border border-border rounded-lg shadow-lg z-10">
                       {AVAILABILITY_FILTER_OPTIONS.map((option) => (
                         <button
                           key={option}
@@ -4171,16 +4173,16 @@ export function Documents({
                 </div>
 
                 {/* User Group Filter Dropdown */}
-                <div className="relative" ref={userGroupFilterDropdownRef}>
+                <div className="relative min-w-0" ref={userGroupFilterDropdownRef}>
                   <button
                     onClick={() => setShowUserGroupFilterDropdown(!showUserGroupFilterDropdown)}
-                    className={listFilterTriggerClass}
+                    className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
                   >
-                    {userGroupFilter}
-                    <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showUserGroupFilterDropdown ? 'rotate-180' : ''}`} />
+                    <span className="truncate">{userGroupFilter}</span>
+                    <ChevronDown size={16} className={`text-muted-foreground shrink-0 transition-transform ${showUserGroupFilterDropdown ? 'rotate-180' : ''}`} />
                   </button>
                   {showUserGroupFilterDropdown && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
+                    <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-48 bg-card border border-border rounded-lg shadow-lg z-10">
                       {['All Groups', ...userGroups].map((group) => (
                         <button
                           key={group}
@@ -4198,13 +4200,13 @@ export function Documents({
                 </div>
 
                 {/* Tag Filter Dropdown (multi-select + search) */}
-                <div className="relative" ref={tagFilterDropdownRef}>
+                <div className="relative min-w-0" ref={tagFilterDropdownRef}>
                   <button
                     type="button"
                     onClick={() => setShowTagFilterDropdown(!showTagFilterDropdown)}
                     className={cn(
                       listFilterTriggerClass,
-                      'max-w-[220px]',
+                      'w-full justify-between py-2.5 max-w-none',
                       (showTagFilterDropdown || selectedTagFilters.length > 0) && 'border-primary',
                     )}
                   >
@@ -4212,7 +4214,7 @@ export function Documents({
                     <ChevronDown size={16} className={`text-muted-foreground shrink-0 transition-transform ${showTagFilterDropdown ? 'rotate-180' : ''}`} />
                   </button>
                   {showTagFilterDropdown && (
-                    <div className="absolute right-0 top-full mt-1 w-64 bg-card border border-border rounded-lg shadow-lg z-10 flex flex-col overflow-hidden">
+                    <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-[min(100vw-2rem,16rem)] sm:w-64 bg-card border border-border rounded-lg shadow-lg z-10 flex flex-col overflow-hidden">
                       <div className="p-2 border-b border-border shrink-0">
                         <div className="relative">
                           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" />
@@ -4270,8 +4272,9 @@ export function Documents({
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+                </>
+              }
+            />
 
             {establishedReportHubIds.size === 0 && (
               <div className="rounded-xl border border-border bg-card p-5">

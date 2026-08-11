@@ -11,7 +11,7 @@ export function KpiIconPicker({ value, onChange }: KpiIconPickerProps) {
   return (
     <div>
       <p className="label-caps mb-2">Icon</p>
-      <div className="grid grid-cols-6 gap-2">
+      <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
         {KPI_ICON_KEYS.map((key) => {
           const Icon = KPI_ICON_MAP[key];
           const isSelected = key === value;

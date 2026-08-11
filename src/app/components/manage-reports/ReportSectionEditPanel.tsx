@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import type { KpiIconKey, ReportChartType, ReportKpiTile, ReportSection } from '../../data/reportsAdminMock';
+import {
+  regenerateKpiTileFromPrompt,
+  regenerateSectionFromPrompt,
+} from '../../data/reportsAdminMock';
 import { inputClass, textareaClass } from '../resources/resourceShared';
 import { ReportChartTypeSelect } from './ReportChartTypeSelect';
 import { KpiIconPicker } from './KpiIconPicker';
@@ -19,6 +23,9 @@ interface ReportSectionEditPanelProps {
   onSaveSection: (section: ReportSection) => void;
   onSaveKpiTile: (tile: ReportKpiTile) => void;
   onSaveForwardTile: (sectionId: string, tile: ReportKpiTile) => void;
+  onRegenerateSection?: (section: ReportSection) => void;
+  onRegenerateKpiTile?: (tile: ReportKpiTile) => void;
+  onRegenerateForwardTile?: (sectionId: string, tile: ReportKpiTile) => void;
 }
 
 export function ReportSectionEditPanel({
@@ -29,6 +36,9 @@ export function ReportSectionEditPanel({
   onSaveSection,
   onSaveKpiTile,
   onSaveForwardTile,
+  onRegenerateSection,
+  onRegenerateKpiTile,
+  onRegenerateForwardTile,
 }: ReportSectionEditPanelProps) {
   const [title, setTitle] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -56,6 +66,13 @@ export function ReportSectionEditPanel({
   const sectionIndex = section ? sections.findIndex((s) => s.id === section.id) : -1;
   const kpiIndex = isKpi ? kpiTiles.findIndex((t) => t.id === target.tileId) : -1;
   const totalSections = sections.length;
+
+  const kpiGenerated = Boolean(kpiTile?.value?.trim());
+  const sectionGenerated =
+    Boolean(section?.body?.trim()) ||
+    Boolean(section?.stat?.trim()) ||
+    Boolean(section?.chartData?.length) ||
+    Boolean(section?.tiles?.some((t) => t.value?.trim()));
 
   useEffect(() => {
     if (isSection && section) {
@@ -85,6 +102,32 @@ export function ReportSectionEditPanel({
     onClose();
   };
 
+  const handleRegenerate = () => {
+    if (isSection && section) {
+      const next = regenerateSectionFromPrompt({
+        ...section,
+        title,
+        prompt,
+        chartType,
+      });
+      (onRegenerateSection ?? onSaveSection)(next);
+      onClose();
+      return;
+    }
+    if (isKpi && kpiTile) {
+      const next = regenerateKpiTileFromPrompt({ ...kpiTile, prompt, iconKey });
+      (onRegenerateKpiTile ?? onSaveKpiTile)(next);
+      onClose();
+      return;
+    }
+    if (isForwardTile && section && kpiTile) {
+      const next = regenerateKpiTileFromPrompt({ ...kpiTile, prompt, iconKey });
+      if (onRegenerateForwardTile) onRegenerateForwardTile(section.id, next);
+      else onSaveForwardTile(section.id, next);
+      onClose();
+    }
+  };
+
   const handleChartTypeChange = (next: ReportChartType) => {
     setChartType(next);
     if (isSection && section) {
@@ -101,34 +144,34 @@ export function ReportSectionEditPanel({
     }
   };
 
+  const canRegenerate = isSection
+    ? sectionGenerated || Boolean(prompt.trim())
+    : kpiGenerated || Boolean(prompt.trim());
+
   const headerLabel = isKpi
-    ? `HEADER TILE ${String(kpiIndex + 1).padStart(2, '0')} OF ${String(kpiTiles.length).padStart(2, '0')} · SKELETON`
+    ? `HEADER TILE ${String(kpiIndex + 1).padStart(2, '0')} OF ${String(kpiTiles.length).padStart(2, '0')}`
     : isForwardTile
       ? `SECTION ${String(sectionIndex + 1).padStart(2, '0')} OF ${String(totalSections).padStart(2, '0')} — TILE`
-      : `SECTION ${String(sectionIndex + 1).padStart(2, '0')} OF ${String(totalSections).padStart(2, '0')} — SKELETON`;
+      : `SECTION ${String(sectionIndex + 1).padStart(2, '0')} OF ${String(totalSections).padStart(2, '0')}`;
 
-  const panelTitle = isKpi
-    ? 'Edit tile'
-    : isForwardTile
-      ? 'Edit tile'
-      : 'Edit section';
+  const panelTitle = isKpi || isForwardTile ? 'Tile prompt' : 'Section prompt';
 
   return (
     <ReportBuilderSidePanel onClose={handleSave}>
-      <div className="border-b border-border px-6 py-5 text-left relative shrink-0">
+      <div className="border-b border-border px-4 sm:px-6 py-5 text-left relative shrink-0">
         <button
           type="button"
           onClick={handleSave}
-          className="absolute right-4 top-4 size-8 hidden sm:flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+          className="absolute right-4 top-4 size-8 hidden lg:flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
           aria-label="Close"
         >
           <X size={18} className="text-muted-foreground" />
         </button>
-        <p className="label-caps text-muted-foreground pr-8">{headerLabel}</p>
-        <h2 className="text-xl font-semibold text-foreground mt-1 pr-8">{panelTitle}</h2>
+        <p className="label-caps text-muted-foreground pr-10">{headerLabel}</p>
+        <h2 className="text-xl font-semibold text-foreground mt-1 pr-10">{panelTitle}</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-5 min-h-0">
         {isSection && (
           <div>
             <label className="label-caps mb-2 block">Section title</label>
@@ -167,27 +210,37 @@ export function ReportSectionEditPanel({
           />
           <p className="text-xs text-muted-foreground mt-2">
             {isKpi || isForwardTile
-              ? 'One number, one short caption. Keep it to a single fact.'
-              : 'This is the instruction the AI uses to generate this section once sources are attached. Be specific about what to rank, filter, or compare.'}
+              ? 'Change this instruction and regenerate to refresh the tile.'
+              : 'Change this instruction and regenerate to refresh the section from attached sources.'}
           </p>
         </div>
       </div>
 
-      <div className="border-t border-border px-6 py-4 flex gap-3 justify-end shrink-0">
+      <div className="border-t border-border px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sm:justify-end shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))] lg:pb-4">
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          className="w-full sm:w-auto px-4 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={handleSave}
-          className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
+          className="w-full sm:w-auto px-4 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
         >
           Save
         </button>
+        {canRegenerate && (
+          <button
+            type="button"
+            onClick={handleRegenerate}
+            className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center gap-2"
+          >
+            <Sparkles size={16} />
+            Regenerate
+          </button>
+        )}
       </div>
     </ReportBuilderSidePanel>
   );

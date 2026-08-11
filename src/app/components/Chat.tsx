@@ -187,7 +187,7 @@ export function Chat({
   onKnowledgeSourceClick,
   startEmpty = false,
 }: ChatProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [messages, setMessages] = useState<Message[]>(() => {
     if (startEmpty) {
       return [];
@@ -226,6 +226,8 @@ export function Chat({
     ];
   });
   const [inputValue, setInputValue] = useState('');
+  const [isInputExpanded, setIsInputExpanded] = useState(false);
+  const [inputIsMultiline, setInputIsMultiline] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isExtendedKnowledgeMode, setIsExtendedKnowledgeMode] = useState(initialExtendedKnowledge);
   const [isSharedExtendedPillVisible, setIsSharedExtendedPillVisible] = useState(false);
@@ -309,10 +311,13 @@ export function Chat({
     scrollToBottom();
   }, [messages]);
 
-  // Notify parent of messages change
+  const onMessagesChangeRef = useRef(onMessagesChange);
+  onMessagesChangeRef.current = onMessagesChange;
+
+  // Notify via ref so unstable parent callbacks don't retrigger this effect every render.
   useEffect(() => {
-    onMessagesChange?.(messages, initialQuery);
-  }, [messages, initialQuery, onMessagesChange]);
+    onMessagesChangeRef.current?.(messages, initialQuery);
+  }, [messages, initialQuery]);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
@@ -736,6 +741,22 @@ export function Chat({
       inputRef.current.setSelectionRange(caretPosition, caretPosition);
     }, 0);
   };
+
+  const resizeComposerInput = (expanded = false) => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const maxH = expanded ? 320 : 120;
+    el.style.height = `${Math.min(el.scrollHeight, maxH)}px`;
+    const lineHeight = parseInt(getComputedStyle(el).lineHeight, 10) || 24;
+    const multiline = el.scrollHeight > lineHeight * 1.8;
+    setInputIsMultiline(multiline);
+    if (!multiline) setIsInputExpanded(false);
+  };
+
+  useEffect(() => {
+    resizeComposerInput(isInputExpanded);
+  }, [inputValue, isInputExpanded]);
 
   const getRiskLevelColor = (level: string) => {
     switch (level) {
@@ -1947,172 +1968,215 @@ export function Chat({
               data-composite-field
               onClick={() => inputRef.current?.focus()}
               className={cn(
-                'relative w-full rounded-2xl border border-border bg-card transition-colors cursor-text',
+                'flex w-full flex-col rounded-2xl border border-border bg-card transition-colors cursor-text',
                 'hover:border-primary',
                 'focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10',
-                sharedComposerCompact ? 'min-h-12' : 'min-h-[96px]',
+                sharedComposerCompact ? 'min-h-12 px-3 py-1.5' : 'px-3 py-2.5 sm:px-4 sm:py-3',
               )}
             >
-            {(!isSharedThread || invokesAiInComposer) && (
-              <div className="absolute bottom-3 left-4 z-10 flex max-w-[calc(100%-4.5rem)] flex-wrap items-center gap-2">
-                {!showRiskIqContext && !isSharedThread && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-pressed={isPrivateToMe}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          const nextState = !isPrivateToMe;
-                          setIsPrivateToMe(nextState);
-                          toast.success(
-                            nextState ? 'Private to me is on' : 'Private to me is off',
-                          );
-                        }}
-                        className={cn(
-                          'inline-flex max-w-[170px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                          isPrivateToMe
-                            ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
-                            : 'border-border bg-card text-foreground hover:bg-muted/30',
-                        )}
-                      >
-                        <Lock size={12} strokeWidth={2.25} aria-hidden />
-                        <span className="truncate ml-1.5">Private to me</span>
-                        {isPrivateToMe ? (
-                          <span className="ml-1.5">
-                            <X size={12} />
-                          </span>
-                        ) : null}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      variant="muted"
-                      side="top"
-                      sideOffset={8}
-                      className="w-[280px] max-w-[280px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
-                    >
-                      When on, answers are drawn from your personal library — the resources and documents you&apos;ve added in My Resources.
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        const nextState = !isExtendedInputActive;
-
-                        if (isSharedThread) {
-                          setIsSharedExtendedPillVisible(nextState);
-                        } else {
-                          setIsExtendedKnowledgeMode(nextState);
-                        }
-
-                        toast.success(
-                          nextState
-                            ? 'Extended Knowledge is on'
-                            : 'Extended Knowledge is off'
-                        );
-                      }}
-                      className={cn(
-                        'inline-flex max-w-[230px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                        isExtendedInputActive
-                          ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
-                          : 'border-border bg-card text-foreground hover:bg-muted/30',
-                      )}
-                    >
-                      <Sparkles size={12} />
-                      <span className="truncate ml-1.5">
-                        {isExtendedInputActive ? 'Extended Knowledge ON' : 'Extended Knowledge'}
-                      </span>
-                      {isExtendedInputActive && (
-                        <span className="ml-1.5">
-                          <X size={12} />
-                        </span>
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    variant="muted"
-                    side="top"
-                    sideOffset={8}
-                    className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
-                  >
-                    Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (isMentionMenuOpen && e.key === 'Enter') {
-                  e.preventDefault();
-                  applyHumanityHubMention();
-                  return;
-                }
-                if (isMentionMenuOpen && e.key === 'Escape') {
-                  e.preventDefault();
-                  setIsMentionMenuOpen(false);
-                  return;
-                }
-                if (e.key === 'Enter' && !e.shiftKey && !isProcessing) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={
-                isSharedThread
-                  ? invokesAiInComposer && isExtendedInputActive
-                    ? "Ask in Extended Knowledge mode..."
-                    : invokesAiInComposer
-                      ? "Ask Humanity Hub AI..."
-                      : "Send a message or mention @humanityhub for AI"
-                  : isHubEmptyState
-                    ? showRiskIqContext
-                      ? 'Ask anything about operational risks, security threats, or field conditions...'
-                      : 'Ask about humanitarian data or field conditions...'
-                  : isExtendedInputActive
-                    ? "Ask in Extended Knowledge mode..."
-                    : "Ask a follow-up question..."
-              }
+            <div
               className={cn(
-                'focus-ring-container-control w-full border-0 bg-transparent text-base text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors',
-                sharedComposerCompact
-                  ? 'h-12 min-h-12 pl-4 pr-14 py-2.5'
-                  : 'h-[96px] pl-6 pr-16 pt-4 pb-12',
+                'flex min-w-0',
+                sharedComposerCompact ? 'items-center gap-2' : 'flex-col',
               )}
-            />
-            {isProcessing ? (
-              <ChatStopButton
-                onClick={stopGeneration}
+            >
+              <textarea
+                ref={inputRef}
+                rows={1}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (isMentionMenuOpen && e.key === 'Enter') {
+                    e.preventDefault();
+                    applyHumanityHubMention();
+                    return;
+                  }
+                  if (isMentionMenuOpen && e.key === 'Escape') {
+                    e.preventDefault();
+                    setIsMentionMenuOpen(false);
+                    return;
+                  }
+                  if (e.key === 'Enter' && !e.shiftKey && !isProcessing) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder={
+                  isSharedThread
+                    ? invokesAiInComposer && isExtendedInputActive
+                      ? "Ask in Extended Knowledge mode..."
+                      : invokesAiInComposer
+                        ? "Ask Humanity Hub AI..."
+                        : "Send a message or mention @humanityhub for AI"
+                    : isHubEmptyState
+                      ? showRiskIqContext
+                        ? 'Ask anything about operational risks, security threats, or field conditions...'
+                        : 'Ask about humanitarian data or field conditions...'
+                    : isExtendedInputActive
+                      ? "Ask in Extended Knowledge mode..."
+                      : "Ask a follow-up question..."
+                }
                 className={cn(
-                  'absolute right-2',
-                  sharedComposerCompact ? 'top-1/2 -translate-y-1/2' : 'bottom-3',
+                  'focus-ring-container-control min-w-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent text-base leading-6 text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors',
+                  sharedComposerCompact
+                    ? 'max-h-9 py-1.5'
+                    : 'min-h-6 py-0.5',
                 )}
               />
-            ) : (
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={!inputValue.trim()}
-                aria-label="Send message"
-                className={`absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                  sharedComposerCompact ? 'top-1/2 -translate-y-1/2' : 'bottom-3'
-                } ${
-                  inputValue.trim()
-                    ? 'bg-primary hover:bg-primary-hover cursor-pointer'
-                    : 'bg-muted cursor-not-allowed'
-                }`}
-              >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke={inputValue.trim() ? "white" : "var(--text-subtle)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
+              {sharedComposerCompact ? (
+                isProcessing ? (
+                  <ChatStopButton onClick={stopGeneration} className="shrink-0" />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={!inputValue.trim()}
+                    aria-label="Send message"
+                    className={cn(
+                      'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
+                      inputValue.trim()
+                        ? 'bg-primary hover:bg-primary-hover cursor-pointer'
+                        : 'bg-muted cursor-not-allowed',
+                    )}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke={inputValue.trim() ? "white" : "var(--text-subtle)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                )
+              ) : null}
+            </div>
+            {!sharedComposerCompact && (
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  {(!isSharedThread || invokesAiInComposer) && (
+                    <>
+                      {!showRiskIqContext && !isSharedThread && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              aria-pressed={isPrivateToMe}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                const nextState = !isPrivateToMe;
+                                setIsPrivateToMe(nextState);
+                                toast.success(
+                                  nextState ? 'Private to me is on' : 'Private to me is off',
+                                );
+                              }}
+                              className={cn(
+                                'inline-flex max-w-[170px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                                isPrivateToMe
+                                  ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                                  : 'border-border bg-card text-foreground hover:bg-muted/30',
+                              )}
+                            >
+                              <Lock size={12} strokeWidth={2.25} aria-hidden />
+                              <span className="ml-1.5 truncate sm:hidden">Private</span>
+                              <span className="ml-1.5 hidden truncate sm:inline">Private to me</span>
+                              {isPrivateToMe ? (
+                                <span className="ml-1.5">
+                                  <X size={12} />
+                                </span>
+                              ) : null}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            variant="muted"
+                            side="top"
+                            sideOffset={8}
+                            className="w-[280px] max-w-[280px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+                          >
+                            When on, answers are drawn from your personal library — the resources and documents you&apos;ve added in My Resources.
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              const nextState = !isExtendedInputActive;
+
+                              if (isSharedThread) {
+                                setIsSharedExtendedPillVisible(nextState);
+                              } else {
+                                setIsExtendedKnowledgeMode(nextState);
+                              }
+
+                              toast.success(
+                                nextState
+                                  ? 'Extended Knowledge is on'
+                                  : 'Extended Knowledge is off'
+                              );
+                            }}
+                            className={cn(
+                              'inline-flex max-w-[230px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                              isExtendedInputActive
+                                ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                                : 'border-border bg-card text-foreground hover:bg-muted/30',
+                            )}
+                          >
+                            <Sparkles size={12} />
+                            <span className="ml-1.5 truncate sm:hidden">Extended</span>
+                            <span className="ml-1.5 hidden truncate sm:inline">
+                              {isExtendedInputActive ? 'Extended Knowledge ON' : 'Extended Knowledge'}
+                            </span>
+                            {isExtendedInputActive && (
+                              <span className="ml-1.5">
+                                <X size={12} />
+                              </span>
+                            )}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          variant="muted"
+                          side="top"
+                          sideOffset={8}
+                          className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+                        >
+                          Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
+                        </TooltipContent>
+                      </Tooltip>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {inputIsMultiline && (
+                    <button
+                      type="button"
+                      onClick={() => setIsInputExpanded((v) => !v)}
+                      aria-label={isInputExpanded ? 'Minimise input' : 'Expand input'}
+                      title={isInputExpanded ? 'Minimise' : 'Expand'}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      {isInputExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                    </button>
+                  )}
+                  {isProcessing ? (
+                    <ChatStopButton onClick={stopGeneration} className="shrink-0" />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSend}
+                      disabled={!inputValue.trim()}
+                      aria-label="Send message"
+                      className={cn(
+                        'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
+                        inputValue.trim()
+                          ? 'bg-primary hover:bg-primary-hover cursor-pointer'
+                          : 'bg-muted cursor-not-allowed',
+                      )}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke={inputValue.trim() ? "white" : "var(--text-subtle)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
             </div>
           </div>

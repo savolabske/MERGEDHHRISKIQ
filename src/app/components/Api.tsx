@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Database,
   Bookmark,
-  Search,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -22,6 +21,13 @@ import { useProgressiveList } from '../hooks/useProgressiveList';
 import { TableSkeleton } from './ui/table-skeleton';
 import { cn } from './ui/utils';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { Button } from './ui/button';
+import {
+  ListPageHeader,
+  ListPageSearch,
+  listHeaderActionClass,
+  listRowClass,
+} from './ui/list-page';
 import {
   iconButtonSmClass,
   listFilterTriggerClass,
@@ -362,130 +368,125 @@ export function Api() {
   return (
     <>
       <PageScrollShell innerClassName="space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-page-title mb-1">API</h2>
-            <p className="text-sm sm:text-sm text-muted-foreground">
-              Browse external data collections and manage dataset subscriptions for Risk IQ.
-            </p>
-          </div>
-          {activeTab === 'all' && (
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={handleHeaderSubscribe}
-                className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                Subscribe
-              </button>
-              <button
+        <ListPageHeader
+          title="API"
+          subtitle="Browse external data collections and manage dataset subscriptions for Risk IQ."
+          action={
+            activeTab === 'all' ? (
+              <Button
+                type="button"
+                variant="outline"
                 onClick={handleSyncCollections}
                 disabled={isSyncing}
-                className={cn(listFilterTriggerClass, 'disabled:opacity-60 disabled:cursor-not-allowed')}
+                className={cn(listHeaderActionClass, 'h-auto py-2.5')}
               >
                 <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} />
                 Refresh All
-              </button>
-            </div>
-          )}
-        </div>
+              </Button>
+            ) : undefined
+          }
+          secondaryAction={
+            activeTab === 'all' ? (
+              <Button
+                type="button"
+                onClick={handleHeaderSubscribe}
+                className={listHeaderActionClass}
+              >
+                Subscribe
+              </Button>
+            ) : undefined
+          }
+        />
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          <div className="flex gap-4 sm:gap-8 border-b border-border overflow-x-auto pb-0 -mb-[1px]">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`flex items-center gap-2 px-1 pb-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
+        <div className="flex gap-4 sm:gap-8 border-b border-border overflow-x-auto pb-0 -mb-[1px]">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`flex items-center gap-2 px-1 pb-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
+              activeTab === 'all'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Database size={18} strokeWidth={2} />
+            <span>All</span>
+            <span
+              className={`px-2 py-0.5 rounded-md text-sm font-semibold ${
                 activeTab === 'all'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+                  ? 'bg-sidebar-accent text-primary'
+                  : 'bg-secondary text-muted-foreground'
               }`}
             >
-              <Database size={18} strokeWidth={2} />
-              <span>All</span>
-              <span
-                className={`px-2 py-0.5 rounded-md text-sm font-semibold ${
-                  activeTab === 'all'
-                    ? 'bg-sidebar-accent text-primary'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
-              >
-                {datasets.length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('subscriptions')}
-              className={`flex items-center gap-2 px-1 pb-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
+              {datasets.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('subscriptions')}
+            className={`flex items-center gap-2 px-1 pb-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
+              activeTab === 'subscriptions'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Bookmark size={18} strokeWidth={2} />
+            <span>My Subscriptions</span>
+            <span
+              className={`px-2 py-0.5 rounded-md text-sm font-semibold ${
                 activeTab === 'subscriptions'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+                  ? 'bg-sidebar-accent text-primary'
+                  : 'bg-secondary text-muted-foreground'
               }`}
             >
-              <Bookmark size={18} strokeWidth={2} />
-              <span>My Subscriptions</span>
-              <span
-                className={`px-2 py-0.5 rounded-md text-sm font-semibold ${
-                  activeTab === 'subscriptions'
-                    ? 'bg-sidebar-accent text-primary'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
-              >
-                {subscriptions.length}
-              </span>
-            </button>
-          </div>
+              {subscriptions.length}
+            </span>
+          </button>
         </div>
 
-        <div className="mb-4">
-          <div className="flex flex-col xl:flex-row xl:items-center gap-3">
-            <div className="relative w-full sm:max-w-[360px] shrink-0">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={20} />
-              <input
-                type="text"
-                placeholder={
-                  activeTab === 'all' ? 'Search datasets...' : 'Search subscriptions...'
-                }
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
-              />
-            </div>
+        <div className="space-y-3">
+          <ListPageSearch
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={
+              activeTab === 'all' ? 'Search datasets...' : 'Search subscriptions...'
+            }
+          />
 
-            <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-              <div className="inline-flex items-center gap-2 text-muted-foreground shrink-0">
-                <Filter size={18} />
-                <span className="text-sm font-medium">Collection:</span>
-              </div>
-              {COLLECTION_FILTER_CHIPS.map(({ id, label }) => {
-                const isActive = collectionFilter === id;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setCollectionFilter(id)}
-                    className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap ${
-                      isActive
-                        ? 'bg-primary text-white'
-                        : 'bg-secondary text-muted-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 text-muted-foreground shrink-0">
+              <Filter size={16} />
+              <span className="text-sm font-medium">Collection</span>
             </div>
+            {COLLECTION_FILTER_CHIPS.map(({ id, label }) => {
+              const isActive = collectionFilter === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setCollectionFilter(id)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                    isActive
+                      ? 'bg-primary text-white'
+                      : 'bg-secondary text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-            <div className="relative" ref={orgDropdownRef}>
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+            <div className="relative min-w-0 sm:min-w-[160px]" ref={orgDropdownRef}>
               <button
                 onClick={() => setShowOrgDropdown(!showOrgDropdown)}
-                className={cn(listFilterTriggerClass, 'w-full sm:w-auto')}
+                className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
               >
-                {orgFilter}
+                <span className="truncate">{orgFilter}</span>
                 <ChevronDown
                   size={16}
-                  className={`text-muted-foreground transition-transform ${showOrgDropdown ? 'rotate-180' : ''}`}
+                  className={`text-muted-foreground shrink-0 transition-transform ${showOrgDropdown ? 'rotate-180' : ''}`}
                 />
               </button>
               {showOrgDropdown && (
-                <div className="absolute right-0 top-full mt-1 w-56 max-h-64 overflow-y-auto bg-card border border-border rounded-lg shadow-lg z-10">
+                <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-56 max-h-64 overflow-y-auto bg-card border border-border rounded-lg shadow-lg z-10">
                   {orgOptions.map((org) => (
                     <button
                       key={org}
@@ -503,19 +504,19 @@ export function Api() {
             </div>
 
             {activeTab === 'subscriptions' && (
-              <div className="relative" ref={statusDropdownRef}>
+              <div className="relative min-w-0 sm:min-w-[140px]" ref={statusDropdownRef}>
                 <button
                   onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                  className={cn(listFilterTriggerClass, 'w-full sm:w-auto')}
+                  className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
                 >
-                  {statusFilter}
+                  <span className="truncate">{statusFilter}</span>
                   <ChevronDown
                     size={16}
-                    className={`text-muted-foreground transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`}
+                    className={`text-muted-foreground shrink-0 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`}
                   />
                 </button>
                 {showStatusDropdown && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
+                  <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-48 bg-card border border-border rounded-lg shadow-lg z-10">
                     {['All Status', 'Active', 'Syncing', 'Error'].map((status) => (
                       <button
                         key={status}
@@ -532,8 +533,6 @@ export function Api() {
                 )}
               </div>
             )}
-
-            </div>
           </div>
         </div>
 
@@ -558,31 +557,34 @@ export function Api() {
                     return (
                       <div
                         key={dataset.id}
-                        className="table-row-entity !min-h-0 grid grid-cols-1 lg:grid-cols-12 lg:items-center gap-2 lg:gap-3 px-6 py-3"
+                        className={cn(listRowClass, '!min-h-0 lg:items-center')}
                       >
-                        <div className="lg:col-span-3">
-                          <div className="table-header-label mb-1 lg:hidden">Dataset</div>
+                        <div className="lg:col-span-3 min-w-0">
                           <div className="table-primary-text">{dataset.title}</div>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 lg:hidden">
+                            <span className="table-metadata-text">{dataset.org}</span>
+                            <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-secondary text-muted-foreground">
+                              {dataset.fileCount} files
+                            </span>
+                            <ProviderPill provider={dataset.provider} />
+                            <span className="table-metadata-text">{dataset.updatedAt}</span>
+                          </div>
                         </div>
-                        <div className="lg:col-span-2">
-                          <div className="table-header-label mb-1 lg:hidden">Org</div>
+                        <div className="hidden lg:block lg:col-span-2">
                           <div className="table-metadata-text">{dataset.org}</div>
                         </div>
-                        <div className="lg:col-span-1">
-                          <div className="table-header-label mb-1 lg:hidden">Files</div>
+                        <div className="hidden lg:block lg:col-span-1">
                           <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-secondary text-muted-foreground">
                             {dataset.fileCount}
                           </span>
                         </div>
-                        <div className="lg:col-span-2">
-                          <div className="table-header-label mb-1 lg:hidden">Updated</div>
+                        <div className="hidden lg:block lg:col-span-2">
                           <div className="table-metadata-text whitespace-nowrap">{dataset.updatedAt}</div>
                         </div>
-                        <div className="lg:col-span-1 flex items-center">
-                          <div className="table-header-label mb-1 lg:hidden">Collection</div>
+                        <div className="hidden lg:flex lg:col-span-1 items-center">
                           <ProviderPill provider={dataset.provider} />
                         </div>
-                        <div className="lg:col-span-3 flex items-center gap-2 lg:justify-end">
+                        <div className="lg:col-span-3 flex items-center gap-2 lg:justify-end mt-1 lg:mt-0">
                           {isSubscribed ? (
                             <span className="px-3 py-1.5 rounded-lg text-sm font-medium bg-secondary text-text-subtle cursor-not-allowed">
                               Subscribed
@@ -590,7 +592,7 @@ export function Api() {
                           ) : (
                             <button
                               onClick={() => openSubscribeModal(dataset)}
-                              className="px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
+                              className="flex-1 lg:flex-none px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
                             >
                               Subscribe
                             </button>
@@ -632,37 +634,38 @@ export function Api() {
                   (visibleItems as ApiSubscription[]).map((sub) => (
                     <div
                       key={sub.id}
-                      className="table-row-entity !min-h-0 grid grid-cols-1 lg:grid-cols-12 lg:items-center gap-2 lg:gap-3 px-6 py-3"
+                      className={cn(listRowClass, '!min-h-0 lg:items-center')}
                     >
-                      <div className="lg:col-span-3">
-                        <div className="table-header-label mb-1 lg:hidden">Dataset</div>
+                      <div className="lg:col-span-3 min-w-0">
                         <div className="table-primary-text">{sub.title}</div>
-                        <div className="mt-1 lg:hidden">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 lg:hidden">
                           <StatusBadge status={sub.status} />
+                          <span className="table-metadata-text">{sub.org}</span>
+                          <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-secondary text-muted-foreground">
+                            {sub.fileCount} files
+                          </span>
+                          <ProviderPill provider={sub.provider} />
+                          <span className="table-metadata-text">{sub.lastRefreshedAt}</span>
                         </div>
                       </div>
-                      <div className="lg:col-span-2">
-                        <div className="table-header-label mb-1 lg:hidden">Org</div>
+                      <div className="hidden lg:block lg:col-span-2">
                         <div className="table-metadata-text">{sub.org}</div>
                       </div>
-                      <div className="lg:col-span-1">
-                        <div className="table-header-label mb-1 lg:hidden">Files</div>
+                      <div className="hidden lg:block lg:col-span-1">
                         <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-secondary text-muted-foreground">
                           {sub.fileCount}
                         </span>
                       </div>
-                      <div className="lg:col-span-1 flex items-center">
-                        <div className="table-header-label mb-1 lg:hidden">Collection</div>
+                      <div className="hidden lg:flex lg:col-span-1 items-center">
                         <ProviderPill provider={sub.provider} />
                       </div>
-                      <div className="lg:col-span-2 flex items-center">
-                        <div className="table-header-label mb-1 lg:hidden">Last refreshed</div>
+                      <div className="hidden lg:flex lg:col-span-2 items-center">
                         <div className="table-metadata-text whitespace-nowrap">{sub.lastRefreshedAt}</div>
                       </div>
                       <div className="lg:col-span-1 hidden lg:flex items-center">
                         <StatusBadge status={sub.status} />
                       </div>
-                      <div className="lg:col-span-2 flex items-center gap-2 lg:justify-end">
+                      <div className="lg:col-span-2 flex items-center gap-2 lg:justify-end mt-1 lg:mt-0">
                         <button
                           onClick={() => openEditModal(sub)}
                           className={cn(iconButtonSmClass, 'size-8 border border-border')}

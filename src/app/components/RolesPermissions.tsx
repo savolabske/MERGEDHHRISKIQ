@@ -1,14 +1,20 @@
 import { useState } from 'react';
-import { Search, Plus, MoreVertical, ChevronLeft, Check, Shield, Users, Trash2, X, Edit2 } from 'lucide-react';
+import { Plus, MoreVertical, ChevronLeft, Check, Shield, Users, Trash2, X, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageFooter } from './PageFooter';
 import { cn } from './ui/utils';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { Button } from './ui/button';
+import {
+  ListPageHeader,
+  ListPageSearch,
+  listHeaderActionClass,
+  listRowClass,
+} from './ui/list-page';
 import {
   iconButtonSmClass,
   listFilterTriggerClass,
   menuItemClass,
-  paginationControlClass,
 } from './ui/interaction';
 
 interface Role {
@@ -610,34 +616,22 @@ export function RolesPermissions() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-page-title mb-1">Roles & Permissions</h2>
-          <p className="text-sm sm:text-sm text-muted-foreground">
-            {roles.length} roles defined · {TOTAL_PERMISSIONS} permissions across {modules.length} sections
-          </p>
-        </div>
-        <button
-          onClick={handleCreateRole}
-          className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0"
-        >
-          <Plus size={18} />
-          Create Role
-        </button>
-      </div>
+      <ListPageHeader
+        title="Roles & Permissions"
+        subtitle={`${roles.length} roles defined · ${TOTAL_PERMISSIONS} permissions across ${modules.length} sections`}
+        action={
+          <Button type="button" onClick={handleCreateRole} className={listHeaderActionClass}>
+            <Plus size={18} />
+            Create Role
+          </Button>
+        }
+      />
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={18} />
-        <input
-          type="text"
-          placeholder="Search roles and permissions..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm focus:outline-none focus:border-primary transition-colors"
-        />
-      </div>
+      <ListPageSearch
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search roles and permissions..."
+      />
 
       {/* Roles Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -663,21 +657,20 @@ export function RolesPermissions() {
           {filteredRoles.map((role) => (
             <div
               key={role.id}
-              className="table-row-standard grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors cursor-pointer"
+              className={cn(listRowClass, 'relative cursor-pointer')}
               onClick={() => setViewingRole(role)}
             >
               {/* Role Info */}
-              <div className="lg:col-span-4">
-                <div className="table-header-label mb-1 lg:hidden">Role</div>
+              <div className="lg:col-span-4 min-w-0 pr-10 lg:pr-0">
                 <div className="flex items-start gap-3">
                   <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0"
                     style={{ backgroundColor: role.color }}
                   >
                     <Shield size={20} className="text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="table-primary-text">{role.name}</h3>
                       {role.isSystem && (
                         <span className="px-2 py-0.5 bg-secondary text-muted-foreground text-xs font-medium rounded">
@@ -685,49 +678,64 @@ export function RolesPermissions() {
                         </span>
                       )}
                     </div>
-                    <p className="table-supporting-text mt-0.5 line-clamp-1" title={role.description}>{role.description}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Users */}
-              <div className="lg:col-span-2">
-                <div className="table-header-label mb-1 lg:hidden">Users</div>
-                <div className="flex items-center gap-2">
-                  <Users className="text-text-subtle" size={16} />
-                  <span className="table-numeric-text">{role.users}</span>
-                </div>
-              </div>
-
-              {/* Permissions */}
-              <div className="lg:col-span-3">
-                <div className="table-header-label mb-1 lg:hidden">Permissions</div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: getProgressWidth(role.permissions, role.totalPermissions),
-                          backgroundColor: getProgressColor(role.permissions, role.totalPermissions)
-                        }}
-                      />
+                    <p className="table-supporting-text mt-0.5 line-clamp-2" title={role.description}>{role.description}</p>
+                    {/* Mobile meta */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 lg:hidden">
+                      <span className="table-metadata-text inline-flex items-center gap-1">
+                        <Users size={14} className="text-text-subtle" />
+                        {role.users}
+                      </span>
+                      <span className="table-metadata-text">
+                        {role.permissions}/{role.totalPermissions} perms
+                      </span>
+                      <span className="table-metadata-text">{role.created}</span>
+                    </div>
+                    <div className="mt-2 lg:hidden">
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: getProgressWidth(role.permissions, role.totalPermissions),
+                            backgroundColor: getProgressColor(role.permissions, role.totalPermissions)
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
-                  <span className="table-numeric-text">
-                    {role.permissions}/{role.totalPermissions}
-                  </span>
                 </div>
               </div>
 
-              {/* Created */}
-              <div className="lg:col-span-2">
-                <div className="table-header-label mb-1 lg:hidden">Created</div>
+              {/* Users - desktop */}
+              <div className="hidden lg:flex lg:col-span-2 items-center gap-2">
+                <Users className="text-text-subtle" size={16} />
+                <span className="table-numeric-text">{role.users}</span>
+              </div>
+
+              {/* Permissions - desktop */}
+              <div className="hidden lg:flex lg:col-span-3 items-center gap-3">
+                <div className="flex-1">
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: getProgressWidth(role.permissions, role.totalPermissions),
+                        backgroundColor: getProgressColor(role.permissions, role.totalPermissions)
+                      }}
+                    />
+                  </div>
+                </div>
+                <span className="table-numeric-text">
+                  {role.permissions}/{role.totalPermissions}
+                </span>
+              </div>
+
+              {/* Created - desktop */}
+              <div className="hidden lg:flex lg:col-span-2 items-center">
                 <span className="table-metadata-text">{role.created}</span>
               </div>
 
               {/* Actions */}
-              <div className="lg:col-span-1 flex items-center justify-end relative">
+              <div className="absolute top-3 right-3 lg:static lg:col-span-1 flex items-center lg:justify-end relative">
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();

@@ -6,6 +6,7 @@ export type AppView =
   | 'resourcesHub'
   | 'mapAI'
   | 'reports'
+  | 'customWorkflows'
   | 'riskIQ'
   | 'aiSearch'
   | 'insights'
@@ -20,6 +21,7 @@ export type AppView =
   | 'links'
   | 'api'
   | 'manageReports'
+  | 'manageWorkflows'
   | 'documentDetail';
 
 export const RISK_IQ_TAB_STORAGE_KEY = 'riskiq.lastTab';

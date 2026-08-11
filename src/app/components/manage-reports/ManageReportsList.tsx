@@ -1,10 +1,16 @@
 import { useState } from 'react';
-import { Plus, Search, MoreVertical, Pencil, Trash2, EyeOff, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, EyeOff, Upload, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ManagedReport } from '../../data/reportsAdminMock';
-import { isBuiltinReport } from '../../data/reportsAdminMock';
 import { PageScrollShell } from '../PageScrollShell';
 import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
+import { Button } from '../ui/button';
+import {
+  ListPageHeader,
+  ListPageSearch,
+  listHeaderActionClass,
+  listRowClass,
+} from '../ui/list-page';
 import { cn } from '../ui/utils';
 
 interface ManageReportsListProps {
@@ -55,10 +61,8 @@ export function ManageReportsList({
 
   const closeMenu = () => setOpenMenuId(null);
 
-  const getMenuItemCount = (report: ManagedReport) => {
-    let count = 2; // Edit + Publish or Unpublish
-    if (!isBuiltinReport(report)) count += 1;
-    return count;
+  const getMenuItemCount = (_report: ManagedReport) => {
+    return 3; // Edit + Publish/Unpublish + Delete
   };
 
   const toggleMenu = (
@@ -84,36 +88,22 @@ export function ManageReportsList({
   return (
     <>
       <PageScrollShell innerClassName="space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-page-title mb-1">Manage Reports</h2>
-            <p className="text-sm text-muted-foreground">
-              Create and configure AI-backed report layouts
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onAdd}
-            className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0"
-          >
-            <Plus size={18} />
-            Add report
-          </button>
-        </div>
+        <ListPageHeader
+          title="Manage Reports"
+          subtitle="Create and configure AI-backed report layouts"
+          action={
+            <Button type="button" onClick={onAdd} className={listHeaderActionClass}>
+              <Plus size={18} />
+              Add report
+            </Button>
+          }
+        />
 
-        <div className="relative">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
-            size={20}
-          />
-          <input
-            type="text"
-            placeholder="Search reports..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
-          />
-        </div>
+        <ListPageSearch
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search reports..."
+        />
 
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
@@ -128,18 +118,30 @@ export function ManageReportsList({
               <div
                 key={report.id}
                 onClick={() => onEdit(report.id)}
-                className="table-row-narrative relative grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors cursor-pointer"
+                className={cn(listRowClass, 'relative cursor-pointer')}
               >
-                <div className="lg:col-span-5 min-w-0 pr-12 lg:pr-0">
-                  <div className="table-header-label mb-1 lg:hidden">Name</div>
+                <div className="lg:col-span-5 min-w-0 pr-10 lg:pr-0">
                   <p className="table-primary-text truncate">{report.title}</p>
                   <p className="table-supporting-text truncate mt-0.5">
                     {report.description || 'No description'}
                   </p>
+                  {/* Mobile meta: status + date on one line */}
+                  <div className="flex flex-wrap items-center gap-2 mt-2 lg:hidden">
+                    <span
+                      className={cn(
+                        'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
+                        report.status === 'published'
+                          ? 'bg-success-subtle text-success-text'
+                          : 'bg-warning-subtle text-warning-text',
+                      )}
+                    >
+                      {report.status === 'published' ? 'Published' : 'Draft'}
+                    </span>
+                    <span className="table-metadata-text">{report.updatedAt}</span>
+                  </div>
                 </div>
 
-                <div className="lg:col-span-2 flex items-center">
-                  <div className="table-header-label mb-1 lg:hidden w-full">Status</div>
+                <div className="hidden lg:flex lg:col-span-2 items-center">
                   <span
                     className={cn(
                       'inline-flex px-2.5 py-1 rounded-full text-xs font-medium',
@@ -152,13 +154,12 @@ export function ManageReportsList({
                   </span>
                 </div>
 
-                <div className="lg:col-span-3 flex items-center">
-                  <div className="table-header-label mb-1 lg:hidden w-full">Last updated</div>
+                <div className="hidden lg:flex lg:col-span-3 items-center">
                   <span className="table-supporting-text">{report.updatedAt}</span>
                 </div>
 
                 <div
-                  className="absolute top-4 right-4 lg:relative lg:top-auto lg:right-auto lg:col-span-2 flex items-center lg:justify-end"
+                  className="absolute top-3 right-3 lg:static lg:col-span-2 flex items-center lg:justify-end"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="relative">
@@ -227,19 +228,17 @@ export function ManageReportsList({
                               Unpublish
                             </button>
                           )}
-                          {!isBuiltinReport(report) && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setDeleteId(report.id);
-                                closeMenu();
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive-text hover:bg-destructive-subtle"
-                            >
-                              <Trash2 size={14} />
-                              Delete
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteId(report.id);
+                              closeMenu();
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive-text hover:bg-destructive-subtle"
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
                         </div>
                       </>
                     )}

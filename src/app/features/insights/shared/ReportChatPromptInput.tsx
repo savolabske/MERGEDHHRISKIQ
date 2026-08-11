@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { ChevronDown, Send } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
 import { ChatStopButton } from '../../../components/ui/ChatStopButton';
@@ -68,13 +69,32 @@ export function ReportChatPromptInput({
   placeholder,
   theme,
 }: ReportChatPromptInputProps) {
-  const { variant, mobileChatOpen, openMobileChat, closeMobileChat } = useReportChatPanel();
+  const {
+    variant,
+    mobileChatOpen,
+    openMobileChat,
+    closeMobileChat,
+    sheetMinimizeLabel,
+    requestPromptFocus,
+    consumePromptFocusRequest,
+  } = useReportChatPanel();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const showMinimize = variant === 'sheet' && mobileChatOpen;
   const showDisclaimer = variant !== 'sheet' || mobileChatOpen;
   const inputDisabled = disabled && !isGenerating;
 
+  useEffect(() => {
+    if (variant !== 'sheet' || !mobileChatOpen) return;
+    if (!consumePromptFocusRequest()) return;
+    const timer = window.setTimeout(() => {
+      textareaRef.current?.focus({ preventScroll: true });
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [variant, mobileChatOpen, consumePromptFocusRequest]);
+
   const handleFocus = () => {
     if (variant === 'sheet' && !mobileChatOpen) {
+      requestPromptFocus();
       openMobileChat();
     }
   };
@@ -102,8 +122,8 @@ export function ReportChatPromptInput({
           <button
             type="button"
             onClick={closeMobileChat}
-            aria-label="Minimize chat and show report"
-            title="Show report"
+            aria-label={`Minimize chat and ${sheetMinimizeLabel.toLowerCase()}`}
+            title={sheetMinimizeLabel}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ChevronDown size={18} strokeWidth={2} />
@@ -120,6 +140,7 @@ export function ReportChatPromptInput({
           )}
         >
           <textarea
+            ref={textareaRef}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onFocus={handleFocus}

@@ -1,8 +1,17 @@
 import { useState } from 'react';
-import { Plus, X, Search, FileText, Trash2, Edit } from 'lucide-react';
+import { Plus, X, Trash2, Edit, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { Button } from './ui/button';
+import {
+  ListPageHeader,
+  ListPageSearch,
+  listHeaderActionClass,
+  listRowClass,
+} from './ui/list-page';
+import { iconButtonClass, menuItemClass } from './ui/interaction';
+import { cn } from './ui/utils';
 
 interface Definition {
   id: string;
@@ -81,6 +90,7 @@ export function Definitions() {
   const [selectedDefinitions, setSelectedDefinitions] = useState<Set<string>>(new Set());
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   
   // Form state
   const [shortForm, setShortForm] = useState('');
@@ -203,42 +213,32 @@ export function Definitions() {
   return (
     <>
     <PageScrollShell innerClassName="space-y-6">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-page-title mb-1">Context Definitions</h2>
-                <p className="text-sm sm:text-sm text-muted-foreground">
-                  Manage acronyms and context replacements for AI chat
-                </p>
-              </div>
-              <button 
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0"
-              >
-                <Plus size={18} />
-                Add Definition
-              </button>
-            </div>
+            <ListPageHeader
+              title="Context Definitions"
+              subtitle="Manage acronyms and context replacements for AI chat"
+              action={
+                <Button
+                  type="button"
+                  onClick={() => setShowAddModal(true)}
+                  className={listHeaderActionClass}
+                >
+                  <Plus size={18} />
+                  Add Definition
+                </Button>
+              }
+            />
 
-            {/* Search Bar */}
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search definitions..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
-            </div>
+            <ListPageSearch
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search definitions..."
+            />
 
             {/* Definitions Table */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               {/* Bulk Actions Bar */}
               {selectedDefinitions.size > 0 && (
-                <div className="px-6 py-3 bg-surface-subtle border-b border-border flex items-center justify-between">
+                <div className="px-4 sm:px-6 py-3 bg-surface-subtle border-b border-border flex items-center justify-between gap-3">
                   <span className="text-sm text-muted-foreground font-medium">
                     {selectedDefinitions.size} definition{selectedDefinitions.size > 1 ? 's' : ''} selected
                   </span>
@@ -274,44 +274,91 @@ export function Definitions() {
               {/* Table Rows */}
               <div className="divide-y divide-border">
                 {filteredDefinitions.map((definition) => (
-                  <div key={definition.id} className="table-row-narrative grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-6 transition-colors">
-                    {/* Checkbox & Name */}
-                    <div className="lg:col-span-3 flex items-center gap-3">
+                  <div key={definition.id} className={cn(listRowClass, 'relative')}>
+                    {/* Mobile: compact title + description + kebab */}
+                    <div className="lg:hidden min-w-0 pr-10">
+                      <p className="table-primary-text">{definition.shortForm}</p>
+                      <p className="table-supporting-text mt-0.5 line-clamp-2">
+                        {definition.expandedForm}
+                      </p>
+                    </div>
+
+                    {/* Desktop: checkbox & name */}
+                    <div className="hidden lg:flex lg:col-span-3 items-center gap-3">
                       <input
                         type="checkbox"
                         checked={selectedDefinitions.has(definition.id)}
                         onChange={() => toggleSelectDefinition(definition.id)}
-                        className="hidden lg:block w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
+                        className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                       />
-                      <div>
-                        <div className="table-header-label mb-1 lg:hidden">Name</div>
-                        <span className="table-primary-text">
-                          {definition.shortForm}
-                        </span>
-                      </div>
+                      <span className="table-primary-text">{definition.shortForm}</span>
                     </div>
 
-                    {/* Description */}
-                    <div className="lg:col-span-7">
-                      <div className="table-header-label mb-1 lg:hidden">Description</div>
-                      <div className="table-value-text">
-                        {definition.expandedForm}
-                      </div>
+                    {/* Desktop: description */}
+                    <div className="hidden lg:block lg:col-span-7">
+                      <div className="table-value-text">{definition.expandedForm}</div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="lg:col-span-2 flex items-center gap-2 lg:justify-end">
-                      <button 
+                    {/* Actions: kebab on mobile, buttons on desktop */}
+                    <div className="absolute top-3 right-3 lg:static lg:col-span-2 flex items-center lg:justify-end gap-2">
+                      <div className="relative lg:hidden">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenMenuId((id) => (id === definition.id ? null : definition.id))
+                          }
+                          className={iconButtonClass}
+                          aria-label="Definition actions"
+                          aria-expanded={openMenuId === definition.id}
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+                        {openMenuId === definition.id && (
+                          <>
+                            <button
+                              type="button"
+                              className="fixed inset-0 z-10"
+                              aria-label="Close menu"
+                              onClick={() => setOpenMenuId(null)}
+                            />
+                            <div className="absolute right-0 top-full mt-1 z-20 w-40 bg-card border border-border rounded-lg shadow-lg py-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleEditDefinition(definition);
+                                  setOpenMenuId(null);
+                                }}
+                                className={cn(menuItemClass, 'flex items-center gap-2')}
+                              >
+                                <Edit size={14} />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDeleteId(definition.id);
+                                  setOpenMenuId(null);
+                                }}
+                                className={cn(menuItemClass, 'flex items-center gap-2 text-destructive-text')}
+                              >
+                                <Trash2 size={14} />
+                                Remove
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <button
                         onClick={() => handleEditDefinition(definition)}
-                        className="px-3 py-1.5 border border-border bg-card hover:bg-info-subtle hover:border-info-subtle hover:text-info rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                        className="hidden lg:inline-flex px-3 py-1.5 border border-border bg-card hover:bg-info-subtle hover:border-info-subtle hover:text-info rounded-lg text-sm font-medium transition-colors items-center gap-1.5"
                         title="Edit definition"
                       >
                         <Edit size={14} />
                         Edit
                       </button>
-                      <button 
+                      <button
                         onClick={() => setDeleteId(definition.id)}
-                        className="px-3 py-1.5 border border-border bg-card hover:bg-destructive-subtle hover:border-destructive hover:text-destructive-text rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                        className="hidden lg:inline-flex px-3 py-1.5 border border-border bg-card hover:bg-destructive-subtle hover:border-destructive hover:text-destructive-text rounded-lg text-sm font-medium transition-colors items-center gap-1.5"
                         title="Remove definition"
                       >
                         <Trash2 size={14} />

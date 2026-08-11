@@ -5,6 +5,7 @@ import { Chat } from "./components/Chat";
 import { Reports, type ActiveReport } from "./components/Reports";
 import { MapView } from "./components/MapView";
 import { Insights } from "./components/Insights";
+import { CustomWorkflows } from "./components/CustomWorkflows";
 import { Profile } from "./components/Profile";
 import { Approvals } from "./components/Approvals";
 import { UsersAccess } from "./components/UsersAccess";
@@ -13,6 +14,7 @@ import { URLSources } from "./components/URLSources";
 import { Api } from "./components/Api";
 import { Definitions } from "./components/Definitions";
 import { ManageReports } from "./components/manage-reports/ManageReports";
+import { ManageWorkflows } from "./components/manage-workflows/ManageWorkflows";
 import { Documents } from "./components/Documents";
 import { linkReportResource } from "./data/reportsAdminMock";
 import type { ManagedReport } from "./data/reportsAdminMock";
@@ -114,6 +116,7 @@ export default function App() {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [aiSearchInput, setAiSearchInput] = useState('');
+  const riskIqLandingInputRef = useRef<HTMLTextAreaElement>(null);
   const [isRiskIqLandingExtended, setIsRiskIqLandingExtended] = useState(false);
   const [riskIqSearchExtendedKnowledge, setRiskIqSearchExtendedKnowledge] = useState(false);
   const [hubSearchExtendedKnowledge, setHubSearchExtendedKnowledge] = useState(false);
@@ -162,6 +165,7 @@ export default function App() {
     setReportLinkContext(null);
     setCurrentView('manageReports');
   }, []);
+
 
   const openRiskIqChat = useCallback((payload: DashboardChatPayload) => {
     setSelectedHistoryTitle(payload.title);
@@ -857,6 +861,7 @@ export default function App() {
       const { timeString, dateLabel } = getCurrentDateMeta();
       const firstUserMessage = messages.find((m) => m.role === 'user');
       const query = firstUserMessage?.content || resourceTitle;
+      let resolvedThreadId = documentChatThreadId ?? `resource-${resourceId}`;
 
       setChatHistory((prev) => {
         const existing =
@@ -864,7 +869,19 @@ export default function App() {
             ? prev.find((chat) => chat.id === documentChatThreadId)
             : undefined) ?? prev.find((chat) => chat.resourceId === resourceId);
 
+        resolvedThreadId = existing?.id ?? `resource-${resourceId}`;
+
         if (existing) {
+          // Avoid a no-op history rewrite that would re-render on every message sync.
+          if (
+            existing.messages === messages &&
+            existing.query === query &&
+            existing.resourceTitle === resourceTitle &&
+            existing.resourceId === resourceId &&
+            existing.unread === (currentView !== 'documentDetail')
+          ) {
+            return prev;
+          }
           const updated: ChatHistoryItem = {
             ...existing,
             query,
@@ -880,9 +897,8 @@ export default function App() {
           return [updated, ...others];
         }
 
-        const threadId = `resource-${resourceId}`;
         const newItem: ChatHistoryItem = {
-          id: threadId,
+          id: resolvedThreadId,
           query,
           timestamp: timeString,
           date: dateLabel,
@@ -898,13 +914,16 @@ export default function App() {
         return [newItem, ...prev];
       });
 
-      setDocumentChatThreadId((current) => {
-        if (current) return current;
-        const existing = chatHistory.find((chat) => chat.resourceId === resourceId);
-        return existing?.id ?? `resource-${resourceId}`;
-      });
+      setDocumentChatThreadId((current) => current ?? resolvedThreadId);
     },
-    [documentChatThreadId, currentView, chatHistory],
+    [documentChatThreadId, currentView],
+  );
+
+  const handleDocumentDetailMessagesChange = useCallback(
+    (messages: DocumentChatMessage[], resourceTitle: string) => {
+      handleResourceChatMessagesChange(messages, resourceTitle, currentDocumentId);
+    },
+    [handleResourceChatMessagesChange, currentDocumentId],
   );
 
   const handleDocumentDetailBack = useCallback(() => {
@@ -938,6 +957,13 @@ export default function App() {
       return prev.map((chat) => assignChatSource(chat));
     });
   }, []);
+
+  useEffect(() => {
+    const el = riskIqLandingInputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [aiSearchInput]);
 
   useEffect(() => {
     if (!isAuthenticated || !pendingLinkState) return;
@@ -1436,11 +1462,7 @@ export default function App() {
           />
         ) : currentView === 'documentDetail' ? (
           <DocumentDetail
-            key={
-              documentChatThreadId
-                ? `${currentDocumentId}-${documentChatThreadId}`
-                : currentDocumentId
-            }
+            key={currentDocumentId}
             documentId={currentDocumentId}
             onBack={handleDocumentDetailBack}
             onOpenDocument={(id) => {
@@ -1457,9 +1479,7 @@ export default function App() {
                     ?.messages ?? []) as DocumentChatMessage[])
                 : undefined
             }
-            onMessagesChange={(messages, resourceTitle) =>
-              handleResourceChatMessagesChange(messages, resourceTitle, currentDocumentId)
-            }
+            onMessagesChange={handleDocumentDetailMessagesChange}
             breadcrumbParent={
               documentReturnView === 'resourcesHub'
                 ? { label: 'Resources', onClick: handleDocumentDetailBack }
@@ -1777,84 +1797,94 @@ export default function App() {
                     <div
                       role="presentation"
                       data-composite-field
+                      onClick={() => riskIqLandingInputRef.current?.focus()}
                       className={cn(
-                        'relative w-full min-h-[96px] rounded-2xl border border-border bg-card transition-colors cursor-text',
+                        'flex w-full flex-col rounded-2xl border border-border bg-card px-3 py-2.5 sm:px-4 sm:py-3 transition-colors cursor-text',
                         'hover:border-primary focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10',
                       )}
                     >
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nextState = !isRiskIqLandingExtended;
-                              setIsRiskIqLandingExtended(nextState);
-                              toast.success(
-                                nextState
-                                  ? 'Extended Knowledge is on'
-                                  : 'Extended Knowledge is off',
-                              );
-                            }}
-                            className={cn(
-                              'absolute bottom-3 left-4 z-10 inline-flex max-w-[230px] items-center rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors',
-                              isRiskIqLandingExtended
-                                ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
-                                : 'border-border-muted bg-card text-muted-foreground hover:bg-muted',
-                            )}
-                          >
-                            <Sparkles size={12} />
-                            <span className="truncate ml-1.5">
-                              {isRiskIqLandingExtended ? 'Extended Knowledge ON' : 'Extended Knowledge'}
-                            </span>
-                            {isRiskIqLandingExtended ? (
-                              <span className="ml-1.5">
-                                <X size={12} />
-                              </span>
-                            ) : null}
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          variant="muted"
-                          side="top"
-                          sideOffset={8}
-                          className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
-                        >
-                          Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
-                        </TooltipContent>
-                      </Tooltip>
-                      <input
-                        type="text"
+                      <textarea
+                        ref={riskIqLandingInputRef}
+                        rows={1}
                         placeholder={
                           isRiskIqLandingExtended
                             ? 'Ask in Extended Knowledge mode...'
                             : 'Ask anything about operational risks, security threats, or field conditions...'
                         }
-                        className="focus-ring-container-control h-[96px] w-full border-0 bg-transparent pl-6 pr-16 pt-4 pb-12 text-base text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors"
+                        className="focus-ring-container-control max-h-[120px] min-h-6 w-full resize-none overflow-y-auto border-0 bg-transparent py-0.5 text-base leading-6 text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors"
                         value={aiSearchInput}
                         onChange={(e) => setAiSearchInput(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                          if (e.key === 'Enter' && !e.shiftKey && e.currentTarget.value.trim()) {
+                            e.preventDefault();
                             handleSearch(e.currentTarget.value);
                             setAiSearchInput('');
                           }
                         }}
                       />
-                      <Button
-                        type="button"
-                        size="icon"
-                        disabled={!aiSearchInput.trim()}
-                        onClick={() => {
-                          if (aiSearchInput.trim()) {
-                            handleSearch(aiSearchInput);
-                            setAiSearchInput('');
-                          }
-                        }}
-                        className="absolute right-2 bottom-3 size-10 rounded-xl"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-                          <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Button>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextState = !isRiskIqLandingExtended;
+                                  setIsRiskIqLandingExtended(nextState);
+                                  toast.success(
+                                    nextState
+                                      ? 'Extended Knowledge is on'
+                                      : 'Extended Knowledge is off',
+                                  );
+                                }}
+                                className={cn(
+                                  'inline-flex max-w-[230px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                                  isRiskIqLandingExtended
+                                    ? 'border-primary bg-primary-subtle text-primary hover:bg-sidebar-accent'
+                                    : 'border-border bg-card text-foreground hover:bg-muted/30',
+                                )}
+                              >
+                                <Sparkles size={12} />
+                                <span className="ml-1.5 truncate sm:hidden">Extended</span>
+                                <span className="ml-1.5 hidden truncate sm:inline">
+                                  {isRiskIqLandingExtended
+                                    ? 'Extended Knowledge ON'
+                                    : 'Extended Knowledge'}
+                                </span>
+                                {isRiskIqLandingExtended ? (
+                                  <span className="ml-1.5">
+                                    <X size={12} />
+                                  </span>
+                                ) : null}
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              variant="muted"
+                              side="top"
+                              sideOffset={8}
+                              className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+                            >
+                              Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          disabled={!aiSearchInput.trim()}
+                          onClick={() => {
+                            if (aiSearchInput.trim()) {
+                              handleSearch(aiSearchInput);
+                              setAiSearchInput('');
+                            }
+                          }}
+                          className="size-10 shrink-0 rounded-xl"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+                            <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   {isRiskIqLandingExtended ? (
@@ -1885,6 +1915,8 @@ export default function App() {
               }
             }}
           />
+        ) : currentView === 'customWorkflows' ? (
+          <CustomWorkflows />
         ) : currentView === 'profile' ? (
           <Profile />
         ) : currentView === 'adminDashboard' ? (
@@ -1903,6 +1935,8 @@ export default function App() {
           <Definitions />
         ) : currentView === 'manageReports' ? (
           <ManageReports onAttachSources={handleAttachSourcesFromReport} />
+        ) : currentView === 'manageWorkflows' ? (
+          <ManageWorkflows />
         ) : currentView === 'resources' ? (
           <Documents
             reportLinkContext={reportLinkContext}

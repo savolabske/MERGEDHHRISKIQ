@@ -1,12 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Filter, Download, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Filter, Download, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { TableSkeleton } from './ui/table-skeleton';
+import { Button } from './ui/button';
+import {
+  ListPageHeader,
+  ListPageToolbar,
+  listHeaderActionClass,
+  listRowClass,
+} from './ui/list-page';
 import { cn } from './ui/utils';
 import {
-  iconButtonSmClass,
   listFilterTriggerClass,
   menuItemClass,
   paginationControlClass,
@@ -376,41 +382,35 @@ export function AuditTrail() {
 
   return (
     <PageScrollShell innerClassName="space-y-6">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-page-title mb-1">Audit Trail</h2>
-                <p className="text-sm sm:text-sm text-muted-foreground">
-                  {mockEvents.length} recorded events · Complete log of all system activity
-                </p>
-              </div>
-              <button
-                onClick={() => toast.info('Export started')}
-                className={cn(listFilterTriggerClass, 'shrink-0')}
-              >
-                <Download size={18} />
-                Export Log
-              </button>
-            </div>
+            <ListPageHeader
+              title="Audit Trail"
+              subtitle={`${mockEvents.length} recorded events · Complete log of all system activity`}
+              action={
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => toast.info('Export started')}
+                  className={cn(listHeaderActionClass, 'h-auto py-2.5')}
+                >
+                  <Download size={18} />
+                  Export Log
+                </Button>
+              }
+            />
 
-            {/* Search Bar with Filter Button */}
-            <div className="mb-4">
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Search audit trail..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-lg text-base focus:outline-none focus:border-primary transition-colors"
-                  />
-                </div>
+            <ListPageToolbar
+              search={{
+                value: searchQuery,
+                onChange: setSearchQuery,
+                placeholder: 'Search audit trail...',
+              }}
+              trailing={
                 <button
+                  type="button"
                   onClick={() => setShowFilters(!showFilters)}
                   className={cn(
                     listFilterTriggerClass,
-                    'shrink-0',
+                    'shrink-0 py-2.5',
                     (showFilters || activeFiltersCount > 0) &&
                       'border-primary bg-primary-subtle text-primary',
                     !(showFilters || activeFiltersCount > 0) && 'text-muted-foreground',
@@ -424,21 +424,20 @@ export function AuditTrail() {
                     </span>
                   )}
                 </button>
-              </div>
-
-              {/* Filter Controls - Conditionally Shown with Divider */}
+              }
+            >
               {showFilters && (
                 <>
-                  <div className="my-5 border-t border-border" />
-                  <div className="flex flex-col lg:flex-row gap-3">
+                  <div className="border-t border-border" />
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {/* User Filter */}
-                    <div className="flex-1 relative" ref={userDropdownRef}>
+                    <div className="relative" ref={userDropdownRef}>
                       <button
                         onClick={() => {
                           setShowUserDropdown(!showUserDropdown);
                           setShowActionDropdown(false);
                         }}
-                        className={cn(listFilterTriggerClass, 'w-full justify-between')}
+                        className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
                       >
                         <span className={selectedUser ? 'text-foreground font-medium' : 'text-text-subtle'}>
                           {selectedUser || 'All Users'}
@@ -485,13 +484,13 @@ export function AuditTrail() {
                     </div>
 
                     {/* Action Type Filter */}
-                    <div className="flex-1 relative" ref={actionDropdownRef}>
+                    <div className="relative" ref={actionDropdownRef}>
                       <button
                         onClick={() => {
                           setShowActionDropdown(!showActionDropdown);
                           setShowUserDropdown(false);
                         }}
-                        className={cn(listFilterTriggerClass, 'w-full justify-between')}
+                        className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
                       >
                         <span className={selectedAction ? 'text-foreground font-medium' : 'text-text-subtle'}>
                           {selectedAction || 'All Actions'}
@@ -527,7 +526,7 @@ export function AuditTrail() {
                     </div>
 
                     {/* Date From */}
-                    <div className="flex-1">
+                    <div>
                       <input
                         type="date"
                         value={dateFrom}
@@ -538,7 +537,7 @@ export function AuditTrail() {
                     </div>
 
                     {/* Date To */}
-                    <div className="flex-1">
+                    <div>
                       <input
                         type="date"
                         value={dateTo}
@@ -552,7 +551,7 @@ export function AuditTrail() {
                     {activeFiltersCount > 0 && (
                       <button
                         onClick={clearFilters}
-                        className="px-4 py-2.5 border border-border bg-card hover:bg-destructive-subtle hover:border-destructive hover:text-destructive-text rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shrink-0"
+                        className="col-span-2 lg:col-span-4 px-4 py-2.5 border border-border bg-card hover:bg-destructive-subtle hover:border-destructive hover:text-destructive-text rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center gap-2"
                       >
                         <X size={16} />
                         Clear ({activeFiltersCount})
@@ -561,7 +560,7 @@ export function AuditTrail() {
                   </div>
                 </>
               )}
-            </div>
+            </ListPageToolbar>
 
             {/* Events Table */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -587,36 +586,34 @@ export function AuditTrail() {
                   <TableSkeleton variant="grid" rows={itemsPerPage} columns={4} />
                 ) : (
                   visibleCurrentEvents.map((event) => (
-                  <div key={event.id} className="table-row-narrative grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 px-4 sm:px-6 transition-colors">
+                  <div key={event.id} className={listRowClass}>
                     {/* User Info */}
                     <div className="lg:col-span-3 flex items-center gap-3">
                       <div 
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                         style={{ backgroundColor: event.userAvatarColor }}
                       >
                         {event.userAvatar}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="table-primary-text truncate">{event.userName}</div>
-                        {/* Mobile: Show time ago inline */}
-                        <div className="text-sm text-muted-foreground lg:hidden">{event.timeAgo}</div>
+                        <div className="table-supporting-text lg:hidden">{event.timeAgo}</div>
                       </div>
                     </div>
                     {/* Action */}
-                    <div className="lg:col-span-4 flex flex-col justify-center">
+                    <div className="lg:col-span-4 flex flex-col justify-center min-w-0">
                       <div className="table-primary-text mb-0.5">{event.action}</div>
-                      <div className="table-supporting-text">{event.actionDetail}</div>
+                      <div className="table-supporting-text line-clamp-2">{event.actionDetail}</div>
                     </div>
                     {/* Date & Time - Desktop Only */}
                     <div className="hidden lg:flex lg:col-span-3 flex-col justify-center">
                       <div className="table-value-text tabular-nums whitespace-nowrap mb-0.5">{event.dateTime}</div>
                       <div className="table-metadata-text">{event.timeAgo}</div>
                     </div>
-                    {/* IP Address */}
-                    <div className="lg:col-span-2 flex items-center">
+                    {/* IP + full date on mobile */}
+                    <div className="lg:col-span-2 flex items-center gap-3 pt-0.5 lg:pt-0">
                       <span className="table-metadata-text font-mono whitespace-nowrap">{event.ipAddress}</span>
-                      {/* Mobile: Show full date */}
-                      <span className="text-sm text-text-subtle ml-auto lg:hidden">{event.dateTime}</span>
+                      <span className="table-metadata-text ml-auto lg:hidden tabular-nums">{event.dateTime}</span>
                     </div>
                   </div>
                   ))

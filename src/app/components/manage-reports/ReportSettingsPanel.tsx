@@ -43,20 +43,20 @@ export function ReportSettingsPanel({
 
   return (
     <ReportBuilderSidePanel onClose={handleClose}>
-      <div className="border-b border-border px-6 py-5 text-left relative shrink-0">
+      <div className="border-b border-border px-4 sm:px-6 py-5 text-left relative shrink-0">
         <button
           type="button"
           onClick={handleClose}
-          className="absolute right-4 top-4 size-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+          className="absolute right-4 top-4 size-8 hidden lg:flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
           aria-label="Close"
         >
           <X size={18} className="text-muted-foreground" />
         </button>
         <p className="label-caps text-muted-foreground">Report settings</p>
-        <h2 className="text-xl font-semibold text-foreground mt-1 pr-8">{report.title}</h2>
+        <h2 className="text-xl font-semibold text-foreground mt-1 pr-10 truncate">{report.title}</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 min-h-0">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-6 min-h-0">
         <div>
             <p className="label-caps mb-3">Theme</p>
             <div className="grid grid-cols-2 gap-3">
@@ -99,11 +99,11 @@ export function ReportSettingsPanel({
         />
       </div>
 
-      <div className="border-t border-border px-6 py-4 flex justify-end shrink-0">
+      <div className="border-t border-border px-4 sm:px-6 py-4 flex justify-end shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))] lg:pb-4">
         <button
           type="button"
           onClick={handleSave}
-          className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
+          className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
         >
           Save
         </button>

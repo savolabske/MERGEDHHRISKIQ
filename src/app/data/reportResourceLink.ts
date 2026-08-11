@@ -3,7 +3,7 @@ export const LINKABLE_KNOWLEDGE_SOURCES = [
   {
     id: '2',
     title: 'Humanitarian Access Incident Tracker — regional annexes',
-    /** Reports already using this resource — shown in the create-report picker */
+    /** Reports already using this resource — excluded from the create-report picker */
     usedByReports: ['Aid Flow Intelligence', 'Migration & Displacement Intelligence'],
   },
   {

@@ -212,13 +212,14 @@ export function HubSearchRow({
                         : 'border-border bg-card text-foreground hover:bg-muted/30',
                     )}
                   >
-                    <Lock size={12} strokeWidth={2.25} aria-hidden />
-                    <span className="truncate ml-1.5">Private to me</span>
-                    {isPrivate ? (
-                      <span className="ml-1.5">
-                        <X size={12} />
-                      </span>
-                    ) : null}
+                      <Lock size={12} strokeWidth={2.25} aria-hidden />
+                      <span className="ml-1.5 truncate sm:hidden">Private</span>
+                      <span className="ml-1.5 hidden truncate sm:inline">Private to me</span>
+                      {isPrivate ? (
+                        <span className="ml-1.5">
+                          <X size={12} />
+                        </span>
+                      ) : null}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent
@@ -251,15 +252,16 @@ export function HubSearchRow({
                         : 'border-border bg-card text-foreground hover:bg-muted/30',
                     )}
                   >
-                    <Sparkles size={12} />
-                    <span className="truncate ml-1.5">
-                      {isExtendedKnowledge ? 'Extended Knowledge ON' : 'Extended Knowledge'}
-                    </span>
-                    {isExtendedKnowledge ? (
-                      <span className="ml-1.5">
-                        <X size={12} />
+                      <Sparkles size={12} />
+                      <span className="ml-1.5 truncate sm:hidden">Extended</span>
+                      <span className="ml-1.5 hidden truncate sm:inline">
+                        {isExtendedKnowledge ? 'Extended Knowledge ON' : 'Extended Knowledge'}
                       </span>
-                    ) : null}
+                      {isExtendedKnowledge ? (
+                        <span className="ml-1.5">
+                          <X size={12} />
+                        </span>
+                      ) : null}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent

@@ -1,6 +1,5 @@
 import {
   Plus,
-  Search,
   Grid2X2,
   List,
   ChevronDown,
@@ -16,6 +15,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PlatformResource, ResourceOwnership } from '../../data/resourcesMock';
 import { Button } from '../ui/button';
 import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
+import {
+  ListPageHeader,
+  ListPageToolbar,
+  listHeaderActionClass,
+} from '../ui/list-page';
 import {
   iconButtonSmClass,
   interactiveCardProps,
@@ -271,149 +275,144 @@ export function ResourcesList({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-page-title mb-1">My Resources</h2>
-          <p className="text-sm text-muted-foreground max-w-prose">
-            Manage and discover operational documents, research, and technical links.
-          </p>
-        </div>
-        <Button type="button" onClick={onAdd} className="w-full sm:w-auto shrink-0">
-          <Plus size={18} />
-          Add Resource
-        </Button>
-      </div>
+      <ListPageHeader
+        title="My Resources"
+        subtitle="Manage and discover operational documents, research, and technical links."
+        action={
+          <Button type="button" onClick={onAdd} className={listHeaderActionClass}>
+            <Plus size={18} />
+            Add Resource
+          </Button>
+        }
+      />
 
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 min-w-0">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Search resources..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm bg-card focus:outline-none focus:border-primary transition-colors"
-          />
-        </div>
-
-        <div className="relative shrink-0" ref={filterMenuRef}>
-          <button
-            type="button"
-            onClick={() => {
-              setShowStatusFilterMenu(false);
-              setShowFilterMenu((v) => !v);
-            }}
-            className={listFilterTriggerClass}
-            aria-expanded={showFilterMenu}
-          >
-            <span>{filterLabel}</span>
-            <ChevronDown
-              size={16}
-              className={`text-text-subtle shrink-0 transition-transform ${showFilterMenu ? 'rotate-180' : ''}`}
-            />
-          </button>
-          {showFilterMenu && (
-            <div className="absolute right-0 z-20 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg py-1">
-              {(
-                [
-                  ['all', 'All Resources'],
-                  ['created_by_me', 'Created by me'],
-                  ['shared_with_me', 'Shared with me'],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => {
-                    setFilter(value);
-                    setShowFilterMenu(false);
-                  }}
-                  className={cn(
-                    menuItemClass,
-                    filter === value ? 'text-primary font-medium' : 'text-foreground',
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
+      <ListPageToolbar
+        search={{
+          value: searchQuery,
+          onChange: setSearchQuery,
+          placeholder: 'Search resources...',
+        }}
+        trailing={
+          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={cn(
+                iconButtonSmClass,
+                'size-9',
+                viewMode === 'list' && 'bg-primary text-white hover:bg-primary-hover hover:text-white',
+              )}
+              aria-label="List view"
+            >
+              <List size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                iconButtonSmClass,
+                'size-9',
+                viewMode === 'grid' && 'bg-primary text-white hover:bg-primary-hover hover:text-white',
+              )}
+              aria-label="Grid view"
+            >
+              <Grid2X2 size={16} />
+            </button>
+          </div>
+        }
+        filterCount={2}
+        filters={
+          <>
+            <div className="relative min-w-0 sm:min-w-[180px] sm:w-auto" ref={filterMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowStatusFilterMenu(false);
+                  setShowFilterMenu((v) => !v);
+                }}
+                className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
+                aria-expanded={showFilterMenu}
+              >
+                <span className="truncate">{filterLabel}</span>
+                <ChevronDown
+                  size={16}
+                  className={`text-text-subtle shrink-0 transition-transform ${showFilterMenu ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {showFilterMenu && (
+                <div className="absolute left-0 sm:right-0 sm:left-auto z-20 mt-1 w-full sm:w-48 bg-card border border-border rounded-lg shadow-lg py-1">
+                  {(
+                    [
+                      ['all', 'All Resources'],
+                      ['created_by_me', 'Created by me'],
+                      ['shared_with_me', 'Shared with me'],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setFilter(value);
+                        setShowFilterMenu(false);
+                      }}
+                      className={cn(
+                        menuItemClass,
+                        filter === value ? 'text-primary font-medium' : 'text-foreground',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div className="relative shrink-0" ref={statusFilterMenuRef}>
-          <button
-            type="button"
-            onClick={() => {
-              setShowFilterMenu(false);
-              setShowStatusFilterMenu((v) => !v);
-            }}
-            className={listFilterTriggerClass}
-            aria-expanded={showStatusFilterMenu}
-          >
-            <span>{statusFilterLabel}</span>
-            <ChevronDown
-              size={16}
-              className={`text-text-subtle shrink-0 transition-transform ${showStatusFilterMenu ? 'rotate-180' : ''}`}
-            />
-          </button>
-          {showStatusFilterMenu && (
-            <div className="absolute right-0 z-20 mt-1 w-44 bg-card border border-border rounded-lg shadow-lg py-1">
-              {(
-                [
-                  ['all', 'All Status'],
-                  ['uploading', 'Uploading'],
-                  ['completed', 'Completed'],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => {
-                    setStatusFilter(value);
-                    setShowStatusFilterMenu(false);
-                  }}
-                  className={cn(
-                    menuItemClass,
-                    statusFilter === value ? 'text-primary font-medium' : 'text-foreground',
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="relative min-w-0 sm:min-w-[160px] sm:w-auto" ref={statusFilterMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFilterMenu(false);
+                  setShowStatusFilterMenu((v) => !v);
+                }}
+                className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
+                aria-expanded={showStatusFilterMenu}
+              >
+                <span className="truncate">{statusFilterLabel}</span>
+                <ChevronDown
+                  size={16}
+                  className={`text-text-subtle shrink-0 transition-transform ${showStatusFilterMenu ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {showStatusFilterMenu && (
+                <div className="absolute left-0 sm:right-0 sm:left-auto z-20 mt-1 w-full sm:w-44 bg-card border border-border rounded-lg shadow-lg py-1">
+                  {(
+                    [
+                      ['all', 'All Status'],
+                      ['uploading', 'Uploading'],
+                      ['completed', 'Completed'],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setStatusFilter(value);
+                        setShowStatusFilterMenu(false);
+                      }}
+                      className={cn(
+                        menuItemClass,
+                        statusFilter === value ? 'text-primary font-medium' : 'text-foreground',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => setViewMode('list')}
-            className={cn(
-              iconButtonSmClass,
-              'size-9',
-              viewMode === 'list' && 'bg-primary text-white hover:bg-primary-hover hover:text-white',
-            )}
-            aria-label="List view"
-          >
-            <List size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('grid')}
-            className={cn(
-              iconButtonSmClass,
-              'size-9',
-              viewMode === 'grid' && 'bg-primary text-white hover:bg-primary-hover hover:text-white',
-            )}
-            aria-label="Grid view"
-          >
-            <Grid2X2 size={16} />
-          </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {viewMode === 'list' ? (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
