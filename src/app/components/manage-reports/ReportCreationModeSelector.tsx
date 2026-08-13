@@ -39,7 +39,7 @@ export function ReportCreationModeSelector({
                 Recommended
               </span>
             </div>
-            <p className="mt-3 text-sm font-semibold text-foreground">Let Humanity Hub draft it</p>
+            <p className="mt-3 text-sm font-semibold text-foreground">Let Humanity Hub create it</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Describe what you need, and Humanity Hub will build the report for you.
             </p>

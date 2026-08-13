@@ -1,9 +1,16 @@
-import { useRef, useState } from 'react';
-import { User, Mail, Lock, MapPin, Briefcase, Phone, Save, Eye, EyeOff, Camera, X } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { User, Mail, Lock, MapPin, Briefcase, Phone, Save, Eye, EyeOff, Camera, X, Compass } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
+import { Button } from './ui/button';
+import { getInterestById, loadManagedInterests } from '../data/interestsAdminMock';
+import { loadUserInterestIds } from '../data/userOnboarding';
 
-export function Profile() {
+interface ProfileProps {
+  onUpdateHomeInterests?: () => void;
+}
+
+export function Profile({ onUpdateHomeInterests }: ProfileProps) {
   const [formData, setFormData] = useState({
     firstName: 'Amina',
     lastName: 'Mohamed',
@@ -22,6 +29,13 @@ export function Profile() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const selectedInterestLabels = useMemo(() => {
+    const catalog = loadManagedInterests();
+    return loadUserInterestIds()
+      .map((id) => getInterestById(id, catalog)?.name)
+      .filter((name): name is string => Boolean(name));
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -153,6 +167,46 @@ export function Profile() {
             </div>
           </div>
         </div>
+
+        {/* Home interests */}
+        {onUpdateHomeInterests && (
+          <div className="bg-card border border-border rounded-2xl p-6 mb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Compass size={18} className="text-primary shrink-0" />
+                  <h3 className="text-base font-semibold text-foreground">Home interests</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  These focus areas shape the prompts behind your Home insights. Change them anytime
+                  to retune what you see first.
+                </p>
+                {selectedInterestLabels.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {selectedInterestLabels.map((label) => (
+                      <span
+                        key={label}
+                        className="inline-flex items-center rounded-md bg-primary-subtle px-2.5 py-1 text-xs font-medium text-primary-text"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-muted-foreground">No interests selected yet.</p>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="shrink-0 w-full sm:w-auto"
+                onClick={onUpdateHomeInterests}
+              >
+                Update interests
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Personal Information */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-6">

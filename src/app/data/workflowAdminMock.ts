@@ -98,9 +98,9 @@ const DEFAULT_WORKFLOWS: ManagedWorkflow[] = [
       },
       {
         id: 'gess',
-        name: 'Galmudug Girls’ Education Access Programme',
+        name: 'Girls’ Education Somalia Programme',
         country: 'Somalia',
-        description: 'Education access for girls across Galmudug, with an FCDO Somalia strand.',
+        description: 'Education access for girls across Puntland and Somaliland, with an FCDO Somalia strand.',
         addedAt: 'Jan 12, 2026',
         projectDocId: '3',
         projectDocTitle: 'IPC Food Security Phase Classification Bay & Bakool',
@@ -110,7 +110,8 @@ const DEFAULT_WORKFLOWS: ManagedWorkflow[] = [
         published: true,
         auditStatus: 'complete',
         score: 61,
-        summary: 'Multiple red areas blocking clearance ahead of the next donor checkpoint.',
+        summary:
+          'Below the 65% threshold. Safeguarding policy has lapsed and the annual review is overdue.',
       },
       {
         id: 'biyoole',
@@ -187,13 +188,13 @@ const STORAGE_KEY = 'hh.managedWorkflows.v4';
 
 const LEGACY_PROGRAMME_NAMES: Record<string, string> = {
   sharp: 'Somalia Humanitarian Assistance and Resilience Programme',
-  gess: 'Galmudug Girls’ Education Access Programme',
+  gess: 'Girls’ Education Somalia Programme',
   biyoole: 'Biyoole Water and Livelihoods Programme',
   damal: 'Damal Caafimaad Health Systems Programme',
   josp: 'Jubaland Stability Programme',
   hilp: 'Humanitarian Innovation and Learning Programme',
   SHARP: 'Somalia Humanitarian Assistance and Resilience Programme',
-  GESS: 'Galmudug Girls’ Education Access Programme',
+  GESS: 'Girls’ Education Somalia Programme',
   Biyoole: 'Biyoole Water and Livelihoods Programme',
   Damal: 'Damal Caafimaad Health Systems Programme',
   JOSP: 'Jubaland Stability Programme',

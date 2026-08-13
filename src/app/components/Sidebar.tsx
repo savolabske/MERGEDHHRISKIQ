@@ -21,6 +21,7 @@ import {
   Shield,
   LayoutTemplate,
   Workflow,
+  Compass,
   type LucideIcon,
 } from 'lucide-react';
 import type { AppView } from '../types/navigation';
@@ -43,6 +44,7 @@ const ADMIN_NAV_ITEMS: {
   { view: 'approvals', label: 'Approvals', icon: Check, badge: 4 },
   { view: 'usersAccess', label: 'Users and Access', icon: Users },
   { view: 'definitions', label: 'Definitions', icon: BookOpen },
+  { view: 'manageInterests', label: 'Manage Interests', icon: Compass },
   { view: 'manageReports', label: 'Manage Reports', icon: LayoutTemplate },
   { view: 'manageWorkflows', label: 'Manage Workflows', icon: Workflow },
   { view: 'resources', label: 'Resources', icon: FileText },
@@ -237,10 +239,12 @@ export function Sidebar({
     currentView === 'approvals' ||
     currentView === 'usersAccess' ||
     currentView === 'definitions' ||
+    currentView === 'manageInterests' ||
     currentView === 'resources' ||
     currentView === 'links' ||
     currentView === 'api' ||
     currentView === 'auditTrails' ||
+    currentView === 'manageReports' ||
     currentView === 'manageWorkflows';
 
   const setCollapsed = (next: boolean) => {

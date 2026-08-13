@@ -36,6 +36,7 @@ import {
   ReportChatHistoryPanel,
   ReportChatLayout,
   ReportChatPromptInput,
+  ReportChatScrollSync,
   ReportDetailShell,
   reportChatLayoutShellClassName,
   type ReportChatHistoryItem,
@@ -801,7 +802,10 @@ export function ProgrammeAuditDetail({
   breadcrumbReviewLabel = 'FCDO Compliance Review',
 }: ProgrammeAuditDetailProps) {
   const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
   const queryTimerRef = useRef<number | null>(null);
+  const streamTimerRef = useRef<number | null>(null);
+  const isQueryingRef = useRef(false);
 
   const suggestedPrompts = useMemo(
     () => buildProgrammeSuggestedPrompts(programme),
@@ -822,6 +826,7 @@ export function ProgrammeAuditDetail({
   const [messages, setMessages] = useState<ProgrammeChatMessage[]>([]);
   const [promptInput, setPromptInput] = useState('');
   const [isQuerying, setIsQuerying] = useState(false);
+  const [thinkingPhase, setThinkingPhase] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [currentChatId, setCurrentChatId] = useState(() => `audit-chat-${Date.now()}`);
@@ -841,6 +846,8 @@ export function ProgrammeAuditDetail({
     setMessages([]);
     setPromptInput('');
     setIsQuerying(false);
+    isQueryingRef.current = false;
+    setThinkingPhase(null);
     setIsHistoryOpen(false);
     setIsChatOpen(false);
     setCurrentChatId(`audit-chat-${Date.now()}`);
@@ -848,6 +855,10 @@ export function ProgrammeAuditDetail({
     if (queryTimerRef.current) {
       window.clearTimeout(queryTimerRef.current);
       queryTimerRef.current = null;
+    }
+    if (streamTimerRef.current) {
+      window.clearTimeout(streamTimerRef.current);
+      streamTimerRef.current = null;
     }
     if (rescanTimerRef.current) {
       window.clearTimeout(rescanTimerRef.current);
@@ -870,6 +881,9 @@ export function ProgrammeAuditDetail({
     return () => {
       if (queryTimerRef.current) {
         window.clearTimeout(queryTimerRef.current);
+      }
+      if (streamTimerRef.current) {
+        window.clearTimeout(streamTimerRef.current);
       }
       if (rescanTimerRef.current) {
         window.clearTimeout(rescanTimerRef.current);
@@ -904,15 +918,67 @@ export function ProgrammeAuditDetail({
     });
   };
 
-  const startNewChat = () => {
+  const clearGenerationTimers = () => {
     if (queryTimerRef.current) {
       window.clearTimeout(queryTimerRef.current);
       queryTimerRef.current = null;
     }
+    if (streamTimerRef.current) {
+      window.clearTimeout(streamTimerRef.current);
+      streamTimerRef.current = null;
+    }
+  };
+
+  const stopGeneration = () => {
+    clearGenerationTimers();
+    isQueryingRef.current = false;
+    setIsQuerying(false);
+    setThinkingPhase(null);
+    setMessages((current) => {
+      persistCurrentChat(current);
+      return current;
+    });
+  };
+
+  const streamAssistantReply = (assistantId: string, fullText: string) => {
+    const textParts = fullText.split(/(\s+)/).filter((part) => part.length > 0);
+    let cursor = 0;
+
+    const streamNextPart = () => {
+      if (cursor >= textParts.length) {
+        streamTimerRef.current = null;
+        isQueryingRef.current = false;
+        setIsQuerying(false);
+        setMessages((current) => {
+          persistCurrentChat(current);
+          return current;
+        });
+        return;
+      }
+
+      const nextChunk = textParts[cursor];
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === assistantId
+            ? { ...message, content: `${message.content}${nextChunk}` }
+            : message,
+        ),
+      );
+      cursor += 1;
+      streamTimerRef.current = window.setTimeout(streamNextPart, 28);
+    };
+
+    streamNextPart();
+  };
+
+  const startNewChat = () => {
+    clearGenerationTimers();
+    isQueryingRef.current = false;
     if (messages.length > 0) {
       persistCurrentChat(messages);
     }
     setIsQuerying(false);
+    setThinkingPhase(null);
     setIsHistoryOpen(false);
     setPromptInput('');
     setMessages([]);
@@ -931,11 +997,10 @@ export function ProgrammeAuditDetail({
   const closeHistory = () => setIsHistoryOpen(false);
 
   const restoreHistoryItem = (item: ReportChatHistoryItem<ProgrammeChatMessage>) => {
-    if (queryTimerRef.current) {
-      window.clearTimeout(queryTimerRef.current);
-      queryTimerRef.current = null;
-    }
+    clearGenerationTimers();
+    isQueryingRef.current = false;
     setIsQuerying(false);
+    setThinkingPhase(null);
     setPromptInput('');
     setCurrentChatId(item.id);
     setMessages(item.messages ?? []);
@@ -1000,7 +1065,7 @@ export function ProgrammeAuditDetail({
 
   const runPrompt = (rawPrompt?: string) => {
     const prompt = (rawPrompt ?? promptInput).trim();
-    if (!prompt || isQuerying) return;
+    if (!prompt || isQueryingRef.current) return;
 
     openProgrammeChat();
     setIsHistoryOpen(false);
@@ -1010,33 +1075,27 @@ export function ProgrammeAuditDetail({
       role: 'user',
       content: prompt,
     };
-    setMessages((current) => {
-      const next = [...current, userMessage];
-      persistCurrentChat(next);
-      return next;
-    });
+    setMessages((current) => [...current, userMessage]);
+    isQueryingRef.current = true;
     setIsQuerying(true);
+    setThinkingPhase('Looking through knowledge base...');
 
-    if (queryTimerRef.current) {
-      window.clearTimeout(queryTimerRef.current);
-    }
+    clearGenerationTimers();
 
     queryTimerRef.current = window.setTimeout(() => {
-      setMessages((current) => {
-        const next = [
+      setThinkingPhase('Preparing answer...');
+      queryTimerRef.current = window.setTimeout(() => {
+        const assistantId = `a-${Date.now()}`;
+        const fullText = buildProgrammeAssistantReply(programme, prompt);
+        setThinkingPhase(null);
+        setMessages((current) => [
           ...current,
-          {
-            id: `a-${Date.now()}`,
-            role: 'assistant' as const,
-            content: buildProgrammeAssistantReply(programme, prompt),
-          },
-        ];
-        persistCurrentChat(next);
-        return next;
-      });
-      setIsQuerying(false);
-      queryTimerRef.current = null;
-    }, 700);
+          { id: assistantId, role: 'assistant' as const, content: '' },
+        ]);
+        queryTimerRef.current = null;
+        streamAssistantReply(assistantId, fullText);
+      }, 700);
+    }, 900);
   };
 
   const openCheck = (checkId: string) => {
@@ -1108,7 +1167,10 @@ export function ProgrammeAuditDetail({
           </div>
         }
         chatFeed={
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-card p-4">
+          <div
+            ref={chatScrollRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-card p-4"
+          >
             {isHistoryOpen ? (
               <ReportChatHistoryPanel
                 items={historyItems}
@@ -1117,12 +1179,19 @@ export function ProgrammeAuditDetail({
                 onTogglePin={togglePinHistoryItem}
               />
             ) : (
-              <ProgrammeAuditChatFeed
-                messages={messages}
-                isQuerying={isQuerying}
-                suggestedPrompts={suggestedPrompts}
-                onPrompt={runPrompt}
-              />
+              <>
+                <ReportChatScrollSync
+                  scrollRef={chatScrollRef}
+                  deps={[messages, isQuerying, thinkingPhase]}
+                />
+                <ProgrammeAuditChatFeed
+                  messages={messages}
+                  isQuerying={isQuerying}
+                  thinkingPhase={thinkingPhase}
+                  suggestedPrompts={suggestedPrompts}
+                  onPrompt={runPrompt}
+                />
+              </>
             )}
           </div>
         }
@@ -1131,15 +1200,8 @@ export function ProgrammeAuditDetail({
             value={promptInput}
             onChange={setPromptInput}
             onSubmit={() => runPrompt()}
-            onStop={() => {
-              if (queryTimerRef.current) {
-                window.clearTimeout(queryTimerRef.current);
-                queryTimerRef.current = null;
-              }
-              setIsQuerying(false);
-            }}
+            onStop={stopGeneration}
             isGenerating={isQuerying}
-            disabled={isQuerying}
             placeholder="Ask about this audit…"
             theme={AID_FLOW_CHAT_PROMPT_THEME}
           />

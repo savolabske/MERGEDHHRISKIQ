@@ -22,6 +22,7 @@ export type AppView =
   | 'api'
   | 'manageReports'
   | 'manageWorkflows'
+  | 'manageInterests'
   | 'documentDetail';
 
 export const RISK_IQ_TAB_STORAGE_KEY = 'riskiq.lastTab';

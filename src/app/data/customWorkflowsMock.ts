@@ -85,6 +85,7 @@ export interface ProgrammeAudit {
   id: string;
   title: string;
   fullTitle: string;
+  code: string;
   iatiId: string;
   geography: string;
   budget: string;
@@ -686,8 +687,9 @@ function stubAreasFromTemplate(
 export const FCDO_PROGRAMME_AUDITS: ProgrammeAudit[] = [
   {
     id: 'sharp',
-    title: 'Somalia Humanitarian Resilience Programme',
+    title: 'Somalia Humanitarian & Resilience Programme',
     fullTitle: 'Somalia Humanitarian and Resilience Programme',
+    code: 'SHARP',
     iatiId: 'GB-GOV-1-300123',
     geography: 'Nationwide',
     budget: '£142.0m',
@@ -698,7 +700,7 @@ export const FCDO_PROGRAMME_AUDITS: ProgrammeAudit[] = [
     lastAudited: 'Mar 12, 2026',
     lastReviewRelative: '2 days ago',
     summary:
-      'Strong programme with one gap. A missing Q2 financial report has pulled finance to red and taken 6 points off the score.',
+      'Strong overall, but a **missing Q2 financial report** has pulled Finance to red and dragged the score down. One approval countersignature and two refreshes would return this programme to green.',
     priorityAction: {
       checkId: 'sharp-finance-q2',
       title: 'Provide the Q2 2025 financial report.',
@@ -732,59 +734,57 @@ export const FCDO_PROGRAMME_AUDITS: ProgrammeAudit[] = [
   },
   {
     id: 'gess',
-    title: 'Galmudug Girls’ Education Programme',
-    fullTitle: 'Galmudug Girls’ Education Access Programme',
-    iatiId: 'GB-GOV-1-300441',
-    geography: 'Galmudug',
-    budget: '£89.4m',
+    title: 'Girls’ Education Somalia',
+    fullTitle: 'Girls’ Education Somalia Programme',
+    code: 'GESS',
+    iatiId: 'GB-GOV-1-301045',
+    geography: 'Puntland, Somaliland',
+    budget: '£58.4m',
     status: 'action_needed',
     score: 61,
-    trendPoints: 4,
-    trend: 'up',
-    lastAudited: 'Mar 8, 2026',
-    lastReviewRelative: '6 days ago',
+    trendPoints: 11,
+    trend: 'down',
+    lastAudited: 'Mar 12, 2026',
+    lastReviewRelative: '1 day ago',
     summary:
-      'Multiple red areas are blocking clearance. Approvals, delivery, risk and governance need evidence before the next donor checkpoint.',
+      'Below the 65% threshold. **Safeguarding policy has lapsed its review date** and the annual review is overdue. Two critical actions needed before the next board.',
     priorityAction: {
-      checkId: 'gess-sharp-approvals-sro',
-      title: 'Upload the overdue board minutes and risk register.',
+      checkId: 'gess-sharp-safe-policy',
+      title: 'Renew the safeguarding policy and close the overdue annual review.',
       description:
-        'Governance and risk remain red until both documents are attached and reviewed.',
+        'Safeguarding stays red until the policy review date is current and the annual review is filed.',
     },
     areas: stubAreasFromTemplate('gess', {
-      Design: 'attention',
-      Approvals: 'action_needed',
       Finance: 'attention',
-      Delivery: 'action_needed',
+      Delivery: 'attention',
       Risk: 'action_needed',
-      VfM: 'attention',
-      Safeguarding: 'compliant',
+      Safeguarding: 'action_needed',
       'M and E': 'attention',
-      Governance: 'action_needed',
     }),
     ratings: {
-      Design: 'A',
-      Approvals: 'R',
+      Design: 'G',
+      Approvals: 'G',
       Finance: 'A',
-      Delivery: 'R',
+      Delivery: 'A',
       Risk: 'R',
-      VfM: 'A',
-      Safeguarding: 'G',
+      VfM: 'G',
+      Safeguarding: 'R',
       'M and E': 'A',
-      Governance: 'R',
+      Governance: 'G',
     },
     history: [
       {
         id: 'g1',
-        when: '6 days ago',
+        when: '1 day ago',
         tone: 'action_needed',
-        description: 'Full AI sweep completed. Score 61 out of 100. Four areas remain red.',
+        description:
+          'Full AI sweep completed. Score 61 out of 100. Safeguarding and risk remain red.',
       },
       {
         id: 'g2',
         when: '3 weeks ago',
         tone: 'attention',
-        description: 'Partial evidence pack uploaded. Score improved 4 points.',
+        description: 'Partial evidence pack uploaded. Score fell 11 points after policy lapse.',
       },
     ],
   },
@@ -792,6 +792,7 @@ export const FCDO_PROGRAMME_AUDITS: ProgrammeAudit[] = [
     id: 'biyooole',
     title: 'Biyoole Water & Livelihoods',
     fullTitle: 'Biyoole Water for Agro-pastoral Livelihoods',
+    code: 'Biyoole',
     iatiId: 'GB-GOV-1-300812',
     geography: 'Puntland & Somaliland',
     budget: '£48.2m',
@@ -802,7 +803,7 @@ export const FCDO_PROGRAMME_AUDITS: ProgrammeAudit[] = [
     lastAudited: 'Mar 4, 2026',
     lastReviewRelative: '1 week ago',
     summary:
-      'Programme is largely clear. Risk still has one amber item — the risk register evidence is outdated and needs a refresh before the next programme board review.',
+      'Programme is largely clear. Risk still has one amber item — the **risk register evidence is outdated** and needs a refresh before the next programme board review.',
     priorityAction: null,
     areas: stubAreasFromTemplate('biyooole', { Risk: 'attention' }),
     ratings: {
@@ -829,6 +830,7 @@ export const FCDO_PROGRAMME_AUDITS: ProgrammeAudit[] = [
     id: 'damal',
     title: 'Damal Caafimaad Health Systems',
     fullTitle: 'Damal Caafimaad Health Systems Strengthening',
+    code: 'Damal',
     iatiId: 'GB-GOV-1-301104',
     geography: 'South West State',
     budget: '£62.7m',
@@ -839,7 +841,7 @@ export const FCDO_PROGRAMME_AUDITS: ProgrammeAudit[] = [
     lastAudited: 'Feb 28, 2026',
     lastReviewRelative: '10 days ago',
     summary:
-      'Safeguarding is the main blocker. A delayed referral register has pulled the score down and left three adjacent areas amber.',
+      '**Safeguarding** is the main blocker. A delayed referral register has pulled the score down and left three adjacent areas amber.',
     priorityAction: {
       checkId: 'damal-sharp-safe-policy',
       title: 'Complete the safeguarding referral register for February.',
@@ -877,6 +879,7 @@ export const FCDO_PROGRAMME_AUDITS: ProgrammeAudit[] = [
     id: 'josp',
     title: 'Jubaland Stability Programme',
     fullTitle: 'Jubaland Stability and Local Governance Programme',
+    code: 'JOSP',
     iatiId: 'GB-GOV-1-301220',
     geography: 'Jubaland',
     budget: '£36.5m',
@@ -887,7 +890,7 @@ export const FCDO_PROGRAMME_AUDITS: ProgrammeAudit[] = [
     lastAudited: 'Feb 22, 2026',
     lastReviewRelative: '2 weeks ago',
     summary:
-      'On track overall. Delivery still has one amber item — quarterly milestone evidence needs a refresh, with a recovery plan already in place.',
+      'On track overall. Delivery still has one amber item — **quarterly milestone evidence** needs a refresh, with a recovery plan already in place.',
     priorityAction: null,
     areas: stubAreasFromTemplate('josp', { Delivery: 'attention' }),
     ratings: {
@@ -959,7 +962,7 @@ export const PROGRAMME_STATUS_META: Record<ProgrammeAuditStatus, StatusVisualMet
     barClass: 'bg-success',
   },
   attention: {
-    label: 'Attention',
+    label: 'Needs attention',
     dotClass: 'bg-warning',
     textClass: 'text-warning-text',
     badgeClass: 'bg-warning-subtle text-warning-text',
@@ -968,7 +971,7 @@ export const PROGRAMME_STATUS_META: Record<ProgrammeAuditStatus, StatusVisualMet
     barClass: 'bg-warning',
   },
   action_needed: {
-    label: 'Action needed',
+    label: 'Requires action',
     dotClass: 'bg-destructive',
     textClass: 'text-destructive-text',
     badgeClass: 'bg-destructive-subtle text-destructive-text',
@@ -1138,6 +1141,7 @@ export function resolveAdminProgrammeAudit(input: {
     id: input.id,
     title: catalog?.title ?? input.name,
     fullTitle: input.name || catalog?.fullTitle || input.name,
+    code: catalog?.code ?? input.id.toUpperCase(),
     iatiId: catalog?.iatiId ?? `ADMIN-${input.id.toUpperCase()}`,
     geography: catalog?.geography ?? input.country ?? '—',
     budget: catalog?.budget ?? '—',

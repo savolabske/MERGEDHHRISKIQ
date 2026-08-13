@@ -1,20 +1,17 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import {
-  FCDO_AUDIT_AREAS,
+  AREA_STATUS_META,
   FCDO_PROGRAMME_AUDITS,
-  NOT_ASSESSED_META,
   PROGRAMME_STATUS_META,
-  RAG_META,
   getProgrammeAuditById,
   sortProgrammeAudits,
-  type CellRating,
   type ProgrammeAudit,
   type ProgrammeAuditStatus,
+  type TrendDirection,
 } from '../../data/customWorkflowsMock';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
 import { PageScrollShell } from '../PageScrollShell';
-import { gridTableHeaderClass, gridTableRowClass, tableText } from '../ui/table-styles';
 import { cn } from '../ui/utils';
 import { ProgrammeAuditDetail } from './ProgrammeAuditDetail';
 
@@ -22,76 +19,217 @@ interface FcdoComplianceReviewProps {
   onBack: () => void;
 }
 
-function RagCell({ rating, area }: { rating: CellRating; area: string }) {
-  if (rating === null) {
-    return (
-      <div
-        className={cn(
-          'relative flex h-8 w-12 sm:h-9 sm:w-14 items-center justify-center rounded-[8px] overflow-hidden',
-          NOT_ASSESSED_META.cellClass,
-        )}
-        title={`${area}: ${NOT_ASSESSED_META.label}`}
-        aria-label={`${area}: ${NOT_ASSESSED_META.label}`}
-      >
-        {/* Intentionally no symbol/text; keeps layout consistent without the em-dash. */}
-      </div>
-    );
-  }
-
-  const meta = RAG_META[rating];
-  return (
-    <div
-      className={cn(
-        'relative flex h-8 w-12 sm:h-9 sm:w-14 items-center justify-center rounded-[8px] overflow-hidden',
-        meta.cellClass,
-      )}
-      title={`${area}: ${meta.label}`}
-      aria-label={`${area}: ${meta.label}`}
-    >
-      <span
-        className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-l-[8px]', meta.accentClass)}
-        aria-hidden
-      />
-      <span className={cn('text-xs font-semibold', meta.textClass)}>{rating}</span>
-    </div>
-  );
-}
-
-function StatusLabel({ status }: { status: ProgrammeAuditStatus }) {
+function StatusBadge({ status }: { status: ProgrammeAuditStatus }) {
   const meta = PROGRAMME_STATUS_META[status];
   return (
-    <span className={cn('inline-flex items-center gap-1.5 text-sm font-medium', meta.textClass)}>
-      <span className={cn('size-2 rounded-full', meta.dotClass)} aria-hidden />
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide',
+        meta.badgeClass,
+      )}
+    >
+      <span className={cn('size-1.5 rounded-full', meta.dotClass)} aria-hidden />
       {meta.label}
     </span>
   );
 }
 
-function ProgrammeIdentity({ audit }: { audit: ProgrammeAudit }) {
-  const progressLabel =
-    audit.status === 'scanning' && audit.scanProgress
-      ? `Scanning ${audit.scanProgress.assessed} of ${audit.scanProgress.total} areas`
-      : null;
+function TrendMark({ trend, className }: { trend: TrendDirection; className?: string }) {
+  if (trend === 'flat') {
+    return (
+      <svg width="18" height="14" viewBox="0 0 18 14" fill="none" className={className} aria-hidden>
+        <path d="M2 7H16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  const d =
+    trend === 'down'
+      ? 'M1.5 3.5 L5 7.5 L8.5 5 L16.5 11.5'
+      : 'M1.5 10.5 L5 6.5 L8.5 8 L16.5 2.5';
 
   return (
-    <div className="min-w-0 space-y-1.5 pr-2">
-      <h3 className="table-primary-text line-clamp-2 group-hover:text-primary transition-colors">
-        {audit.title}
-      </h3>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <StatusLabel status={audit.status} />
-        {progressLabel ? (
-          <p className="text-sm font-medium text-muted-foreground">{progressLabel}</p>
-        ) : (
-          <p className="text-sm font-semibold tabular-nums text-foreground">{audit.score}%</p>
-        )}
+    <svg width="18" height="14" viewBox="0 0 18 14" fill="none" className={className} aria-hidden>
+      <path
+        d={d}
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SummaryText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <p className="text-[15px] leading-relaxed text-muted-foreground">
+      {parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return (
+            <strong key={index} className="font-semibold text-foreground">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </p>
+  );
+}
+
+function ribbonLabel(shortLabel: string) {
+  if (shortLabel === 'M and E') return 'M&E';
+  if (shortLabel === 'Safeguarding') return 'Safeguard';
+  return shortLabel;
+}
+
+function countChangedDocs(audit: ProgrammeAudit): number {
+  return audit.areas.reduce((total, area) => {
+    return (
+      total +
+      area.checks.filter((check) => {
+        if (!check.evidence) return check.status !== 'compliant';
+        return check.evidence.badge === 'outdated' || check.evidence.badge === 'missing';
+      }).length
+    );
+  }, 0);
+}
+
+function ComplianceRibbon({ audit }: { audit: ProgrammeAudit }) {
+  return (
+    <div className="overflow-x-auto">
+      <div className="flex min-w-[680px] gap-2">
+        {audit.areas.map((area) => {
+          const meta = AREA_STATUS_META[area.status];
+          return (
+            <div
+              key={area.area}
+              className={cn(
+                'relative flex min-h-[2.5rem] min-w-0 flex-1 items-center justify-center rounded-none px-1.5 py-2',
+                meta.cardClass,
+              )}
+              title={`${area.fullLabel}: ${meta.label}`}
+            >
+              <span
+                className={cn('absolute inset-y-0 left-0 w-[3px]', meta.barClass)}
+                aria-hidden
+              />
+              <span
+                className={cn(
+                  'truncate pl-1 text-[11px] font-semibold leading-none sm:text-xs',
+                  meta.textClass,
+                )}
+              >
+                {ribbonLabel(area.shortLabel)}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-const DESKTOP_GRID =
-  'grid-cols-[minmax(0,1fr)_repeat(9,4.25rem)] gap-x-1.5';
+function ProgrammeAuditCard({
+  audit,
+  onOpen,
+}: {
+  audit: ProgrammeAudit;
+  onOpen: () => void;
+}) {
+  const isScanning = audit.status === 'scanning' || audit.score === null;
+  const docsChanged = countChangedDocs(audit);
+  const scoreTone =
+    audit.trend === 'down' || audit.status === 'action_needed'
+      ? 'text-destructive'
+      : audit.trend === 'up' || audit.status === 'compliant'
+        ? 'text-success-text'
+        : 'text-warning-text';
+  const deltaPart =
+    audit.trendPoints === 0 || audit.trend === 'flat'
+      ? 'no change since last review'
+      : `${audit.trend === 'down' ? '-' : '+'}${audit.trendPoints} since last review`;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full rounded-2xl border border-border bg-card p-5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-colors hover:border-primary/25 sm:p-6"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <StatusBadge status={audit.status} />
+          <div className="min-w-0 pt-px">
+            <h3 className="text-[1.25rem] font-semibold tracking-tight text-foreground">
+              {audit.title}
+            </h3>
+            <p className="mt-1.5 font-mono text-[12px] leading-5 tracking-tight text-muted-foreground">
+              {[audit.code, audit.iatiId, audit.geography, audit.budget]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          </div>
+        </div>
+
+        <div className="shrink-0 pt-1">
+          {isScanning ? (
+            <p className="text-sm font-medium tabular-nums text-muted-foreground">
+              {audit.scanProgress
+                ? `Scanning ${audit.scanProgress.assessed} of ${audit.scanProgress.total}`
+                : 'Scanning'}
+            </p>
+          ) : (
+            <p
+              className={cn(
+                'inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums',
+                scoreTone,
+              )}
+            >
+              <TrendMark trend={audit.trend} />
+              <span>
+                {audit.score}% · {deltaPart}
+              </span>
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <SummaryText text={audit.summary} />
+      </div>
+
+      <div className="mt-5">
+        <ComplianceRibbon audit={audit} />
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {(
+            [
+              ['compliant', 'Green'],
+              ['attention', 'Amber'],
+              ['action_needed', 'Red'],
+            ] as const
+          ).map(([status, label]) => (
+            <span key={status} className="inline-flex items-center gap-1.5">
+              <span
+                className={cn('size-1.5 rounded-full', PROGRAMME_STATUS_META[status].dotClass)}
+                aria-hidden
+              />
+              {label}
+            </span>
+          ))}
+        </div>
+        <p className="font-mono text-[12px] text-muted-foreground">
+          last review {audit.lastReviewRelative}
+          {docsChanged > 0 ? ` · ${docsChanged} doc${docsChanged === 1 ? '' : 's'} changed` : ''}
+        </p>
+      </div>
+    </button>
+  );
+}
 
 export function FcdoComplianceReview({ onBack }: FcdoComplianceReviewProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,6 +247,7 @@ export function FcdoComplianceReview({ onBack }: FcdoComplianceReviewProps) {
       (audit) =>
         audit.title.toLowerCase().includes(q) ||
         audit.fullTitle.toLowerCase().includes(q) ||
+        audit.code.toLowerCase().includes(q) ||
         audit.geography.toLowerCase().includes(q),
     );
   }, [audits, searchQuery]);
@@ -125,32 +264,31 @@ export function FcdoComplianceReview({ onBack }: FcdoComplianceReviewProps) {
 
   return (
     <PageScrollShell>
-    <div className="space-y-6">
-      <PageBreadcrumb
-        items={[
-          { label: 'Custom Workflows', onClick: onBack },
-          { label: 'FCDO Compliance Review' },
-        ]}
-      />
+      <div className="space-y-6">
+        <PageBreadcrumb
+          items={[
+            { label: 'Custom Workflows', onClick: onBack },
+            { label: 'FCDO Compliance Review' },
+          ]}
+        />
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-page-title mb-1">FCDO Compliance Review</h2>
-          <p className="text-sm text-muted-foreground max-w-2xl">
-            Programme-level outcomes against the 72-point evidence framework across nine compliance
-            areas.
-          </p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-page-title mb-1">FCDO Compliance Review</h2>
+            <p className="text-sm text-muted-foreground max-w-2xl">
+              Programme-level outcomes against the 72-point evidence framework across nine
+              compliance areas.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success-text">
+              <span className="size-1.5 rounded-full bg-success" aria-hidden />
+              Last sync 2hrs ago
+            </span>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success-text">
-            <span className="size-1.5 rounded-full bg-success" aria-hidden />
-            Last sync 2hrs ago
-          </span>
-        </div>
-      </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 min-w-0">
+        <div className="relative w-full">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
             size={18}
@@ -160,116 +298,26 @@ export function FcdoComplianceReview({ onBack }: FcdoComplianceReviewProps) {
             placeholder="Search programmes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-base sm:text-sm bg-card focus:outline-none focus:border-primary transition-colors"
+            className="w-full rounded-full border border-border bg-card py-2.5 pl-10 pr-4 text-base transition-colors focus:border-primary focus:outline-none sm:text-sm"
           />
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-          {(['G', 'A', 'R'] as const).map((rating) => {
-            const meta = RAG_META[rating];
-            return (
-              <span key={rating} className="inline-flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    'flex h-5 w-5 items-center justify-center rounded',
-                    meta.cellClass,
-                  )}
-                >
-                  <span className={cn('text-[10px] font-semibold', meta.textClass)}>{rating}</span>
-                </span>
-                <span className={meta.textClass}>{meta.label}</span>
-              </span>
-            );
-          })}
+
+        <div className="space-y-5">
+          {filtered.map((audit) => (
+            <ProgrammeAuditCard
+              key={audit.id}
+              audit={audit}
+              onOpen={() => setSelectedProgrammeId(audit.id)}
+            />
+          ))}
+
+          {filtered.length === 0 && (
+            <div className="rounded-2xl border border-border bg-card py-12 text-center">
+              <p className="text-sm text-muted-foreground">No programmes found</p>
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="min-w-[720px]">
-            <div
-              className={cn(
-                gridTableHeaderClass,
-                'grid items-end gap-y-0 px-4 sm:px-5 py-3',
-                DESKTOP_GRID,
-              )}
-            >
-              <div className={tableText.header}>Programme</div>
-              {FCDO_AUDIT_AREAS.map((area) => (
-                <div
-                  key={area}
-                  className={cn(
-                    tableText.header,
-                    'text-center text-[10px] leading-tight px-0.5',
-                  )}
-                >
-                  {area}
-                </div>
-              ))}
-            </div>
-
-            <div>
-              {filtered.map((audit) => (
-                <button
-                  key={audit.id}
-                  type="button"
-                  onClick={() => setSelectedProgrammeId(audit.id)}
-                  className={cn(
-                    'group w-full text-left',
-                    gridTableRowClass.narrative,
-                    'grid items-center gap-y-0 px-4 sm:px-5',
-                    DESKTOP_GRID,
-                    'last:border-b-0',
-                  )}
-                >
-                  <ProgrammeIdentity audit={audit} />
-                  {FCDO_AUDIT_AREAS.map((area) => (
-                    <div key={area} className="flex justify-center">
-                      <RagCell rating={audit.ratings[area]} area={area} />
-                    </div>
-                  ))}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="py-12 text-center">
-            <p className="text-sm text-muted-foreground">No programmes found</p>
-          </div>
-        )}
-      </div>
-
-      <div className="md:hidden space-y-3">
-        {filtered.map((audit) => (
-          <button
-            key={audit.id}
-            type="button"
-            onClick={() => setSelectedProgrammeId(audit.id)}
-            className="w-full text-left rounded-xl border border-border bg-card p-4 space-y-4 hover:border-primary/30 transition-colors"
-          >
-            <ProgrammeIdentity audit={audit} />
-            <p className="text-xs text-muted-foreground">Last audited {audit.lastAudited}</p>
-            <div className="grid grid-cols-3 gap-x-1.5 gap-y-3">
-              {FCDO_AUDIT_AREAS.map((area) => (
-                <div key={area} className="flex flex-col items-center gap-1 min-w-0">
-                  <RagCell rating={audit.ratings[area]} area={area} />
-                  <span className="text-[10px] leading-tight text-center text-muted-foreground line-clamp-2">
-                    {area}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </button>
-        ))}
-
-        {filtered.length === 0 && (
-          <div className="py-12 text-center rounded-xl border border-border bg-card">
-            <p className="text-sm text-muted-foreground">No programmes found</p>
-          </div>
-        )}
-      </div>
-    </div>
     </PageScrollShell>
   );
 }

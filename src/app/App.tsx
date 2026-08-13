@@ -15,6 +15,8 @@ import { Api } from "./components/Api";
 import { Definitions } from "./components/Definitions";
 import { ManageReports } from "./components/manage-reports/ManageReports";
 import { ManageWorkflows } from "./components/manage-workflows/ManageWorkflows";
+import { ManageInterests } from "./components/manage-interests/ManageInterests";
+import { OnboardingFlow } from "./components/onboarding/OnboardingFlow";
 import { Documents } from "./components/Documents";
 import { linkReportResource } from "./data/reportsAdminMock";
 import type { ManagedReport } from "./data/reportsAdminMock";
@@ -64,6 +66,10 @@ import type { AppNotification } from "./types/notifications";
 import type { ChatHistoryItem } from "./types/chat";
 import { withChatSources, assignChatSource } from "./utils/chatHistorySources";
 import { resolveChatSource } from "./components/chats/chatSource";
+import {
+  isOnboardingComplete,
+  clearOnboardingCompleteFlag,
+} from "./data/userOnboarding";
 
 interface JoinActivity {
   id: string;
@@ -103,6 +109,7 @@ export default function App() {
   };
 
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Show login screen
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [currentView, setCurrentView] = useState<AppView | 'aiSearch'>('home');
   const [riskIqTab, setRiskIqTab] = useState<RiskIqTab>(loadRiskIqTab);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -1001,15 +1008,46 @@ export default function App() {
   const handleLogin = () => {
     setPendingLinkState(getPendingLinkState());
     setIsAuthenticated(true);
+    setNeedsOnboarding(!isOnboardingComplete());
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setNeedsOnboarding(false);
+  };
+
+  const handleOnboardingComplete = () => {
+    setNeedsOnboarding(false);
+    setCurrentView('home');
+    toast.success('Your home is personalized to your interests');
+  };
+
+  const handleRedoOnboarding = () => {
+    clearOnboardingCompleteFlag();
+    setNeedsOnboarding(true);
   };
 
   // Show Auth screen if not authenticated
   if (!isAuthenticated) {
     return <Auth onLogin={handleLogin} />;
+  }
+
+  if (needsOnboarding) {
+    return (
+      <>
+        <OnboardingFlow onComplete={handleOnboardingComplete} />
+        <Toaster
+          position="top-right"
+          closeButton
+          duration={4000}
+          toastOptions={{
+            className: 'sonner-toast',
+            closeButton: true,
+            duration: 4000,
+          }}
+        />
+      </>
+    );
   }
 
   const startSearchChat = (query: string, options?: { fromRiskIq?: boolean; fromHome?: boolean }) => {
@@ -1918,7 +1956,7 @@ export default function App() {
         ) : currentView === 'customWorkflows' ? (
           <CustomWorkflows />
         ) : currentView === 'profile' ? (
-          <Profile />
+          <Profile onUpdateHomeInterests={handleRedoOnboarding} />
         ) : currentView === 'adminDashboard' ? (
           <AdminDashboard />
         ) : currentView === 'approvals' ? (
@@ -1933,6 +1971,8 @@ export default function App() {
           <Api />
         ) : currentView === 'definitions' ? (
           <Definitions />
+        ) : currentView === 'manageInterests' ? (
+          <ManageInterests />
         ) : currentView === 'manageReports' ? (
           <ManageReports onAttachSources={handleAttachSourcesFromReport} />
         ) : currentView === 'manageWorkflows' ? (

@@ -196,7 +196,7 @@ export function ReportBuilder({
                       durationMs={REPORT_GENERATION_DURATION_MS}
                       steps={REPORT_GENERATION_STEPS}
                       eyebrow=""
-                      subtitle="Building your report from the prompt you provided"
+                      subtitle="We'll notify you when it's ready. Feel free to leave and come back later."
                       ariaLabel="Generating report"
                       centerIcon={Sparkles}
                       centerIconClassName="text-primary"

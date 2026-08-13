@@ -206,6 +206,7 @@ export function buildProgrammeAssistantReply(
 interface ProgrammeAuditChatFeedProps {
   messages: ProgrammeChatMessage[];
   isQuerying: boolean;
+  thinkingPhase?: string | null;
   suggestedPrompts?: string[];
   onPrompt?: (prompt: string) => void;
 }
@@ -254,6 +255,7 @@ export function ProgrammeAuditTryAsking({
 export function ProgrammeAuditChatFeed({
   messages,
   isQuerying,
+  thinkingPhase,
   suggestedPrompts = [],
   onPrompt,
 }: ProgrammeAuditChatFeedProps) {
@@ -270,44 +272,51 @@ export function ProgrammeAuditChatFeed({
         />
       ) : null}
 
-      {messages.map((message) => (
-        <div
-          key={message.id}
-          className={cn(
-            'flex flex-col gap-1.5',
-            message.role === 'user' ? 'items-end' : 'items-start',
-          )}
-        >
-          {message.role === 'assistant' && (
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-              <Sparkles size={12} className="text-primary" />
-              Audit assistant
-            </div>
-          )}
+      {messages.map((message) => {
+        if (message.role === 'assistant' && !message.content) return null;
+
+        return (
           <div
+            key={message.id}
             className={cn(
-              'max-w-[92%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed',
-              message.role === 'user'
-                ? 'rounded-br-md bg-primary text-primary-foreground'
-                : 'rounded-bl-md border border-border bg-muted/40 text-foreground',
+              'flex flex-col gap-1.5',
+              message.role === 'user' ? 'items-end' : 'items-start',
             )}
           >
-            {message.content}
+            {message.role === 'assistant' && (
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+                <Sparkles size={12} className="text-primary" />
+                Audit assistant
+              </div>
+            )}
+            <div
+              className={cn(
+                'max-w-[92%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed',
+                message.role === 'user'
+                  ? 'rounded-br-md bg-primary text-primary-foreground'
+                  : 'rounded-bl-md border border-border bg-muted/40 text-foreground',
+              )}
+            >
+              {message.content}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
-      {isQuerying && (
+      {isQuerying && thinkingPhase ? (
         <div className="flex flex-col gap-1.5 items-start">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
             <Sparkles size={12} className="text-primary" />
             Audit assistant
           </div>
-          <div className="rounded-2xl rounded-bl-md border border-border bg-muted/40 px-3.5 py-3 text-[13px] text-muted-foreground">
-            Checking the audit…
+          <div className="flex items-center gap-2.5 px-1 py-1">
+            <div className="size-4 shrink-0 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <span className="text-[13px] font-medium text-foreground shimmer-text">
+              {thinkingPhase}
+            </span>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
