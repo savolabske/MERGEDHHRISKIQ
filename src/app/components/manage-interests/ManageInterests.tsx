@@ -1,26 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Edit, MoreVertical, Plus, Trash2, X } from 'lucide-react';
+import { CircleCheck, CircleOff, Edit, MoreVertical, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   createEmptyInterestDraft,
   formatInterestUpdatedAt,
   getActiveInterests,
-  INTEREST_ICON_OPTIONS,
   loadManagedInterests,
   saveManagedInterests,
-  type InterestIconKey,
   type ManagedInterest,
 } from '../../data/interestsAdminMock';
 import { PageScrollShell } from '../PageScrollShell';
 import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
 import { Button } from '../ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
 import {
   ListPageHeader,
   ListPageSearch,
@@ -29,14 +20,14 @@ import {
 } from '../ui/list-page';
 import { iconButtonClass, menuItemClass } from '../ui/interaction';
 import { cn } from '../ui/utils';
-import { INTEREST_ICONS } from '../onboarding/interestIcons';
+import { getInterestIcon } from '../onboarding/interestIcons';
+import { InterestIconPicker } from './InterestIconPicker';
 
 type InterestFormState = {
   name: string;
   description: string;
-  iconKey: InterestIconKey;
+  iconKey: string;
   accent: string;
-  active: boolean;
   prompt: string;
 };
 
@@ -45,9 +36,8 @@ function toFormState(interest?: ManagedInterest | null): InterestFormState {
     return {
       name: '',
       description: '',
-      iconKey: 'earlyWarning',
+      iconKey: 'sparkles',
       accent: '#2463eb',
-      active: true,
       prompt: '',
     };
   }
@@ -56,7 +46,6 @@ function toFormState(interest?: ManagedInterest | null): InterestFormState {
     description: interest.description,
     iconKey: interest.iconKey,
     accent: interest.accent,
-    active: interest.active,
     prompt: interest.prompt,
   };
 }
@@ -66,6 +55,7 @@ export function ManageInterests() {
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deactivateId, setDeactivateId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<InterestFormState>(toFormState());
@@ -86,9 +76,6 @@ export function ManageInterests() {
   }, [interests, searchQuery]);
 
   const activeCount = interests.filter((i) => i.active).length;
-  const SelectedIcon = INTEREST_ICONS[form.iconKey];
-  const selectedIconLabel =
-    INTEREST_ICON_OPTIONS.find((opt) => opt.key === form.iconKey)?.label ?? 'Icon';
 
   const openCreate = () => {
     setEditingId(null);
@@ -134,7 +121,6 @@ export function ManageInterests() {
                 description: form.description.trim(),
                 iconKey: form.iconKey,
                 accent: form.accent,
-                active: form.active,
                 prompt: form.prompt.trim(),
                 updatedAt: formatInterestUpdatedAt(),
               }
@@ -151,7 +137,7 @@ export function ManageInterests() {
         description: form.description.trim(),
         iconKey: form.iconKey,
         accent: form.accent,
-        active: form.active,
+        active: true,
         prompt: form.prompt.trim(),
         updatedAt: formatInterestUpdatedAt(),
       };
@@ -169,15 +155,25 @@ export function ManageInterests() {
     toast.success(`${name} removed`);
   };
 
-  const toggleActive = (id: string) => {
+  const applyActive = (id: string, active: boolean) => {
+    const name = interests.find((i) => i.id === id)?.name ?? 'Interest';
     setInterests((prev) =>
       prev.map((item) =>
-        item.id === id
-          ? { ...item, active: !item.active, updatedAt: formatInterestUpdatedAt() }
-          : item,
+        item.id === id ? { ...item, active, updatedAt: formatInterestUpdatedAt() } : item,
       ),
     );
     setOpenMenuId(null);
+    setDeactivateId(null);
+    toast.success(active ? `${name} is active` : `${name} deactivated`);
+  };
+
+  const requestToggleActive = (interest: ManagedInterest) => {
+    setOpenMenuId(null);
+    if (interest.active) {
+      setDeactivateId(interest.id);
+      return;
+    }
+    applyActive(interest.id, true);
   };
 
   return (
@@ -215,28 +211,30 @@ export function ManageInterests() {
               </div>
             ) : (
               filtered.map((interest) => {
-                const Icon = INTEREST_ICONS[interest.iconKey];
+                const Icon = getInterestIcon(interest.iconKey);
                 return (
                   <div
                     key={interest.id}
                     className={cn(listRowClass, 'relative cursor-pointer')}
                     onClick={() => openEdit(interest)}
                   >
-                    <div className="lg:col-span-4 min-w-0 pr-10 lg:pr-0 flex items-start gap-3">
-                      <span
-                        className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white"
-                        style={{ backgroundColor: interest.accent }}
-                      >
-                        <Icon size={16} strokeWidth={1.75} />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="table-primary-text truncate">{interest.name}</p>
-                        <p className="table-supporting-text truncate mt-0.5">
-                          {interest.description}
-                        </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 lg:hidden">
-                          <StatusBadge active={interest.active} />
-                          <span className="table-metadata-text">{interest.updatedAt}</span>
+                    <div className="lg:col-span-4 min-w-0 pr-10 lg:pr-0">
+                      <div className="flex flex-row items-center gap-3 min-w-0">
+                        <span
+                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white"
+                          style={{ backgroundColor: interest.accent }}
+                        >
+                          <Icon size={16} strokeWidth={1.75} />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="table-primary-text truncate">{interest.name}</p>
+                          <p className="table-supporting-text truncate mt-0.5">
+                            {interest.description}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 lg:hidden">
+                            <StatusBadge active={interest.active} />
+                            <span className="table-metadata-text">{interest.updatedAt}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -270,29 +268,30 @@ export function ManageInterests() {
                           <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-border bg-card py-1 shadow-lg">
                             <button
                               type="button"
-                              className={menuItemClass}
+                              className={cn(menuItemClass, 'leading-none')}
                               onClick={() => openEdit(interest)}
                             >
                               <Edit size={14} />
-                              Edit
+                              <span>Edit</span>
                             </button>
                             <button
                               type="button"
-                              className={menuItemClass}
-                              onClick={() => toggleActive(interest.id)}
+                              className={cn(menuItemClass, 'leading-none')}
+                              onClick={() => requestToggleActive(interest)}
                             >
-                              {interest.active ? 'Deactivate' : 'Activate'}
+                              {interest.active ? <CircleOff size={14} /> : <CircleCheck size={14} />}
+                              <span>{interest.active ? 'Deactivate' : 'Activate'}</span>
                             </button>
                             <button
                               type="button"
-                              className={cn(menuItemClass, 'text-destructive-text')}
+                              className={cn(menuItemClass, 'leading-none text-destructive-text')}
                               onClick={() => {
                                 setDeleteId(interest.id);
                                 setOpenMenuId(null);
                               }}
                             >
                               <Trash2 size={14} />
-                              Delete
+                              <span>Delete</span>
                             </button>
                           </div>
                         )}
@@ -363,34 +362,10 @@ export function ManageInterests() {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Icon</label>
-                  <Select
+                  <InterestIconPicker
                     value={form.iconKey}
-                    onValueChange={(value) =>
-                      setForm((prev) => ({ ...prev, iconKey: value as InterestIconKey }))
-                    }
-                  >
-                    <SelectTrigger className="h-11 rounded-lg bg-input-background">
-                      <SelectValue>
-                        <span className="flex items-center gap-2.5">
-                          <SelectedIcon size={16} strokeWidth={1.75} className="text-foreground" />
-                          <span>{selectedIconLabel}</span>
-                        </span>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="z-[1500]">
-                      {INTEREST_ICON_OPTIONS.map((opt) => {
-                        const Icon = INTEREST_ICONS[opt.key];
-                        return (
-                          <SelectItem key={opt.key} value={opt.key}>
-                            <span className="flex items-center gap-2.5">
-                              <Icon size={16} strokeWidth={1.75} />
-                              <span>{opt.label}</span>
-                            </span>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                    onChange={(iconKey) => setForm((prev) => ({ ...prev, iconKey }))}
+                  />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Accent</label>
@@ -408,15 +383,6 @@ export function ManageInterests() {
                     />
                   </div>
                 </div>
-                <label className="sm:col-span-2 flex items-center gap-2.5 text-sm text-foreground">
-                  <input
-                    type="checkbox"
-                    checked={form.active}
-                    onChange={(e) => setForm((prev) => ({ ...prev, active: e.target.checked }))}
-                    className="h-4 w-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20"
-                  />
-                  Active in onboarding
-                </label>
               </div>
 
               <div className="border-t border-border pt-5">
@@ -447,6 +413,20 @@ export function ManageInterests() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={Boolean(deactivateId)}
+        onOpenChange={(open) => {
+          if (!open) setDeactivateId(null);
+        }}
+        title="Deactivate this interest?"
+        description="It will no longer appear during onboarding. People who already selected it keep their current home."
+        confirmLabel="Deactivate"
+        confirmClassName="bg-primary text-primary-foreground hover:bg-primary/90"
+        onConfirm={() => {
+          if (deactivateId) applyActive(deactivateId, false);
+        }}
+      />
 
       <ConfirmDeleteDialog
         open={Boolean(deleteId)}

@@ -6,7 +6,7 @@ import {
 } from '../../data/userOnboarding';
 import { Button } from '../ui/button';
 import { cn } from '../ui/utils';
-import { INTEREST_ICONS } from './interestIcons';
+import { getInterestIcon } from './interestIcons';
 
 interface InterestPickerStepProps {
   firstName: string;
@@ -46,7 +46,7 @@ export function InterestPickerStep({
       >
         {interests.map((interest, index) => {
           const selected = selectedIds.includes(interest.id);
-          const Icon = INTEREST_ICONS[interest.iconKey];
+          const Icon = getInterestIcon(interest.iconKey);
           const disabled = !selected && atMax;
 
           return (

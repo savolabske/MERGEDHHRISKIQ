@@ -197,10 +197,10 @@ export function ManageReportsList({
                               onEdit(report.id);
                               closeMenu();
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                            className="inline-flex w-full items-center gap-2 px-3 py-2 text-sm leading-none text-foreground hover:bg-muted"
                           >
-                            <Pencil size={14} />
-                            Edit
+                            <Pencil size={14} className="shrink-0" />
+                            <span>Edit</span>
                           </button>
                           {report.status === 'draft' && (
                             <button
@@ -209,10 +209,10 @@ export function ManageReportsList({
                                 onPublish(report.id);
                                 closeMenu();
                               }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                              className="inline-flex w-full items-center gap-2 px-3 py-2 text-sm leading-none text-foreground hover:bg-muted"
                             >
-                              <Upload size={14} />
-                              Publish
+                              <Upload size={14} className="shrink-0" />
+                              <span>Publish</span>
                             </button>
                           )}
                           {report.status === 'published' && (
@@ -222,10 +222,10 @@ export function ManageReportsList({
                                 setUnpublishId(report.id);
                                 closeMenu();
                               }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
+                              className="inline-flex w-full items-center gap-2 px-3 py-2 text-sm leading-none text-foreground hover:bg-muted"
                             >
-                              <EyeOff size={14} />
-                              Unpublish
+                              <EyeOff size={14} className="shrink-0" />
+                              <span>Unpublish</span>
                             </button>
                           )}
                           <button
@@ -234,10 +234,10 @@ export function ManageReportsList({
                               setDeleteId(report.id);
                               closeMenu();
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive-text hover:bg-destructive-subtle"
+                            className="inline-flex w-full items-center gap-2 px-3 py-2 text-sm leading-none text-destructive-text hover:bg-destructive-subtle"
                           >
-                            <Trash2 size={14} />
-                            Delete
+                            <Trash2 size={14} className="shrink-0" />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </>

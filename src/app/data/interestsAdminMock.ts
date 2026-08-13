@@ -1,12 +1,4 @@
-export type InterestIconKey =
-  | 'food'
-  | 'displacement'
-  | 'climate'
-  | 'funding'
-  | 'security'
-  | 'wash'
-  | 'gender'
-  | 'earlyWarning';
+export type InterestIconKey = string;
 
 export interface ManagedInterest {
   id: string;
@@ -153,7 +145,7 @@ function normalizeInterest(raw: Record<string, unknown>): ManagedInterest | null
     id: raw.id,
     name: typeof raw.name === 'string' ? raw.name : '',
     description: typeof raw.description === 'string' ? raw.description : '',
-    iconKey: (typeof raw.iconKey === 'string' ? raw.iconKey : 'earlyWarning') as InterestIconKey,
+    iconKey: (typeof raw.iconKey === 'string' ? raw.iconKey : 'sparkles') as InterestIconKey,
     accent: typeof raw.accent === 'string' ? raw.accent : '#2463eb',
     active: raw.active !== false,
     sortOrder: typeof raw.sortOrder === 'number' ? raw.sortOrder : 0,
@@ -206,21 +198,10 @@ export function createEmptyInterestDraft(sortOrder: number): Omit<ManagedInteres
   return {
     name: '',
     description: '',
-    iconKey: 'earlyWarning',
+    iconKey: 'sparkles',
     accent: '#2463eb',
     active: true,
     sortOrder,
     prompt: '',
   };
 }
-
-export const INTEREST_ICON_OPTIONS: { key: InterestIconKey; label: string }[] = [
-  { key: 'food', label: 'Food security' },
-  { key: 'displacement', label: 'Displacement' },
-  { key: 'climate', label: 'Climate' },
-  { key: 'funding', label: 'Funding' },
-  { key: 'security', label: 'Security' },
-  { key: 'wash', label: 'WASH & health' },
-  { key: 'gender', label: 'Gender' },
-  { key: 'earlyWarning', label: 'Early warning' },
-];

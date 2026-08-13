@@ -61,9 +61,9 @@ export const selectTriggerClass =
 export const listFilterTriggerClass =
   'inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted';
 
-/** Menu / dropdown option row. */
+/** Menu / dropdown option row. Icon + label sit on one line, vertically centered. */
 export const menuItemClass =
-  'w-full px-4 py-2 text-left text-sm transition-colors hover:bg-muted first:rounded-t-lg last:rounded-b-lg';
+  'inline-flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors hover:bg-muted first:rounded-t-lg last:rounded-b-lg [&_svg]:shrink-0';
 
 /** Pagination page number / chevron control. Pair with active override via className. */
 export const paginationControlClass =

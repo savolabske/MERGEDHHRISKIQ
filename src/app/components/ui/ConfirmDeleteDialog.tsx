@@ -20,6 +20,8 @@ export interface ConfirmDeleteDialogProps {
   description?: ReactNode;
   /** Confirm button label. Defaults to "Delete". */
   confirmLabel?: string;
+  /** Override confirm button classes. Defaults to destructive. */
+  confirmClassName?: string;
 }
 
 /**
@@ -32,6 +34,7 @@ export function ConfirmDeleteDialog({
   title = 'Are you sure you want to delete?',
   description = 'This action cannot be undone.',
   confirmLabel = 'Delete',
+  confirmClassName,
 }: ConfirmDeleteDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -46,7 +49,7 @@ export function ConfirmDeleteDialog({
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="bg-destructive hover:bg-destructive-text"
+            className={confirmClassName ?? 'bg-destructive hover:bg-destructive-text'}
           >
             {confirmLabel}
           </AlertDialogAction>
