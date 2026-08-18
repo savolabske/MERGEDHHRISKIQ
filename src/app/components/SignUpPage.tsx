@@ -78,7 +78,7 @@ function OrganisationField({
             setSearch(value);
           }}
           placeholder="Select or search organisation"
-          className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:ring-3 focus:ring-primary/20 focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+          className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
         />
         <Building2 size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" />
       </div>
@@ -157,7 +157,7 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Full Name"
-                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:ring-3 focus:ring-primary/20 focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
                 />
                 <User size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" />
               </div>
@@ -173,7 +173,7 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email Address"
-                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:ring-3 focus:ring-primary/20 focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
                 />
                 <Mail size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" />
               </div>
@@ -196,7 +196,7 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a secure password"
-                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:ring-3 focus:ring-primary/20 focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
                 />
                 <button
                   type="button"

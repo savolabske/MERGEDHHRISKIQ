@@ -254,7 +254,7 @@ export function ShareThreadModal({ open, threadTitle, threadId, initialSelectedU
                 onFocus={() => setIsDropdownOpen(true)}
                 onClick={() => setIsDropdownOpen(true)}
                 placeholder="Search by name or email..."
-                className="w-full h-[48px] pl-11 pr-11 bg-card border border-border rounded-xl text-sm text-foreground-emphasis placeholder:text-text-subtle outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                className="w-full h-[48px] pl-11 pr-11 bg-card border border-border rounded-xl text-sm text-foreground-emphasis placeholder:text-text-subtle outline-none focus:border-primary"
               />
               {searchQuery.length > 0 && (
                 <button

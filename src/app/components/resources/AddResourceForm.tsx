@@ -320,7 +320,7 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
           <div className="relative">
             <div
               data-composite-field
-              className="min-h-[44px] flex flex-wrap items-center gap-2 px-3 py-2 border border-border rounded-lg bg-card cursor-text focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10"
+              className="min-h-[44px] flex flex-wrap items-center gap-2 px-3 py-2 border border-border rounded-lg bg-card cursor-text focus-within:border-primary"
               onClick={() => tagInputRef.current?.focus()}
             >
               {tags.map((tag) => (

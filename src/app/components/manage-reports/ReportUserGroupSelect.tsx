@@ -161,7 +161,7 @@ export function ReportUserGroupSelect({
           className={cn(
             inputClass,
             'cursor-pointer text-left flex flex-wrap items-center gap-1.5 min-h-[42px]',
-            open && 'border-primary ring-2 ring-ring/10',
+            open && 'border-primary',
           )}
           aria-expanded={open}
           aria-haspopup="listbox"

@@ -42,7 +42,7 @@ export function ReportChartTypeSelect({ value, onChange }: ReportChartTypeSelect
         className={cn(
           inputClass,
           'flex items-center justify-between gap-2 text-left cursor-pointer',
-          open && 'border-primary ring-2 ring-ring/10',
+          open && 'border-primary',
         )}
         aria-expanded={open}
         aria-haspopup="listbox"

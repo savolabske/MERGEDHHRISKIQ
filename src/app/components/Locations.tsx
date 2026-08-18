@@ -318,7 +318,7 @@ export function Locations() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Mogadishu, Bay Region, Afgooye District"
-                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                 />
               </div>
 
@@ -330,7 +330,7 @@ export function Locations() {
                 <button
                   type="button"
                   onClick={() => setShowLevelDropdown(!showLevelDropdown)}
-                  className="w-full px-4 py-2.5 pr-10 border border-border rounded-lg text-sm text-left focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 bg-card flex items-center justify-between"
+                  className="w-full px-4 py-2.5 pr-10 border border-border rounded-lg text-sm text-left focus:outline-none focus:border-primary bg-card flex items-center justify-between"
                 >
                   <span className={level ? 'text-foreground' : 'text-text-subtle'}>{level || 'Select level...'}</span>
                   <ChevronDown size={16} className="text-text-subtle shrink-0" />
@@ -367,7 +367,7 @@ export function Locations() {
                     value={latitude}
                     onChange={(e) => setLatitude(e.target.value)}
                     placeholder="e.g. 2.0469"
-                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                   />
                   <p className="text-xs text-text-subtle mt-1.5">Range: -90 to 90</p>
                 </div>
@@ -383,7 +383,7 @@ export function Locations() {
                     value={longitude}
                     onChange={(e) => setLongitude(e.target.value)}
                     placeholder="e.g. 45.3182"
-                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                   />
                   <p className="text-xs text-text-subtle mt-1.5">Range: -180 to 180</p>
                 </div>

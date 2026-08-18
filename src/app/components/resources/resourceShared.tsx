@@ -85,10 +85,10 @@ export function FileTypeIcon({ type }: { type: ResourceFileType }) {
 }
 
 export const inputClass =
-  'w-full px-4 py-2.5 border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 transition-colors';
+  'w-full px-4 py-2.5 border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary focus:shadow-none focus-visible:shadow-none transition-colors';
 
 export const textareaClass =
-  'w-full px-4 py-2.5 border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 transition-colors resize-none';
+  'w-full px-4 py-2.5 border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary focus:shadow-none focus-visible:shadow-none transition-colors resize-none';
 
 /** Same column template as admin resource detail file table. */
 export const DETAIL_FILES_TABLE_GRID =

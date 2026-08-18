@@ -1838,7 +1838,7 @@ export default function App() {
                       onClick={() => riskIqLandingInputRef.current?.focus()}
                       className={cn(
                         'flex w-full flex-col rounded-2xl border border-border bg-card px-3 py-2.5 sm:px-4 sm:py-3 transition-colors cursor-text',
-                        'hover:border-primary focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10',
+                        'hover:border-primary focus-within:border-primary',
                       )}
                     >
                       <textarea

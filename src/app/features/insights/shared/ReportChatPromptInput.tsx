@@ -8,7 +8,6 @@ export interface ReportChatPromptTheme {
   border: string;
   bg: string;
   focusBorder: string;
-  focusRing: string;
   buttonBg: string;
   buttonHover: string;
   text: string;
@@ -19,7 +18,6 @@ export const AID_FLOW_CHAT_PROMPT_THEME: ReportChatPromptTheme = {
   border: 'border-[#e6e9ef]',
   bg: 'bg-[#f6f7f9]',
   focusBorder: 'focus-within:border-[#1f6feb]',
-  focusRing: 'focus-within:ring-[#eaf1fe]',
   buttonBg: 'bg-[#1f6feb]',
   buttonHover: 'hover:bg-[#1550b3]',
   text: 'text-[#0d1b2a]',
@@ -30,7 +28,6 @@ export const MIGRATION_CHAT_PROMPT_THEME: ReportChatPromptTheme = {
   border: 'border-[#ece6df]',
   bg: 'bg-[#f7f4ef]',
   focusBorder: 'focus-within:border-[#c2562a]',
-  focusRing: 'focus-within:ring-[#fbeee5]',
   buttonBg: 'bg-[#c2562a]',
   buttonHover: 'hover:bg-[#a3461f]',
   text: 'text-[#1a1410]',
@@ -41,7 +38,6 @@ export const SJF_CHAT_PROMPT_THEME: ReportChatPromptTheme = {
   border: 'border-[#e2e6ee]',
   bg: 'bg-[#f4f6fa]',
   focusBorder: 'focus-within:border-[#00689D]',
-  focusRing: 'focus-within:ring-[#E5F3FB]',
   buttonBg: 'bg-[#00689D]',
   buttonHover: 'hover:bg-[#19486A]',
   text: 'text-[#0b1a2c]',
@@ -132,11 +128,10 @@ export function ReportChatPromptInput({
         <div
           data-composite-field
           className={cn(
-            'flex min-w-0 flex-1 items-end gap-2 rounded-xl border px-3 py-2 focus-within:ring-2',
+            'flex min-w-0 flex-1 items-end gap-2 rounded-xl border px-3 py-2',
             theme.border,
             theme.bg,
             theme.focusBorder,
-            theme.focusRing,
           )}
         >
           <textarea

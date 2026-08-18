@@ -86,7 +86,7 @@ export function DashboardSectionEditPanel({
           value={draftPrompt}
           onChange={(event) => onDraftChange(event.target.value)}
           rows={5}
-          className="mt-2 w-full resize-y rounded-xl border border-border bg-background px-3.5 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 min-h-[112px] max-h-[200px]"
+          className="mt-2 w-full resize-y rounded-xl border border-border bg-background px-3.5 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground outline-none focus:border-primary min-h-[112px] max-h-[200px]"
         />
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{section.promptHint}</p>
 

@@ -54,7 +54,7 @@ export function ForgotPasswordPage({ onSubmit, onNavigateToSignIn }: ForgotPassw
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email address"
-                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:ring-3 focus:ring-primary/20 focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
                   required
                 />
                 <Mail size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle" aria-hidden />

@@ -167,7 +167,7 @@ export function HubSearchRow({
           className={cn(
             'mt-5 rounded-2xl border border-border bg-background p-4 min-h-[132px] flex flex-col cursor-text',
             'transition-colors hover:border-primary',
-            'focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10',
+            'focus-within:border-primary',
           )}
         >
           <div className="flex items-start gap-2.5 flex-1 min-h-[52px]">

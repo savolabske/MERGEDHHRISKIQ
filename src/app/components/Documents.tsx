@@ -2991,7 +2991,7 @@ export function Documents({
                           data-composite-field
                           className={`flex w-full cursor-text flex-wrap items-center gap-1.5 min-h-[42px] rounded-lg border bg-card px-2 py-1.5 transition-colors ${
                             showEditTagsDropdown ? 'border-primary' : 'border-border'
-                          } focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10`}
+                          } focus-within:border-primary`}
                           onClick={() => {
                             setShowEditTagsDropdown(true);
                             setShowEditUserGroupDropdown(false);
@@ -3930,7 +3930,7 @@ export function Documents({
                         data-composite-field
                         className={`flex w-full cursor-text flex-wrap items-center gap-1.5 min-h-[42px] rounded-lg border bg-card px-2 py-1.5 transition-colors ${
                           showTagsDropdown ? 'border-primary' : 'border-border'
-                        } focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/10`}
+                        } focus-within:border-primary`}
                         onClick={() => {
                           setShowTagsDropdown(true);
                           setShowUserGroupDropdown(false);

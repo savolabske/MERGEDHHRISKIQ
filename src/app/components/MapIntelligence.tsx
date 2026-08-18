@@ -2130,7 +2130,7 @@ export function MapIntelligence() {
                     }}
                     placeholder="Ask a question about map risks..."
                     disabled={isAssistantStreaming}
-                    className="w-full h-11 border border-border rounded-xl pl-4 pr-11 text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary disabled:opacity-70"
+                    className="w-full h-11 border border-border rounded-xl pl-4 pr-11 text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary disabled:opacity-70"
                   />
                   {isAssistantStreaming ? (
                     <ChatStopButton

@@ -224,7 +224,7 @@ export function Profile({ onUpdateHomeInterests }: ProfileProps) {
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:border-primary transition-all"
                   placeholder="Enter first name"
                 />
               </div>
@@ -241,7 +241,7 @@ export function Profile({ onUpdateHomeInterests }: ProfileProps) {
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:border-primary transition-all"
                   placeholder="Enter last name"
                 />
               </div>
@@ -258,7 +258,7 @@ export function Profile({ onUpdateHomeInterests }: ProfileProps) {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:border-primary transition-all"
                   placeholder="name@undp.org"
                 />
               </div>
@@ -275,7 +275,7 @@ export function Profile({ onUpdateHomeInterests }: ProfileProps) {
                   type="text"
                   value={formData.role}
                   onChange={(e) => handleInputChange('role', e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:border-primary transition-all"
                   placeholder="Your role"
                 />
               </div>
@@ -292,7 +292,7 @@ export function Profile({ onUpdateHomeInterests }: ProfileProps) {
                   type="text"
                   value={formData.location}
                   onChange={(e) => handleInputChange('location', e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:border-primary transition-all"
                   placeholder="Your location"
                 />
               </div>
@@ -309,7 +309,7 @@ export function Profile({ onUpdateHomeInterests }: ProfileProps) {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:border-primary transition-all"
                   placeholder="+252 XX XXX XXXX"
                 />
               </div>
@@ -336,7 +336,7 @@ export function Profile({ onUpdateHomeInterests }: ProfileProps) {
                   type={showCurrentPassword ? 'text' : 'password'}
                   value={formData.currentPassword}
                   onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                  className="w-full pl-12 pr-12 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full pl-12 pr-12 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:border-primary transition-all"
                   placeholder="Enter current password"
                 />
                 <button
@@ -360,7 +360,7 @@ export function Profile({ onUpdateHomeInterests }: ProfileProps) {
                   type={showNewPassword ? 'text' : 'password'}
                   value={formData.newPassword}
                   onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                  className="w-full pl-12 pr-12 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full pl-12 pr-12 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:border-primary transition-all"
                   placeholder="Enter new password"
                 />
                 <button
@@ -387,7 +387,7 @@ export function Profile({ onUpdateHomeInterests }: ProfileProps) {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  className="w-full pl-12 pr-12 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full pl-12 pr-12 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-subtle focus:outline-none focus:border-primary transition-all"
                   placeholder="Confirm new password"
                 />
                 <button

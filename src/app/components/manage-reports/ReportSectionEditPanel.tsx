@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Sparkles, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Loader2, Sparkles, Undo2, X } from 'lucide-react';
 import type { KpiIconKey, ReportChartType, ReportKpiTile, ReportSection } from '../../data/reportsAdminMock';
 import {
+  refineReportPrompt,
   regenerateKpiTileFromPrompt,
   regenerateSectionFromPrompt,
 } from '../../data/reportsAdminMock';
@@ -44,6 +45,9 @@ export function ReportSectionEditPanel({
   const [prompt, setPrompt] = useState('');
   const [chartType, setChartType] = useState<ReportChartType>('auto');
   const [iconKey, setIconKey] = useState<KpiIconKey>('home');
+  const [isRefining, setIsRefining] = useState(false);
+  const [promptBeforeRefine, setPromptBeforeRefine] = useState<string | null>(null);
+  const refineTimerRef = useRef<number | null>(null);
 
   const section =
     target.kind === 'section'
@@ -85,7 +89,15 @@ export function ReportSectionEditPanel({
       setIconKey(kpiTile.iconKey);
       setChartType('auto');
     }
+    setIsRefining(false);
+    setPromptBeforeRefine(null);
   }, [target, section, kpiTile, isSection, isKpi, isForwardTile]);
+
+  useEffect(() => {
+    return () => {
+      if (refineTimerRef.current != null) window.clearTimeout(refineTimerRef.current);
+    };
+  }, []);
 
   const persist = () => {
     if (isSection && section) {
@@ -128,6 +140,14 @@ export function ReportSectionEditPanel({
     }
   };
 
+  const handleSaveAction = () => {
+    if (canRegenerate) {
+      handleRegenerate();
+      return;
+    }
+    handleSave();
+  };
+
   const handleChartTypeChange = (next: ReportChartType) => {
     setChartType(next);
     if (isSection && section) {
@@ -142,6 +162,53 @@ export function ReportSectionEditPanel({
     } else if (isForwardTile && section && kpiTile) {
       onSaveForwardTile(section.id, { ...kpiTile, prompt, iconKey: next });
     }
+  };
+
+  const refineKind = isKpi ? 'kpi' : isForwardTile ? 'forward_tile' : 'section';
+  const refinedPrompt = prompt.trim()
+    ? refineReportPrompt({
+        draft: prompt,
+        kind: refineKind,
+        title,
+        chartType,
+      })
+    : '';
+  const canRefinePrompt = Boolean(prompt.trim()) && refinedPrompt !== prompt;
+
+  const handleRefinePrompt = () => {
+    if (!canRefinePrompt || isRefining) return;
+    if (refineTimerRef.current != null) window.clearTimeout(refineTimerRef.current);
+
+    const draft = prompt;
+    setIsRefining(true);
+
+    refineTimerRef.current = window.setTimeout(() => {
+      const nextPrompt = refineReportPrompt({
+        draft,
+        kind: refineKind,
+        title,
+        chartType,
+      });
+      if (nextPrompt !== draft) {
+        setPromptBeforeRefine(draft);
+        setPrompt(nextPrompt);
+      } else {
+        setPromptBeforeRefine(null);
+      }
+      setIsRefining(false);
+      refineTimerRef.current = null;
+    }, 450);
+  };
+
+  const handleUndoRefine = () => {
+    if (promptBeforeRefine == null) return;
+    if (refineTimerRef.current != null) {
+      window.clearTimeout(refineTimerRef.current);
+      refineTimerRef.current = null;
+    }
+    setPrompt(promptBeforeRefine);
+    setPromptBeforeRefine(null);
+    setIsRefining(false);
   };
 
   const canRegenerate = isSection
@@ -195,12 +262,43 @@ export function ReportSectionEditPanel({
         )}
 
         <div>
-          <label className="label-caps mb-2 block">AI prompt</label>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <label className="label-caps">AI prompt</label>
+            <div className="flex items-center gap-3">
+              {isRefining ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                  <Loader2 size={14} className="animate-spin" />
+                  Refining…
+                </span>
+              ) : promptBeforeRefine != null ? (
+                <button
+                  type="button"
+                  onClick={handleUndoRefine}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                  Undo
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRefinePrompt}
+                  disabled={!canRefinePrompt}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+                >
+                  <Sparkles size={14} />
+                  Refine prompt
+                </button>
+              )}
+            </div>
+          </div>
           <textarea
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => {
+              setPrompt(e.target.value);
+              if (promptBeforeRefine != null) setPromptBeforeRefine(null);
+            }}
             onBlur={persist}
-            rows={isKpi || isForwardTile ? 4 : 6}
+            rows={isKpi || isForwardTile ? 5 : 8}
             className={textareaClass}
             placeholder={
               isKpi || isForwardTile
@@ -208,11 +306,6 @@ export function ReportSectionEditPanel({
                 : 'e.g. Rank donors by total disbursement, show top 10 with amounts...'
             }
           />
-          <p className="text-xs text-muted-foreground mt-2">
-            {isKpi || isForwardTile
-              ? 'Change this instruction and regenerate to refresh the tile.'
-              : 'Change this instruction and regenerate to refresh the section from attached sources.'}
-          </p>
         </div>
       </div>
 
@@ -226,21 +319,11 @@ export function ReportSectionEditPanel({
         </button>
         <button
           type="button"
-          onClick={handleSave}
-          className="w-full sm:w-auto px-4 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          onClick={handleSaveAction}
+          className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center"
         >
           Save
         </button>
-        {canRegenerate && (
-          <button
-            type="button"
-            onClick={handleRegenerate}
-            className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center gap-2"
-          >
-            <Sparkles size={16} />
-            Regenerate
-          </button>
-        )}
       </div>
     </ReportBuilderSidePanel>
   );

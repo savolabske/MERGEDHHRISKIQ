@@ -70,7 +70,7 @@ export function ReportCreationModeSelector({
             <label className="mb-2 block text-sm font-medium text-foreground">
               Describe what the report should cover <span className="text-destructive-text">*</span>
             </label>
-            <div className="relative rounded-xl border border-border bg-white px-4 py-3.5 pr-14 focus-within:border-primary focus-within:ring-2 focus-within:ring-[#eaf1fe] transition-colors">
+            <div className="relative rounded-xl border border-border bg-white px-4 py-3.5 pr-14 focus-within:border-primary transition-colors">
               <textarea
                 value={masterPrompt}
                 onChange={(e) => setMasterPrompt(e.target.value)}

@@ -407,7 +407,7 @@ export function Definitions() {
                   value={shortForm}
                   onChange={(e) => setShortForm(e.target.value)}
                   placeholder="e.g. IPC, OCHA, HRP"
-                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
                   The term, acronym, or tag the AI should recognize.
@@ -424,7 +424,7 @@ export function Definitions() {
                   onChange={(e) => setExpandedForm(e.target.value)}
                   placeholder="e.g. Integrated Food Security Phase Classification"
                   rows={4}
-                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 resize-none"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary resize-none"
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
                   This explanation will be used by the AI to interpret the term correctly.
@@ -486,7 +486,7 @@ export function Definitions() {
                   value={shortForm}
                   onChange={(e) => setShortForm(e.target.value)}
                   placeholder="e.g. IPC, OCHA, HRP"
-                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
                   The term, acronym, or tag the AI should recognize.
@@ -503,7 +503,7 @@ export function Definitions() {
                   onChange={(e) => setExpandedForm(e.target.value)}
                   placeholder="e.g. Integrated Food Security Phase Classification"
                   rows={4}
-                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 resize-none"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary resize-none"
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
                   This explanation will be used by the AI to interpret the term correctly.

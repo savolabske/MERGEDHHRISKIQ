@@ -265,7 +265,7 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
                     className={cn(
                       inputClass,
                       'cursor-pointer text-left flex items-center gap-2 min-h-[42px]',
-                      resourceMenuOpen && 'border-primary ring-2 ring-ring/10',
+                      resourceMenuOpen && 'border-primary',
                     )}
                     aria-expanded={resourceMenuOpen}
                     aria-haspopup="listbox"

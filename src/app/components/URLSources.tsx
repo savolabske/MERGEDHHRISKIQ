@@ -985,7 +985,7 @@ export function URLSources() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://example.com"
-                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                 />
               </div>
 
@@ -1002,7 +1002,7 @@ export function URLSources() {
                     onChange={(e) => setMaxDepth(e.target.value)}
                     min="1"
                     max="10"
-                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                   />
                 </div>
 
@@ -1017,7 +1017,7 @@ export function URLSources() {
                     onChange={(e) => setMaxPages(e.target.value)}
                     min="1"
                     max="1000"
-                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                   />
                 </div>
               </div>
@@ -1031,7 +1031,7 @@ export function URLSources() {
                   <select
                     value={crawlMethod}
                     onChange={(e) => setCrawlMethod(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 bg-card appearance-none cursor-pointer pr-10"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary bg-card appearance-none cursor-pointer pr-10"
                   >
                     <option value="auto">Auto (fallback chain)</option>
                     <option value="api">API (structured data)</option>
@@ -1055,7 +1055,7 @@ export function URLSources() {
                   <select
                     value={knowledgeBase}
                     onChange={(e) => setKnowledgeBase(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 bg-card appearance-none cursor-pointer pr-10"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary bg-card appearance-none cursor-pointer pr-10"
                   >
                     <option value="web-sources">Web Sources</option>
                     <option value="verified-intel">Verified Intelligence</option>
@@ -1078,7 +1078,7 @@ export function URLSources() {
                   <select
                     value={crawlSchedule}
                     onChange={(e) => setCrawlSchedule(e.target.value as CrawlSchedule)}
-                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 bg-card appearance-none cursor-pointer pr-10"
+                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary bg-card appearance-none cursor-pointer pr-10"
                   >
                     <option value="manual">Manual</option>
                     <option value="daily">Daily</option>
@@ -1186,7 +1186,7 @@ export function URLSources() {
                       type="text"
                       value={editUrl}
                       onChange={(e) => setEditUrl(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                      className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                     />
                   </div>
 
@@ -1199,7 +1199,7 @@ export function URLSources() {
                         onChange={(e) => setEditMaxDepth(e.target.value)}
                         min="1"
                         max="10"
-                        className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                        className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                       />
                     </div>
                     <div>
@@ -1210,7 +1210,7 @@ export function URLSources() {
                         onChange={(e) => setEditMaxPages(e.target.value)}
                         min="1"
                         max="1000"
-                        className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10"
+                        className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
                       />
                     </div>
                   </div>
@@ -1220,7 +1220,7 @@ export function URLSources() {
                     <select
                       value={editCrawlMethod}
                       onChange={(e) => setEditCrawlMethod(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 bg-card"
+                      className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary bg-card"
                     >
                       <option value="auto">Auto (fallback chain)</option>
                       <option value="api">API (structured data)</option>
@@ -1234,7 +1234,7 @@ export function URLSources() {
                     <select
                       value={editKnowledgeBase}
                       onChange={(e) => setEditKnowledgeBase(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 bg-card"
+                      className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary bg-card"
                     >
                       <option value="web-sources">Web Sources</option>
                       <option value="verified-intel">Verified Intelligence</option>
@@ -1247,7 +1247,7 @@ export function URLSources() {
                     <select
                       value={editCrawlSchedule}
                       onChange={(e) => setEditCrawlSchedule(e.target.value as CrawlSchedule)}
-                      className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-ring/10 bg-card"
+                      className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary bg-card"
                     >
                       <option value="manual">Manual</option>
                       <option value="daily">Daily</option>

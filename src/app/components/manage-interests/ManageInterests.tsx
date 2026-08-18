@@ -346,7 +346,7 @@ export function ManageInterests() {
                     value={form.name}
                     onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g. Food security & nutrition"
-                    className="w-full rounded-lg border border-input bg-input-background px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/20"
+                    className="w-full rounded-lg border border-input bg-input-background px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none"
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -357,7 +357,7 @@ export function ManageInterests() {
                     value={form.description}
                     onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                     placeholder="Short line shown on the onboarding card"
-                    className="w-full rounded-lg border border-input bg-input-background px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/20"
+                    className="w-full rounded-lg border border-input bg-input-background px-3.5 py-2.5 text-sm focus:border-primary focus:outline-none"
                   />
                 </div>
                 <div>
@@ -379,7 +379,7 @@ export function ManageInterests() {
                     <input
                       value={form.accent}
                       onChange={(e) => setForm((prev) => ({ ...prev, accent: e.target.value }))}
-                      className="w-full rounded-lg border border-input bg-input-background px-3.5 py-2.5 text-sm font-mono focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/20"
+                      className="w-full rounded-lg border border-input bg-input-background px-3.5 py-2.5 text-sm font-mono focus:border-primary focus:outline-none"
                     />
                   </div>
                 </div>
@@ -397,7 +397,7 @@ export function ManageInterests() {
                   onChange={(e) => setForm((prev) => ({ ...prev, prompt: e.target.value }))}
                   rows={5}
                   placeholder="Describe what Home should emphasize for people who care about this interest…"
-                  className="w-full resize-y rounded-lg border border-input bg-input-background px-3.5 py-2.5 text-sm leading-relaxed focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/20"
+                  className="w-full resize-y rounded-lg border border-input bg-input-background px-3.5 py-2.5 text-sm leading-relaxed focus:border-primary focus:outline-none"
                 />
               </div>
             </div>

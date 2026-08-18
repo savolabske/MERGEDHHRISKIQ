@@ -391,13 +391,11 @@ export function Chats({
                   onNewChat ? (
                     <Button
                       type="button"
+                      size="lg"
                       onClick={onNewChat}
-                      className={cn(
-                        listHeaderActionClass,
-                        'h-7 min-h-7 gap-1.5 rounded-md px-3 text-[12px] font-semibold leading-none',
-                      )}
+                      className={cn(listHeaderActionClass, 'font-semibold')}
                     >
-                      <Plus size={14} strokeWidth={2} />
+                      <Plus size={18} />
                       New Chat
                     </Button>
                   ) : undefined

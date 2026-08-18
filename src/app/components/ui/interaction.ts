@@ -55,7 +55,7 @@ export const outlineControlClass =
 
 /** Full-width select / filter dropdown trigger (RiskRegister CustomDropdown, list filters). */
 export const selectTriggerClass =
-  'flex w-full items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent';
+  'flex w-full items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-surface-hover focus:outline-none focus:border-primary';
 
 /** Compact list-toolbar filter trigger (ownership, status, items-per-page). */
 export const listFilterTriggerClass =

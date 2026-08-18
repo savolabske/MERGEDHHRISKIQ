@@ -751,9 +751,26 @@
   text-underline-offset: 3px;
 }
 
-:where(button, a[href], input, textarea, select, [role="button"], [tabindex]):focus-visible {
+:where(button, a[href], [role="button"], [tabindex]):focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent);
+}
+
+:where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+  textarea,
+  select
+):focus,
+:where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+  textarea,
+  select
+):focus-visible,
+:where([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus,
+:where([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]):focus-visible {
+  outline: none;
+  box-shadow: none !important;
+  border-color: var(--primary);
 }
 
 .focus-ring-container-control:focus,

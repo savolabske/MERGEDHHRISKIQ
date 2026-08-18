@@ -814,3 +814,74 @@ export function regenerateKpiTileFromPrompt(
     sub: def.sub,
   };
 }
+
+export type ReportPromptKind = 'section' | 'kpi' | 'forward_tile';
+
+const CHART_PROMPT_GUIDANCE: Record<ReportChartType, string> = {
+  auto: 'Choose the clearest visual for this question.',
+  ranked_bars: 'Use a ranked bar chart of the top 8–10 items with USD or count labels.',
+  stat_bar: 'Lead with one hero statistic, then supporting bars for comparison.',
+  donut_split: 'Show the split as a donut, with the majority share called out.',
+  treemap: 'Show composition as a treemap sized by value, with the largest cells labelled.',
+  trend_line: 'Plot the series over time and call out inflection points.',
+  single_stat: 'Surface one standout figure with a tight caption.',
+};
+
+function expandPromptIntent(draft: string): string {
+  const trimmed = draft.trim().replace(/\s+/g, ' ');
+  const core = trimmed.replace(/[?!.]+$/, '');
+  const lower = core.toLowerCase();
+
+  if (/^(why|what|where|which|how|who|when)\b/.test(lower)) {
+    if (lower.startsWith('why ')) return `explain ${core.slice(4)}, with the main drivers and share of the total`;
+    if (lower.startsWith('what ')) return `identify ${core.slice(5)}, with the key figures behind it`;
+    if (lower.startsWith('where ')) return `show where ${core.slice(6)}, ranked by magnitude`;
+    if (lower.startsWith('which ')) return `identify which ${core.slice(6)}, with a ranked comparison`;
+    if (lower.startsWith('how ')) return `analyse how ${core.slice(4)}, with evidence from the attached sources`;
+    if (lower.startsWith('who ')) return `identify who ${core.slice(4)}, ranked by contribution`;
+    if (lower.startsWith('when ')) return `show when ${core.slice(5)}, as a time series with notable shifts`;
+  }
+
+  if (
+    /^(summarise|summarize|rank|show|compare|analyse|analyze|explain|list|flag|highlight|measure|surface|break down|map)\b/i.test(
+      core,
+    )
+  ) {
+    return core.charAt(0).toLowerCase() + core.slice(1);
+  }
+
+  return `analyse ${core}, with the key figures, rankings, and a short briefing`;
+}
+
+/** Expand a short user note into a full section or tile prompt. */
+export function refineReportPrompt(input: {
+  draft: string;
+  kind: ReportPromptKind;
+  title?: string;
+  chartType?: ReportChartType;
+}): string {
+  const draft = input.draft.trim();
+  if (!draft) return draft;
+  if (/^using attached sources/i.test(draft) && /stay grounded in the attached data/i.test(draft)) {
+    return draft;
+  }
+
+  const intent = expandPromptIntent(draft);
+  const title = input.title?.trim();
+  const titleClause = input.kind === 'section' && title ? ` for the section “${title}”` : '';
+
+  if (input.kind === 'section') {
+    const chartType = input.chartType ?? 'auto';
+    const visual = CHART_PROMPT_GUIDANCE[chartType];
+    return [
+      `Using attached sources${titleClause}, ${intent}.`,
+      `Visual: ${visual}`,
+      'Output a headline takeaway, 2–3 sentences of analysis, and 3 evidence bullets with USD or counts where available. Stay grounded in the attached data — do not invent figures.',
+    ].join('\n\n');
+  }
+
+  return [
+    `Using attached sources, ${intent}.`,
+    'Output a concise KPI: a short label, a primary value (USD, count, or %), and a one-line caption with the comparison or period. Stay grounded in the attached data — do not invent figures.',
+  ].join('\n\n');
+}

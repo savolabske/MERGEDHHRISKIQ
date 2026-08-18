@@ -676,7 +676,7 @@ export function RiskRegister() {
                 placeholder="Search internal risks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary"
               />
             </div>
 
@@ -1155,7 +1155,7 @@ export function RiskRegister() {
                     onChange={(e) => setTempResidualValue(e.target.value)}
                     placeholder="Enter ranking"
                     autoFocus
-                    className="w-full px-4 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary"
+                    className="w-full px-4 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary"
                   />
                   <div className="flex items-center gap-2">
                     <button
@@ -1300,7 +1300,7 @@ export function RiskRegister() {
                       <textarea
                         value={newMitigationText}
                         onChange={(e) => setNewMitigationText(e.target.value)}
-                        className="w-full h-16 px-3 py-2.5 bg-card border border-border rounded-lg text-sm text-secondary-foreground placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
+                        className="w-full h-16 px-3 py-2.5 bg-card border border-border rounded-lg text-sm text-secondary-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary resize-none"
                         placeholder="Describe the mitigation measure..."
                         autoFocus
                       />
@@ -1308,7 +1308,7 @@ export function RiskRegister() {
                         type="text"
                         value={newMitigationOwner}
                         onChange={(e) => setNewMitigationOwner(e.target.value)}
-                        className="w-full mt-2 px-3 py-2 bg-card border border-border rounded-lg text-sm text-secondary-foreground placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                        className="w-full mt-2 px-3 py-2 bg-card border border-border rounded-lg text-sm text-secondary-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary"
                         placeholder="Owner (e.g. Security Team)"
                       />
                       <div className="flex items-center justify-end gap-2 mt-3">
@@ -1468,7 +1468,7 @@ export function RiskRegister() {
                     <textarea
                       value={newNote}
                       onChange={(e) => setNewNote(e.target.value)}
-                      className="w-full h-20 px-4 py-3 bg-card border border-border rounded-xl text-sm text-secondary-foreground placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                      className="w-full h-20 px-4 py-3 bg-card border border-border rounded-xl text-sm text-secondary-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary"
                       placeholder="Add a note..."
                     />
                     <div className="flex items-center justify-end mt-3">

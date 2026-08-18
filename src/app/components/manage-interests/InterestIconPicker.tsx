@@ -32,7 +32,7 @@ export function InterestIconPicker({ value, onChange }: InterestIconPickerProps)
           type="button"
           role="combobox"
           aria-expanded={open}
-          className="flex h-11 w-full items-center justify-between rounded-lg border border-input bg-input-background px-3.5 text-sm transition-colors hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/20"
+          className="flex h-11 w-full items-center justify-between rounded-lg border border-input bg-input-background px-3.5 text-sm transition-colors hover:border-primary/40 focus:border-primary focus:outline-none"
         >
           <span className="flex min-w-0 items-center gap-2.5">
             <SelectedIcon size={16} strokeWidth={1.75} className="shrink-0 text-foreground" />
