@@ -5,7 +5,10 @@ import {
   getReportsUsingResource,
   type ManagedReport,
 } from '../../data/reportsAdminMock';
-import { LINKABLE_KNOWLEDGE_SOURCES } from '../../data/reportResourceLink';
+import {
+  LINKABLE_KNOWLEDGE_SOURCES,
+  type LinkableReportResource,
+} from '../../data/reportResourceLink';
 import { inputClass, textareaClass } from '../resources/resourceShared';
 import { cn } from '../ui/utils';
 import { ReportUserGroupSelect } from './ReportUserGroupSelect';
@@ -20,15 +23,29 @@ interface ReportAddModalProps {
     userGroups: string[];
     resourceId?: string;
   }) => void;
+  /** When set, replaces the default admin knowledge-source catalog */
+  resourceOptions?: LinkableReportResource[];
+  resourceFieldHint?: string;
+  emptyResourcesMessage?: string;
+  hideUserGroups?: boolean;
 }
 
 function isResourceLinkedToAnyReport(resourceId: string, reports: ManagedReport[]): boolean {
   if (getReportsUsingResource(resourceId, reports).length > 0) return true;
-  const source = LINKABLE_KNOWLEDGE_SOURCES.find((r) => r.id === resourceId);
-  return Boolean(source && source.usedByReports.length > 0);
+  const adminSource = LINKABLE_KNOWLEDGE_SOURCES.find((r) => r.id === resourceId);
+  return Boolean(adminSource && adminSource.usedByReports.length > 0);
 }
 
-export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddModalProps) {
+export function ReportAddModal({
+  open,
+  reports,
+  onClose,
+  onCreate,
+  resourceOptions,
+  resourceFieldHint,
+  emptyResourcesMessage,
+  hideUserGroups = false,
+}: ReportAddModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [userGroups, setUserGroups] = useState<string[]>([]);
@@ -42,12 +59,16 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
     null,
   );
 
-  const availableResources = useMemo(
+  const catalog: LinkableReportResource[] = useMemo(
     () =>
-      LINKABLE_KNOWLEDGE_SOURCES.filter(
-        (source) => !isResourceLinkedToAnyReport(source.id, reports),
-      ),
-    [reports],
+      resourceOptions ??
+      LINKABLE_KNOWLEDGE_SOURCES.map((s) => ({ id: s.id, title: s.title })),
+    [resourceOptions],
+  );
+
+  const availableResources = useMemo(
+    () => catalog.filter((source) => !isResourceLinkedToAnyReport(source.id, reports)),
+    [catalog, reports],
   );
 
   const selectedResource = availableResources.find((r) => r.id === selectedResourceId);
@@ -167,7 +188,7 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
                 <p className="px-4 py-3 text-sm text-muted-foreground">
                   {resourceQuery.trim()
                     ? 'No resources found.'
-                    : 'No unlinked resources available.'}
+                    : emptyResourcesMessage ?? 'No unlinked resources available.'}
                 </p>
               ) : (
                 filteredResources.map((resource) => {
@@ -248,7 +269,8 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
                   Resources <span className="font-normal text-text-subtle">(optional)</span>
                 </label>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Link this report to existing resources, or add them after it&apos;s created.
+                  {resourceFieldHint ??
+                    "Link this report to existing resources, or add them after it's created."}
                 </p>
                 <div className="relative">
                   <div
@@ -301,11 +323,13 @@ export function ReportAddModal({ open, reports, onClose, onCreate }: ReportAddMo
                 </div>
               </div>
 
-              <ReportUserGroupSelect
-                selected={userGroups}
-                onChange={setUserGroups}
-                placement="above"
-              />
+              {!hideUserGroups && (
+                <ReportUserGroupSelect
+                  selected={userGroups}
+                  onChange={setUserGroups}
+                  placement="above"
+                />
+              )}
         </div>
 
         <div className="sticky bottom-0 bg-card border-t border-border px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">

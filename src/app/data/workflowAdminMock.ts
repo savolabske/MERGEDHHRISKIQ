@@ -3,6 +3,34 @@ export type DocSlot = 'project' | 'checklist';
 
 export type WorkflowAuditStatus = 'needs_doc' | 'scanning' | 'complete';
 
+export type WorkflowKind = 'ai' | 'legacy';
+
+export type WorkflowPipelineStepKind =
+  | 'trigger'
+  | 'check'
+  | 'condition'
+  | 'action'
+  | 'output';
+
+export type OutputTemplate =
+  | 'decision_board'
+  | 'scorecard'
+  | 'briefing'
+  | 'assurance_matrix'
+  | 'action_queue';
+
+export type WorkflowRecipeId =
+  | 'project_compliance'
+  | 'fraud_deactivations'
+  | 'donor_reporting'
+  | 'situational_brief'
+  | 'assurance_matrix'
+  | 'fallback';
+
+export type WorkflowNodeConfigStatus = 'needs_setup' | 'ready';
+
+export type WorkflowWizardStep = 1 | 2 | 3 | 4;
+
 export interface WorkflowScanProgress {
   assessed: number;
   total: number;
@@ -42,6 +70,53 @@ export interface WorkflowPermission {
   canEdit: boolean;
 }
 
+/** Default document sources for trigger steps (Upload / SharePoint / OneDrive). */
+export const DEFAULT_TRIGGER_SOURCES = ['Upload', 'SharePoint', 'OneDrive'] as const;
+
+/** Per-source details when a trigger source chip is on (kept when chip is turned off). */
+export interface WorkflowTriggerSourceConfig {
+  upload?: {
+    resourceId?: string;
+    title?: string;
+    /** Extra file names from drag-drop, shown as chips */
+    files?: string[];
+  };
+  sharepoint?: { links: string[] };
+  onedrive?: { links: string[] };
+  other?: { datasetId?: string; label?: string };
+}
+
+export interface WorkflowPipelineStep {
+  id: string;
+  kind: WorkflowPipelineStepKind;
+  title: string;
+  prompt: string;
+  agent?: string;
+  files?: string[];
+  links?: string[];
+  /** Trigger: toggled document sources (e.g. Upload, SharePoint, OneDrive). */
+  sources?: string[];
+  /** Trigger: resource/link/dataset config for each enabled source. */
+  sourceConfig?: WorkflowTriggerSourceConfig;
+  conditionYes?: string;
+  conditionNo?: string;
+  notify?: string;
+  threshold?: number;
+  outputToggles?: {
+    uploadEvidence?: boolean;
+    actionPlan?: boolean;
+    leadershipSummary?: boolean;
+    donorBriefing?: boolean;
+  };
+  configStatus: WorkflowNodeConfigStatus;
+}
+
+export interface WorkflowDefinition {
+  recipeId: WorkflowRecipeId;
+  steps: WorkflowPipelineStep[];
+  outputTemplate: OutputTemplate;
+}
+
 export interface ManagedWorkflow {
   id: string;
   name: string;
@@ -50,6 +125,23 @@ export interface ManagedWorkflow {
   updatedAt: string;
   audits: WorkflowAudit[];
   permissions: WorkflowPermission[];
+  /** legacy = FCDO-style programmes; ai = AI builder workflows */
+  kind?: WorkflowKind;
+  masterPrompt?: string;
+  definition?: WorkflowDefinition;
+  /** When true and status live, appears in Custom Workflows catalog */
+  publishedToCatalog?: boolean;
+  /** User groups allowed to view published AI workflow (empty = everyone) */
+  catalogUserGroups?: string[];
+  /** AI wizard progress (1–4) */
+  wizardStep?: WorkflowWizardStep;
+  /** Record type from describe step, e.g. Project */
+  recordType?: string;
+  /** Rating display style from describe step, e.g. Red / Amber / Green */
+  ratingStyle?: string;
+  accessAdmins?: string[];
+  accessEditors?: string[];
+  accessViewers?: string[];
 }
 
 export const WORKFLOW_AUDIT_AREAS = [
@@ -78,6 +170,7 @@ const DEFAULT_WORKFLOWS: ManagedWorkflow[] = [
     name: 'FCDO Compliance Review',
     description: 'Compliance audit matrix for FCDO-funded programmes across Somalia',
     status: 'live',
+    kind: 'legacy',
     updatedAt: 'Aug 10, 2026',
     audits: [
       {
@@ -184,7 +277,13 @@ const DEFAULT_WORKFLOWS: ManagedWorkflow[] = [
   },
 ];
 
-const STORAGE_KEY = 'hh.managedWorkflows.v4';
+const STORAGE_KEY = 'hh.managedWorkflows.v8';
+const LEGACY_STORAGE_KEYS = [
+  'hh.managedWorkflows.v7',
+  'hh.managedWorkflows.v6',
+  'hh.managedWorkflows.v5',
+  'hh.managedWorkflows.v4',
+] as const;
 
 const LEGACY_PROGRAMME_NAMES: Record<string, string> = {
   sharp: 'Somalia Humanitarian Assistance and Resilience Programme',
@@ -238,26 +337,129 @@ function normalizeWorkflow(raw: ManagedWorkflow & {
     id: raw.checklistDocId ?? null,
     title: raw.checklistDocTitle ?? null,
   };
+  const kind: WorkflowKind = raw.kind ?? (raw.definition ? 'ai' : 'legacy');
+  const definition = normalizeDefinition(raw.definition);
   return {
     id: raw.id,
     name: raw.name,
     description: raw.description,
     status: raw.status,
     updatedAt: raw.updatedAt,
-    permissions: raw.permissions,
+    permissions: raw.permissions ?? DEFAULT_PERMISSIONS,
     audits: (raw.audits ?? []).map((a) => normalizeAudit(a, legacyChecklist)),
+    kind,
+    masterPrompt: raw.masterPrompt,
+    definition,
+    publishedToCatalog: raw.publishedToCatalog ?? false,
+    catalogUserGroups: raw.catalogUserGroups ?? [],
+    wizardStep: raw.wizardStep ?? (definition ? 2 : undefined),
+    recordType: raw.recordType ?? 'Project',
+    ratingStyle: raw.ratingStyle ?? 'Red / Amber / Green',
+    accessAdmins: raw.accessAdmins ?? ['Mission Leadership'],
+    accessEditors: raw.accessEditors ?? ['Humanitarian Affairs', 'WASH Cluster'],
+    accessViewers: raw.accessViewers ?? raw.catalogUserGroups ?? ['Security & Access'],
   };
 }
 
-export function loadManagedWorkflows(): ManagedWorkflow[] {
+function normalizeDefinition(
+  raw: ManagedWorkflow['definition'] | (Record<string, unknown> & { steps?: WorkflowPipelineStep[] }) | undefined,
+): WorkflowDefinition | undefined {
+  if (!raw) return undefined;
+  // Drop pre-v8 node/edge definitions — force re-create via wizard
+  if (!Array.isArray(raw.steps) || raw.steps.length === 0) return undefined;
+  return {
+    recipeId: (raw.recipeId as WorkflowRecipeId) ?? 'fallback',
+    outputTemplate: (raw.outputTemplate as OutputTemplate) ?? 'assurance_matrix',
+    steps: raw.steps.map((s) => ({
+      ...s,
+      files: s.files ?? [],
+      links: s.links ?? [],
+      sources:
+        s.sources ??
+        (s.kind === 'trigger' ? [...DEFAULT_TRIGGER_SOURCES] : undefined),
+      configStatus: s.configStatus ?? (String(s.prompt ?? '').trim() ? 'ready' : 'needs_setup'),
+    })),
+  };
+}
+
+function readStoredWorkflows(): ManagedWorkflow[] | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_WORKFLOWS;
-    const parsed = JSON.parse(raw) as ManagedWorkflow[];
-    return parsed.map(normalizeWorkflow);
+    if (raw) return (JSON.parse(raw) as ManagedWorkflow[]).map(normalizeWorkflow);
+
+    for (const legacyKey of LEGACY_STORAGE_KEYS) {
+      const legacyRaw = localStorage.getItem(legacyKey);
+      if (!legacyRaw) continue;
+      const migrated = (JSON.parse(legacyRaw) as ManagedWorkflow[]).map(normalizeWorkflow);
+      saveManagedWorkflows(migrated);
+      return migrated;
+    }
+    return null;
   } catch {
-    return DEFAULT_WORKFLOWS;
+    return null;
   }
+}
+
+export function loadManagedWorkflows(): ManagedWorkflow[] {
+  return readStoredWorkflows() ?? DEFAULT_WORKFLOWS;
+}
+
+export function isAiWorkflow(workflow: ManagedWorkflow): boolean {
+  return workflow.kind === 'ai';
+}
+
+export function workflowDefinitionComplete(definition: WorkflowDefinition | undefined): boolean {
+  if (!definition?.steps?.length) return false;
+  return definition.steps.every((s) => s.configStatus === 'ready' && Boolean(s.prompt.trim()));
+}
+
+export function formatWorkflowUpdatedAt(date = new Date()): string {
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+export function createAiWorkflowDraft(input: {
+  name: string;
+  description: string;
+  masterPrompt: string;
+  recordType: string;
+  ratingStyle?: string;
+  definition?: WorkflowDefinition;
+  wizardStep?: WorkflowWizardStep;
+}): ManagedWorkflow {
+  return {
+    id: `ai-wf-${Date.now()}`,
+    name: input.name.trim(),
+    description: input.description.trim(),
+    status: 'draft',
+    kind: 'ai',
+    updatedAt: formatWorkflowUpdatedAt(),
+    audits: [],
+    permissions: DEFAULT_PERMISSIONS,
+    masterPrompt: input.masterPrompt,
+    definition: input.definition,
+    publishedToCatalog: false,
+    catalogUserGroups: [],
+    wizardStep: input.wizardStep ?? 1,
+    recordType: input.recordType.trim() || 'Project',
+    ratingStyle: input.ratingStyle?.trim() || 'Red / Amber / Green',
+    accessAdmins: ['Mission Leadership'],
+    accessEditors: ['Humanitarian Affairs', 'WASH Cluster'],
+    accessViewers: ['Security & Access'],
+  };
+}
+
+export function listPublishedAiWorkflows(workflows: ManagedWorkflow[]): ManagedWorkflow[] {
+  return workflows.filter(
+    (w) =>
+      w.kind === 'ai' &&
+      w.status === 'live' &&
+      w.publishedToCatalog &&
+      Boolean(w.definition),
+  );
 }
 
 export function saveManagedWorkflows(workflows: ManagedWorkflow[]): void {
@@ -406,4 +608,32 @@ export const LINKABLE_WORKFLOW_RESOURCES = [
   { id: '2', title: 'Humanitarian Access Incident Tracker — regional annexes' },
   { id: '3', title: 'IPC Food Security Phase Classification Bay & Bakool' },
   { id: '4', title: 'WASH Cluster Assessment — Baidoa & Dollow' },
+  { id: '5', title: 'Partner registry — Somalia implementing partners' },
+  { id: '6', title: 'Donor reporting pack — Q2 evidence folder' },
+  { id: '7', title: 'Contractor Management / FCDO' },
+  { id: '8', title: 'HR Records / Implementing Partners' },
+  { id: '9', title: 'Compliance / Vetting Database' },
 ] as const;
+
+export const LINKABLE_WORKFLOW_URL_SOURCES = [
+  { id: 'url-1', title: 'FSNAU early warning portal' },
+  { id: 'url-2', title: 'OCHA Somalia reliefweb feed' },
+  { id: 'url-3', title: 'FCDO partnership portal' },
+] as const;
+
+export const LINKABLE_WORKFLOW_DATASETS = [
+  { id: 'api-1', title: 'IATI Somalia activities feed' },
+  { id: 'api-2', title: 'Partner compliance scores API' },
+  { id: 'api-3', title: 'Incident tickets — field ops' },
+  { id: 'api-4', title: 'Partner status & deactivation feed' },
+] as const;
+
+export const WORKFLOW_MAP_FOCUSES = [
+  'Lower Shabelle',
+  'Banadir',
+  'Bay & Bakool',
+  'Lower Shabelle & Banadir',
+  'Nationwide Somalia',
+] as const;
+
+export { DEFAULT_PERMISSIONS };

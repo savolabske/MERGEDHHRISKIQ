@@ -449,3 +449,33 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
   },
   ...generateAdditionalResources(),
 ];
+
+const PLATFORM_RESOURCES_KEY = 'hh.platformResources';
+
+export function loadPlatformResources(): PlatformResource[] {
+  try {
+    const raw = localStorage.getItem(PLATFORM_RESOURCES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as PlatformResource[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    /* ignore */
+  }
+  return INITIAL_RESOURCES;
+}
+
+export function savePlatformResources(resources: PlatformResource[]): void {
+  try {
+    localStorage.setItem(PLATFORM_RESOURCES_KEY, JSON.stringify(resources));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Resources the signed-in user owns in My Resources (excludes shared-with-me + admin catalog). */
+export function getOwnedMyResources(
+  resources: PlatformResource[] = loadPlatformResources(),
+): PlatformResource[] {
+  return resources.filter((r) => r.ownership === 'created_by_me');
+}

@@ -14,6 +14,7 @@ export function ComplianceAreaCards({
   onViewAudit,
   disabled = false,
   disabledHint,
+  areasHeading = 'The 9 compliance areas',
 }: {
   areas: ComplianceAreaDetail[];
   onOpenArea?: (areaKey: string) => void;
@@ -24,6 +25,7 @@ export function ComplianceAreaCards({
   /** When true, cards are non-interactive (e.g. no linked audit detail). */
   disabled?: boolean;
   disabledHint?: string;
+  areasHeading?: string;
 }) {
   const [pulseActionCards, setPulseActionCards] = useState(true);
 
@@ -37,7 +39,7 @@ export function ComplianceAreaCards({
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1 min-w-0 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3">
-          <p className="label-caps">The 9 compliance areas</p>
+          <p className="label-caps">{areasHeading}</p>
           <p className="text-supporting">
             {disabled
               ? disabledHint ?? 'Detailed audit view is not available for this programme yet'
@@ -58,7 +60,7 @@ export function ComplianceAreaCards({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(150px,100%),1fr))] gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {areas.map((area, index) => {
           const meta = AREA_STATUS_META[area.status];
           const clearSummary =

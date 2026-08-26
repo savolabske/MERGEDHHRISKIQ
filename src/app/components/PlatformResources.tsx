@@ -1,6 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { INITIAL_RESOURCES, type PlatformResource } from '../data/resourcesMock';
+import {
+  loadPlatformResources,
+  savePlatformResources,
+  type PlatformResource,
+} from '../data/resourcesMock';
+import type { ReportResourceLinkContext } from '../data/reportResourceLink';
 import { ResourcesList } from './resources/ResourcesList';
 import { ResourceDetailView } from './resources/ResourceDetailView';
 import { ResourceEditView } from './resources/ResourceEditView';
@@ -12,21 +17,44 @@ type HubView = 'list' | 'detail' | 'edit' | 'add';
 interface PlatformResourcesProps {
   onChatWithResource?: (resourceId: string) => void;
   focusedResourceId?: string | null;
+  reportLinkContext?: ReportResourceLinkContext | null;
+  onReportLinkComplete?: (resourceId: string) => void;
+  onReportLinkBack?: () => void;
 }
 
-export function PlatformResources({ onChatWithResource, focusedResourceId }: PlatformResourcesProps) {
-  const [resources, setResources] = useState<PlatformResource[]>(INITIAL_RESOURCES);
+export function PlatformResources({
+  onChatWithResource,
+  focusedResourceId,
+  reportLinkContext = null,
+  onReportLinkComplete,
+  onReportLinkBack,
+}: PlatformResourcesProps) {
+  const [resources, setResources] = useState<PlatformResource[]>(() => loadPlatformResources());
   const [view, setView] = useState<HubView>('list');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selectedResource = resources.find((r) => r.id === selectedId) ?? null;
+  const isLinkingReport = Boolean(reportLinkContext);
 
-  const goToList = useCallback(() => {
-    setView('list');
-    setSelectedId(null);
+  const persist = useCallback((next: PlatformResource[]) => {
+    setResources(next);
+    savePlatformResources(next);
   }, []);
 
+  const goToList = useCallback(() => {
+    if (isLinkingReport && onReportLinkBack) {
+      onReportLinkBack();
+      return;
+    }
+    setView('list');
+    setSelectedId(null);
+  }, [isLinkingReport, onReportLinkBack]);
+
   const handleSelect = (id: string) => {
+    if (isLinkingReport && onReportLinkComplete) {
+      onReportLinkComplete(id);
+      return;
+    }
     setSelectedId(id);
     setView('detail');
   };
@@ -37,20 +65,33 @@ export function PlatformResources({ onChatWithResource, focusedResourceId }: Pla
   };
 
   const handleDelete = (id: string) => {
-    setResources((prev) => prev.filter((r) => r.id !== id));
-    goToList();
+    persist(resources.filter((r) => r.id !== id));
+    setView('list');
+    setSelectedId(null);
   };
 
   const handleSave = (updated: PlatformResource) => {
-    setResources((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    persist(resources.map((r) => (r.id === updated.id ? updated : r)));
     setView('detail');
   };
 
   const handleAdd = (resource: PlatformResource) => {
-    setResources((prev) => [resource, ...prev]);
+    const next = [resource, ...resources];
+    persist(next);
+    if (isLinkingReport && onReportLinkComplete) {
+      onReportLinkComplete(resource.id);
+      return;
+    }
     setSelectedId(resource.id);
     setView('detail');
   };
+
+  useEffect(() => {
+    if (reportLinkContext) {
+      setView('add');
+      setSelectedId(null);
+    }
+  }, [reportLinkContext]);
 
   useEffect(() => {
     if (!focusedResourceId) return;
@@ -129,6 +170,7 @@ export function PlatformResources({ onChatWithResource, focusedResourceId }: Pla
                 onBack={goToList}
                 onCancel={goToList}
                 onSubmit={handleAdd}
+                reportLinkContext={reportLinkContext}
               />
             )}
     </PageScrollShell>

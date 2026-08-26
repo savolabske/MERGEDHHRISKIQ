@@ -105,8 +105,14 @@ export interface ManagedReport {
   sections: ReportSection[];
   createdAt: string;
   updatedAt: string;
-  /** Linked admin resource used as AI knowledge for this report */
+  /** Linked resource used as AI knowledge for this report */
   resourceId?: string;
+  /**
+   * Where linked resources are drawn from.
+   * - `admin` — Admin → Resources (default for managed / builtin reports)
+   * - `user` — My Resources (normal-user created reports)
+   */
+  resourcePool?: 'admin' | 'user';
   creationMode?: 'manual' | 'master_prompt';
   masterPrompt?: string;
 }
@@ -393,6 +399,7 @@ export function createDefaultReportSkeleton(input: {
   description: string;
   userGroups: string[];
   resourceId?: string;
+  resourcePool?: 'admin' | 'user';
   creationMode?: 'manual' | 'master_prompt';
   masterPrompt?: string;
 }): ManagedReport {
@@ -418,6 +425,7 @@ export function createDefaultReportSkeleton(input: {
     themeId: 'aid_flow',
     userGroups: input.userGroups,
     resourceId: input.resourceId,
+    resourcePool: input.resourcePool ?? 'admin',
     creationMode: input.creationMode,
     masterPrompt: input.masterPrompt?.trim() || undefined,
     reportContext:

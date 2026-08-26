@@ -18,16 +18,27 @@ export const LINKABLE_KNOWLEDGE_SOURCES = [
   },
 ] as const;
 
+export type ReportResourcePool = 'admin' | 'user';
+
+export interface LinkableReportResource {
+  id: string;
+  title: string;
+}
+
 export interface ReportResourceLinkContext {
   reportId: string;
   reportTitle: string;
   prefillTitle: string;
   prefillDescription: string;
+  /** Defaults to admin Documents when omitted */
+  resourcePool?: ReportResourcePool;
 }
 
 export interface ManageReportsReturnContext {
   reportId: string;
   toastMessage?: string;
+  /** Where to reopen the builder after attaching sources */
+  returnView?: 'manageReports' | 'reports';
 }
 
 const LINK_CONTEXT_KEY = 'hh.reportResourceLinkContext';

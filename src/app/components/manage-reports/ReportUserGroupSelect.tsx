@@ -10,6 +10,8 @@ interface ReportUserGroupSelectProps {
   selected: string[];
   onChange: (groups: string[]) => void;
   helperText?: string;
+  /** Show "N groups selected" / visibility summary above the trigger. Default true. */
+  showCount?: boolean;
   /** Open menu above the trigger — use in modals near the bottom */
   placement?: 'above' | 'below';
 }
@@ -18,6 +20,7 @@ export function ReportUserGroupSelect({
   selected,
   onChange,
   helperText = 'Only selected groups can see this report once published. Leave empty to make it visible to everyone with report access.',
+  showCount = true,
   placement = 'below',
 }: ReportUserGroupSelectProps) {
   const [open, setOpen] = useState(false);
@@ -140,12 +143,16 @@ export function ReportUserGroupSelect({
 
   return (
     <div>
-      <p className="label-caps mb-2">User group access</p>
-      <p className="text-sm text-muted-foreground mb-2">
-        {selected.length === 0
-          ? 'Visible to everyone with report access.'
-          : `${selected.length} group${selected.length === 1 ? '' : 's'} selected`}
-      </p>
+      <label className="block text-sm font-medium text-foreground mb-2">
+        User group access
+      </label>
+      {showCount && (
+        <p className="text-sm text-muted-foreground mb-2">
+          {selected.length === 0
+            ? 'Visible to everyone with report access.'
+            : `${selected.length} group${selected.length === 1 ? '' : 's'} selected`}
+        </p>
+      )}
       <div className="relative">
         <div
           ref={triggerRef}
@@ -160,7 +167,7 @@ export function ReportUserGroupSelect({
           }}
           className={cn(
             inputClass,
-            'cursor-pointer text-left flex flex-wrap items-center gap-1.5 min-h-[42px]',
+            'bg-white cursor-pointer text-left flex flex-wrap items-center gap-1.5 min-h-[42px]',
             open && 'border-primary',
           )}
           aria-expanded={open}

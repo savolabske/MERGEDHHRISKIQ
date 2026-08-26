@@ -11,6 +11,7 @@ import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { PlatformResource, ResourceUserGroup } from '../../data/resourcesMock';
 import { INITIAL_RESOURCE_USER_GROUPS } from '../../data/resourcesMock';
+import type { ReportResourceLinkContext } from '../../data/reportResourceLink';
 import { Checkbox } from '../ui/checkbox';
 import { chipRemoveClass } from '../ui/interaction';
 import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
@@ -22,11 +23,17 @@ interface AddResourceFormProps {
   onBack: () => void;
   onCancel: () => void;
   onSubmit: (resource: PlatformResource) => void;
+  reportLinkContext?: ReportResourceLinkContext | null;
 }
 
-export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+export function AddResourceForm({
+  onBack,
+  onCancel,
+  onSubmit,
+  reportLinkContext = null,
+}: AddResourceFormProps) {
+  const [title, setTitle] = useState(reportLinkContext?.prefillTitle ?? '');
+  const [description, setDescription] = useState(reportLinkContext?.prefillDescription ?? '');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [webLinks, setWebLinks] = useState<string[]>([]);
@@ -218,10 +225,20 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
         ]}
       />
 
+      {reportLinkContext && (
+        <div className="rounded-xl border border-primary/30 bg-primary-subtle/40 px-4 py-3 text-sm text-foreground">
+          Creating a resource for report{' '}
+          <span className="font-semibold">{reportLinkContext.reportTitle}</span>. It will be saved
+          in My Resources and linked automatically.
+        </div>
+      )}
+
       <div>
         <h2 className="text-page-title mb-1">Add New Resource</h2>
         <p className="text-sm text-muted-foreground">
-          Provide resource details and upload content to your workspace repository.
+          {reportLinkContext
+            ? 'This resource stays in My Resources and powers your report — not the admin library.'
+            : 'Provide resource details and upload content to your workspace repository.'}
         </p>
       </div>
 
@@ -619,7 +636,7 @@ export function AddResourceForm({ onBack, onCancel, onSubmit }: AddResourceFormP
           className="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
         >
           <Upload size={16} />
-          Add Resource
+          {reportLinkContext ? 'Add & link to report' : 'Add Resource'}
         </button>
       </div>
     </div>

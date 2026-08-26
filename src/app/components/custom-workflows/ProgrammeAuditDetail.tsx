@@ -80,6 +80,8 @@ interface ProgrammeAuditDetailProps {
   initialExpandedAreaId?: string | null;
   breadcrumbRootLabel?: string;
   breadcrumbReviewLabel?: string;
+  /** Heading above area cards / checklist (defaults to nine-area FCDO copy). */
+  areasHeading?: string;
 }
 
 function ScoreRing({
@@ -214,16 +216,18 @@ function CheckRow({
       type="button"
       onClick={onOpen}
       className={cn(
-        'w-full flex items-start sm:items-center gap-2.5 sm:gap-3 px-0 py-3 text-left transition-colors',
+        'w-full flex items-start gap-2.5 sm:gap-3 px-0 py-3 text-left transition-colors',
         isActive ? 'bg-primary-subtle/40' : 'hover:bg-muted/40',
       )}
     >
-      <span className={cn('size-2.5 shrink-0 rounded-full mt-1.5 sm:mt-0', meta.dotClass)} aria-hidden />
-      <span className="min-w-0 flex-1 text-sm font-medium tracking-tight text-foreground sm:truncate">
-        {check.title}
+      <span className={cn('size-2.5 shrink-0 rounded-full mt-1.5', meta.dotClass)} aria-hidden />
+      <span className="min-w-0 flex-1 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+        <span className="text-sm font-medium tracking-tight text-foreground sm:min-w-0 sm:flex-1 sm:truncate">
+          {check.title}
+        </span>
+        <span className={cn('text-xs font-semibold', meta.textClass)}>{meta.label}</span>
       </span>
-      <span className={cn('text-xs font-semibold shrink-0', meta.textClass)}>{meta.label}</span>
-      <ChevronDown size={16} className="shrink-0 -rotate-90 text-muted-foreground mt-0.5 sm:mt-0" />
+      <ChevronDown size={16} className="shrink-0 -rotate-90 text-muted-foreground mt-0.5" />
     </button>
   );
 }
@@ -267,14 +271,14 @@ function AreasAccordion({
             <button
               type="button"
               onClick={() => onToggleArea(areaKey)}
-              className="w-full flex items-center gap-3 px-4 sm:px-5 py-4 text-left hover:bg-muted/30 transition-colors"
+              className="w-full flex items-start sm:items-center gap-3 px-4 sm:px-5 py-4 text-left hover:bg-muted/30 transition-colors"
             >
-              <span className="text-metadata tabular-nums w-6 shrink-0">
+              <span className="text-metadata tabular-nums w-6 shrink-0 mt-0.5 sm:mt-0">
                 {String(index + 1).padStart(2, '0')}
               </span>
-              <span className={cn('size-2.5 rounded-full shrink-0', meta.dotClass)} aria-hidden />
+              <span className={cn('size-2.5 rounded-full shrink-0 mt-1.5 sm:mt-0', meta.dotClass)} aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block text-component-title tracking-tight">
+                <span className="block text-component-title tracking-tight text-balance">
                   {area.fullLabel}
                 </span>
                 <span className={cn('sm:hidden mt-1 block text-xs font-semibold', meta.textClass)}>
@@ -289,7 +293,7 @@ function AreasAccordion({
               <ChevronDown
                 size={18}
                 className={cn(
-                  'shrink-0 text-muted-foreground transition-transform',
+                  'shrink-0 text-muted-foreground transition-transform mt-0.5 sm:mt-0',
                   isExpanded && 'rotate-180',
                 )}
               />
@@ -800,6 +804,7 @@ export function ProgrammeAuditDetail({
   initialExpandedAreaId = null,
   breadcrumbRootLabel = 'Custom Workflows',
   breadcrumbReviewLabel = 'FCDO Compliance Review',
+  areasHeading = 'The 9 compliance areas',
 }: ProgrammeAuditDetailProps) {
   const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -1229,8 +1234,8 @@ export function ProgrammeAuditDetail({
             </div>
             <div
               className={cn(
-                'flex flex-col sm:flex-row gap-2 shrink-0 w-full',
-                !isChatOpen && 'sm:w-auto',
+                'flex flex-col gap-2 shrink-0 w-full',
+                !isChatOpen && 'sm:w-auto sm:flex-row sm:flex-wrap',
               )}
             >
               <Button
@@ -1313,6 +1318,7 @@ export function ProgrammeAuditDetail({
           <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
             <ComplianceAreaCards
               areas={programme.areas}
+              areasHeading={areasHeading}
               onOpenArea={(areaKey) => {
                 setExpandedAreaId(areaKey);
                 setActiveCheckId(null);
@@ -1327,7 +1333,7 @@ export function ProgrammeAuditDetail({
 
           <section id="areas-and-checks" className="space-y-4 scroll-mt-4">
             <div className="flex flex-wrap items-end justify-between gap-2">
-              <h3 className="text-section-title">The 9 compliance areas</h3>
+              <h3 className="text-section-title">{areasHeading}</h3>
               {isRescanning ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary-subtle px-3 py-1 text-label font-medium text-primary">
                   <RefreshCw size={14} className="animate-spin" aria-hidden />

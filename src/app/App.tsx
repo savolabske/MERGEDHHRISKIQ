@@ -148,30 +148,47 @@ export default function App() {
       reportTitle: report.title,
       prefillTitle: report.title,
       prefillDescription: report.description,
+      resourcePool: 'admin',
     });
     setCurrentView('resources');
+  }, []);
+
+  const handleCreateResourceForUserReport = useCallback((ctx: ReportResourceLinkContext) => {
+    setReportLinkContext({ ...ctx, resourcePool: 'user' });
+    setCurrentView('resourcesHub');
   }, []);
 
   const handleReportLinkComplete = useCallback(
     (resourceId: string) => {
       if (!reportLinkContext) return;
       linkReportResource(reportLinkContext.reportId, resourceId);
+      const returnView =
+        reportLinkContext.resourcePool === 'user' ? 'reports' : 'manageReports';
       saveManageReportsReturnContext({
         reportId: reportLinkContext.reportId,
         toastMessage: 'Knowledge sources attached — you can now build report sections',
+        returnView,
       });
       clearReportResourceLinkContext();
       setReportLinkContext(null);
-      setCurrentView('manageReports');
+      setCurrentView(returnView);
     },
     [reportLinkContext],
   );
 
   const handleReportLinkBack = useCallback(() => {
+    const returnView =
+      reportLinkContext?.resourcePool === 'user' ? 'reports' : 'manageReports';
+    if (reportLinkContext) {
+      saveManageReportsReturnContext({
+        reportId: reportLinkContext.reportId,
+        returnView,
+      });
+    }
     clearReportResourceLinkContext();
     setReportLinkContext(null);
-    setCurrentView('manageReports');
-  }, []);
+    setCurrentView(returnView);
+  }, [reportLinkContext]);
 
 
   const openRiskIqChat = useCallback((payload: DashboardChatPayload) => {
@@ -1547,6 +1564,11 @@ export default function App() {
           <PlatformResources
             onChatWithResource={(id) => openResourceChat(id, 'resourcesHub')}
             focusedResourceId={resourcesHubFocusedResourceId}
+            reportLinkContext={
+              reportLinkContext?.resourcePool === 'user' ? reportLinkContext : null
+            }
+            onReportLinkComplete={handleReportLinkComplete}
+            onReportLinkBack={handleReportLinkBack}
           />
         ) : currentView === 'riskIQ' ? (
           <RiskIQPage
@@ -1952,6 +1974,7 @@ export default function App() {
                 sidebarCollapsedBeforeReportRef.current = null;
               }
             }}
+            onCreateResourceForReport={handleCreateResourceForUserReport}
           />
         ) : currentView === 'customWorkflows' ? (
           <CustomWorkflows />
@@ -1979,7 +2002,9 @@ export default function App() {
           <ManageWorkflows />
         ) : currentView === 'resources' ? (
           <Documents
-            reportLinkContext={reportLinkContext}
+            reportLinkContext={
+              reportLinkContext?.resourcePool === 'user' ? null : reportLinkContext
+            }
             onReportLinkComplete={handleReportLinkComplete}
             onReportLinkBack={handleReportLinkBack}
           />
