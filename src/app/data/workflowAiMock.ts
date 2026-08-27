@@ -6,8 +6,9 @@ import type {
   WorkflowRecipeId,
 } from './workflowAdminMock';
 import {
-  DEFAULT_TRIGGER_SOURCES,
+  hasNotifyConfigured,
   LINKABLE_WORKFLOW_RESOURCES,
+  serializeNotifyConfig,
 } from './workflowAdminMock';
 
 export interface RecipeMeta {
@@ -104,18 +105,40 @@ function step(
   prompt: string,
   extras: Partial<WorkflowPipelineStep> = {},
 ): WorkflowPipelineStep {
+  const {
+    files: extrasFiles,
+    sourceConfig: extrasSourceConfig,
+    sources: extrasSources,
+    ...restExtras
+  } = extras;
+  const uploadFromConfig = extrasSourceConfig?.upload?.files ?? [];
+  const migratedUploadFiles =
+    uploadFromConfig.length > 0 ? uploadFromConfig : (extrasFiles ?? []);
+  const needsUploadSource = kind === 'check' && migratedUploadFiles.length > 0;
+  const sourceConfig =
+    migratedUploadFiles.length > 0
+      ? {
+          ...extrasSourceConfig,
+          upload: {
+            ...extrasSourceConfig?.upload,
+            files: migratedUploadFiles,
+          },
+        }
+      : extrasSourceConfig;
+
   const base: WorkflowPipelineStep = {
     id: nextStepId(),
     kind,
     title,
     prompt,
-    files: extras.files ?? [],
+    files: [],
     links: extras.links ?? [],
     sources:
-      extras.sources ??
-      (kind === 'trigger' ? [...DEFAULT_TRIGGER_SOURCES] : undefined),
+      extrasSources ??
+      (kind === 'output' ? undefined : needsUploadSource ? ['Upload'] : []),
+    ...(sourceConfig ? { sourceConfig } : {}),
     configStatus: 'ready',
-    ...extras,
+    ...restExtras,
   };
   return recomputeStepStatus(base);
 }
@@ -125,7 +148,7 @@ export function stepNeedsSetup(s: WorkflowPipelineStep): boolean {
   if (s.kind === 'condition' && (!String(s.conditionYes ?? '').trim() || !String(s.conditionNo ?? '').trim())) {
     return true;
   }
-  if (s.kind === 'action' && !String(s.notify ?? '').trim()) return true;
+  if (s.kind === 'action' && !hasNotifyConfigured(s)) return true;
   return false;
 }
 
@@ -190,6 +213,7 @@ export function setPipelineStepKind(
     conditionYes: kind === 'condition' ? 'Send an alert' : undefined,
     conditionNo: kind === 'condition' ? 'Continue as normal' : undefined,
     notify: kind === 'action' ? '' : undefined,
+    notifyConfig: kind === 'action' ? { channels: [] } : undefined,
   });
 }
 
@@ -432,8 +456,25 @@ function assuranceMatrixDefinition(): WorkflowDefinition {
         'Escalate action-needed areas',
         'If any area is action-needed, alert the assurance lead. Otherwise continue to the matrix.',
         {
-          conditionYes: 'Alert assurance lead',
+          conditionYes: 'Notify assurance lead',
           conditionNo: 'Continue to matrix',
+        },
+      ),
+      step(
+        'action',
+        'Notify assurance lead',
+        'Alert the assurance lead and compliance channel when any area is marked action-needed.',
+        {
+          notifyConfig: {
+            channels: ['people', 'slack'],
+            people: ['group-mission', 'person-collins'],
+            slackChannels: ['#compliance-alerts'],
+          },
+          notify: serializeNotifyConfig({
+            channels: ['people', 'slack'],
+            people: ['group-mission', 'person-collins'],
+            slackChannels: ['#compliance-alerts'],
+          }),
         },
       ),
       step(
@@ -899,7 +940,10 @@ export function buildWorkflowOutputPayload(
   const steps = definition.steps ?? [];
   const incomplete = steps.some((s) => s.configStatus === 'needs_setup');
 
-  const fileTitles = steps.flatMap((s) => s.files ?? []);
+  const fileTitles = steps.flatMap((s) => [
+    ...(s.sourceConfig?.upload?.files ?? []),
+    ...(s.files ?? []),
+  ]);
   const linkedResources = fileTitles.map((title, i) => {
     const known = LINKABLE_WORKFLOW_RESOURCES.find((r) => r.title === title);
     return { id: known?.id ?? `file-${i}`, title };

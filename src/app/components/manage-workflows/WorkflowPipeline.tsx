@@ -1,38 +1,45 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Check,
   ChevronDown,
   FileText,
   GitBranch,
+  Hash,
   Link2,
   ListChecks,
+  Mail,
+  Pencil,
   Play,
   Plus,
   RefreshCw,
   Shield,
   Trash2,
   Upload,
+  Users,
   X,
   Zap,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import type {
   WorkflowDefinition,
+  WorkflowNotifyChannel,
+  WorkflowNotifyConfig,
   WorkflowPipelineStep,
   WorkflowTriggerSourceConfig,
 } from '../../data/workflowAdminMock';
 import {
-  DEFAULT_TRIGGER_SOURCES,
-  LINKABLE_WORKFLOW_DATASETS,
+  DOCUMENT_SOURCE_OPTIONS,
   LINKABLE_WORKFLOW_RESOURCES,
+  serializeNotifyConfig,
+  WORKFLOW_NOTIFY_PEOPLE,
+  WORKFLOW_SLACK_CHANNELS,
 } from '../../data/workflowAdminMock';
 import {
   insertPipelineStepAfter,
   pipelineAssumptions,
-  pipelineDraftSummary,
   removePipelineStep,
   setPipelineStepKind,
+  stepNeedsSetup,
   updatePipelineStep,
   WORKFLOW_GENERATION_STEPS,
 } from '../../data/workflowAiMock';
@@ -54,8 +61,27 @@ const fieldLabelClass =
 const fieldInputClass =
   'w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary';
 
-const TRIGGER_SOURCE_OPTIONS = [...DEFAULT_TRIGGER_SOURCES] as string[];
-const CONNECT_OTHER_SOURCE = 'Connect another source';
+const SOURCE_OPTIONS = [...DOCUMENT_SOURCE_OPTIONS] as string[];
+
+const NOTIFY_CHANNEL_OPTIONS: {
+  id: WorkflowNotifyChannel;
+  label: string;
+  icon: typeof Users;
+}[] = [
+  { id: 'people', label: 'People', icon: Users },
+  { id: 'email', label: 'Email', icon: Mail },
+  { id: 'slack', label: 'Slack', icon: Hash },
+];
+
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function normalizeSlackChannel(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '';
+  return t.startsWith('#') ? t : `#${t}`;
+}
 
 function kindIcon(kind: WorkflowPipelineStep['kind']) {
   switch (kind) {
@@ -90,8 +116,8 @@ function kindIconWrapClass(kind: WorkflowPipelineStep['kind'], isOutput: boolean
   return 'bg-primary/10 text-primary';
 }
 
-function triggerSources(step: WorkflowPipelineStep): string[] {
-  return step.sources ?? [...DEFAULT_TRIGGER_SOURCES];
+function stepSources(step: WorkflowPipelineStep): string[] {
+  return step.sources ?? [];
 }
 
 export function WorkflowPipeline({
@@ -103,14 +129,11 @@ export function WorkflowPipeline({
   onRegenerate,
 }: WorkflowPipelineProps) {
   const steps = definition.steps ?? [];
-  const [openId, setOpenId] = useState<string | null>(
-    steps.find((s) => s.kind === 'check')?.id ?? steps[0]?.id ?? null,
-  );
-  const [linkDraft, setLinkDraft] = useState<Record<string, string>>({});
+  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!openId || steps.some((s) => s.id === openId)) return;
-    setOpenId(steps.find((s) => s.kind === 'check')?.id ?? steps[0]?.id ?? null);
+    setOpenId(null);
   }, [steps, openId]);
 
   const patchStep = (id: string, patch: Partial<WorkflowPipelineStep>) => {
@@ -147,8 +170,8 @@ export function WorkflowPipeline({
         }
       />
 
-      <div className="mb-5 rounded-xl border border-border bg-muted/40 px-5 py-4">
-        {generating && !generationDone ? (
+      {generating && !generationDone ? (
+        <div className="mb-5 rounded-xl border border-border bg-white px-5 py-4">
           <div className="space-y-2">
             {WORKFLOW_GENERATION_STEPS.map((row, i) => (
               <GenerationRow
@@ -162,10 +185,8 @@ export function WorkflowPipeline({
               />
             ))}
           </div>
-        ) : (
-          <p className="text-sm font-semibold text-primary">{pipelineDraftSummary(definition)}</p>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       {generationDone ? (
         <>
@@ -180,18 +201,6 @@ export function WorkflowPipeline({
                   onSetKind={(kind) => onChange(setPipelineStepKind(definition, s.id, kind))}
                   canRemove={canRemoveStep}
                   onRemove={() => removeStep(s.id)}
-                  linkDraft={linkDraft[s.id] ?? ''}
-                  onLinkDraftChange={(v) => setLinkDraft((prev) => ({ ...prev, [s.id]: v }))}
-                  onAddLink={() => {
-                    const v = (linkDraft[s.id] ?? '').trim();
-                    if (!v) return;
-                    patchStep(s.id, { links: [...(s.links ?? []), v] });
-                    setLinkDraft((prev) => ({ ...prev, [s.id]: '' }));
-                  }}
-                  onAddFile={(title) => {
-                    if ((s.files ?? []).includes(title)) return;
-                    patchStep(s.id, { files: [...(s.files ?? []), title] });
-                  }}
                 />
                 {index < steps.length - 1 ? (
                   <div className="relative flex h-9 items-center justify-center">
@@ -287,10 +296,6 @@ interface PipelineStepCardProps {
   onSetKind: (kind: WorkflowPipelineStep['kind']) => void;
   canRemove: boolean;
   onRemove: () => void;
-  linkDraft: string;
-  onLinkDraftChange: (v: string) => void;
-  onAddLink: () => void;
-  onAddFile: (title: string) => void;
 }
 
 function PipelineStepCard({
@@ -301,27 +306,60 @@ function PipelineStepCard({
   onSetKind,
   canRemove,
   onRemove,
-  linkDraft,
-  onLinkDraftChange,
-  onAddLink,
-  onAddFile,
 }: PipelineStepCardProps) {
   const Icon = kindIcon(step.kind);
   const isOutput = step.kind === 'output';
-  const isTrigger = step.kind === 'trigger';
+  const needsSetup = stepNeedsSetup(step);
   const preview = step.prompt || 'Describe what this step should check or do…';
   const showTypeSwitch = step.kind === 'check' || step.kind === 'condition' || step.kind === 'action';
-  const showStepTitle = showTypeSwitch;
-  const [dragging, setDragging] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [uploadPickerOpen, setUploadPickerOpen] = useState(false);
   const [uploadDragging, setUploadDragging] = useState(false);
-  const [otherPickerOpen, setOtherPickerOpen] = useState(false);
+  const [resourcePickerOpen, setResourcePickerOpen] = useState(false);
+  const [resourceSearch, setResourceSearch] = useState('');
   const [spLinkDraft, setSpLinkDraft] = useState('');
-  const [odLinkDraft, setOdLinkDraft] = useState('');
+  const [urlLinkDraft, setUrlLinkDraft] = useState('');
+  const [peoplePickerOpen, setPeoplePickerOpen] = useState(false);
+  const [emailDraft, setEmailDraft] = useState('');
+  const [slackDraft, setSlackDraft] = useState('');
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(step.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const resourcePickerRef = useRef<HTMLDivElement>(null);
 
-  const sources = triggerSources(step);
+  useEffect(() => {
+    if (!editingTitle) setTitleDraft(step.title);
+  }, [step.title, editingTitle]);
+
+  useEffect(() => {
+    if (!editingTitle) return;
+    titleInputRef.current?.focus();
+    titleInputRef.current?.select();
+  }, [editingTitle]);
+
+  useEffect(() => {
+    if (!resourcePickerOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (resourcePickerRef.current?.contains(e.target as Node)) return;
+      setResourcePickerOpen(false);
+      setResourceSearch('');
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [resourcePickerOpen]);
+
+  const filteredLinkableResources = LINKABLE_WORKFLOW_RESOURCES.filter((r) =>
+    r.title.toLowerCase().includes(resourceSearch.trim().toLowerCase()),
+  );
+
+  const commitTitle = () => {
+    const next = titleDraft.trim();
+    if (next && next !== step.title) onPatch({ title: next });
+    else setTitleDraft(step.title);
+    setEditingTitle(false);
+  };
+
+  const sources = stepSources(step);
   const sourceConfig = step.sourceConfig ?? {};
+  const showDocumentSources = step.kind === 'trigger' || step.kind === 'check';
 
   const patchSourceConfig = (partial: Partial<WorkflowTriggerSourceConfig>) => {
     onPatch({
@@ -333,41 +371,20 @@ function PipelineStepCard({
   };
 
   const toggleSource = (src: string) => {
-    const current = triggerSources(step);
+    const current = stepSources(step);
     const next = current.includes(src)
       ? current.filter((s) => s !== src)
       : [...current, src];
     onPatch({ sources: next });
   };
 
-  const attachFromDrop = (files: FileList | null) => {
-    if (!files?.length) return;
-    Array.from(files).forEach((file) => onAddFile(file.name));
-  };
-
-  const attachTriggerUpload = (title: string, resourceId?: string) => {
-    const upload = step.sourceConfig?.upload ?? {};
-    if (resourceId) {
-      if (upload.resourceId === resourceId) return;
-      patchSourceConfig({
-        upload: { ...upload, resourceId, title },
-      });
-      return;
-    }
-    const files = upload.files ?? [];
-    if (files.includes(title) || upload.title === title) return;
-    patchSourceConfig({
-      upload: { ...upload, files: [...files, title] },
-    });
-  };
-
-  const attachTriggerUploadDrop = (fileList: FileList | null) => {
+  const attachUploadDrop = (fileList: FileList | null) => {
     if (!fileList?.length) return;
     const upload = step.sourceConfig?.upload ?? {};
     const existing = upload.files ?? [];
     const next = [...existing];
     Array.from(fileList).forEach((file) => {
-      if (!next.includes(file.name) && upload.title !== file.name) next.push(file.name);
+      if (!next.includes(file.name)) next.push(file.name);
     });
     if (next.length === existing.length) return;
     patchSourceConfig({
@@ -375,7 +392,15 @@ function PipelineStepCard({
     });
   };
 
-  const addSourceLink = (kind: 'sharepoint' | 'onedrive', raw: string) => {
+  const attachExistingResource = (id: string, title: string) => {
+    const items = sourceConfig.existingResources?.items ?? [];
+    if (items.some((r) => r.id === id)) return;
+    patchSourceConfig({
+      existingResources: { items: [...items, { id, title }] },
+    });
+  };
+
+  const addSourceLink = (kind: 'sharepoint' | 'urlSources', raw: string) => {
     const v = raw.trim();
     if (!v) return;
     const existing = sourceConfig[kind]?.links ?? [];
@@ -384,63 +409,193 @@ function PipelineStepCard({
       [kind]: { links: [...existing, v] },
     });
     if (kind === 'sharepoint') setSpLinkDraft('');
-    else setOdLinkDraft('');
+    else setUrlLinkDraft('');
+  };
+
+  const notifyConfig: WorkflowNotifyConfig = step.notifyConfig ?? { channels: [] };
+
+  const patchNotifyConfig = (partial: Partial<WorkflowNotifyConfig>) => {
+    const next: WorkflowNotifyConfig = {
+      ...notifyConfig,
+      ...partial,
+      channels: partial.channels ?? notifyConfig.channels,
+    };
+    onPatch({
+      notifyConfig: next,
+      notify: serializeNotifyConfig(next),
+    });
+  };
+
+  const toggleNotifyChannel = (channel: WorkflowNotifyChannel) => {
+    const on = notifyConfig.channels.includes(channel);
+    const channels = on
+      ? notifyConfig.channels.filter((c) => c !== channel)
+      : [...notifyConfig.channels, channel];
+    patchNotifyConfig({ channels });
+  };
+
+  const toggleNotifyPerson = (id: string) => {
+    const current = notifyConfig.people ?? [];
+    const people = current.includes(id)
+      ? current.filter((p) => p !== id)
+      : [...current, id];
+    patchNotifyConfig({ people });
+  };
+
+  const addNotifyEmail = (raw: string) => {
+    const email = raw.trim().toLowerCase();
+    if (!email || !isValidEmail(email)) return;
+    const existing = notifyConfig.emails ?? [];
+    if (existing.includes(email)) {
+      setEmailDraft('');
+      return;
+    }
+    patchNotifyConfig({ emails: [...existing, email] });
+    setEmailDraft('');
+  };
+
+  const addNotifySlack = (raw: string) => {
+    const channel = normalizeSlackChannel(raw);
+    if (!channel || channel === '#') return;
+    const existing = notifyConfig.slackChannels ?? [];
+    if (existing.includes(channel)) {
+      setSlackDraft('');
+      return;
+    }
+    patchNotifyConfig({ slackChannels: [...existing, channel] });
+    setSlackDraft('');
   };
 
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border bg-card shadow-sm transition-colors',
+        'group overflow-hidden rounded-2xl border bg-card shadow-sm transition-colors',
         isOutput ? 'border-primary' : 'border-border',
       )}
     >
-      <button
-        type="button"
-        onClick={onToggle}
+      <div
         className={cn(
           'flex w-full items-center gap-3 px-4 py-3.5 text-left',
           isOutput && 'bg-primary text-white',
         )}
       >
-        <div
+        <button
+          type="button"
+          onClick={onToggle}
           className={cn(
             'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
             kindIconWrapClass(step.kind, isOutput),
           )}
+          aria-label={open ? 'Collapse step' : 'Expand step'}
         >
           <Icon size={18} />
-        </div>
+        </button>
         <div className="min-w-0 flex-1">
-          <p className={cn('text-sm font-semibold', isOutput ? 'text-white' : 'text-foreground')}>
-            {step.title}
-          </p>
-          <p
+          {editingTitle ? (
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  commitTitle();
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setTitleDraft(step.title);
+                  setEditingTitle(false);
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className={cn(
+                'w-full rounded-lg border px-2 py-1 text-sm font-semibold outline-none',
+                isOutput
+                  ? 'border-white/40 bg-white/15 text-white placeholder:text-white/60'
+                  : 'border-primary/40 bg-white text-foreground',
+              )}
+              aria-label="Step title"
+            />
+          ) : (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={onToggle}
+                className={cn(
+                  'min-w-0 truncate text-left text-sm font-semibold',
+                  isOutput ? 'text-white' : 'text-foreground',
+                )}
+              >
+                {step.title}
+              </button>
+              <button
+                type="button"
+                aria-label="Edit step title"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTitleDraft(step.title);
+                  setEditingTitle(true);
+                }}
+                className={cn(
+                  'shrink-0 rounded-md p-1 opacity-0 transition-all group-hover:opacity-100 focus-visible:opacity-100',
+                  isOutput
+                    ? 'text-white/80 hover:bg-white/15 hover:text-white'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <Pencil size={13} />
+              </button>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={onToggle}
             className={cn(
-              'mt-0.5 truncate text-xs',
+              'mt-0.5 block w-full truncate text-left text-xs',
               isOutput ? 'text-white/80' : 'text-muted-foreground',
             )}
           >
             {preview.slice(0, 100)}
             {preview.length > 100 ? '…' : ''}
-          </p>
+          </button>
         </div>
-        <span
-          className={cn(
-            'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-            kindBadgeClass(step.kind, isOutput),
-          )}
+        {needsSetup ? (
+          <span
+            className="shrink-0 text-destructive-text"
+            title="This step needs setup"
+            aria-label="This step needs setup"
+          >
+            <AlertTriangle size={16} />
+          </span>
+        ) : null}
+        <button type="button" onClick={onToggle} className="shrink-0">
+          <span
+            className={cn(
+              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+              kindBadgeClass(step.kind, isOutput),
+            )}
+          >
+            {kindBadge(step)}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={open ? 'Collapse step' : 'Expand step'}
+          className="shrink-0"
         >
-          {kindBadge(step)}
-        </span>
-        <ChevronDown
-          size={16}
-          className={cn(
-            'shrink-0 transition-transform',
-            open && 'rotate-180',
-            isOutput ? 'text-white/80' : 'text-muted-foreground',
-          )}
-        />
-      </button>
+          <ChevronDown
+            size={16}
+            className={cn(
+              'transition-transform',
+              open && 'rotate-180',
+              isOutput ? 'text-white/80' : 'text-muted-foreground',
+            )}
+          />
+        </button>
+      </div>
 
       {open ? (
         <div className="border-t border-border bg-card px-4 pb-4 pt-1">
@@ -473,23 +628,17 @@ function PipelineStepCard({
             className={cn(fieldInputClass, 'min-h-[88px] resize-y leading-relaxed')}
           />
 
-          {isTrigger ? (
+          {showDocumentSources ? (
             <div>
               <label className={fieldLabelClass}>Where documents come from</label>
               <div className="mt-1 flex flex-wrap gap-2">
-                {[...TRIGGER_SOURCE_OPTIONS, CONNECT_OTHER_SOURCE].map((src) => {
+                {SOURCE_OPTIONS.map((src) => {
                   const on = sources.includes(src);
                   return (
                     <button
                       key={src}
                       type="button"
-                      onClick={() => {
-                        const wasOn = sources.includes(src);
-                        toggleSource(src);
-                        if (!wasOn && src === CONNECT_OTHER_SOURCE) {
-                          toast('Opens the data source connector');
-                        }
-                      }}
+                      onClick={() => toggleSource(src)}
                       className={cn(
                         'inline-flex items-center gap-2 rounded-[11px] border px-3 py-2 text-xs font-medium transition-colors',
                         on
@@ -516,86 +665,53 @@ function PipelineStepCard({
               {sources.includes('Upload') ? (
                 <div className="mt-3 rounded-xl border border-border bg-muted/20 px-3.5 py-3">
                   <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Upload — select a resource
+                    Upload files
                   </div>
-                  <div className="relative">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setUploadPickerOpen((v) => !v)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setUploadPickerOpen((v) => !v);
-                        }
-                      }}
-                      onDragOver={(e) => {
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setUploadDragging(true);
+                    }}
+                    onDragLeave={() => setUploadDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setUploadDragging(false);
+                      attachUploadDrop(e.dataTransfer.files);
+                    }}
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.multiple = true;
+                      input.onchange = () => attachUploadDrop(input.files);
+                      input.click();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        setUploadDragging(true);
-                      }}
-                      onDragLeave={() => setUploadDragging(false)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setUploadDragging(false);
-                        setUploadPickerOpen(false);
-                        attachTriggerUploadDrop(e.dataTransfer.files);
-                      }}
-                      className={cn(
-                        'cursor-pointer rounded-xl border-[1.5px] border-dashed px-4 py-3.5 text-center transition-colors',
-                        uploadDragging
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border bg-card hover:border-primary hover:bg-primary/5',
-                      )}
-                    >
-                      <Upload size={18} className="mx-auto mb-1.5 text-muted-foreground" />
-                      <p className="text-[12.5px] font-medium text-muted-foreground">
-                        <span className="font-semibold text-primary">Click to select</span> or
-                        drag a file here
-                      </p>
-                    </div>
-                    {uploadPickerOpen ? (
-                      <div className="absolute left-0 right-0 z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-border bg-card py-1 shadow-md">
-                        {LINKABLE_WORKFLOW_RESOURCES.map((r) => (
-                          <button
-                            key={r.id}
-                            type="button"
-                            onClick={() => {
-                              attachTriggerUpload(r.title, r.id);
-                              setUploadPickerOpen(false);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-primary/5"
-                          >
-                            <FileText size={14} className="shrink-0 text-primary" />
-                            <span className="truncate">{r.title}</span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.multiple = true;
+                        input.onchange = () => attachUploadDrop(input.files);
+                        input.click();
+                      }
+                    }}
+                    className={cn(
+                      'cursor-pointer rounded-xl border-[1.5px] border-dashed px-4 py-3.5 text-center transition-colors',
+                      uploadDragging
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border bg-card hover:border-primary hover:bg-primary/5',
+                    )}
+                  >
+                    <Upload size={18} className="mx-auto mb-1.5 text-muted-foreground" />
+                    <p className="text-[12.5px] font-medium text-muted-foreground">
+                      <span className="font-semibold text-primary">Click to upload</span> or drag a
+                      file here
+                    </p>
                   </div>
-                  {(sourceConfig.upload?.title || (sourceConfig.upload?.files ?? []).length > 0) ? (
+                  {(sourceConfig.upload?.files ?? []).length > 0 ? (
                     <div className="mt-2.5 flex flex-wrap gap-2">
-                      {sourceConfig.upload?.title ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs text-foreground">
-                          <FileText size={12} className="text-primary" />
-                          {sourceConfig.upload.title}
-                          <button
-                            type="button"
-                            aria-label={`Remove ${sourceConfig.upload.title}`}
-                            onClick={() =>
-                              patchSourceConfig({
-                                upload: {
-                                  ...sourceConfig.upload,
-                                  resourceId: undefined,
-                                  title: undefined,
-                                },
-                              })
-                            }
-                            className="ml-0.5 text-muted-foreground hover:text-destructive-text"
-                          >
-                            <X size={12} />
-                          </button>
-                        </span>
-                      ) : null}
                       {(sourceConfig.upload?.files ?? []).map((f) => (
                         <span
                           key={f}
@@ -609,8 +725,101 @@ function PipelineStepCard({
                             onClick={() =>
                               patchSourceConfig({
                                 upload: {
-                                  ...sourceConfig.upload,
                                   files: (sourceConfig.upload?.files ?? []).filter((x) => x !== f),
+                                },
+                              })
+                            }
+                            className="ml-0.5 text-muted-foreground hover:text-destructive-text"
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {sources.includes('Existing resources') ? (
+                <div className="mt-3 rounded-xl border border-border bg-muted/20 px-3.5 py-3">
+                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Existing resources
+                  </div>
+                  <div className="relative" ref={resourcePickerRef}>
+                    <div
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm transition-colors',
+                        resourcePickerOpen
+                          ? 'border-primary bg-card'
+                          : 'border-border bg-card hover:border-primary/50',
+                      )}
+                    >
+                      <input
+                        type="text"
+                        value={resourceSearch}
+                        placeholder="Select from resources…"
+                        aria-label="Search resources"
+                        aria-expanded={resourcePickerOpen}
+                        onFocus={() => setResourcePickerOpen(true)}
+                        onClick={() => setResourcePickerOpen(true)}
+                        onChange={(e) => {
+                          setResourceSearch(e.target.value);
+                          setResourcePickerOpen(true);
+                        }}
+                        className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                      />
+                      <ChevronDown
+                        size={15}
+                        className={cn(
+                          'shrink-0 text-muted-foreground transition-transform',
+                          resourcePickerOpen && 'rotate-180',
+                        )}
+                      />
+                    </div>
+                    {resourcePickerOpen ? (
+                      <div className="absolute bottom-full left-0 right-0 z-10 mb-1 max-h-48 overflow-y-auto rounded-xl border border-border bg-card py-1 shadow-md">
+                        {filteredLinkableResources.length === 0 ? (
+                          <p className="px-3 py-2 text-sm text-muted-foreground">
+                            No resources found.
+                          </p>
+                        ) : (
+                          filteredLinkableResources.map((r) => (
+                            <button
+                              key={r.id}
+                              type="button"
+                              onClick={() => {
+                                attachExistingResource(r.id, r.title);
+                                setResourcePickerOpen(false);
+                                setResourceSearch('');
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-primary/5"
+                            >
+                              <FileText size={14} className="shrink-0 text-primary" />
+                              <span className="truncate">{r.title}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                  {(sourceConfig.existingResources?.items ?? []).length > 0 ? (
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {(sourceConfig.existingResources?.items ?? []).map((r) => (
+                        <span
+                          key={r.id}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs text-foreground"
+                        >
+                          <FileText size={12} className="text-primary" />
+                          {r.title}
+                          <button
+                            type="button"
+                            aria-label={`Remove ${r.title}`}
+                            onClick={() =>
+                              patchSourceConfig({
+                                existingResources: {
+                                  items: (sourceConfig.existingResources?.items ?? []).filter(
+                                    (x) => x.id !== r.id,
+                                  ),
                                 },
                               })
                             }
@@ -684,36 +893,36 @@ function PipelineStepCard({
                 </div>
               ) : null}
 
-              {sources.includes('OneDrive') ? (
+              {sources.includes('Url sources') ? (
                 <div className="mt-3 rounded-xl border border-border bg-muted/20 px-3.5 py-3">
                   <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    OneDrive — folder link
+                    Url sources
                   </div>
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={odLinkDraft}
-                      onChange={(e) => setOdLinkDraft(e.target.value)}
+                      value={urlLinkDraft}
+                      onChange={(e) => setUrlLinkDraft(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
-                          addSourceLink('onedrive', odLinkDraft);
+                          addSourceLink('urlSources', urlLinkDraft);
                         }
                       }}
-                      placeholder="Paste a OneDrive folder link"
+                      placeholder="Paste a URL (OneDrive, web link, etc.)"
                       className={fieldInputClass}
                     />
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => addSourceLink('onedrive', odLinkDraft)}
+                      onClick={() => addSourceLink('urlSources', urlLinkDraft)}
                     >
                       Add
                     </Button>
                   </div>
-                  {(sourceConfig.onedrive?.links ?? []).length > 0 ? (
+                  {(sourceConfig.urlSources?.links ?? []).length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {(sourceConfig.onedrive?.links ?? []).map((l) => (
+                      {(sourceConfig.urlSources?.links ?? []).map((l) => (
                         <span
                           key={l}
                           className="inline-flex max-w-full items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs text-foreground"
@@ -722,11 +931,11 @@ function PipelineStepCard({
                           <span className="truncate">{l}</span>
                           <button
                             type="button"
-                            aria-label="Remove OneDrive link"
+                            aria-label="Remove URL"
                             onClick={() =>
                               patchSourceConfig({
-                                onedrive: {
-                                  links: (sourceConfig.onedrive?.links ?? []).filter(
+                                urlSources: {
+                                  links: (sourceConfig.urlSources?.links ?? []).filter(
                                     (x) => x !== l,
                                   ),
                                 },
@@ -742,238 +951,47 @@ function PipelineStepCard({
                   ) : null}
                 </div>
               ) : null}
-
-              {sources.includes(CONNECT_OTHER_SOURCE) ? (
-                <div className="mt-3 rounded-xl border border-border bg-muted/20 px-3.5 py-3">
-                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Connect another source — pick a dataset
-                  </div>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setOtherPickerOpen((v) => !v)}
-                      className={cn(
-                        'flex w-full items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-colors',
-                        otherPickerOpen
-                          ? 'border-primary bg-card'
-                          : 'border-border bg-card hover:border-primary/50',
-                        sourceConfig.other?.label
-                          ? 'text-foreground'
-                          : 'text-muted-foreground',
-                      )}
-                    >
-                      <span className="truncate">
-                        {sourceConfig.other?.label ?? 'Select a linked dataset…'}
-                      </span>
-                      <ChevronDown
-                        size={15}
-                        className={cn(
-                          'shrink-0 text-muted-foreground transition-transform',
-                          otherPickerOpen && 'rotate-180',
-                        )}
-                      />
-                    </button>
-                    {otherPickerOpen ? (
-                      <div className="absolute left-0 right-0 z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-border bg-card py-1 shadow-md">
-                        {LINKABLE_WORKFLOW_DATASETS.map((d) => (
-                          <button
-                            key={d.id}
-                            type="button"
-                            onClick={() => {
-                              patchSourceConfig({
-                                other: { datasetId: d.id, label: d.title },
-                              });
-                              setOtherPickerOpen(false);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-primary/5"
-                          >
-                            <Zap size={14} className="shrink-0 text-primary" />
-                            <span className="truncate">{d.title}</span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                  {sourceConfig.other?.label ? (
-                    <div className="mt-2.5">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs text-foreground">
-                        <Zap size={12} className="text-primary" />
-                        {sourceConfig.other.label}
-                        <button
-                          type="button"
-                          aria-label="Clear dataset"
-                          onClick={() =>
-                            patchSourceConfig({
-                              other: { datasetId: undefined, label: undefined },
-                            })
-                          }
-                          className="ml-0.5 text-muted-foreground hover:text-destructive-text"
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-[11.5px] text-muted-foreground">
-                      Or connect a custom API / feed via the connector dialog (mock).
-                    </p>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          {step.kind === 'check' ? (
-            <div>
-              <label className={fieldLabelClass}>Reference checklist or framework</label>
-              <div className="relative">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setPickerOpen((v) => !v)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setPickerOpen((v) => !v);
-                    }
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragging(true);
-                  }}
-                  onDragLeave={() => setDragging(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragging(false);
-                    setPickerOpen(false);
-                    attachFromDrop(e.dataTransfer.files);
-                  }}
-                  className={cn(
-                    'cursor-pointer rounded-xl border-[1.5px] border-dashed px-4 py-4 text-center transition-colors',
-                    dragging
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border bg-muted/20 hover:border-primary hover:bg-primary/5',
-                  )}
-                >
-                  <Upload size={20} className="mx-auto mb-1.5 text-muted-foreground" />
-                  <p className="text-[12.5px] font-medium text-muted-foreground">
-                    <span className="font-semibold text-primary">Click to upload</span> or drag a
-                    file here
-                  </p>
-                </div>
-                {pickerOpen ? (
-                  <div className="absolute left-0 right-0 z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-border bg-card py-1 shadow-md">
-                    {LINKABLE_WORKFLOW_RESOURCES.map((r) => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => {
-                          onAddFile(r.title);
-                          setPickerOpen(false);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-primary/5"
-                      >
-                        <FileText size={14} className="shrink-0 text-primary" />
-                        <span className="truncate">{r.title}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-              {(step.files ?? []).length > 0 ? (
-                <div className="mt-2.5 flex flex-wrap gap-2">
-                  {(step.files ?? []).map((f) => (
-                    <span
-                      key={f}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-foreground"
-                    >
-                      <FileText size={12} className="text-primary" />
-                      {f}
-                      <button
-                        type="button"
-                        aria-label={`Remove ${f}`}
-                        onClick={() =>
-                          onPatch({ files: (step.files ?? []).filter((x) => x !== f) })
-                        }
-                        className="ml-0.5 text-muted-foreground hover:text-destructive-text"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-
-              <label className={fieldLabelClass}>Where evidence comes from</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={linkDraft}
-                  onChange={(e) => onLinkDraftChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      onAddLink();
-                    }
-                  }}
-                  placeholder="Paste a SharePoint or OneDrive link"
-                  className={fieldInputClass}
-                />
-                <Button type="button" variant="outline" onClick={onAddLink}>
-                  Add
-                </Button>
-              </div>
-              {(step.links ?? []).length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {(step.links ?? []).map((l) => (
-                    <span
-                      key={l}
-                      className="inline-flex max-w-full items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-foreground"
-                    >
-                      <Link2 size={12} className="shrink-0 text-primary" />
-                      <span className="truncate">{l}</span>
-                      <button
-                        type="button"
-                        aria-label="Remove link"
-                        onClick={() =>
-                          onPatch({ links: (step.links ?? []).filter((x) => x !== l) })
-                        }
-                        className="ml-0.5 shrink-0 text-muted-foreground hover:text-destructive-text"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
             </div>
           ) : null}
 
           {step.kind === 'condition' ? (
-            <div className="mt-3.5 grid gap-2.5 sm:grid-cols-2">
-              <div className="rounded-xl bg-warning-subtle px-3.5 py-3">
-                <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-warning-text">
-                  If yes
+            <div className="mt-3.5">
+              <p className="mb-2 text-[11.5px] text-muted-foreground">
+                Describe what happens on each branch
+              </p>
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="rounded-xl bg-warning-subtle px-3.5 py-3">
+                  <label
+                    htmlFor={`condition-yes-${step.id}`}
+                    className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-warning-text"
+                  >
+                    If yes
+                  </label>
+                  <input
+                    id={`condition-yes-${step.id}`}
+                    type="text"
+                    value={step.conditionYes ?? ''}
+                    onChange={(e) => onPatch({ conditionYes: e.target.value })}
+                    className="w-full border-0 bg-transparent p-0 text-[12.5px] font-medium text-foreground outline-none ring-0 placeholder:text-warning-text/45"
+                    placeholder="e.g. Alert leadership + PSEA network"
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={step.conditionYes ?? ''}
-                  onChange={(e) => onPatch({ conditionYes: e.target.value })}
-                  className="w-full border-0 bg-transparent text-[12.5px] font-medium text-foreground outline-none placeholder:text-warning-text/50"
-                  placeholder="Send an alert"
-                />
-              </div>
-              <div className="rounded-xl bg-success-subtle px-3.5 py-3">
-                <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wide text-success-text">
-                  If no
+                <div className="rounded-xl bg-success-subtle px-3.5 py-3">
+                  <label
+                    htmlFor={`condition-no-${step.id}`}
+                    className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-success-text"
+                  >
+                    If no
+                  </label>
+                  <input
+                    id={`condition-no-${step.id}`}
+                    type="text"
+                    value={step.conditionNo ?? ''}
+                    onChange={(e) => onPatch({ conditionNo: e.target.value })}
+                    className="w-full border-0 bg-transparent p-0 text-[12.5px] font-medium text-foreground outline-none ring-0 placeholder:text-success-text/45"
+                    placeholder="e.g. Continue to dashboard"
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={step.conditionNo ?? ''}
-                  onChange={(e) => onPatch({ conditionNo: e.target.value })}
-                  className="w-full border-0 bg-transparent text-[12.5px] font-medium text-foreground outline-none placeholder:text-success-text/50"
-                  placeholder="Continue as normal"
-                />
               </div>
             </div>
           ) : null}
@@ -981,13 +999,276 @@ function PipelineStepCard({
           {step.kind === 'action' ? (
             <div>
               <label className={fieldLabelClass}>Notify</label>
-              <input
-                type="text"
-                value={step.notify ?? ''}
-                onChange={(e) => onPatch({ notify: e.target.value })}
-                placeholder="Who or what gets notified — an email, a Slack channel, a team"
-                className={fieldInputClass}
-              />
+              <div className="mt-1 flex flex-wrap gap-2">
+                {NOTIFY_CHANNEL_OPTIONS.map(({ id, label, icon: ChannelIcon }) => {
+                  const on = notifyConfig.channels.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => toggleNotifyChannel(id)}
+                      className={cn(
+                        'inline-flex items-center gap-2 rounded-[11px] border px-3 py-2 text-xs font-medium transition-colors',
+                        on
+                          ? 'border-primary/25 bg-primary/10 text-primary'
+                          : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'flex h-[15px] w-[15px] items-center justify-center rounded-[4px] border-[1.5px]',
+                          on
+                            ? 'border-primary bg-primary text-white'
+                            : 'border-muted-foreground/40 bg-transparent',
+                        )}
+                      >
+                        {on ? <Check size={10} strokeWidth={3} /> : null}
+                      </span>
+                      <ChannelIcon size={13} />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {notifyConfig.channels.includes('people') ? (
+                <div className="mt-3 rounded-xl border border-border bg-muted/20 px-3.5 py-3">
+                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    People on the platform
+                  </div>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setPeoplePickerOpen((v) => !v)}
+                      className={cn(
+                        'flex w-full items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-colors',
+                        peoplePickerOpen
+                          ? 'border-primary bg-card'
+                          : 'border-border bg-card hover:border-primary/50',
+                        'text-muted-foreground',
+                      )}
+                    >
+                      <span className="truncate">
+                        {(notifyConfig.people?.length ?? 0) > 0
+                          ? `${notifyConfig.people!.length} selected`
+                          : 'Select people or groups…'}
+                      </span>
+                      <ChevronDown
+                        size={15}
+                        className={cn(
+                          'shrink-0 text-muted-foreground transition-transform',
+                          peoplePickerOpen && 'rotate-180',
+                        )}
+                      />
+                    </button>
+                    {peoplePickerOpen ? (
+                      <div className="absolute bottom-full left-0 right-0 z-10 mb-1 max-h-56 overflow-y-auto rounded-xl border border-border bg-card py-1 shadow-md">
+                        {WORKFLOW_NOTIFY_PEOPLE.map((person) => {
+                          const selected = (notifyConfig.people ?? []).includes(person.id);
+                          return (
+                            <button
+                              key={person.id}
+                              type="button"
+                              onClick={() => toggleNotifyPerson(person.id)}
+                              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-foreground hover:bg-primary/5"
+                            >
+                              <span
+                                className={cn(
+                                  'flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border-[1.5px]',
+                                  selected
+                                    ? 'border-primary bg-primary text-white'
+                                    : 'border-muted-foreground/40 bg-transparent',
+                                )}
+                              >
+                                {selected ? <Check size={10} strokeWidth={3} /> : null}
+                              </span>
+                              <Users size={14} className="shrink-0 text-primary" />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate font-medium">{person.name}</span>
+                                {person.detail ? (
+                                  <span className="block truncate text-xs text-muted-foreground">
+                                    {person.kind === 'group' ? 'Group · ' : ''}
+                                    {person.detail}
+                                  </span>
+                                ) : null}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                  {(notifyConfig.people ?? []).length > 0 ? (
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {(notifyConfig.people ?? []).map((id) => {
+                        const person = WORKFLOW_NOTIFY_PEOPLE.find((p) => p.id === id);
+                        const label = person?.name ?? id;
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs text-foreground"
+                          >
+                            <Users size={12} className="text-primary" />
+                            {label}
+                            <button
+                              type="button"
+                              aria-label={`Remove ${label}`}
+                              onClick={() =>
+                                patchNotifyConfig({
+                                  people: (notifyConfig.people ?? []).filter((x) => x !== id),
+                                })
+                              }
+                              className="ml-0.5 text-muted-foreground hover:text-destructive-text"
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {notifyConfig.channels.includes('email') ? (
+                <div className="mt-3 rounded-xl border border-border bg-muted/20 px-3.5 py-3">
+                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Email addresses
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={emailDraft}
+                      onChange={(e) => setEmailDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          addNotifyEmail(emailDraft);
+                        }
+                      }}
+                      placeholder="name@organisation.org"
+                      className={fieldInputClass}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => addNotifyEmail(emailDraft)}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  {(notifyConfig.emails ?? []).length > 0 ? (
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {(notifyConfig.emails ?? []).map((email) => (
+                        <span
+                          key={email}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs text-foreground"
+                        >
+                          <Mail size={12} className="text-primary" />
+                          {email}
+                          <button
+                            type="button"
+                            aria-label={`Remove ${email}`}
+                            onClick={() =>
+                              patchNotifyConfig({
+                                emails: (notifyConfig.emails ?? []).filter((x) => x !== email),
+                              })
+                            }
+                            className="ml-0.5 text-muted-foreground hover:text-destructive-text"
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {notifyConfig.channels.includes('slack') ? (
+                <div className="mt-3 rounded-xl border border-border bg-muted/20 px-3.5 py-3">
+                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Slack channels
+                  </div>
+                  <div className="mb-2.5 flex flex-wrap gap-1.5">
+                    {WORKFLOW_SLACK_CHANNELS.map((ch) => {
+                      const on = (notifyConfig.slackChannels ?? []).includes(ch);
+                      return (
+                        <button
+                          key={ch}
+                          type="button"
+                          onClick={() => {
+                            const current = notifyConfig.slackChannels ?? [];
+                            patchNotifyConfig({
+                              slackChannels: on
+                                ? current.filter((x) => x !== ch)
+                                : [...current, ch],
+                            });
+                          }}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors',
+                            on
+                              ? 'border-primary/25 bg-primary/10 text-primary'
+                              : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                          )}
+                        >
+                          <Hash size={11} />
+                          {ch.replace(/^#/, '')}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={slackDraft}
+                      onChange={(e) => setSlackDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addNotifySlack(slackDraft);
+                        }
+                      }}
+                      placeholder="Or type a channel, e.g. #alerts"
+                      className={fieldInputClass}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => addNotifySlack(slackDraft)}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  {(notifyConfig.slackChannels ?? []).length > 0 ? (
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {(notifyConfig.slackChannels ?? []).map((ch) => (
+                        <span
+                          key={ch}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-xs text-foreground"
+                        >
+                          <Hash size={12} className="text-primary" />
+                          {ch}
+                          <button
+                            type="button"
+                            aria-label={`Remove ${ch}`}
+                            onClick={() =>
+                              patchNotifyConfig({
+                                slackChannels: (notifyConfig.slackChannels ?? []).filter(
+                                  (x) => x !== ch,
+                                ),
+                              })
+                            }
+                            className="ml-0.5 text-muted-foreground hover:text-destructive-text"
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -1049,18 +1330,6 @@ function PipelineStepCard({
                   </div>
                 );
               })}
-            </div>
-          ) : null}
-
-          {showStepTitle ? (
-            <div className="mt-3">
-              <label className={fieldLabelClass}>Step title</label>
-              <input
-                type="text"
-                value={step.title}
-                onChange={(e) => onPatch({ title: e.target.value })}
-                className={fieldInputClass}
-              />
             </div>
           ) : null}
 

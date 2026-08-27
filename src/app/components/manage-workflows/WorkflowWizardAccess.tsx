@@ -8,7 +8,6 @@ interface WorkflowWizardAccessProps {
   onChangeAdmins: (groups: string[]) => void;
   onChangeEditors: (groups: string[]) => void;
   onChangeViewers: (groups: string[]) => void;
-  siblingWorkflowName?: string;
 }
 
 export function WorkflowWizardAccess({
@@ -18,7 +17,6 @@ export function WorkflowWizardAccess({
   onChangeAdmins,
   onChangeEditors,
   onChangeViewers,
-  siblingWorkflowName = 'FCDO Compliance Review',
 }: WorkflowWizardAccessProps) {
   return (
     <div>
@@ -57,15 +55,6 @@ export function WorkflowWizardAccess({
             showCount={false}
             helperText=""
           />
-        </div>
-
-        <div className="rounded-xl border border-border bg-muted/40 px-4 py-3.5">
-          <p className="text-sm font-semibold text-foreground">Separate by design</p>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            This workflow’s records, documents and assessments are stored separately from{' '}
-            {siblingWorkflowName} and every other workflow. Nothing here is visible there, and
-            nothing there is visible here.
-          </p>
         </div>
       </div>
     </div>

@@ -70,21 +70,75 @@ export interface WorkflowPermission {
   canEdit: boolean;
 }
 
-/** Default document sources for trigger steps (Upload / SharePoint / OneDrive). */
-export const DEFAULT_TRIGGER_SOURCES = ['Upload', 'SharePoint', 'OneDrive'] as const;
+/** Available document source chips for pipeline steps (none selected by default). */
+export const DOCUMENT_SOURCE_OPTIONS = [
+  'Upload',
+  'Existing resources',
+  'SharePoint',
+  'Url sources',
+] as const;
 
-/** Per-source details when a trigger source chip is on (kept when chip is turned off). */
+/** @deprecated Use DOCUMENT_SOURCE_OPTIONS */
+export const DEFAULT_TRIGGER_SOURCES = DOCUMENT_SOURCE_OPTIONS;
+
+/** Per-source details when a source chip is on (kept when chip is turned off). */
 export interface WorkflowTriggerSourceConfig {
   upload?: {
-    resourceId?: string;
-    title?: string;
-    /** Extra file names from drag-drop, shown as chips */
+    /** File names from drag-drop / local upload, shown as chips */
     files?: string[];
   };
+  existingResources?: {
+    items?: { id: string; title: string }[];
+  };
   sharepoint?: { links: string[] };
+  urlSources?: { links: string[] };
+  /** @deprecated migrated to urlSources */
   onedrive?: { links: string[] };
+  /** @deprecated */
   other?: { datasetId?: string; label?: string };
 }
+
+/** Notify channel chips on Action steps (none selected by default). */
+export type WorkflowNotifyChannel = 'people' | 'email' | 'slack';
+
+export interface WorkflowNotifyPerson {
+  id: string;
+  name: string;
+  /** Group label or email for display context */
+  detail?: string;
+  kind: 'person' | 'group';
+}
+
+/** Structured notify targets for Action steps. */
+export interface WorkflowNotifyConfig {
+  channels: WorkflowNotifyChannel[];
+  /** Selected platform people / group ids from WORKFLOW_NOTIFY_PEOPLE */
+  people?: string[];
+  emails?: string[];
+  slackChannels?: string[];
+}
+
+/** Platform people & groups selectable for Action notify. */
+export const WORKFLOW_NOTIFY_PEOPLE: WorkflowNotifyPerson[] = [
+  { id: 'group-mission', name: 'Mission Leadership', detail: '2 members', kind: 'group' },
+  { id: 'group-ha', name: 'Humanitarian Affairs', detail: '3 members', kind: 'group' },
+  { id: 'group-security', name: 'Security & Access', detail: '3 members', kind: 'group' },
+  { id: 'group-wash', name: 'WASH Cluster', detail: '1 member', kind: 'group' },
+  { id: 'person-collins', name: 'Collins Otieno', detail: 'c.otieno@un.org', kind: 'person' },
+  { id: 'person-amina', name: 'Amina Hassan', detail: 'a.hassan@unicef.org', kind: 'person' },
+  { id: 'person-ahmed', name: 'Ahmed Yusuf', detail: 'a.yusuf@unhcr.org', kind: 'person' },
+  { id: 'person-fatima', name: 'Fatima Ali', detail: 'f.ali@who.org', kind: 'person' },
+  { id: 'person-david', name: 'David Mutua', detail: 'd.mutua@ocha.org', kind: 'person' },
+];
+
+/** Mock Slack channels for Action notify. */
+export const WORKFLOW_SLACK_CHANNELS = [
+  '#compliance-alerts',
+  '#psea-network',
+  '#country-leadership',
+  '#security-ops',
+  '#programme-updates',
+] as const;
 
 export interface WorkflowPipelineStep {
   id: string;
@@ -94,13 +148,19 @@ export interface WorkflowPipelineStep {
   agent?: string;
   files?: string[];
   links?: string[];
-  /** Trigger: toggled document sources (e.g. Upload, SharePoint, OneDrive). */
+  /** Toggled document sources (Upload, Existing resources, SharePoint, Url sources). */
   sources?: string[];
-  /** Trigger: resource/link/dataset config for each enabled source. */
+  /** Resource/link config for each enabled source. */
   sourceConfig?: WorkflowTriggerSourceConfig;
   conditionYes?: string;
   conditionNo?: string;
+  /**
+   * Legacy free-text notify target. Prefer `notifyConfig`; kept in sync as a
+   * serialized summary for older readers.
+   */
   notify?: string;
+  /** Structured People / Email / Slack notify targets (Action steps). */
+  notifyConfig?: WorkflowNotifyConfig;
   threshold?: number;
   outputToggles?: {
     uploadEvidence?: boolean;
@@ -109,6 +169,37 @@ export interface WorkflowPipelineStep {
     donorBriefing?: boolean;
   };
   configStatus: WorkflowNodeConfigStatus;
+}
+
+export function serializeNotifyConfig(config?: WorkflowNotifyConfig | null): string {
+  if (!config?.channels?.length) return '';
+  const parts: string[] = [];
+  if (config.channels.includes('people') && (config.people?.length ?? 0) > 0) {
+    const labels = (config.people ?? [])
+      .map((id) => WORKFLOW_NOTIFY_PEOPLE.find((p) => p.id === id)?.name ?? id)
+      .filter(Boolean);
+    if (labels.length) parts.push(`People: ${labels.join(', ')}`);
+  }
+  if (config.channels.includes('email') && (config.emails?.length ?? 0) > 0) {
+    parts.push(`Email: ${(config.emails ?? []).join(', ')}`);
+  }
+  if (config.channels.includes('slack') && (config.slackChannels?.length ?? 0) > 0) {
+    parts.push(`Slack: ${(config.slackChannels ?? []).join(', ')}`);
+  }
+  return parts.join(' · ');
+}
+
+export function hasNotifyConfigured(
+  step: Pick<WorkflowPipelineStep, 'notify' | 'notifyConfig'>,
+): boolean {
+  const config = step.notifyConfig;
+  if (config?.channels?.length) {
+    if (config.channels.includes('people') && (config.people?.length ?? 0) > 0) return true;
+    if (config.channels.includes('email') && (config.emails?.length ?? 0) > 0) return true;
+    if (config.channels.includes('slack') && (config.slackChannels?.length ?? 0) > 0) return true;
+    return false;
+  }
+  return Boolean(String(step.notify ?? '').trim());
 }
 
 export interface WorkflowDefinition {
@@ -370,15 +461,39 @@ function normalizeDefinition(
   return {
     recipeId: (raw.recipeId as WorkflowRecipeId) ?? 'fallback',
     outputTemplate: (raw.outputTemplate as OutputTemplate) ?? 'assurance_matrix',
-    steps: raw.steps.map((s) => ({
-      ...s,
-      files: s.files ?? [],
-      links: s.links ?? [],
-      sources:
-        s.sources ??
-        (s.kind === 'trigger' ? [...DEFAULT_TRIGGER_SOURCES] : undefined),
-      configStatus: s.configStatus ?? (String(s.prompt ?? '').trim() ? 'ready' : 'needs_setup'),
-    })),
+    steps: raw.steps.map((s) => {
+      const legacyFiles = s.files ?? [];
+      const uploadFiles = s.sourceConfig?.upload?.files ?? [];
+      const mergedUpload =
+        uploadFiles.length > 0
+          ? uploadFiles
+          : s.kind === 'check' && legacyFiles.length > 0
+            ? legacyFiles
+            : uploadFiles;
+      const migratedUpload =
+        mergedUpload.length > 0 && uploadFiles.length === 0 && s.kind === 'check';
+      return {
+        ...s,
+        files: migratedUpload ? [] : legacyFiles,
+        links: s.links ?? [],
+        sources:
+          s.sources ??
+          (s.kind === 'output'
+            ? undefined
+            : migratedUpload
+              ? ['Upload']
+              : []),
+        sourceConfig: migratedUpload
+          ? {
+              ...s.sourceConfig,
+              upload: { ...s.sourceConfig?.upload, files: mergedUpload },
+            }
+          : s.sourceConfig,
+        notifyConfig:
+          s.notifyConfig ?? (s.kind === 'action' ? { channels: [] } : undefined),
+        configStatus: s.configStatus ?? (String(s.prompt ?? '').trim() ? 'ready' : 'needs_setup'),
+      };
+    }),
   };
 }
 
