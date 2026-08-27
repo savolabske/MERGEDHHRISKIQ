@@ -37,8 +37,8 @@ export function WorkflowPublishSuccess({
   onOpenWorkflow,
 }: WorkflowPublishSuccessProps) {
   return (
-    <PageScrollShell innerClassName="flex justify-center py-8 sm:py-12">
-      <div className="w-full max-w-xl text-center">
+    <PageScrollShell innerClassName="py-8 sm:py-12">
+      <div className="mx-auto w-full max-w-xl text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white">
           <Check size={28} strokeWidth={2.5} />
         </div>
