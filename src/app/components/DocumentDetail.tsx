@@ -11,6 +11,7 @@ import {
   FileText,
   Globe,
   Maximize2,
+  MessageSquarePlus,
   Minus,
   Send,
   Sparkles,
@@ -48,6 +49,7 @@ interface DocumentDetailProps {
   initialChatOpen?: boolean;
   initialMessages?: DocumentChatMessage[];
   onMessagesChange?: (messages: DocumentChatMessage[], resourceTitle: string) => void;
+  onNewChat?: () => void;
 }
 
 function renderInlineBold(text: string): Array<string | JSX.Element> {
@@ -318,6 +320,7 @@ export function DocumentDetail({
   initialChatOpen = false,
   initialMessages,
   onMessagesChange,
+  onNewChat,
 }: DocumentDetailProps) {
   const content = getDocumentContent(documentId);
   const [chatQuery, setChatQuery] = useState('');
@@ -378,6 +381,12 @@ export function DocumentDetail({
     clearResponseTimeouts();
     setMessages((prev) => prev.filter((message) => !message.isThinking));
     setIsTyping(false);
+  };
+
+  const startNewChat = () => {
+    clearResponseTimeouts();
+    setIsTyping(false);
+    onNewChat?.();
   };
 
   const handleSendMessage = (e: FormEvent) => {
@@ -512,8 +521,8 @@ export function DocumentDetail({
   );
 
   const renderEmptyChat = () => (
-    <div className="text-center py-12">
-      <Sparkles size={40} className="text-border mx-auto mb-3" />
+    <div className="flex flex-col items-center justify-center text-center">
+      <Sparkles size={40} className="text-border mb-3" />
       <p className="text-sm text-muted-foreground">Ask anything about this resource</p>
     </div>
   );
@@ -689,7 +698,19 @@ export function DocumentDetail({
                 <div className="overflow-hidden rounded-[20px] border border-border bg-card shadow-xl">
                   <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border bg-muted/40 shrink-0">
                     <span className="text-sm font-medium text-foreground truncate pr-2">Chat</span>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {onNewChat && (
+                        <button
+                          type="button"
+                          onClick={startNewChat}
+                          aria-label="Start a new chat"
+                          title="New chat"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#EFF6FF] px-3 text-[12px] font-medium leading-none text-[#2463EB] transition-colors hover:bg-[#E0EDFF]"
+                        >
+                          <MessageSquarePlus size={14} />
+                          <span>New Chat</span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
@@ -715,7 +736,12 @@ export function DocumentDetail({
                   </div>
                   <div
                     ref={chatScrollRef}
-                    className="h-[420px] overflow-y-auto px-4 sm:px-6 py-5 space-y-5"
+                    className={cn(
+                      'h-[420px] overflow-y-auto px-4 sm:px-6 min-h-0',
+                      messages.length === 0
+                        ? 'flex flex-col justify-center py-5'
+                        : 'py-5 space-y-5',
+                    )}
                   >
                     {messages.length === 0 ? renderEmptyChat() : renderChatMessages()}
                   </div>
@@ -754,22 +780,41 @@ export function DocumentDetail({
         <div className="fixed inset-y-0 right-0 z-50 flex flex-col w-full lg:w-[420px] bg-card border-l border-border shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border bg-muted/40 shrink-0 pt-4">
             <span className="text-sm font-medium text-foreground truncate pr-2">Chat</span>
-            <button
-              type="button"
-              onClick={() => {
-                setIsChatExpanded(false);
-                setIsChatOpen(true);
-              }}
-              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              title="Collapse to bottom panel"
-              aria-label="Collapse chat"
-            >
-              <Minus size={18} />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {onNewChat && (
+                <button
+                  type="button"
+                  onClick={startNewChat}
+                  aria-label="Start a new chat"
+                  title="New chat"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#EFF6FF] px-3 text-[12px] font-medium leading-none text-[#2463EB] transition-colors hover:bg-[#E0EDFF]"
+                >
+                  <MessageSquarePlus size={14} />
+                  <span>New Chat</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsChatExpanded(false);
+                  setIsChatOpen(true);
+                }}
+                className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                title="Collapse to bottom panel"
+                aria-label="Collapse chat"
+              >
+                <Minus size={18} />
+              </button>
+            </div>
           </div>
           <div
             ref={chatScrollRef}
-            className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-5 min-h-0"
+            className={cn(
+              'flex-1 overflow-y-auto px-4 sm:px-6 min-h-0',
+              messages.length === 0
+                ? 'flex flex-col justify-center py-5'
+                : 'py-5 space-y-5',
+            )}
           >
             {messages.length === 0 ? renderEmptyChat() : renderChatMessages()}
           </div>

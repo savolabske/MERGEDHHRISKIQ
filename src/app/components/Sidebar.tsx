@@ -22,6 +22,7 @@ import {
   LayoutTemplate,
   Workflow,
   Compass,
+  ThumbsUp,
   type LucideIcon,
 } from 'lucide-react';
 import type { AppView } from '../types/navigation';
@@ -50,6 +51,7 @@ const ADMIN_NAV_ITEMS: {
   { view: 'resources', label: 'Resources', icon: FileText },
   { view: 'links', label: 'URL Sources', icon: Link },
   { view: 'api', label: 'API', icon: Braces },
+  { view: 'responseFeedback', label: 'Response Feedback', icon: ThumbsUp },
   { view: 'auditTrails', label: 'Audit Trails', icon: ClipboardList },
 ];
 

@@ -15,8 +15,10 @@ import {
 import { ManageReportsList } from './ManageReportsList';
 import { ReportAddModal } from './ReportAddModal';
 import { ReportBuilder } from './ReportBuilder';
+import { ManagedReportView } from '../reports/ManagedReportView';
+import { ReportDetailShell } from '../../features/insights/shared/ReportDetailShell';
 
-type View = 'list' | 'builder';
+type View = 'list' | 'builder' | 'preview';
 
 interface ManageReportsProps {
   onAttachSources?: (report: ManagedReport) => void;
@@ -206,6 +208,14 @@ export function ManageReports({ onAttachSources }: ManageReportsProps) {
     setView('list');
   };
 
+  const openPreview = () => {
+    setView('preview');
+  };
+
+  const exitPreview = () => {
+    setView('builder');
+  };
+
   const handleAttachSources = useCallback(
     (report: ManagedReport) => {
       saveReportResourceLinkContext({
@@ -219,6 +229,19 @@ export function ManageReports({ onAttachSources }: ManageReportsProps) {
     [onAttachSources],
   );
 
+  if (view === 'preview' && activeReport) {
+    return (
+      <ReportDetailShell>
+        <ManagedReportView
+          report={activeReport}
+          isPreviewMode
+          onBack={exitPreview}
+          onEdit={exitPreview}
+        />
+      </ReportDetailShell>
+    );
+  }
+
   if (view === 'builder' && activeReport) {
     return (
       <ReportBuilder
@@ -230,6 +253,7 @@ export function ManageReports({ onAttachSources }: ManageReportsProps) {
         onUnpublish={handleUnpublish}
         onCommit={commitSnapshot}
         onAttachSources={() => handleAttachSources(activeReport)}
+        onPreview={openPreview}
       />
     );
   }

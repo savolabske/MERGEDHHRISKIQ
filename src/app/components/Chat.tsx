@@ -31,6 +31,8 @@ import {
   getDashboardStreamingResponse,
   type DashboardChatPayload,
 } from '../utils/dashboardChatContext';
+import { ResponseFeedbackButtons } from './feedback/ResponseFeedbackButtons';
+import type { ConversationSnapshotMessage } from '../data/responseFeedbackStore';
 
 // Utility function to clean markdown from content for better typing display
 const cleanMarkdown = (text: string) => text.replace(/\*\*/g, '');
@@ -532,6 +534,10 @@ export function Chat({
 
     const webIntelligenceContent = getWebIntelligenceSummary(query);
     const formattedRefinedWebIntelligenceContent = buildRefinedWebIntelligence(query);
+    const shouldIncludeWebIntel =
+      isExtendedRefinement ||
+      sources.length > 0 ||
+      (useExtendedKnowledge && trigger !== 'extend');
     const responseContent = prebuiltResponse
       ? prebuiltResponse.content
       : isExtendedRefinement
@@ -560,12 +566,11 @@ export function Chat({
       isTyping: true,
       displayedContent: '',
       sources: sources,
-      webIntelligenceSummary:
-        isExtendedRefinement
+      webIntelligenceSummary: shouldIncludeWebIntel
+        ? isExtendedRefinement
           ? formattedRefinedWebIntelligenceContent
-          : useExtendedKnowledge && trigger !== 'extend'
-            ? webIntelligenceContent
-          : undefined,
+          : webIntelligenceContent
+        : undefined,
       originatingQuery: query,
       isAiExtended: isExtendedRefinement
     };
@@ -585,13 +590,11 @@ export function Chat({
       msg.id === responseId ? { ...msg, isTyping: false, displayedContent: cleanedText } : msg
     ));
 
-    const webIntelText = prebuiltResponse
-      ? undefined
-      : isExtendedRefinement
+    const webIntelText = shouldIncludeWebIntel
+      ? isExtendedRefinement
         ? formattedRefinedWebIntelligenceContent
-        : useExtendedKnowledge && trigger !== 'extend'
-          ? webIntelligenceContent
-          : undefined;
+        : webIntelligenceContent
+      : undefined;
 
     if (webIntelText) {
       setMessages(prev => prev.map(msg =>
@@ -967,7 +970,80 @@ export function Chat({
     );
   };
 
-  const SourcesDisplay = ({ message, canExtend }: { message: Message; canExtend: boolean }) => {
+  const getUserQueryPreview = (messageIndex: number): string | undefined => {
+    for (let i = messageIndex - 1; i >= 0; i -= 1) {
+      const priorMessage = messages[i];
+      if (priorMessage.type === 'user') {
+        return priorMessage.content;
+      }
+    }
+    return undefined;
+  };
+
+  const resolveAssistantWebIntelligence = (
+    message: Message,
+    userQueryPreview?: string,
+  ): string | undefined => {
+    if (message.webIntelligenceSummary?.trim()) {
+      return message.webIntelligenceSummary;
+    }
+
+    const hasSources = Boolean(message.sources && message.sources.length > 0);
+    if (!hasSources || !userQueryPreview?.trim()) {
+      return undefined;
+    }
+
+    return getWebIntelligenceSummary(userQueryPreview);
+  };
+
+  const buildConversationSnapshot = (upToMessageId: string): ConversationSnapshotMessage[] => {
+    const snapshot: ConversationSnapshotMessage[] = [];
+
+    for (let index = 0; index < messages.length; index += 1) {
+      const msg = messages[index];
+      if (msg.type === 'loading' || msg.type === 'searching') {
+        continue;
+      }
+
+      if (msg.type === 'user' || msg.type === 'assistant') {
+        const userQueryPreview =
+          msg.type === 'assistant' ? getUserQueryPreview(index) : undefined;
+        const webIntelligenceSummary =
+          msg.type === 'assistant'
+            ? resolveAssistantWebIntelligence(msg, userQueryPreview)
+            : undefined;
+
+        snapshot.push({
+          id: msg.id,
+          role: msg.type,
+          content: msg.content,
+          senderName:
+            msg.type === 'user'
+              ? msg.senderName || CURRENT_USER.name
+              : msg.senderName || RISK_IQ_USER.name,
+          ...(webIntelligenceSummary ? { webIntelligenceSummary } : {}),
+        });
+      }
+
+      if (msg.id === upToMessageId) {
+        break;
+      }
+    }
+
+    return snapshot;
+  };
+
+  const SourcesDisplay = ({
+    message,
+    canExtend,
+    userQueryPreview,
+    conversationSnapshot,
+  }: {
+    message: Message;
+    canExtend: boolean;
+    userQueryPreview?: string;
+    conversationSnapshot: ConversationSnapshotMessage[];
+  }) => {
     const [isWebIntelExpanded, setIsWebIntelExpanded] = useState(true);
     const [isSourcesExpanded, setIsSourcesExpanded] = useState(false);
     const [sourcesTab, setSourcesTab] = useState<'all' | 'knowledge-base' | 'web'>('all');
@@ -1146,59 +1222,73 @@ export function Chat({
           </div>
         )}
 
-        {/* Compact Sources Button */}
-        {sources.length > 0 && (
-          <>
+        {/* Response footer: sources, extended knowledge, feedback */}
+        {!message.isTyping && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setIsDrawerOpen(true)}
-              className={cn(outlineControlClass, 'inline-flex items-center gap-2 rounded-full border-border-muted text-sm font-medium text-foreground')}
-            >
-              <Database size={14} />
-              <Globe size={14} />
-              <span>{sources.length} sources</span>
-            </button>
-            {!message.isAiExtended && (
-              (() => {
-                const canResolveExtensionQuery = Boolean(resolveExtensionQuery(message));
-                return (
-              <button
-                type="button"
-                onClick={() => handleExtendWithAI(message)}
-                disabled={isProcessing || !canExtend || !canResolveExtensionQuery || Boolean(message.usedForAiExtension)}
-                className={cn(
-                  textLinkActionClass,
-                  'gap-2 px-1 py-1 text-sm disabled:cursor-not-allowed',
-                  message.usedForAiExtension
-                    ? 'text-primary'
-                    : 'text-primary-text hover:text-primary disabled:opacity-40',
-                )}
-              >
-                {message.usedForAiExtension ? <Check size={14} /> : <Sparkles size={14} />}
-                <span>Extended Knowledge</span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex items-center justify-center text-primary75 hover:text-primary">
-                      <CircleHelp size={14} />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    variant="muted"
-                    side="top"
-                    sideOffset={8}
-                    className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
-                  >
-                    Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
-                  </TooltipContent>
-                </Tooltip>
-              </button>
-                );
-              })()
-            )}
+              {sources.length > 0 && (
+                <button
+                  onClick={() => setIsDrawerOpen(true)}
+                  className={cn(outlineControlClass, 'inline-flex items-center gap-2 rounded-full border-border-muted text-sm font-medium text-foreground')}
+                >
+                  <Database size={14} />
+                  <Globe size={14} />
+                  <span>{sources.length} sources</span>
+                </button>
+              )}
+              {sources.length > 0 && !message.isAiExtended && (
+                (() => {
+                  const canResolveExtensionQuery = Boolean(resolveExtensionQuery(message));
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => handleExtendWithAI(message)}
+                      disabled={isProcessing || !canExtend || !canResolveExtensionQuery || Boolean(message.usedForAiExtension)}
+                      className={cn(
+                        textLinkActionClass,
+                        'gap-2 px-1 py-1 text-sm disabled:cursor-not-allowed',
+                        message.usedForAiExtension
+                          ? 'text-primary'
+                          : 'text-primary-text hover:text-primary disabled:opacity-40',
+                      )}
+                    >
+                      {message.usedForAiExtension ? <Check size={14} /> : <Sparkles size={14} />}
+                      <span>Extended Knowledge</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center justify-center text-primary75 hover:text-primary">
+                            <CircleHelp size={14} />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          variant="muted"
+                          side="top"
+                          sideOffset={8}
+                          className="w-[320px] max-w-[320px] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-normal shadow-lg"
+                        >
+                          Enabling Extended Knowledge allows the model to enhance responses with its broader internal knowledge, providing additional context beyond your selected documents while still keeping answers grounded in your data.
+                        </TooltipContent>
+                      </Tooltip>
+                    </button>
+                  );
+                })()
+              )}
             </div>
+            <ResponseFeedbackButtons
+              messageId={message.id}
+              responseContent={message.content}
+              webIntelligenceContent={resolveAssistantWebIntelligence(message, userQueryPreview)}
+              threadId={threadId}
+              threadTitle={threadTitle || initialQuery}
+              userQueryPreview={userQueryPreview}
+              conversationSnapshot={conversationSnapshot}
+              className={sources.length === 0 ? 'ml-auto' : undefined}
+            />
+          </div>
+        )}
 
-            {/* Sources Drawer */}
-            {isDrawerOpen && (
+        {/* Sources Drawer */}
+        {sources.length > 0 && isDrawerOpen && (
               <div className="fixed inset-0 z-[1600]">
                 <div
                   className="absolute inset-0 z-[1600] bg-black/40"
@@ -1334,8 +1424,6 @@ export function Chat({
               </div>
               </div>
             )}
-          </>
-        )}
       </div>
     );
   };
@@ -1900,9 +1988,29 @@ export function Chat({
                         <SourcesDisplay
                           message={message}
                           canExtend={message.id === latestExtendableAssistantMessageId}
+                          userQueryPreview={getUserQueryPreview(index)}
+                          conversationSnapshot={buildConversationSnapshot(message.id)}
                         />
                       ) : (
-                        renderMessageContent(message)
+                        <div className="space-y-2">
+                          {renderMessageContent(message)}
+                          {!message.isTyping && (
+                            <div className="flex justify-end">
+                              <ResponseFeedbackButtons
+                                messageId={message.id}
+                                responseContent={message.content}
+                                webIntelligenceContent={resolveAssistantWebIntelligence(
+                                  message,
+                                  getUserQueryPreview(index),
+                                )}
+                                threadId={threadId}
+                                threadTitle={threadTitle || initialQuery}
+                                userQueryPreview={getUserQueryPreview(index)}
+                                conversationSnapshot={buildConversationSnapshot(message.id)}
+                              />
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}

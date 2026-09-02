@@ -990,6 +990,44 @@ Filtering to show **4 health and nutrition programs** serving **204,500 benefici
 ];
 
 const LG_BREAKPOINT = 1024;
+const MAP_LOADING_PHASE_MS = 2200;
+
+const MAP_LOADING_PHASES: Record<string, string[]> = {
+  refugees: [
+    'Analyzing IDP camp query...',
+    'Searching UNHCR displacement records...',
+    'Fetching camp coordinates near Mogadishu...',
+    'Plotting camps on the map...',
+  ],
+  diversion: [
+    'Analyzing aid diversion patterns...',
+    'Cross-referencing OCHA supply chain data...',
+    'Identifying high-risk corridor zones...',
+    'Rendering risk overlays on the map...',
+  ],
+  hunger2026: [
+    'Analyzing food security projections...',
+    'Loading IPC phase 2026 forecast data...',
+    'Mapping drought-affected districts...',
+    'Rendering hunger severity layers...',
+  ],
+  unicef: [
+    'Searching UNICEF project database...',
+    'Filtering active programmes in Somalia...',
+    'Geocoding project site locations...',
+    'Plotting project markers on the map...',
+  ],
+  default: [
+    'Analyzing your question...',
+    'Querying Somalia geospatial data...',
+    'Fetching location coordinates...',
+    'Rendering map layers...',
+  ],
+};
+
+function getMapLoadingPhases(flowId: string): string[] {
+  return MAP_LOADING_PHASES[flowId] ?? MAP_LOADING_PHASES.default;
+}
 
 // ══════════════════════════════════════════════════════════════
 // ── MAIN COMPONENT ──
@@ -1006,6 +1044,8 @@ export function MapView() {
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isMapLoading, setIsMapLoading] = useState(false);
+  const [mapLoadingPhase, setMapLoadingPhase] = useState(0);
   const [queryHistory, setQueryHistory] = useState<HistoryItem[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
@@ -1022,6 +1062,7 @@ export function MapView() {
   const promptInputRef = useRef<HTMLInputElement>(null);
   const focusPromptAfterOpenRef = useRef(false);
   const typingIntervalRef = useRef<number | null>(null);
+  const mapLoadingTimeoutsRef = useRef<number[]>([]);
   const animationFrameRef = useRef<number | null>(null);
 
   const activeFlow = activeFlowId ? CONVERSATION_FLOWS.find(f => f.id === activeFlowId) : null;
@@ -1717,6 +1758,65 @@ export function MapView() {
     waitForStyle();
   }, [renderRefugeeCamps, renderDiversionMap, renderHungerProjection, renderUNICEFProjects]);
 
+  const clearMapLoading = useCallback(() => {
+    mapLoadingTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    mapLoadingTimeoutsRef.current = [];
+    setIsMapLoading(false);
+    setMapLoadingPhase(0);
+  }, []);
+
+  const startTypingAnimation = useCallback((fullText: string) => {
+    if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+
+    let charIndex = 0;
+    typingIntervalRef.current = window.setInterval(() => {
+      charIndex = Math.min(charIndex + 4, fullText.length);
+      setChatMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          ...updated[updated.length - 1],
+          displayedText: fullText.slice(0, charIndex),
+          isTyping: charIndex < fullText.length,
+        };
+        return updated;
+      });
+      if (charIndex >= fullText.length) {
+        clearInterval(typingIntervalRef.current!);
+        typingIntervalRef.current = null;
+        setIsTransitioning(false);
+      }
+    }, 10);
+  }, []);
+
+  const runMapLoadingSequence = useCallback((
+    flowId: string,
+    stepIdx: number,
+    onReady: () => void,
+  ) => {
+    clearMapLoading();
+    const phases = getMapLoadingPhases(flowId);
+    setIsMapLoading(true);
+    setMapLoadingPhase(0);
+
+    const timeouts: number[] = [];
+    for (let i = 1; i < phases.length; i += 1) {
+      timeouts.push(
+        window.setTimeout(() => setMapLoadingPhase(i), MAP_LOADING_PHASE_MS * i),
+      );
+    }
+
+    timeouts.push(
+      window.setTimeout(() => {
+        setIsMapLoading(false);
+        setMapLoadingPhase(0);
+        renderMapForStep(flowId, stepIdx);
+        onReady();
+      }, MAP_LOADING_PHASE_MS * phases.length),
+    );
+
+    mapLoadingTimeoutsRef.current = timeouts;
+  }, [clearMapLoading, renderMapForStep]);
+
   // ── Start a new conversation flow ──
   const startFlow = useCallback((flowId: string) => {
     const flow = CONVERSATION_FLOWS.find(f => f.id === flowId);
@@ -1726,35 +1826,28 @@ export function MapView() {
     setCurrentStepIndex(0);
     setSelectedItem(null);
     setIsTransitioning(true);
+    setActiveFilters([]);
 
     if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
 
     const step = flow.steps[0];
-    setActiveFilters(step.filters);
-
     const userMsg: ChatMessage = { role: 'user', content: step.userMessage };
-    const assistantMsg: ChatMessage = { role: 'assistant', content: step.assistantResponse, displayedText: '', isTyping: true };
-    setChatMessages([userMsg, assistantMsg]);
+    setChatMessages([userMsg]);
 
-    // Typing animation
-    const fullText = step.assistantResponse;
-    let charIndex = 0;
-    typingIntervalRef.current = window.setInterval(() => {
-      charIndex = Math.min(charIndex + 4, fullText.length);
-      setChatMessages(prev => {
-        const updated = [...prev];
-        updated[updated.length - 1] = { ...updated[updated.length - 1], displayedText: fullText.slice(0, charIndex), isTyping: charIndex < fullText.length };
-        return updated;
-      });
-      if (charIndex >= fullText.length) {
-        clearInterval(typingIntervalRef.current!);
-        setIsTransitioning(false);
-      }
-    }, 10);
+    runMapLoadingSequence(flowId, 0, () => {
+      setActiveFilters(step.filters);
+      const assistantMsg: ChatMessage = {
+        role: 'assistant',
+        content: step.assistantResponse,
+        displayedText: '',
+        isTyping: true,
+      };
+      setChatMessages((prev) => [...prev, assistantMsg]);
+      startTypingAnimation(step.assistantResponse);
+    });
 
-    renderMapForStep(flowId, 0);
     setIsMobilePanelOpen(true);
-  }, [renderMapForStep]);
+  }, [runMapLoadingSequence, startTypingAnimation]);
 
   // ── Advance to next step in flow ──
   const advanceStep = useCallback((suggestedActionIndex: number) => {
@@ -1787,30 +1880,22 @@ export function MapView() {
     if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
 
     const step = activeFlow.steps[nextStepIdx];
-    setActiveFilters(step.filters);
 
     const userMsg: ChatMessage = { role: 'user', content: step.userMessage };
-    const assistantMsg: ChatMessage = { role: 'assistant', content: step.assistantResponse, displayedText: '', isTyping: true };
-    setChatMessages(prev => [...prev, userMsg, assistantMsg]);
+    setChatMessages((prev) => [...prev, userMsg]);
 
-    // Typing animation
-    const fullText = step.assistantResponse;
-    let charIndex = 0;
-    typingIntervalRef.current = window.setInterval(() => {
-      charIndex = Math.min(charIndex + 4, fullText.length);
-      setChatMessages(prev => {
-        const updated = [...prev];
-        updated[updated.length - 1] = { ...updated[updated.length - 1], displayedText: fullText.slice(0, charIndex), isTyping: charIndex < fullText.length };
-        return updated;
-      });
-      if (charIndex >= fullText.length) {
-        clearInterval(typingIntervalRef.current!);
-        setIsTransitioning(false);
-      }
-    }, 10);
-
-    renderMapForStep(activeFlow.id, nextStepIdx);
-  }, [activeFlow, activeFlowId, currentStepIndex, currentStep, isTransitioning, renderMapForStep, startFlow]);
+    runMapLoadingSequence(activeFlow.id, nextStepIdx, () => {
+      setActiveFilters(step.filters);
+      const assistantMsg: ChatMessage = {
+        role: 'assistant',
+        content: step.assistantResponse,
+        displayedText: '',
+        isTyping: true,
+      };
+      setChatMessages((prev) => [...prev, assistantMsg]);
+      startTypingAnimation(step.assistantResponse);
+    });
+  }, [activeFlow, activeFlowId, currentStepIndex, currentStep, isTransitioning, runMapLoadingSequence, startFlow, startTypingAnimation]);
 
   // ── Remove a filter ──
   const removeFilter = useCallback((filterId: string) => {
@@ -1840,6 +1925,7 @@ export function MapView() {
   };
 
   const stopGeneration = useCallback(() => {
+    clearMapLoading();
     if (typingIntervalRef.current) {
       clearInterval(typingIntervalRef.current);
       typingIntervalRef.current = null;
@@ -1858,7 +1944,7 @@ export function MapView() {
       return updated;
     });
     setIsTransitioning(false);
-  }, []);
+  }, [clearMapLoading]);
 
   // ── Save to History ──
   const saveToHistory = () => {
@@ -1884,6 +1970,7 @@ export function MapView() {
   // ── Reset ──
   const handleReset = () => {
     saveToHistory(); // Save current conversation before resetting
+    clearMapLoading();
     setActiveFlowId(null);
     setCurrentStepIndex(0);
     setSelectedItem(null);
@@ -1896,18 +1983,24 @@ export function MapView() {
 
   useEffect(() => {
     return () => {
+      clearMapLoading();
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, []);
+  }, [clearMapLoading]);
+
+  const activeLoadingPhases = getMapLoadingPhases(activeFlowId ?? 'default');
+  const currentLoadingMessage = activeLoadingPhases[Math.min(mapLoadingPhase, activeLoadingPhases.length - 1)];
 
   // Check if last message is done typing
-  const isLastMessageDone = chatMessages.length > 0 && !chatMessages[chatMessages.length - 1]?.isTyping;
-  const isGenerating = chatMessages.some((msg) => msg.isTyping) || isTransitioning;
+  const isLastMessageDone = chatMessages.length > 0 && !chatMessages[chatMessages.length - 1]?.isTyping && !isMapLoading;
+  const isGenerating = isMapLoading || chatMessages.some((msg) => msg.isTyping) || isTransitioning;
 
-  const promptPlaceholder = activeFlow
-    ? 'Ask a follow-up question...'
-    : 'Ask a question about Somalia...';
+  const promptPlaceholder = isMapLoading
+    ? 'Analyzing...'
+    : activeFlow
+      ? 'Ask a follow-up question...'
+      : 'Ask a question about Somalia...';
 
   const renderPromptInput = ({
     compact = false,
@@ -2026,6 +2119,46 @@ export function MapView() {
           from { transform: translateX(100%); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
         }
+        @keyframes map-shimmer-sweep {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        @keyframes map-loading-pulse {
+          0%, 100% { opacity: 0.45; }
+          50% { opacity: 0.7; }
+        }
+        .map-loading-overlay {
+          background: rgba(15, 23, 42, 0.62);
+          backdrop-filter: blur(2px);
+        }
+        .map-loading-shimmer-track {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          pointer-events: none;
+        }
+        .map-loading-shimmer-track::after {
+          content: '';
+          position: absolute;
+          inset: -50% 0;
+          width: 60%;
+          background: linear-gradient(
+            105deg,
+            transparent 0%,
+            rgba(56, 189, 248, 0.04) 35%,
+            rgba(56, 189, 248, 0.14) 50%,
+            rgba(56, 189, 248, 0.04) 65%,
+            transparent 100%
+          );
+          animation: map-shimmer-sweep 2.2s ease-in-out infinite;
+        }
+        .map-loading-grid {
+          background-image:
+            linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+          background-size: 48px 48px;
+          animation: map-loading-pulse 3s ease-in-out infinite;
+        }
         .filter-pill { animation: filter-appear 0.3s ease-out forwards; }
         .suggestion-btn { animation: suggestion-appear 0.4s ease-out forwards; }
         .animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
@@ -2067,6 +2200,30 @@ export function MapView() {
           </div>
         )}
 
+        {/* Map loading overlay */}
+        {isMapLoading && (
+          <div
+            className="map-loading-overlay absolute inset-0 z-[15] flex flex-col items-center justify-center"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+            aria-label="Loading map data"
+          >
+            <div className="map-loading-shimmer-track map-loading-grid absolute inset-0" aria-hidden />
+            <div className="relative z-10 flex flex-col items-center gap-4 px-6 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#334155] bg-[#0F172A]/90 shadow-lg">
+                <MapPin size={26} className="text-[#38BDF8]" strokeWidth={1.75} aria-hidden />
+              </div>
+              <div className="flex items-center gap-3 rounded-full border border-[#334155] bg-[#0F172A]/90 px-5 py-2.5 shadow-lg">
+                <div className="size-4 shrink-0 rounded-full border-2 border-[#38BDF8] border-t-transparent animate-spin" />
+                <span className="text-[0.8125rem] font-medium shimmer-text">
+                  {currentLoadingMessage}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Active Filters Pill Row */}
         {activeFilters.length > 0 && (
           <div className="absolute top-4 left-4 right-4 lg:right-[440px] z-10 flex flex-wrap gap-2">
@@ -2090,7 +2247,7 @@ export function MapView() {
         )}
 
         {/* Map Legend */}
-        {currentStep && (
+        {currentStep && !isMapLoading && (
           <div className="absolute top-14 left-4 z-10 bg-[#0F172A]/90 backdrop-blur-sm rounded-xl border border-[#1E293B] shadow-lg p-4 min-w-[200px]" style={{ marginTop: activeFilters.length > 0 ? '8px' : '0' }}>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-[0.6875rem] font-semibold text-[#64748B]">{currentStep.legendTitle}</h4>
@@ -2332,6 +2489,18 @@ export function MapView() {
                     )}
                   </div>
                 ))}
+
+                {/* Map loading indicator */}
+                {isMapLoading && (
+                  <div className="bg-[#F9FAFB] rounded-2xl rounded-tl-md p-4 border border-[#F3F4F6]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full border-2 border-[#2463EB] border-t-transparent animate-spin shrink-0" />
+                      <span className="text-[0.8125rem] font-medium text-[#1f2937] shimmer-text">
+                        {currentLoadingMessage}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Data Panel */}
                 {isLastMessageDone && currentStep?.panelItems && currentStep.panelItems.length > 0 && (

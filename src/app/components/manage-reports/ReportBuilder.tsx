@@ -44,6 +44,7 @@ interface ReportBuilderProps {
   onUnpublish: (id: string) => void;
   onCommit: (report: ManagedReport) => void;
   onAttachSources?: () => void;
+  onPreview?: () => void;
 }
 
 export function ReportBuilder({
@@ -55,6 +56,7 @@ export function ReportBuilder({
   onUnpublish,
   onCommit,
   onAttachSources,
+  onPreview,
 }: ReportBuilderProps) {
   const [editTarget, setEditTarget] = useState<SectionEditTarget | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -180,6 +182,7 @@ export function ReportBuilder({
                 onTitleChange={(title) => touch({ title })}
                 onDescriptionChange={(description) => touch({ description })}
                 onOpenSettings={openSettings}
+                onPreview={onPreview}
                 onPublish={() => onPublish({ ...report, status: 'published' })}
                 onUnpublish={() => onUnpublish(report.id)}
               />

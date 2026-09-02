@@ -10,6 +10,7 @@ import { Profile } from "./components/Profile";
 import { Approvals } from "./components/Approvals";
 import { UsersAccess } from "./components/UsersAccess";
 import { AuditTrail } from "./components/AuditTrail";
+import { ResponseFeedbackAdmin } from "./components/ResponseFeedbackAdmin";
 import { URLSources } from "./components/URLSources";
 import { Api } from "./components/Api";
 import { Definitions } from "./components/Definitions";
@@ -950,6 +951,31 @@ export default function App() {
     [handleResourceChatMessagesChange, currentDocumentId],
   );
 
+  const handleResourceNewChat = useCallback(() => {
+    const resource = getPlatformResourceById(currentDocumentId);
+    if (!resource || !resolveChatEligibleResourceId(currentDocumentId)) return;
+
+    const { timeString, dateLabel } = getCurrentDateMeta();
+    const newChatId = `resource-${currentDocumentId}-${Date.now()}`;
+    const newHistoryItem: ChatHistoryItem = {
+      id: newChatId,
+      query: resource.title,
+      timestamp: timeString,
+      date: dateLabel,
+      messages: [],
+      sharedWith: [],
+      source: 'resource',
+      resourceId: currentDocumentId,
+      resourceTitle: resource.title,
+      createdBy: CURRENT_USER.id,
+      createdByName: CURRENT_USER.name,
+      unread: false,
+    };
+    setChatHistory((prev) => [newHistoryItem, ...prev]);
+    setDocumentChatThreadId(newChatId);
+    setDocumentChatOpen(true);
+  }, [currentDocumentId]);
+
   const handleDocumentDetailBack = useCallback(() => {
     setCurrentView((view) => {
       if (view !== 'documentDetail') return view;
@@ -1517,7 +1543,7 @@ export default function App() {
           />
         ) : currentView === 'documentDetail' ? (
           <DocumentDetail
-            key={currentDocumentId}
+            key={`${currentDocumentId}-${documentChatThreadId ?? 'new'}`}
             documentId={currentDocumentId}
             onBack={handleDocumentDetailBack}
             onOpenDocument={(id) => {
@@ -1535,6 +1561,7 @@ export default function App() {
                 : undefined
             }
             onMessagesChange={handleDocumentDetailMessagesChange}
+            onNewChat={handleResourceNewChat}
             breadcrumbParent={
               documentReturnView === 'resourcesHub'
                 ? { label: 'Resources', onClick: handleDocumentDetailBack }
@@ -1988,6 +2015,8 @@ export default function App() {
           <UsersAccess />
         ) : currentView === 'auditTrails' ? (
           <AuditTrail />
+        ) : currentView === 'responseFeedback' ? (
+          <ResponseFeedbackAdmin />
         ) : currentView === 'links' ? (
           <URLSources />
         ) : currentView === 'api' ? (

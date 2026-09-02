@@ -27,6 +27,7 @@ interface ReportBuilderHeaderProps {
   onTitleChange: (title: string) => void;
   onDescriptionChange: (description: string) => void;
   onOpenSettings: () => void;
+  onPreview?: () => void;
   onPublish: () => void | Promise<void>;
   onUnpublish: () => void;
 }
@@ -40,6 +41,7 @@ export function ReportBuilderHeader({
   onTitleChange,
   onDescriptionChange,
   onOpenSettings,
+  onPreview,
   onPublish,
   onUnpublish,
 }: ReportBuilderHeaderProps) {
@@ -133,21 +135,24 @@ export function ReportBuilderHeader({
               </span>
             )}
 
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    disabled={!hasKnowledgeSources}
-                    className="px-3 py-2 border border-border rounded-lg text-sm font-medium text-muted-foreground opacity-60 cursor-not-allowed inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed enabled:opacity-100 enabled:cursor-pointer enabled:text-foreground enabled:hover:bg-muted"
-                  >
-                    <Eye size={16} />
-                    Preview
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Available once sources are attached</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {onPreview ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      disabled={!hasKnowledgeSources}
+                      onClick={onPreview}
+                      className="px-3 py-2 border border-border rounded-lg text-sm font-medium text-muted-foreground opacity-60 cursor-not-allowed inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed enabled:opacity-100 enabled:cursor-pointer enabled:text-foreground enabled:hover:bg-muted"
+                    >
+                      <Eye size={16} />
+                      Preview
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Available once sources are attached</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : null}
 
             <button
               type="button"

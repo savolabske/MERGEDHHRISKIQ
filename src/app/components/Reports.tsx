@@ -94,6 +94,7 @@ export function Reports({
   const [reports, setReports] = useState<ManagedReport[]>(() => loadManagedReports());
   const [showAddModal, setShowAddModal] = useState(false);
   const [builderReportId, setBuilderReportId] = useState<string | null>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [hubView, setHubView] = useState<'catalog' | 'drafts'>('catalog');
   const [savedSnapshots, setSavedSnapshots] = useState<Record<string, string>>(() =>
@@ -308,9 +309,19 @@ export function Reports({
       }));
     }
     setBuilderReportId(null);
+    setIsPreviewMode(false);
     setShowAttachModal(false);
     onReportClose?.();
     refreshCatalog();
+  };
+
+  const openBuilderPreview = () => {
+    setIsPreviewMode(true);
+    onReportOpen?.();
+  };
+
+  const exitBuilderPreview = () => {
+    setIsPreviewMode(false);
   };
 
   const handleAttachSelect = (resourceId: string) => {
@@ -389,6 +400,19 @@ export function Reports({
     setDraftHidden([]);
   };
 
+  if (builderReport && isPreviewMode) {
+    return (
+      <ReportDetailShell>
+        <ManagedReportView
+          report={builderReport}
+          isPreviewMode
+          onBack={exitBuilderPreview}
+          onEdit={exitBuilderPreview}
+        />
+      </ReportDetailShell>
+    );
+  }
+
   if (builderReport) {
     return (
       <>
@@ -401,6 +425,7 @@ export function Reports({
           onUnpublish={handleBuilderUnpublish}
           onCommit={commitSnapshot}
           onAttachSources={() => setShowAttachModal(true)}
+          onPreview={openBuilderPreview}
         />
         <ReportAttachMyResourceModal
           open={showAttachModal}

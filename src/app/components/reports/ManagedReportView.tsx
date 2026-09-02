@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Sparkles } from 'lucide-react';
+import { ChevronDown, Eye, Pencil, Sparkles } from 'lucide-react';
 import type { ManagedReport, ReportSection } from '../../data/reportsAdminMock';
 import { KPI_ICON_MAP } from '../../data/reportsAdminMock';
+import {
+  resolveKpiPreviewDisplay,
+  resolveSectionPreviewDisplay,
+} from '../../data/reportsAdminMock';
 import { getReportThemeTokens, type ReportThemeTokens } from '../../data/reportThemeTokens';
 import { ChartSkeletonGraphic } from '../manage-reports/reportSkeletonGraphics';
 import { ChartFilledGraphic } from '../manage-reports/reportFilledGraphics';
@@ -38,6 +42,8 @@ import {
 interface ManagedReportViewProps {
   report: ManagedReport;
   onBack: () => void;
+  isPreviewMode?: boolean;
+  onEdit?: () => void;
 }
 
 type ChatMessage =
@@ -123,25 +129,68 @@ function answerForPrompt(report: ManagedReport, query: string): string {
   return `I can walk through “${report.title}” using the sections and metrics on this report. Try one of the suggested prompts.`;
 }
 
+function PreviewFlag({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: 'warning' | 'muted';
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+        tone === 'warning'
+          ? 'bg-warning-subtle text-warning-text'
+          : 'bg-muted text-muted-foreground',
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
 function ManagedSectionBlock({
   section,
   index,
   total,
   theme,
   onAsk,
+  isPreviewMode = false,
 }: {
   section: ReportSection;
   index: number;
   total: number;
   theme: ReportThemeTokens;
   onAsk: (prompt: string) => void;
+  isPreviewMode?: boolean;
 }) {
   const sectionNum = String(index + 1).padStart(2, '0');
   const totalNum = String(total).padStart(2, '0');
-  const isGenerated =
-    Boolean(section.body?.trim()) ||
-    Boolean(section.stat?.trim()) ||
-    Boolean(section.chartData?.length);
+  const preview = isPreviewMode ? resolveSectionPreviewDisplay(section) : null;
+  const isGenerated = isPreviewMode
+    ? Boolean(
+        preview?.body?.trim() ||
+          preview?.stat?.trim() ||
+          preview?.chartData?.length ||
+          section.chartData?.length,
+      )
+    : Boolean(section.body?.trim()) ||
+      Boolean(section.stat?.trim()) ||
+      Boolean(section.chartData?.length);
+  const narrativeBody = isPreviewMode
+    ? preview?.body
+    : section.body?.trim() || (!isGenerated ? section.prompt?.trim() : undefined);
+  const narrativeStat = isPreviewMode ? preview?.stat : section.stat;
+  const narrativeStatLabel = isPreviewMode ? preview?.statLabel : section.statLabel;
+  const narrativeBullets = isPreviewMode ? preview?.bullets : section.bullets;
+  const chartCaption = isPreviewMode ? preview?.chartCaption ?? section.chartCaption : section.chartCaption;
+  const chartTitle = isPreviewMode ? preview?.chartTitle ?? section.chartTitle : section.chartTitle;
+  const chartData =
+    isPreviewMode && preview?.chartData?.length
+      ? preview.chartData
+      : section.chartData;
+  const showChart = Boolean(chartData?.length);
 
   if (section.layout === 'tile_grid') {
     const tiles = section.tiles ?? [];
@@ -205,16 +254,16 @@ function ManagedSectionBlock({
           className="text-[11.5px] font-semibold uppercase tracking-[0.05em]"
           style={{ color: theme.textMuted }}
         >
-          {isGenerated && section.chartCaption
-            ? section.chartCaption
+          {isGenerated && chartCaption
+            ? chartCaption
             : `${sectionNum} / ${totalNum}`}
         </div>
-        {isGenerated && section.chartTitle ? (
+        {isGenerated && chartTitle ? (
           <div
             className="mb-4 mt-1 text-base font-semibold sm:mb-5 sm:text-[18px]"
             style={{ color: theme.textPrimary }}
           >
-            {section.chartTitle}
+            {chartTitle}
           </div>
         ) : (
           <div
@@ -224,10 +273,10 @@ function ManagedSectionBlock({
             {section.title}
           </div>
         )}
-        {isGenerated && section.chartData?.length ? (
+        {showChart ? (
           <ChartFilledGraphic
             chartType={section.chartType}
-            data={section.chartData}
+            data={chartData!}
             palette={theme.chartPalette}
             muted={theme.chartMuted}
             accent={theme.sectionStat}
@@ -254,29 +303,38 @@ function ManagedSectionBlock({
         >
           {section.title}
         </h3>
+        {isPreviewMode && preview ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {preview.isSampleContent ? <PreviewFlag label="Sample content" tone="muted" /> : null}
+            {preview.missingPrompt ? <PreviewFlag label="No prompt" tone="warning" /> : null}
+            {preview.hasGenerationError ? (
+              <PreviewFlag label="Generation error" tone="warning" />
+            ) : null}
+          </div>
+        ) : null}
         {isGenerated ? (
           <>
-            {section.stat ? (
+            {narrativeStat ? (
               <div
                 className="mt-2 block text-[28px] font-semibold leading-none sm:mt-3 sm:text-[36px] lg:text-[38px]"
                 style={{ color: theme.sectionStat }}
               >
-                {section.stat}
+                {narrativeStat}
               </div>
             ) : null}
-            {section.statLabel ? (
+            {narrativeStatLabel ? (
               <p className="mt-1 text-[12.5px]" style={{ color: theme.textMuted }}>
-                {section.statLabel}
+                {narrativeStatLabel}
               </p>
             ) : null}
-            {section.body ? (
+            {narrativeBody ? (
               <p className="mt-4 text-[14.5px]" style={{ color: theme.textSecondary }}>
-                {section.body}
+                {narrativeBody}
               </p>
             ) : null}
-            {section.bullets && section.bullets.length > 0 ? (
+            {narrativeBullets && narrativeBullets.length > 0 ? (
               <ul className="mt-2">
-                {section.bullets.map((bullet) => (
+                {narrativeBullets.map((bullet) => (
                   <li
                     key={bullet}
                     className="flex items-start gap-3 border-t py-2 text-[13.5px]"
@@ -417,7 +475,12 @@ function ManagedChatFeed({
 }
 
 /** Read-only hub view for custom published managed reports. */
-export function ManagedReportView({ report, onBack }: ManagedReportViewProps) {
+export function ManagedReportView({
+  report,
+  onBack,
+  isPreviewMode = false,
+  onEdit,
+}: ManagedReportViewProps) {
   const theme = getReportThemeTokens(report.themeId);
   const chrome = chromeForTheme(theme.id);
   const sections = useMemo(
@@ -508,12 +571,20 @@ export function ManagedReportView({ report, onBack }: ManagedReportViewProps) {
         />
         <div className={reportTitleFilterRowClassName}>
           <div className="lg:min-w-0 lg:flex-1">
-            <h1
-              className="report-display-title truncate text-[22px] leading-[1.05] font-semibold sm:text-[30px]"
-              style={{ color: theme.textPrimary }}
-            >
-              {report.title}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1
+                className="report-display-title truncate text-[22px] leading-[1.05] font-semibold sm:text-[30px]"
+                style={{ color: theme.textPrimary }}
+              >
+                {report.title}
+              </h1>
+              {isPreviewMode ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-warning-subtle px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-warning-text">
+                  <Eye size={12} />
+                  Preview
+                </span>
+              ) : null}
+            </div>
             {report.description ? (
               <p
                 className="mt-1 hidden max-w-[580px] text-[13.5px] lg:block"
@@ -529,6 +600,18 @@ export function ManagedReportView({ report, onBack }: ManagedReportViewProps) {
             theme={chrome.filter}
             hasAppliedFilters={hasAppliedFilters}
             onClearAll={clearAllFilters}
+            trailingAction={
+              isPreviewMode && onEdit ? (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-[12.5px] font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  <Pencil size={14} className="shrink-0" />
+                  Edit
+                </button>
+              ) : null
+            }
           >
             <div className="relative">
               <button
@@ -608,6 +691,15 @@ export function ManagedReportView({ report, onBack }: ManagedReportViewProps) {
             </div>
           </ReportFilterBar>
         </div>
+        {isPreviewMode ? (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-border bg-warning-subtle px-3 py-2.5 text-[12.5px] text-warning-text">
+            <Eye size={14} className="mt-0.5 shrink-0" />
+            <span>
+              Preview mode — sections without prompts and generation errors are flagged below.
+              End users never see them.
+            </span>
+          </div>
+        ) : null}
       </header>
 
       <ReportChatLayout
@@ -690,7 +782,12 @@ export function ManagedReportView({ report, onBack }: ManagedReportViewProps) {
             const accent = theme.kpiAccents[index] ?? theme.accent;
             const iconBg = theme.kpiIconBgs[index] ?? theme.accentSubtle;
             const iconColor = theme.kpiIconColors[index] ?? theme.accent;
-            const isGenerated = Boolean(tile.value?.trim());
+            const kpiDisplay = isPreviewMode
+              ? resolveKpiPreviewDisplay(tile, index)
+              : null;
+            const isGenerated = isPreviewMode
+              ? Boolean(kpiDisplay?.value?.trim() || kpiDisplay?.promptDraft)
+              : Boolean(tile.value?.trim());
 
             return (
               <button
@@ -711,7 +808,45 @@ export function ManagedReportView({ report, onBack }: ManagedReportViewProps) {
                 >
                   <Icon size={14} style={{ color: iconColor }} />
                 </div>
-                {isGenerated ? (
+                {isPreviewMode && kpiDisplay ? (
+                  <>
+                    {kpiDisplay.isSampleContent || kpiDisplay.missingPrompt ? (
+                      <div className="mb-2 flex flex-wrap gap-1">
+                        {kpiDisplay.isSampleContent ? (
+                          <PreviewFlag label="Sample" tone="muted" />
+                        ) : null}
+                        {kpiDisplay.missingPrompt ? (
+                          <PreviewFlag label="No prompt" tone="warning" />
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {kpiDisplay.value ? (
+                      <>
+                        <div
+                          className="mb-1 text-[10.5px] uppercase tracking-[0.04em]"
+                          style={{ color: theme.textMuted }}
+                        >
+                          {kpiDisplay.label ?? 'Metric'}
+                        </div>
+                        <div
+                          className="text-[23px] font-semibold"
+                          style={{ color: theme.textPrimary }}
+                        >
+                          {kpiDisplay.value}
+                        </div>
+                        {kpiDisplay.sub ? (
+                          <div className="mt-1 text-[11px]" style={{ color: theme.textMuted }}>
+                            {kpiDisplay.sub}
+                          </div>
+                        ) : null}
+                      </>
+                    ) : kpiDisplay.promptDraft ? (
+                      <p className="text-sm leading-snug" style={{ color: theme.textSecondary }}>
+                        {kpiDisplay.promptDraft}
+                      </p>
+                    ) : null}
+                  </>
+                ) : isGenerated ? (
                   <>
                     <div
                       className="mb-1 text-[10.5px] uppercase tracking-[0.04em]"
@@ -756,6 +891,7 @@ export function ManagedReportView({ report, onBack }: ManagedReportViewProps) {
                 total={list.length}
                 theme={theme}
                 onAsk={runPrompt}
+                isPreviewMode={isPreviewMode}
               />
             ))}
         </section>
@@ -770,6 +906,7 @@ export function ManagedReportView({ report, onBack }: ManagedReportViewProps) {
               total={1}
               theme={theme}
               onAsk={runPrompt}
+              isPreviewMode={isPreviewMode}
             />
           ))}
       </ReportChatLayout>

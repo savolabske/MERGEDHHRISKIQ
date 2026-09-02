@@ -775,6 +775,125 @@ function pickGeneratedSectionDef(section: ReportSection) {
   return GENERATED_SECTION_DEFS[idx];
 }
 
+export interface SectionPreviewDisplay {
+  body?: string;
+  stat?: string;
+  statLabel?: string;
+  bullets?: string[];
+  chartCaption?: string;
+  chartTitle?: string;
+  chartData?: ReportChartDatum[];
+  missingPrompt: boolean;
+  isSampleContent: boolean;
+  hasGenerationError: boolean;
+}
+
+/** Resolve what to show in builder preview for a section (sample fill when empty). */
+export function resolveSectionPreviewDisplay(section: ReportSection): SectionPreviewDisplay {
+  const hasPrompt = Boolean(section.prompt?.trim());
+  const hasGeneratedText = Boolean(section.body?.trim()) || Boolean(section.stat?.trim());
+  const hasChartData = Boolean(section.chartData?.length);
+
+  if (hasGeneratedText) {
+    return {
+      body: section.body,
+      stat: section.stat,
+      statLabel: section.statLabel,
+      bullets: section.bullets,
+      chartCaption: section.chartCaption,
+      chartTitle: section.chartTitle,
+      chartData: section.chartData,
+      missingPrompt: !hasPrompt,
+      isSampleContent: false,
+      hasGenerationError: false,
+    };
+  }
+
+  if (hasChartData && !hasGeneratedText) {
+    return {
+      body: section.body?.trim() || section.prompt?.trim() || undefined,
+      stat: section.stat,
+      statLabel: section.statLabel,
+      bullets: section.bullets,
+      chartCaption: section.chartCaption,
+      chartTitle: section.chartTitle,
+      chartData: section.chartData,
+      missingPrompt: !hasPrompt,
+      isSampleContent: false,
+      hasGenerationError: !section.body?.trim() && !section.prompt?.trim(),
+    };
+  }
+
+  if (hasPrompt) {
+    return {
+      body: section.prompt.trim(),
+      chartCaption: section.chartCaption,
+      chartTitle: section.chartTitle,
+      chartData: section.chartData,
+      missingPrompt: false,
+      isSampleContent: false,
+      hasGenerationError: false,
+    };
+  }
+
+  const def = pickGeneratedSectionDef(section);
+  return {
+    body: def.body,
+    stat: def.stat,
+    statLabel: def.statLabel,
+    bullets: def.bullets,
+    chartCaption: def.chartCaption,
+    chartTitle: def.chartTitle,
+    chartData: def.chartData,
+    missingPrompt: true,
+    isSampleContent: true,
+    hasGenerationError: false,
+  };
+}
+
+export interface KpiPreviewDisplay {
+  label?: string;
+  value?: string;
+  sub?: string;
+  promptDraft?: string;
+  missingPrompt: boolean;
+  isSampleContent: boolean;
+}
+
+/** Resolve what to show in builder preview for a KPI tile. */
+export function resolveKpiPreviewDisplay(tile: ReportKpiTile, index: number): KpiPreviewDisplay {
+  const hasPrompt = Boolean(tile.prompt?.trim());
+  const hasValue = Boolean(tile.value?.trim());
+
+  if (hasValue) {
+    return {
+      label: tile.label,
+      value: tile.value,
+      sub: tile.sub,
+      missingPrompt: !hasPrompt,
+      isSampleContent: false,
+    };
+  }
+
+  if (hasPrompt) {
+    return {
+      label: tile.label ?? 'KPI',
+      promptDraft: tile.prompt.trim(),
+      missingPrompt: false,
+      isSampleContent: false,
+    };
+  }
+
+  const def = GENERATED_KPI_DEFS[index % GENERATED_KPI_DEFS.length];
+  return {
+    label: def.label,
+    value: def.value,
+    sub: def.sub,
+    missingPrompt: true,
+    isSampleContent: true,
+  };
+}
+
 /** Re-draft a single section from its current prompt / chart type. */
 export function regenerateSectionFromPrompt(section: ReportSection): ReportSection {
   if (section.layout === 'tile_grid') {
