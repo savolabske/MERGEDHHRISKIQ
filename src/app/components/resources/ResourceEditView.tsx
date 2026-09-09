@@ -22,6 +22,12 @@ import { DetailFieldLabel, DetailSectionTitle, inputClass } from './resourceShar
 import { ResourceDocumentsList } from './ResourceDocumentsList';
 import { UserGroupModal } from './UserGroupModal';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredField,
+  useFormValidation,
+} from '../ui/form-validation';
 
 interface ResourceEditViewProps {
   resource: PlatformResource;
@@ -64,6 +70,13 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
   const tagInputRef = useRef<HTMLInputElement>(null);
   const tagsDropdownRef = useRef<HTMLDivElement>(null);
   const groupDropdownRef = useRef<HTMLDivElement>(null);
+  const { errors, validate } = useFormValidation(
+    { title, description },
+    {
+      title: requiredField('Title'),
+      description: requiredField('Description'),
+    },
+  );
 
   const allTagOptions = Array.from(
     new Set([...SUGGESTED_TAGS, ...resource.tags, ...tags]),
@@ -234,10 +247,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
   };
 
   const handleSave = () => {
-    if (!title.trim()) {
-      toast.error('Resource title is required');
-      return;
-    }
+    if (!validate()) return;
     onSave({
       ...resource,
       title: title.trim(),
@@ -256,8 +266,6 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
     toast.success('Resource saved successfully');
   };
 
-  const canSave = title.trim().length > 0 && description.trim().length > 0;
-
   return (
     <div className="space-y-6">
       <PageBreadcrumb
@@ -275,7 +283,9 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter title"
           className="w-full text-2xl font-semibold text-foreground bg-transparent border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors"
+          {...fieldControlProps('resource-edit-title', errors.title)}
         />
+        <FieldError id="resource-edit-title" message={errors.title} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -288,7 +298,9 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
               placeholder="Describe the resource content and purpose"
               rows={4}
               className="w-full px-4 py-2.5 border border-border rounded-lg text-base text-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+              {...fieldControlProps('resource-edit-description', errors.description)}
             />
+            <FieldError id="resource-edit-description" message={errors.description} />
           </div>
 
           <div className="bg-card rounded-xl border border-border p-6">
@@ -624,12 +636,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
             <button
               type="button"
               onClick={handleSave}
-              disabled={!canSave}
-              className={`w-full px-4 py-3 rounded-lg text-base font-medium transition-colors ${
-                canSave
-                  ? 'bg-primary hover:bg-primary-hover text-white'
-                  : 'bg-muted text-text-subtle cursor-not-allowed'
-              }`}
+              className="w-full px-4 py-3 rounded-lg text-base font-medium transition-colors bg-primary hover:bg-primary-hover text-white"
             >
               Save Changes
             </button>

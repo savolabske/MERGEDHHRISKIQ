@@ -973,7 +973,7 @@ export default function App() {
     };
     setChatHistory((prev) => [newHistoryItem, ...prev]);
     setDocumentChatThreadId(newChatId);
-    setDocumentChatOpen(true);
+    setDocumentChatOpen(false);
   }, [currentDocumentId]);
 
   const handleDocumentDetailBack = useCallback(() => {
@@ -1886,7 +1886,7 @@ export default function App() {
                       data-composite-field
                       onClick={() => riskIqLandingInputRef.current?.focus()}
                       className={cn(
-                        'flex w-full flex-col rounded-2xl border border-border bg-card px-3 py-2.5 sm:px-4 sm:py-3 transition-colors cursor-text',
+                        'composer-shell flex w-full flex-col rounded-2xl border px-3 py-2.5 sm:px-4 sm:py-3 transition-colors cursor-text',
                         'hover:border-primary focus-within:border-primary',
                       )}
                     >

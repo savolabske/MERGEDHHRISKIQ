@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, PanelRightClose, MessageSquare, MessageSquarePlus, Send, Sparkles, AlertTriangle, Utensils, Tent, ShieldAlert, ChevronRight, ChevronUp, ChevronDown, Users, X, Zap, TrendingDown, Package, Route, Crosshair, Calendar, Filter as FilterIcon, History, Clock } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { MapPin, PanelRightClose, MessageSquare, MessageSquarePlus, Send, Sparkles, AlertTriangle, Utensils, Tent, ShieldAlert, ChevronRight, ChevronUp, ChevronDown, ChevronsUp, Users, X, Zap, TrendingDown, Package, Route, Crosshair, Calendar, Filter as FilterIcon, History, Clock } from 'lucide-react';
 import { cn } from './ui/utils';
 import {
   chipRemoveClass,
@@ -11,6 +11,21 @@ import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { ChatStopButton } from './ui/ChatStopButton';
 import { useKeyboardBottomInset } from '../hooks/useKeyboardBottomInset';
 import { hasMapboxAccessToken, mapboxgl } from '../config/mapbox';
+import {
+  DEFAULT_SELECTED_LAYERS,
+  DEFAULT_SELECTED_OVERLAYS,
+  getActiveFillLayer,
+  type MapDataLayerId,
+  type MapOverlayId,
+  type MapRegionIntelligence,
+  type RiskDimension,
+} from '../data/mapLayersMock';
+import {
+  MapDataLayersPanel,
+  MapLayersLegend,
+  MapRegionDetailPanel,
+  useMapIntelligenceLayers,
+} from './map-layers';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 // ── Types ──
@@ -1050,6 +1065,18 @@ export function MapView() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
 
+  // Intelligence data layers (available before any chat prompt)
+  const [selectedLayers, setSelectedLayers] = useState<Set<MapDataLayerId>>(
+    () => new Set(DEFAULT_SELECTED_LAYERS),
+  );
+  const [selectedOverlays, setSelectedOverlays] = useState<Set<MapOverlayId>>(
+    () => new Set(DEFAULT_SELECTED_OVERLAYS),
+  );
+  const [riskDimension, setRiskDimension] = useState<RiskDimension>('overall');
+  const [selectedRegion, setSelectedRegion] = useState<MapRegionIntelligence | null>(null);
+  const [isLayersPanelCollapsed, setIsLayersPanelCollapsed] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+
   const keyboardBottomInset = useKeyboardBottomInset();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -1059,7 +1086,7 @@ export function MapView() {
   const pinnedPopupRef = useRef<mapboxgl.Popup | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
-  const promptInputRef = useRef<HTMLInputElement>(null);
+  const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const focusPromptAfterOpenRef = useRef(false);
   const typingIntervalRef = useRef<number | null>(null);
   const mapLoadingTimeoutsRef = useRef<number[]>([]);
@@ -1067,10 +1094,63 @@ export function MapView() {
 
   const activeFlow = activeFlowId ? CONVERSATION_FLOWS.find(f => f.id === activeFlowId) : null;
   const currentStep = activeFlow ? activeFlow.steps[currentStepIndex] : null;
+  const intelligenceEnabled = !activeFlowId && !isMapLoading;
+  const fillLayer = useMemo(() => getActiveFillLayer(selectedLayers), [selectedLayers]);
+
+  const toggleDataLayer = useCallback((id: MapDataLayerId) => {
+    setSelectedLayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleOverlay = useCallback((id: MapOverlayId) => {
+    setSelectedOverlays((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelectRegion = useCallback((region: MapRegionIntelligence | null) => {
+    setSelectedRegion(region);
+  }, []);
+
+  const handleAskAboutRegion = useCallback((region: MapRegionIntelligence) => {
+    setSelectedRegion(null);
+    setIsPanelMinimized(false);
+    if (window.innerWidth < LG_BREAKPOINT) {
+      setIsMobilePanelOpen(true);
+    }
+    setMapQuery(
+      `Give me a situational brief on ${region.name}: risk drivers, displacement, aid coverage, and what changed in the last 14 days.`,
+    );
+    window.setTimeout(() => {
+      promptInputRef.current?.focus({ preventScroll: true });
+    }, 80);
+  }, []);
+
+  useMapIntelligenceLayers({
+    enabled: intelligenceEnabled && mapReady,
+    mapRef: mapInstanceRef,
+    selectedLayers,
+    selectedOverlays,
+    riskDimension,
+    selectedRegionId: selectedRegion?.id ?? null,
+    onHoverRegion: () => {},
+    onSelectRegion: handleSelectRegion,
+    onHoverAlert: () => {},
+  });
 
   useEffect(() => {
     const syncViewport = () => setIsMobileViewport(window.innerWidth < LG_BREAKPOINT);
     syncViewport();
+    if (window.innerWidth < LG_BREAKPOINT) {
+      setIsLayersPanelCollapsed(true);
+    }
     window.addEventListener('resize', syncViewport);
     return () => window.removeEventListener('resize', syncViewport);
   }, []);
@@ -1148,12 +1228,23 @@ export function MapView() {
         ctx.beginPath(); ctx.moveTo(-4, 4); ctx.lineTo(4, -4); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(12, 20); ctx.lineTo(20, 12); ctx.stroke();
         map?.addImage('hatching-pattern', { width: 16, height: 16, data: ctx.getImageData(0, 0, 16, 16).data } as any);
+        setMapReady(true);
       });
-      // Click on empty map area dismisses pinned popup
-      map.on('click', () => {
+      // Click on empty map area dismisses pinned popup / region detail
+      map.on('click', (e) => {
         if (pinnedPopupRef.current) {
           pinnedPopupRef.current.remove();
           pinnedPopupRef.current = null;
+        }
+        const hit = map.queryRenderedFeatures(e.point, {
+          layers: [
+            'intel-adm1-fill',
+            'intel-alerts-circle',
+            'intel-displacement-circle',
+          ].filter((id) => Boolean(map.getLayer(id))),
+        });
+        if (hit.length === 0) {
+          setSelectedRegion(null);
         }
       });
       mapInstanceRef.current = map;
@@ -1173,6 +1264,7 @@ export function MapView() {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+      setMapReady(false);
     };
   }, []);
 
@@ -1825,6 +1917,7 @@ export function MapView() {
     setActiveFlowId(flowId);
     setCurrentStepIndex(0);
     setSelectedItem(null);
+    setSelectedRegion(null);
     setIsTransitioning(true);
     setActiveFilters([]);
 
@@ -1974,6 +2067,7 @@ export function MapView() {
     setActiveFlowId(null);
     setCurrentStepIndex(0);
     setSelectedItem(null);
+    setSelectedRegion(null);
     setActiveFilters([]);
     setChatMessages([]);
     clearMapLayers();
@@ -2009,10 +2103,10 @@ export function MapView() {
   }: {
     compact?: boolean;
     showMinimize?: boolean;
-    inputRef?: React.RefObject<HTMLInputElement | null>;
+    inputRef?: React.RefObject<HTMLTextAreaElement | null>;
   } = {}) => (
     <form onSubmit={handleCustomQuery}>
-      <div className={cn('flex items-center', showMinimize ? 'gap-2' : '')}>
+      <div className={cn('flex items-end', showMinimize ? 'gap-2' : '')}>
         {showMinimize && (
           <button
             type="button"
@@ -2021,63 +2115,81 @@ export function MapView() {
             title="Show map"
             className={cn(
               iconButtonSmClass,
-              'size-9 rounded-xl border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]',
+              'mb-1 size-9 rounded-xl border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]',
             )}
           >
             <ChevronDown size={18} />
           </button>
         )}
         <div
+          role="presentation"
           data-composite-field
+          onClick={() => inputRef?.current?.focus()}
           className={cn(
-            'relative flex flex-1 items-center',
+            'composer-shell flex flex-1 cursor-text flex-col rounded-2xl border transition-colors',
+            'hover:border-primary focus-within:border-primary',
             showMinimize && 'min-w-0',
+            compact ? 'min-h-[88px] px-3.5 py-3' : 'min-h-[108px] px-4 py-3.5',
           )}
         >
-          <div className="absolute left-4 pointer-events-none">
-            <Sparkles size={compact ? 14 : 16} className="text-[#9CA3AF]" />
+          <div className="flex min-h-0 flex-1 items-start gap-2.5">
+            <Sparkles
+              size={compact ? 15 : 16}
+              strokeWidth={1.75}
+              className="mt-0.5 shrink-0 text-[#9CA3AF]"
+              aria-hidden
+            />
+            <textarea
+              ref={inputRef}
+              value={mapQuery}
+              onChange={(e) => setMapQuery(e.target.value)}
+              onFocus={() => {
+                if (isMobileViewport && !isMobilePanelOpen) {
+                  focusPromptAfterOpenRef.current = true;
+                  openMobilePanel();
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!isGenerating && mapQuery.trim()) {
+                    e.currentTarget.form?.requestSubmit();
+                  }
+                }
+              }}
+              rows={compact ? 2 : 3}
+              placeholder={promptPlaceholder}
+              disabled={isGenerating}
+              className={cn(
+                'focus-ring-container-control min-h-[40px] w-full flex-1 resize-none border-0 bg-transparent p-0 text-[0.875rem] leading-5 text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:outline-none focus:ring-0 disabled:opacity-70',
+              )}
+            />
           </div>
-          <input
-            ref={inputRef}
-            type="text"
-            value={mapQuery}
-            onChange={(e) => setMapQuery(e.target.value)}
-            onFocus={() => {
-              if (isMobileViewport && !isMobilePanelOpen) {
-                focusPromptAfterOpenRef.current = true;
-                openMobilePanel();
-              }
-            }}
-            placeholder={promptPlaceholder}
-            disabled={isGenerating}
-            className={cn(
-              'focus-ring-container-control w-full rounded-[16px] border border-[#E5E7EB] bg-[#F9FAFB] text-[0.8125rem] transition-all placeholder:text-[#9CA3AF] focus:border-[#1D4ED8] disabled:opacity-70',
-              compact ? 'pl-9 pr-11 py-2.5' : 'pl-10 pr-12 py-3',
-            )}
-          />
-          {isGenerating ? (
-            <span className="absolute right-2 top-1/2 z-10 -translate-y-1/2">
+
+          <div className="mt-2.5 flex items-center justify-end">
+            {isGenerating ? (
               <ChatStopButton
                 onClick={stopGeneration}
                 size="sm"
-                className={compact ? 'size-7' : 'size-8'}
+                className={compact ? 'size-8' : 'size-9'}
               />
-            </span>
-          ) : (
-            <button
-              type="submit"
-              disabled={!mapQuery.trim()}
-              className={cn(
-                'absolute right-2 top-1/2 -translate-y-1/2 rounded-full flex items-center justify-center transition-all',
-                compact ? 'w-7 h-7' : 'w-8 h-8',
-                mapQuery.trim()
-                  ? 'bg-[#2463EB] text-white cursor-pointer hover:bg-[#1D4ED8] active:bg-[#1E40AF]'
-                  : 'text-[#D1D5DB] cursor-not-allowed',
-              )}
-            >
-              <Send size={compact ? 12 : 14} />
-            </button>
-          )}
+            ) : (
+              <button
+                type="submit"
+                disabled={!mapQuery.trim()}
+                aria-label="Send question"
+                className={cn(
+                  'inline-flex items-center justify-center rounded-xl transition-colors',
+                  compact ? 'size-8' : 'size-9',
+                  mapQuery.trim()
+                    ? 'bg-[#2463EB] text-white hover:bg-[#1D4ED8] active:bg-[#1E40AF]'
+                    : 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed',
+                )}
+              >
+                <Send size={compact ? 14 : 15} strokeWidth={2} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </form>
@@ -2167,6 +2279,11 @@ export function MapView() {
           border: 1px solid #1E293B; background: #0F172A;
         }
         .mapboxgl-popup.gis-tooltip .mapboxgl-popup-tip { border-top-color: #0F172A; }
+        .mapboxgl-popup.region-hover-card .mapboxgl-popup-content {
+          padding: 0; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+          border: 1px solid #E2E8F0; background: #FFFFFF;
+        }
+        .mapboxgl-popup.region-hover-card .mapboxgl-popup-tip { border-top-color: #FFFFFF; }
         .mapboxgl-popup.pinned-card .mapboxgl-popup-content {
           padding: 0; border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(56,189,248,0.15);
           border: 1px solid #334155; background: #0F172A;
@@ -2245,6 +2362,129 @@ export function MapView() {
             ))}
           </div>
         )}
+
+        {/* Data layers panel — default intelligence before chat flows */}
+        {intelligenceEnabled && !isMobileViewport && (
+          <div
+            className={cn(
+              'absolute top-4 z-[14] transition-[left] duration-300',
+              activeFilters.length > 0 ? 'top-16' : 'top-4',
+              isLayersPanelCollapsed ? 'left-4' : 'left-4',
+            )}
+          >
+            {isLayersPanelCollapsed ? (
+              <button
+                type="button"
+                onClick={() => setIsLayersPanelCollapsed(false)}
+                className="flex items-center gap-2 rounded-xl border border-[#1E293B] bg-[#0F172A]/92 px-3 py-2.5 text-[0.75rem] font-semibold text-[#E2E8F0] shadow-lg backdrop-blur-md transition-colors hover:border-[#334155]"
+              >
+                <span className="size-2 rounded-full bg-[#3B82F6]" aria-hidden />
+                Data layers
+                <span className="rounded-md bg-[#1E293B] px-1.5 py-0.5 text-[0.625rem] text-[#94A3B8]">
+                  {selectedLayers.size}
+                </span>
+              </button>
+            ) : (
+              <div className="relative">
+                <MapDataLayersPanel
+                  selectedLayers={selectedLayers}
+                  selectedOverlays={selectedOverlays}
+                  fillLayer={fillLayer}
+                  riskDimension={riskDimension}
+                  onToggleLayer={toggleDataLayer}
+                  onToggleOverlay={toggleOverlay}
+                  onRiskDimensionChange={setRiskDimension}
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsLayersPanelCollapsed(true)}
+                  aria-label="Collapse data layers"
+                  title="Collapse"
+                  className="absolute top-2.5 right-2.5 flex size-7 items-center justify-center rounded-lg text-[#64748B] transition-colors hover:bg-[#1E293B] hover:text-[#E2E8F0]"
+                >
+                  <ChevronsUp size={14} strokeWidth={2} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Mobile layers affordance */}
+        {intelligenceEnabled && isMobileViewport && (
+          <div className="absolute top-3 left-3 z-[14]">
+            {isLayersPanelCollapsed ? (
+              <button
+                type="button"
+                onClick={() => setIsLayersPanelCollapsed(false)}
+                className="flex items-center gap-2 rounded-xl border border-[#1E293B] bg-[#0F172A]/92 px-3 py-2 text-[0.75rem] font-semibold text-[#E2E8F0] shadow-lg backdrop-blur-md"
+              >
+                Layers · {selectedLayers.size}
+              </button>
+            ) : (
+              <div className="relative max-h-[55vh]">
+                <MapDataLayersPanel
+                  className="max-h-[55vh] w-[min(100vw-1.5rem,220px)]"
+                  selectedLayers={selectedLayers}
+                  selectedOverlays={selectedOverlays}
+                  fillLayer={fillLayer}
+                  riskDimension={riskDimension}
+                  onToggleLayer={toggleDataLayer}
+                  onToggleOverlay={toggleOverlay}
+                  onRiskDimensionChange={setRiskDimension}
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsLayersPanelCollapsed(true)}
+                  aria-label="Collapse data layers"
+                  title="Collapse"
+                  className="absolute top-2.5 right-2.5 flex size-7 items-center justify-center rounded-lg text-[#64748B] transition-colors hover:bg-[#1E293B] hover:text-[#E2E8F0]"
+                >
+                  <ChevronsUp size={14} strokeWidth={2} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Region detail dossier — docked to the right edge of the map */}
+        {intelligenceEnabled && selectedRegion && (
+          <div
+            className={cn(
+              'pointer-events-none absolute top-3 bottom-3 z-[16] flex items-stretch justify-end',
+              isMobileViewport ? 'inset-x-3' : 'right-3 left-auto',
+            )}
+          >
+            <MapRegionDetailPanel
+              region={selectedRegion}
+              onClose={() => setSelectedRegion(null)}
+              onAskAboutRegion={handleAskAboutRegion}
+              className={cn(
+                'pointer-events-auto h-full max-h-full',
+                isMobileViewport ? 'ml-auto w-full max-w-md' : 'w-[380px]',
+              )}
+            />
+          </div>
+        )}
+
+        {/* Dynamic legend for active intelligence layers */}
+        {intelligenceEnabled &&
+          (selectedLayers.size > 0 || selectedOverlays.size > 0) &&
+          !selectedRegion && (
+            <div
+              className={cn(
+                'absolute z-[13]',
+                isMobileViewport
+                  ? 'right-3 bottom-[5.75rem]'
+                  : 'bottom-10 left-3',
+              )}
+            >
+              <MapLayersLegend
+                selectedLayers={selectedLayers}
+                selectedOverlays={selectedOverlays}
+                fillLayer={fillLayer}
+              />
+            </div>
+          )}
 
         {/* Map Legend */}
         {currentStep && !isMapLoading && (

@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ArrowLeft, Mail } from 'lucide-react';
 import { AuthHeroPanel } from './AuthHeroPanel';
-import { cn } from './ui/utils';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredEmail,
+  useFormValidation,
+} from './ui/form-validation';
 
 const unLogo = '/branding/un-somalia-login-logo.png';
 const SUPPORT_EMAIL = 'alerts.rmu@undp.org';
@@ -13,11 +18,15 @@ interface ForgotPasswordPageProps {
 
 export function ForgotPasswordPage({ onSubmit, onNavigateToSignIn }: ForgotPasswordPageProps) {
   const [email, setEmail] = useState('');
-  const canSubmit = Boolean(email.trim());
+  const formRef = useRef<HTMLFormElement>(null);
+  const { errors, validate } = useFormValidation(
+    { email },
+    { email: requiredEmail },
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (!validate(formRef.current)) return;
     onSubmit(email.trim());
   };
 
@@ -45,31 +54,29 @@ export function ForgotPasswordPage({ onSubmit, onNavigateToSignIn }: ForgotPassw
             Enter your email address and we&apos;ll send you instructions to reset your password.
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-5">
             <div>
-              <label className="block text-label mb-2">Email Address</label>
+              <label htmlFor="reset-email" className="block text-label mb-2">
+                Email Address
+              </label>
               <div className="relative">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email address"
+                  autoComplete="email"
                   className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
-                  required
+                  {...fieldControlProps('reset-email', errors.email)}
                 />
                 <Mail size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle" aria-hidden />
               </div>
+              <FieldError id="reset-email" message={errors.email} />
             </div>
 
             <button
               type="submit"
-              disabled={!canSubmit}
-              className={cn(
-                'w-full py-3.5 rounded-full text-sm font-semibold transition-colors',
-                canSubmit
-                  ? 'bg-primary text-white hover:bg-primary-hover active:bg-primary-active'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed',
-              )}
+              className="w-full py-3.5 rounded-full text-sm font-semibold transition-colors bg-primary text-white hover:bg-primary-hover active:bg-primary-active"
             >
               Send Reset Instructions
             </button>

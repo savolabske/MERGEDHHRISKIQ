@@ -1,17 +1,77 @@
 import {
-  Sparkles,
+  Accessibility,
+  Activity,
+  AlertTriangle,
   AlignLeft,
+  Apple,
+  Baby,
+  Banknote,
   BarChart2,
-  PieChart,
-  LayoutGrid,
-  TrendingUp,
-  Hash,
-  Home,
-  CheckCircle2,
-  Calendar,
+  Bell,
+  BookOpen,
   Briefcase,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  ClipboardList,
+  CloudLightning,
+  CloudRain,
+  CloudSun,
+  Coins,
+  Cross,
+  Droplets,
+  FileText,
+  Flame,
+  Globe,
+  GraduationCap,
+  HandCoins,
+  Handshake,
+  Hash,
   Heart,
+  HeartHandshake,
+  HeartPulse,
+  Home,
+  Hospital,
+  Landmark,
+  LayoutGrid,
+  Leaf,
+  LifeBuoy,
+  Lock,
+  MapPin,
+  Megaphone,
+  Newspaper,
+  Package,
+  Phone,
+  PieChart,
+  Pill,
+  Plane,
+  Radio,
+  Route,
+  Scale,
+  School,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  Ship,
+  Siren,
+  Snowflake,
+  Sparkles,
   Sprout,
+  Stethoscope,
+  Sun,
+  Syringe,
+  Tent,
+  ThermometerSun,
+  TrendingUp,
+  Truck,
+  Umbrella,
+  Users,
+  Utensils,
+  Wallet,
+  Waves,
+  Wheat,
+  Wind,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -48,13 +108,7 @@ export type ReportThemeId =
 
 export type ReportSectionLayout = 'split' | 'tile_grid';
 
-export type KpiIconKey =
-  | 'home'
-  | 'check'
-  | 'calendar'
-  | 'briefcase'
-  | 'heart'
-  | 'sprout';
+export type KpiIconKey = string;
 
 export interface ReportChartDatum {
   label: string;
@@ -173,15 +227,80 @@ export const REPORT_CHART_TYPES: ReportChartTypeOption[] = [
   { value: 'single_stat', label: 'Single stat', icon: Hash },
 ];
 
-export const KPI_ICON_MAP: Record<KpiIconKey, LucideIcon> = {
-  home: Home,
-  check: CheckCircle2,
-  calendar: Calendar,
-  briefcase: Briefcase,
-  heart: Heart,
-  sprout: Sprout,
-};
+export const KPI_ICON_OPTIONS: { key: KpiIconKey; label: string; Icon: LucideIcon }[] = [
+  { key: 'home', label: 'Home', Icon: Home },
+  { key: 'check', label: 'Check', Icon: CheckCircle2 },
+  { key: 'calendar', label: 'Calendar', Icon: Calendar },
+  { key: 'briefcase', label: 'Briefcase', Icon: Briefcase },
+  { key: 'heart', label: 'Heart', Icon: Heart },
+  { key: 'sprout', label: 'Sprout', Icon: Sprout },
+  { key: 'utensils', label: 'Utensils', Icon: Utensils },
+  { key: 'wheat', label: 'Wheat', Icon: Wheat },
+  { key: 'apple', label: 'Apple', Icon: Apple },
+  { key: 'users', label: 'Users', Icon: Users },
+  { key: 'tent', label: 'Tent', Icon: Tent },
+  { key: 'baby', label: 'Baby', Icon: Baby },
+  { key: 'heartHandshake', label: 'Heart handshake', Icon: HeartHandshake },
+  { key: 'accessibility', label: 'Accessibility', Icon: Accessibility },
+  { key: 'cloudRain', label: 'Cloud rain', Icon: CloudRain },
+  { key: 'cloudSun', label: 'Cloud sun', Icon: CloudSun },
+  { key: 'cloudLightning', label: 'Cloud lightning', Icon: CloudLightning },
+  { key: 'sun', label: 'Sun', Icon: Sun },
+  { key: 'snowflake', label: 'Snowflake', Icon: Snowflake },
+  { key: 'wind', label: 'Wind', Icon: Wind },
+  { key: 'waves', label: 'Waves', Icon: Waves },
+  { key: 'thermometerSun', label: 'Thermometer', Icon: ThermometerSun },
+  { key: 'flame', label: 'Flame', Icon: Flame },
+  { key: 'umbrella', label: 'Umbrella', Icon: Umbrella },
+  { key: 'leaf', label: 'Leaf', Icon: Leaf },
+  { key: 'droplets', label: 'Droplets', Icon: Droplets },
+  { key: 'hospital', label: 'Hospital', Icon: Hospital },
+  { key: 'cross', label: 'Cross', Icon: Cross },
+  { key: 'syringe', label: 'Syringe', Icon: Syringe },
+  { key: 'stethoscope', label: 'Stethoscope', Icon: Stethoscope },
+  { key: 'pill', label: 'Pill', Icon: Pill },
+  { key: 'heartPulse', label: 'Heart pulse', Icon: HeartPulse },
+  { key: 'shieldAlert', label: 'Shield alert', Icon: ShieldAlert },
+  { key: 'shield', label: 'Shield', Icon: Shield },
+  { key: 'shieldCheck', label: 'Shield check', Icon: ShieldCheck },
+  { key: 'alertTriangle', label: 'Alert triangle', Icon: AlertTriangle },
+  { key: 'siren', label: 'Siren', Icon: Siren },
+  { key: 'lifeBuoy', label: 'Life buoy', Icon: LifeBuoy },
+  { key: 'lock', label: 'Lock', Icon: Lock },
+  { key: 'wallet', label: 'Wallet', Icon: Wallet },
+  { key: 'coins', label: 'Coins', Icon: Coins },
+  { key: 'banknote', label: 'Banknote', Icon: Banknote },
+  { key: 'handCoins', label: 'Hand coins', Icon: HandCoins },
+  { key: 'package', label: 'Package', Icon: Package },
+  { key: 'truck', label: 'Truck', Icon: Truck },
+  { key: 'ship', label: 'Ship', Icon: Ship },
+  { key: 'plane', label: 'Plane', Icon: Plane },
+  { key: 'route', label: 'Route', Icon: Route },
+  { key: 'mapPin', label: 'Map pin', Icon: MapPin },
+  { key: 'globe', label: 'Globe', Icon: Globe },
+  { key: 'building2', label: 'Buildings', Icon: Building2 },
+  { key: 'landmark', label: 'Landmark', Icon: Landmark },
+  { key: 'school', label: 'School', Icon: School },
+  { key: 'graduationCap', label: 'Graduation cap', Icon: GraduationCap },
+  { key: 'handshake', label: 'Handshake', Icon: Handshake },
+  { key: 'scale', label: 'Scale', Icon: Scale },
+  { key: 'fileText', label: 'File', Icon: FileText },
+  { key: 'clipboardList', label: 'Clipboard list', Icon: ClipboardList },
+  { key: 'newspaper', label: 'Newspaper', Icon: Newspaper },
+  { key: 'bookOpen', label: 'Open book', Icon: BookOpen },
+  { key: 'trendingUp', label: 'Trending up', Icon: TrendingUp },
+  { key: 'activity', label: 'Activity', Icon: Activity },
+  { key: 'sparkles', label: 'Sparkles', Icon: Sparkles },
+  { key: 'bell', label: 'Bell', Icon: Bell },
+  { key: 'megaphone', label: 'Megaphone', Icon: Megaphone },
+  { key: 'radio', label: 'Radio', Icon: Radio },
+  { key: 'phone', label: 'Phone', Icon: Phone },
+  { key: 'wrench', label: 'Wrench', Icon: Wrench },
+];
 
+const KPI_ICON_BY_KEY = new Map(KPI_ICON_OPTIONS.map((opt) => [opt.key, opt]));
+
+/** Default cycle used when seeding new KPI / forward tiles */
 export const KPI_ICON_KEYS: KpiIconKey[] = [
   'home',
   'check',
@@ -190,6 +309,23 @@ export const KPI_ICON_KEYS: KpiIconKey[] = [
   'heart',
   'sprout',
 ];
+
+export const KPI_ICON_MAP: Record<string, LucideIcon> = Object.fromEntries(
+  KPI_ICON_OPTIONS.map((opt) => [opt.key, opt.Icon]),
+);
+
+export function resolveKpiIconKey(key: string | undefined): KpiIconKey {
+  if (key && KPI_ICON_BY_KEY.has(key)) return key;
+  return 'home';
+}
+
+export function getKpiIcon(key: string | undefined): LucideIcon {
+  return KPI_ICON_BY_KEY.get(resolveKpiIconKey(key))?.Icon ?? Home;
+}
+
+export function getKpiIconLabel(key: string | undefined): string {
+  return KPI_ICON_BY_KEY.get(resolveKpiIconKey(key))?.label ?? 'Home';
+}
 
 export interface ReportThemeOption {
   id: ReportThemeId;

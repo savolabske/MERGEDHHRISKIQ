@@ -1,5 +1,5 @@
 import type { ReportKpiTile } from '../../data/reportsAdminMock';
-import { KPI_ICON_MAP } from '../../data/reportsAdminMock';
+import { getKpiIcon } from '../../data/reportsAdminMock';
 import type { ReportThemeTokens } from '../../data/reportThemeTokens';
 import { cn } from '../ui/utils';
 
@@ -19,7 +19,7 @@ export function ReportKpiTileGrid({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {tiles.map((tile, index) => {
-        const Icon = KPI_ICON_MAP[tile.iconKey];
+        const Icon = getKpiIcon(tile.iconKey);
         const hasPrompt = Boolean(tile.prompt.trim());
         const isGenerated = Boolean(tile.value?.trim());
         const isSelected = selectedId === tile.id;

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Eye, Pencil, Sparkles } from 'lucide-react';
 import type { ManagedReport, ReportSection } from '../../data/reportsAdminMock';
-import { KPI_ICON_MAP } from '../../data/reportsAdminMock';
+import { getKpiIcon } from '../../data/reportsAdminMock';
 import {
   resolveKpiPreviewDisplay,
   resolveSectionPreviewDisplay,
@@ -210,7 +210,7 @@ function ManagedSectionBlock({
         ) : null}
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           {tiles.map((tile, tileIndex) => {
-            const Icon = KPI_ICON_MAP[tile.iconKey];
+            const Icon = getKpiIcon(tile.iconKey);
             const accent = theme.kpiAccents[tileIndex % 6];
             const generated = Boolean(tile.value?.trim());
             return (
@@ -778,7 +778,7 @@ export function ManagedReportView({
       >
         <section className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
           {report.kpiTiles.map((tile, index) => {
-            const Icon = KPI_ICON_MAP[tile.iconKey];
+            const Icon = getKpiIcon(tile.iconKey);
             const accent = theme.kpiAccents[index] ?? theme.accent;
             const iconBg = theme.kpiIconBgs[index] ?? theme.accentSubtle;
             const iconColor = theme.kpiIconColors[index] ?? theme.accent;

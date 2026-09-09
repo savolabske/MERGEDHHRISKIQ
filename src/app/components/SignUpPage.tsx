@@ -1,6 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Building2, Eye, EyeOff } from 'lucide-react';
 import { AuthHeroPanel } from './AuthHeroPanel';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredEmail,
+  requiredField,
+  requiredPassword,
+  useFormValidation,
+} from './ui/form-validation';
 
 const unLogo = '/branding/un-somalia-login-logo.png';
 
@@ -32,12 +41,17 @@ interface SignUpPageProps {
   onNavigateToSignIn: () => void;
 }
 
+const authInputClass =
+  'w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12';
+
 function OrganisationField({
   value,
   onChange,
+  error,
 }: {
   value: string;
   onChange: (value: string) => void;
+  error?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -78,7 +92,8 @@ function OrganisationField({
             setSearch(value);
           }}
           placeholder="Select or search organisation"
-          className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+          className={authInputClass}
+          {...fieldControlProps('signup-organisation', error)}
         />
         <Building2 size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" />
       </div>
@@ -117,17 +132,20 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
   const [organisation, setOrganisation] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  const isValid =
-    name.trim().length > 0 &&
-    email.trim().length > 0 &&
-    email.includes('@') &&
-    organisation.length > 0 &&
-    password.length >= 8;
+  const formRef = useRef<HTMLFormElement>(null);
+  const { errors, validate } = useFormValidation(
+    { name, email, organisation, password },
+    {
+      name: requiredField('Full name'),
+      email: requiredEmail,
+      organisation: requiredField('Organisation'),
+      password: requiredPassword,
+    },
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValid) return;
+    if (!validate(formRef.current)) return;
     onSubmit({ name: name.trim(), email: email.trim(), organisation, password });
   };
 
@@ -146,9 +164,9 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
             Your account will be reviewed by an administrator before you can access the platform.
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-5">
             <div>
-              <label className="block text-label uppercase tracking-wide mb-2">
+              <label htmlFor="signup-name" className="block text-label uppercase tracking-wide mb-2">
                 Full Name
               </label>
               <div className="relative">
@@ -157,14 +175,17 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Full Name"
-                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+                  autoComplete="name"
+                  className={authInputClass}
+                  {...fieldControlProps('signup-name', errors.name)}
                 />
                 <User size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" />
               </div>
+              <FieldError id="signup-name" message={errors.name} />
             </div>
 
             <div>
-              <label className="block text-label uppercase tracking-wide mb-2">
+              <label htmlFor="signup-email" className="block text-label uppercase tracking-wide mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -173,21 +194,25 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email Address"
-                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+                  autoComplete="email"
+                  className={authInputClass}
+                  {...fieldControlProps('signup-email', errors.email)}
                 />
                 <Mail size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" />
               </div>
+              <FieldError id="signup-email" message={errors.email} />
             </div>
 
             <div>
-              <label className="block text-label uppercase tracking-wide mb-2">
+              <label htmlFor="signup-organisation" className="block text-label uppercase tracking-wide mb-2">
                 Organisation
               </label>
-              <OrganisationField value={organisation} onChange={setOrganisation} />
+              <OrganisationField value={organisation} onChange={setOrganisation} error={errors.organisation} />
+              <FieldError id="signup-organisation" message={errors.organisation} />
             </div>
 
             <div>
-              <label className="block text-label uppercase tracking-wide mb-2">
+              <label htmlFor="signup-password" className="block text-label uppercase tracking-wide mb-2">
                 Password
               </label>
               <div className="relative">
@@ -196,26 +221,32 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a secure password"
-                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+                  autoComplete="new-password"
+                  className={authInputClass}
+                  {...fieldControlProps('signup-password', errors.password)}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={6}>
+                    {showPassword ? 'Hide password' : 'Show password'}
+                  </TooltipContent>
+                </Tooltip>
               </div>
+              <FieldError id="signup-password" message={errors.password} />
             </div>
 
             <button
               type="submit"
-              disabled={!isValid}
-              className={`w-full py-3.5 rounded-full text-sm font-semibold transition-colors ${
-                isValid
-                  ? 'bg-primary text-white hover:bg-primary-hover active:bg-primary-active'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed'
-              }`}
+              className="w-full py-3.5 rounded-full text-sm font-semibold transition-colors bg-primary text-white hover:bg-primary-hover active:bg-primary-active"
             >
               Create Account
             </button>

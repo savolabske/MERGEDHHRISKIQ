@@ -12,6 +12,12 @@ import {
 } from './ui/list-page';
 import { iconButtonClass, menuItemClass } from './ui/interaction';
 import { cn } from './ui/utils';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredField,
+  useFormValidation,
+} from './ui/form-validation';
 
 interface Definition {
   id: string;
@@ -95,6 +101,13 @@ export function Definitions() {
   // Form state
   const [shortForm, setShortForm] = useState('');
   const [expandedForm, setExpandedForm] = useState('');
+  const { errors, validate, reset } = useFormValidation(
+    { shortForm, expandedForm },
+    {
+      shortForm: requiredField('Name'),
+      expandedForm: requiredField('Description'),
+    },
+  );
 
   const filteredDefinitions = definitions.filter(def =>
     def.shortForm.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -102,10 +115,7 @@ export function Definitions() {
   );
 
   const handleAddDefinition = () => {
-    if (!shortForm.trim() || !expandedForm.trim()) {
-      toast.error('Please fill in both Name and Description');
-      return;
-    }
+    if (!validate()) return;
 
     const isContext = shortForm.includes('<') && shortForm.includes('>');
     
@@ -124,6 +134,7 @@ export function Definitions() {
     // Reset form
     setShortForm('');
     setExpandedForm('');
+    reset();
     setShowAddModal(false);
   };
 
@@ -131,14 +142,12 @@ export function Definitions() {
     setEditingDefinition(definition);
     setShortForm(definition.shortForm);
     setExpandedForm(definition.expandedForm);
+    reset();
     setShowEditModal(true);
   };
 
   const handleSaveEdit = () => {
-    if (!shortForm.trim() || !expandedForm.trim() || !editingDefinition) {
-      toast.error('Please fill in both Name and Description');
-      return;
-    }
+    if (!validate() || !editingDefinition) return;
 
     const isContext = shortForm.includes('<') && shortForm.includes('>');
 
@@ -160,6 +169,7 @@ export function Definitions() {
     setShortForm('');
     setExpandedForm('');
     setEditingDefinition(null);
+    reset();
     setShowEditModal(false);
   };
 
@@ -399,7 +409,7 @@ export function Definitions() {
             <div className="px-6 py-6 space-y-5">
               {/* Name Field */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label htmlFor="definition-name" className="block text-sm font-medium text-foreground mb-2">
                   Name <span className="text-destructive-text">*</span>
                 </label>
                 <input
@@ -408,15 +418,19 @@ export function Definitions() {
                   onChange={(e) => setShortForm(e.target.value)}
                   placeholder="e.g. IPC, OCHA, HRP"
                   className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
+                  {...fieldControlProps('definition-name', errors.shortForm)}
                 />
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  The term, acronym, or tag the AI should recognize.
-                </p>
+                <FieldError id="definition-name" message={errors.shortForm} />
+                {!errors.shortForm && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    The term, acronym, or tag the AI should recognize.
+                  </p>
+                )}
               </div>
 
               {/* Description Field */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label htmlFor="definition-description" className="block text-sm font-medium text-foreground mb-2">
                   Description <span className="text-destructive-text">*</span>
                 </label>
                 <textarea
@@ -425,10 +439,14 @@ export function Definitions() {
                   placeholder="e.g. Integrated Food Security Phase Classification"
                   rows={4}
                   className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary resize-none"
+                  {...fieldControlProps('definition-description', errors.expandedForm)}
                 />
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  This explanation will be used by the AI to interpret the term correctly.
-                </p>
+                <FieldError id="definition-description" message={errors.expandedForm} />
+                {!errors.expandedForm && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    This explanation will be used by the AI to interpret the term correctly.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -442,12 +460,7 @@ export function Definitions() {
               </button>
               <button
                 onClick={handleAddDefinition}
-                disabled={!shortForm.trim() || !expandedForm.trim()}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  shortForm.trim() && expandedForm.trim()
-                    ? 'bg-primary hover:bg-primary-hover text-white'
-                    : 'bg-muted text-text-subtle cursor-not-allowed'
-                }`}
+                className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors bg-primary hover:bg-primary-hover text-white"
               >
                 Add Definition
               </button>
@@ -478,7 +491,7 @@ export function Definitions() {
             <div className="px-6 py-6 space-y-5">
               {/* Name Field */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label htmlFor="definition-name" className="block text-sm font-medium text-foreground mb-2">
                   Name <span className="text-destructive-text">*</span>
                 </label>
                 <input
@@ -487,15 +500,19 @@ export function Definitions() {
                   onChange={(e) => setShortForm(e.target.value)}
                   placeholder="e.g. IPC, OCHA, HRP"
                   className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
+                  {...fieldControlProps('definition-name', errors.shortForm)}
                 />
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  The term, acronym, or tag the AI should recognize.
-                </p>
+                <FieldError id="definition-name" message={errors.shortForm} />
+                {!errors.shortForm && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    The term, acronym, or tag the AI should recognize.
+                  </p>
+                )}
               </div>
 
               {/* Description Field */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label htmlFor="definition-description" className="block text-sm font-medium text-foreground mb-2">
                   Description <span className="text-destructive-text">*</span>
                 </label>
                 <textarea
@@ -504,10 +521,14 @@ export function Definitions() {
                   placeholder="e.g. Integrated Food Security Phase Classification"
                   rows={4}
                   className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary resize-none"
+                  {...fieldControlProps('definition-description', errors.expandedForm)}
                 />
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  This explanation will be used by the AI to interpret the term correctly.
-                </p>
+                <FieldError id="definition-description" message={errors.expandedForm} />
+                {!errors.expandedForm && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    This explanation will be used by the AI to interpret the term correctly.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -521,12 +542,7 @@ export function Definitions() {
               </button>
               <button
                 onClick={handleSaveEdit}
-                disabled={!shortForm.trim() || !expandedForm.trim()}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  shortForm.trim() && expandedForm.trim()
-                    ? 'bg-primary hover:bg-primary-hover text-white'
-                    : 'bg-muted text-text-subtle cursor-not-allowed'
-                }`}
+                className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors bg-primary hover:bg-primary-hover text-white"
               >
                 Save Changes
               </button>

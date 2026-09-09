@@ -1,11 +1,15 @@
 import {
   AlertTriangle,
   Bell,
+  CheckCircle2,
+  FileBarChart2,
   FileCheck2,
   FileText,
+  FolderOpen,
   MessageSquare,
   RefreshCw,
   Share2,
+  Workflow,
   X,
 } from 'lucide-react';
 import type {
@@ -19,10 +23,7 @@ import { cn } from './ui/utils';
 
 const DAY_GROUP_ORDER: NotificationDayGroup[] = ['today', 'yesterday', 'earlier'];
 
-const KIND_FOOTER_ICON: Record<
-  NotificationKind,
-  typeof Share2
-> = {
+const KIND_FOOTER_ICON: Record<NotificationKind, typeof Share2> = {
   'chat-reply': MessageSquare,
   'chat-added': MessageSquare,
   invite: Share2,
@@ -30,6 +31,25 @@ const KIND_FOOTER_ICON: Record<
   briefing: FileText,
   'doc-sync': FileCheck2,
   'workspace-sync': RefreshCw,
+  'resource-shared': FolderOpen,
+  'report-ready': FileBarChart2,
+  'report-shared': FileBarChart2,
+  'workflow-alert': Workflow,
+  'access-approved': CheckCircle2,
+};
+
+const SYSTEM_ICON_KINDS = new Set<NotificationKind>([
+  'doc-sync',
+  'workspace-sync',
+  'report-ready',
+  'access-approved',
+]);
+
+const SYSTEM_KIND_ICON: Partial<Record<NotificationKind, typeof Share2>> = {
+  'doc-sync': FileCheck2,
+  'workspace-sync': RefreshCw,
+  'report-ready': FileBarChart2,
+  'access-approved': CheckCircle2,
 };
 
 interface NotificationsPanelProps {
@@ -49,11 +69,23 @@ function NotificationAvatar({ notification }: { notification: AppNotification })
     );
   }
 
-  if (notification.kind === 'doc-sync' || notification.kind === 'workspace-sync') {
-    const Icon = notification.kind === 'doc-sync' ? FileCheck2 : RefreshCw;
+  if (SYSTEM_ICON_KINDS.has(notification.kind)) {
+    const Icon = SYSTEM_KIND_ICON[notification.kind] ?? FileCheck2;
+    const tone =
+      notification.kind === 'access-approved'
+        ? 'bg-success-subtle text-success-text'
+        : 'bg-primary-subtle text-primary';
+    return (
+      <div className={cn('flex size-10 shrink-0 items-center justify-center rounded-full', tone)}>
+        <Icon size={18} strokeWidth={1.75} aria-hidden />
+      </div>
+    );
+  }
+
+  if (notification.kind === 'resource-shared' && !notification.actorInitials) {
     return (
       <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-subtle text-primary">
-        <Icon size={18} strokeWidth={1.75} aria-hidden />
+        <FolderOpen size={18} strokeWidth={1.75} aria-hidden />
       </div>
     );
   }

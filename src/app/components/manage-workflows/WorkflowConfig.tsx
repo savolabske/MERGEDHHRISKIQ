@@ -29,6 +29,12 @@ import { Button } from '../ui/button';
 import { ListPageHeader, listHeaderActionClass, listRowClass } from '../ui/list-page';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '../ui/utils';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredField,
+  useFormValidation,
+} from '../ui/form-validation';
 import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
 import { ReportUserGroupSelect } from '../manage-reports/ReportUserGroupSelect';
 
@@ -1095,15 +1101,15 @@ function AddProjectModal({
   const [checklistDocId, setChecklistDocId] = useState<string | null>(null);
   const [checklistDocTitle, setChecklistDocTitle] = useState<string | null>(null);
   const [userGroups, setUserGroups] = useState<string[]>([]);
-  const [nameError, setNameError] = useState('');
+  const { errors, validate } = useFormValidation(
+    { name },
+    { name: requiredField('Programme name') },
+  );
   const hasRequiredDocs = Boolean(projectDocId && checklistDocId);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setNameError('Programme name is required');
-      return;
-    }
+    if (!validate()) return;
     onAdd(
       createScanningProgramme({
         name,
@@ -1140,23 +1146,18 @@ function AddProjectModal({
         <form onSubmit={handleSubmit} noValidate className="flex flex-col min-h-0 flex-1">
           <div className="px-4 sm:px-6 py-5 space-y-4 overflow-y-auto flex-1 min-h-0">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">
+              <label htmlFor="programme-name" className="block text-sm font-medium text-foreground mb-1.5">
                 Name <span className="text-destructive-text">*</span>
               </label>
               <input
                 type="text"
                 value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setNameError('');
-                }}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Somalia Humanitarian Assistance and Resilience Programme"
-                className={cn(
-                  'w-full px-3 py-2.5 rounded-lg border bg-input-background text-sm text-foreground placeholder:text-text-subtle transition-colors focus:outline-none focus:border-primary',
-                  nameError ? 'border-destructive-text' : 'border-border',
-                )}
+                className="w-full px-3 py-2.5 rounded-lg border border-border bg-input-background text-sm text-foreground placeholder:text-text-subtle transition-colors focus:outline-none focus:border-primary"
+                {...fieldControlProps('programme-name', errors.name)}
               />
-              {nameError && <p className="mt-1 text-xs text-destructive-text">{nameError}</p>}
+              <FieldError id="programme-name" message={errors.name} />
             </div>
 
             <div>

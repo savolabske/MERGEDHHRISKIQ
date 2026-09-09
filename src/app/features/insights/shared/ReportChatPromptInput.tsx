@@ -128,9 +128,7 @@ export function ReportChatPromptInput({
         <div
           data-composite-field
           className={cn(
-            'flex min-w-0 flex-1 items-end gap-2 rounded-xl border px-3 py-2',
-            theme.border,
-            theme.bg,
+            'composer-shell flex min-w-0 flex-1 items-end gap-2 rounded-xl border px-3 py-2',
             theme.focusBorder,
           )}
         >

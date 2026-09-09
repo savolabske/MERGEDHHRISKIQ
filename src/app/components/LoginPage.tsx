@@ -1,8 +1,19 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Mail, Eye, EyeOff } from 'lucide-react';
 import { AuthHeroPanel } from './AuthHeroPanel';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredEmail,
+  requiredField,
+  useFormValidation,
+} from './ui/form-validation';
 
 const unLogo = '/branding/un-somalia-login-logo.png';
+
+const authInputClass =
+  'w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12';
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -15,9 +26,18 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const { errors, validate } = useFormValidation(
+    { email, password },
+    {
+      email: requiredEmail,
+      password: requiredField('Password'),
+    },
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate(formRef.current)) return;
     onLogin();
   };
 
@@ -34,9 +54,9 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
 
           <h2 className="text-page-title mb-6">Sign In</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-5">
             <div>
-              <label className="block text-label mb-2">
+              <label htmlFor="login-email" className="block text-label mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -45,15 +65,18 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+                  autoComplete="email"
+                  className={authInputClass}
+                  {...fieldControlProps('login-email', errors.email)}
                 />
                 <Mail size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle" />
               </div>
+              <FieldError id="login-email" message={errors.email} />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-label">
+                <label htmlFor="login-password" className="block text-label">
                   Password
                 </label>
                 <button
@@ -70,16 +93,27 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12"
+                  autoComplete="current-password"
+                  className={authInputClass}
+                  {...fieldControlProps('login-password', errors.password)}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-subtle hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={6}>
+                    {showPassword ? 'Hide password' : 'Show password'}
+                  </TooltipContent>
+                </Tooltip>
               </div>
+              <FieldError id="login-password" message={errors.password} />
             </div>
 
             <div className="flex items-center gap-2.5">

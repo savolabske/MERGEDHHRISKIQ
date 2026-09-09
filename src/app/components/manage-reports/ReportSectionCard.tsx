@@ -1,7 +1,7 @@
 import { Sparkles, ChevronUp, ChevronDown, X } from 'lucide-react';
 import type { ReportSection } from '../../data/reportsAdminMock';
 import { getChartTypeDisplayLabel } from '../../data/reportsAdminMock';
-import { KPI_ICON_MAP } from '../../data/reportsAdminMock';
+import { getKpiIcon } from '../../data/reportsAdminMock';
 import type { ReportThemeTokens } from '../../data/reportThemeTokens';
 import { cn } from '../ui/utils';
 import { interactiveCardProps } from '../ui/interaction';
@@ -128,7 +128,7 @@ export function ReportSectionCard({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {(section.tiles ?? []).map((tile, tileIndex) => {
-            const Icon = KPI_ICON_MAP[tile.iconKey];
+            const Icon = getKpiIcon(tile.iconKey);
             const tileHasPrompt = Boolean(tile.prompt.trim());
             const tileGenerated = Boolean(tile.value?.trim());
             const accent = theme.kpiAccents[tileIndex % 6];

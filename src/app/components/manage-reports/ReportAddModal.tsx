@@ -12,6 +12,12 @@ import {
 import { inputClass, textareaClass } from '../resources/resourceShared';
 import { cn } from '../ui/utils';
 import { ReportUserGroupSelect } from './ReportUserGroupSelect';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredField,
+  useFormValidation,
+} from '../ui/form-validation';
 
 interface ReportAddModalProps {
   open: boolean;
@@ -58,6 +64,10 @@ export function ReportAddModal({
   const [menuStyle, setMenuStyle] = useState<{ top: number; left: number; width: number } | null>(
     null,
   );
+  const { errors, validate, reset } = useFormValidation(
+    { title },
+    { title: requiredField('Title') },
+  );
 
   const catalog: LinkableReportResource[] = useMemo(
     () =>
@@ -86,10 +96,11 @@ export function ReportAddModal({
     setSelectedResourceId('');
     setResourceMenuOpen(false);
     setResourceQuery('');
+    reset();
   };
 
   const handleSubmit = () => {
-    if (!title.trim()) return;
+    if (!validate()) return;
     onCreate({
       title,
       description,
@@ -241,7 +252,7 @@ export function ReportAddModal({
 
         <div className="px-4 sm:px-6 py-5 sm:py-6 space-y-5 overflow-y-auto flex-1 min-h-0">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label htmlFor="report-title" className="block text-sm font-medium text-foreground mb-2">
                   Title <span className="text-destructive-text">*</span>
                 </label>
                 <input
@@ -250,7 +261,9 @@ export function ReportAddModal({
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Aid Flow Intelligence"
                   className={inputClass}
+                  {...fieldControlProps('report-title', errors.title)}
                 />
+                <FieldError id="report-title" message={errors.title} />
               </div>
 
               <div>
@@ -343,8 +356,7 @@ export function ReportAddModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!title.trim()}
-            className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
           >
             Save
           </button>

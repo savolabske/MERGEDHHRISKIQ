@@ -3,7 +3,18 @@ export type NotificationAction =
   | { type: 'open-invite'; threadId: string }
   | { type: 'join-shared-chat'; threadId: string }
   | { type: 'open-briefing'; threadId: string }
-  | { type: 'navigate'; view: 'home' | 'riskIQ' | 'resources' };
+  | {
+      type: 'navigate';
+      view:
+        | 'home'
+        | 'riskIQ'
+        | 'resources'
+        | 'resourcesHub'
+        | 'reports'
+        | 'customWorkflows'
+        | 'approvals'
+        | 'platformChats';
+    };
 
 export type NotificationKind =
   | 'chat-reply'
@@ -12,7 +23,12 @@ export type NotificationKind =
   | 'doc-sync'
   | 'chat-added'
   | 'invite'
-  | 'shared-thread';
+  | 'shared-thread'
+  | 'resource-shared'
+  | 'report-ready'
+  | 'report-shared'
+  | 'workflow-alert'
+  | 'access-approved';
 
 export type NotificationDayGroup = 'today' | 'yesterday' | 'earlier';
 

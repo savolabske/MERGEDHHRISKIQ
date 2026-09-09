@@ -10,6 +10,12 @@ import {
   listHeaderActionClass,
   listRowClass,
 } from './ui/list-page';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredField,
+  useFormValidation,
+} from './ui/form-validation';
 
 interface Location {
   id: string;
@@ -117,6 +123,25 @@ export function Locations() {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [showLevelDropdown, setShowLevelDropdown] = useState(false);
+  const { errors, validate, reset } = useFormValidation(
+    { name, level, latitude, longitude },
+    {
+      name: requiredField('Location name'),
+      level: requiredField('Level'),
+      latitude: (value) => {
+        if (!value.trim()) return 'Latitude is required';
+        const n = parseFloat(value);
+        if (Number.isNaN(n) || n < -90 || n > 90) return 'Enter a latitude between -90 and 90';
+        return undefined;
+      },
+      longitude: (value) => {
+        if (!value.trim()) return 'Longitude is required';
+        const n = parseFloat(value);
+        if (Number.isNaN(n) || n < -180 || n > 180) return 'Enter a longitude between -180 and 180';
+        return undefined;
+      },
+    },
+  );
 
   const filteredLocations = locations.filter(loc =>
     loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -127,15 +152,10 @@ export function Locations() {
   );
 
   const handleAddLocation = () => {
-    if (!name.trim() || !level || !latitude.trim() || !longitude.trim()) return;
+    if (!validate()) return;
 
-    // Validate coordinates
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
-    
-    if (isNaN(lat) || isNaN(lng)) return;
-    if (lat < -90 || lat > 90) return;
-    if (lng < -180 || lng > 180) return;
 
     const newLocation: Location = {
       id: Date.now().toString(),
@@ -154,6 +174,7 @@ export function Locations() {
     setLevel('');
     setLatitude('');
     setLongitude('');
+    reset();
     setShowAddModal(false);
   };
 
@@ -299,7 +320,10 @@ export function Locations() {
                 <p className="text-sm text-muted-foreground mt-0.5">Add a new geographic location for tracking</p>
               </div>
               <button 
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  reset();
+                  setShowAddModal(false);
+                }}
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
               >
                 <X size={20} className="text-muted-foreground" />
@@ -310,7 +334,7 @@ export function Locations() {
             <div className="px-6 py-6 space-y-5">
               {/* Name Field */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label htmlFor="location-name" className="block text-sm font-medium text-foreground mb-2">
                   Location Name <span className="text-destructive-text">*</span>
                 </label>
                 <input
@@ -319,18 +343,24 @@ export function Locations() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Mogadishu, Bay Region, Afgooye District"
                   className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
+                  {...fieldControlProps('location-name', errors.name)}
                 />
+                <FieldError id="location-name" message={errors.name} />
               </div>
 
               {/* Level Dropdown */}
               <div className="relative">
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label htmlFor="location-level" className="block text-sm font-medium text-foreground mb-2">
                   Level <span className="text-destructive-text">*</span>
                 </label>
                 <button
                   type="button"
+                  id="location-level"
                   onClick={() => setShowLevelDropdown(!showLevelDropdown)}
                   className="w-full px-4 py-2.5 pr-10 border border-border rounded-lg text-sm text-left focus:outline-none focus:border-primary bg-card flex items-center justify-between"
+                  aria-invalid={Boolean(errors.level) || undefined}
+                  aria-describedby={errors.level ? 'location-level-error' : undefined}
+                  data-invalid-field={errors.level ? true : undefined}
                 >
                   <span className={level ? 'text-foreground' : 'text-text-subtle'}>{level || 'Select level...'}</span>
                   <ChevronDown size={16} className="text-text-subtle shrink-0" />
@@ -352,13 +382,14 @@ export function Locations() {
                     ))}
                   </div>
                 )}
+                <FieldError id="location-level" message={errors.level} />
               </div>
 
               {/* Coordinates Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Latitude Field */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
+                  <label htmlFor="location-latitude" className="block text-sm font-medium text-foreground mb-2">
                     Latitude <span className="text-destructive-text">*</span>
                   </label>
                   <input
@@ -368,13 +399,17 @@ export function Locations() {
                     onChange={(e) => setLatitude(e.target.value)}
                     placeholder="e.g. 2.0469"
                     className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
+                    {...fieldControlProps('location-latitude', errors.latitude)}
                   />
-                  <p className="text-xs text-text-subtle mt-1.5">Range: -90 to 90</p>
+                  <FieldError id="location-latitude" message={errors.latitude} />
+                  {!errors.latitude && (
+                    <p className="text-xs text-text-subtle mt-1.5">Range: -90 to 90</p>
+                  )}
                 </div>
 
                 {/* Longitude Field */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
+                  <label htmlFor="location-longitude" className="block text-sm font-medium text-foreground mb-2">
                     Longitude <span className="text-destructive-text">*</span>
                   </label>
                   <input
@@ -384,8 +419,12 @@ export function Locations() {
                     onChange={(e) => setLongitude(e.target.value)}
                     placeholder="e.g. 45.3182"
                     className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary"
+                    {...fieldControlProps('location-longitude', errors.longitude)}
                   />
-                  <p className="text-xs text-text-subtle mt-1.5">Range: -180 to 180</p>
+                  <FieldError id="location-longitude" message={errors.longitude} />
+                  {!errors.longitude && (
+                    <p className="text-xs text-text-subtle mt-1.5">Range: -180 to 180</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -393,19 +432,17 @@ export function Locations() {
             {/* Modal Footer */}
             <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4 flex items-center justify-end gap-3">
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  reset();
+                  setShowAddModal(false);
+                }}
                 className="px-4 py-2.5 border border-border bg-card hover:bg-muted rounded-lg text-sm font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddLocation}
-                disabled={!name.trim() || !level || !latitude.trim() || !longitude.trim()}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  name.trim() && level && latitude.trim() && longitude.trim()
-                    ? 'bg-primary hover:bg-primary-hover text-white'
-                    : 'bg-muted text-text-subtle cursor-not-allowed'
-                }`}
+                className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors bg-primary hover:bg-primary-hover text-white"
               >
                 Add Location
               </button>

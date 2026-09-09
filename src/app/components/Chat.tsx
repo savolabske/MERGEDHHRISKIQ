@@ -2076,7 +2076,7 @@ export function Chat({
               data-composite-field
               onClick={() => inputRef.current?.focus()}
               className={cn(
-                'flex w-full flex-col rounded-2xl border border-border bg-card transition-colors cursor-text',
+                'composer-shell flex w-full flex-col rounded-2xl border transition-colors cursor-text',
                 'hover:border-primary',
                 'focus-within:border-primary',
                 sharedComposerCompact ? 'min-h-12 px-3 py-1.5' : 'px-3 py-2.5 sm:px-4 sm:py-3',

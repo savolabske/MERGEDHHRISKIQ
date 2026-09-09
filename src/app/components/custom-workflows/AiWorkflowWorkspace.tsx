@@ -269,7 +269,7 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
                       if (e.key === 'Enter') sendChat(chatInput);
                     }}
                     placeholder="Ask about these outputs…"
-                    className="w-full rounded-xl border border-border bg-white py-2.5 pl-3 pr-10 text-sm outline-none focus:border-primary"
+                    className="composer-shell w-full rounded-xl border py-2.5 pl-3 pr-10 text-sm outline-none focus:border-primary"
                   />
                   <button
                     type="button"

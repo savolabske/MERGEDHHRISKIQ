@@ -2,6 +2,12 @@ import { Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ResourceUserGroup } from '../../data/resourcesMock';
 import { inputClass } from './resourceShared';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredField,
+  useFormValidation,
+} from '../ui/form-validation';
 
 interface UserGroupModalProps {
   open: boolean;
@@ -21,6 +27,10 @@ export function UserGroupModal({
   const [name, setName] = useState('');
   const [members, setMembers] = useState<string[]>([]);
   const [memberInput, setMemberInput] = useState('');
+  const { errors, validate, reset } = useFormValidation(
+    { name },
+    { name: requiredField('Group name') },
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -32,7 +42,8 @@ export function UserGroupModal({
       setMembers([]);
     }
     setMemberInput('');
-  }, [open, mode, initialGroup]);
+    reset();
+  }, [open, mode, initialGroup, reset]);
 
   if (!open) return null;
 
@@ -45,8 +56,8 @@ export function UserGroupModal({
   };
 
   const handleSave = () => {
+    if (!validate()) return;
     const trimmedName = name.trim();
-    if (!trimmedName) return;
     onSave({
       id: initialGroup?.id ?? Date.now().toString(),
       name: trimmedName,
@@ -70,14 +81,18 @@ export function UserGroupModal({
 
         <div className="px-6 py-5 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Group Name</label>
+            <label htmlFor="user-group-name" className="block text-sm font-medium text-foreground mb-2">
+              Group Name
+            </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Design Team, Research Team"
               className={inputClass}
+              {...fieldControlProps('user-group-name', errors.name)}
             />
+            <FieldError id="user-group-name" message={errors.name} />
           </div>
 
           <div>
@@ -144,8 +159,7 @@ export function UserGroupModal({
           <button
             type="button"
             onClick={handleSave}
-            disabled={!name.trim()}
-            className="px-5 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+            className="px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg text-sm font-medium transition-colors"
           >
             {mode === 'create' ? 'Create Group' : 'Save Changes'}
           </button>

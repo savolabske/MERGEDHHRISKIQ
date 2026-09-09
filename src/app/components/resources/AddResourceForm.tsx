@@ -18,6 +18,12 @@ import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
 import { inputClass, textareaClass } from './resourceShared';
 import { UserGroupModal } from './UserGroupModal';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredField,
+  useFormValidation,
+} from '../ui/form-validation';
 
 interface AddResourceFormProps {
   onBack: () => void;
@@ -120,11 +126,13 @@ export function AddResourceForm({
     setEmailInput(value);
   };
 
+  const { errors, validate } = useFormValidation(
+    { title },
+    { title: requiredField('Resource title') },
+  );
+
   const handleSubmit = () => {
-    if (!title.trim()) {
-      toast.error('Resource title is required');
-      return;
-    }
+    if (!validate()) return;
     const now = new Date().toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -247,7 +255,7 @@ export function AddResourceForm({
           <h3 className="text-sm font-semibold text-foreground mb-4">Resource Details</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label htmlFor="resource-title" className="block text-sm font-medium text-foreground mb-2">
                 Resource Title
               </label>
               <input
@@ -256,7 +264,9 @@ export function AddResourceForm({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Somalia Economic Outlook 2024"
                 className={inputClass}
+                {...fieldControlProps('resource-title', errors.title)}
               />
+              <FieldError id="resource-title" message={errors.title} />
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Description</label>

@@ -16,6 +16,12 @@ import {
   listFilterTriggerClass,
   menuItemClass,
 } from './ui/interaction';
+import {
+  FieldError,
+  fieldControlProps,
+  requiredField,
+  useFormValidation,
+} from './ui/form-validation';
 
 interface Role {
   id: string;
@@ -205,6 +211,10 @@ export function RolesPermissions() {
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [activeTab, setActiveTab] = useState<'permissions' | 'users'>('permissions');
   const [isEditing, setIsEditing] = useState(false);
+  const { errors, validate, reset } = useFormValidation(
+    { roleName },
+    { roleName: requiredField('Role name') },
+  );
 
   const filteredRoles = roles.filter(role =>
     role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -252,6 +262,7 @@ export function RolesPermissions() {
     setRoleName('');
     setRoleDescription('');
     setPermissions([]);
+    reset();
   };
 
   const isPermissionApplicable = (module: string, permission: 'view' | 'create' | 'edit' | 'delete') => {
@@ -355,7 +366,7 @@ export function RolesPermissions() {
               <div className="bg-card rounded-xl border border-border p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block table-header-label mb-2">
+                    <label htmlFor="role-name" className="block table-header-label mb-2">
                       Role Name *
                     </label>
                     <input
@@ -364,7 +375,9 @@ export function RolesPermissions() {
                       onChange={(e) => setRoleName(e.target.value)}
                       placeholder="e.g. Field Coordinator"
                       className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary transition-colors"
+                      {...fieldControlProps('role-name', errors.roleName)}
                     />
+                    <FieldError id="role-name" message={errors.roleName} />
                   </div>
                   <div>
                     <label className="block table-header-label mb-2">
@@ -595,12 +608,9 @@ export function RolesPermissions() {
                       Discard
                     </button>
                     <button
-                      disabled={!roleName.trim()}
-                      className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                        roleName.trim()
-                          ? 'bg-primary hover:bg-primary-hover text-white'
-                          : 'bg-muted text-text-subtle cursor-not-allowed'
-                      }`}
+                      type="button"
+                      onClick={() => validate()}
+                      className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 bg-primary hover:bg-primary-hover text-white"
                     >
                       <Check size={16} />
                       Create Role

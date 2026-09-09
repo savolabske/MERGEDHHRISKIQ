@@ -183,7 +183,7 @@ function DocumentChatComposer({
         data-composite-field
         onClick={() => inputRef.current?.focus()}
         className={cn(
-          'flex w-full flex-col rounded-2xl border border-border bg-card px-3 py-2.5 sm:px-4 sm:py-3 transition-colors cursor-text',
+          'composer-shell flex w-full flex-col rounded-2xl border px-3 py-2.5 sm:px-4 sm:py-3 transition-colors cursor-text',
           'hover:border-primary',
           'focus-within:border-primary',
         )}
@@ -327,7 +327,9 @@ export function DocumentDetail({
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [isTyping, setIsTyping] = useState(false);
   const [isExtendedKnowledgeMode, setIsExtendedKnowledgeMode] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(initialChatOpen);
+  const [isChatOpen, setIsChatOpen] = useState(
+    initialChatOpen && (initialMessages?.length ?? 0) > 0,
+  );
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const responseTimeoutsRef = useRef<number[]>([]);
@@ -386,7 +388,15 @@ export function DocumentDetail({
   const startNewChat = () => {
     clearResponseTimeouts();
     setIsTyping(false);
+    setIsChatOpen(false);
+    setIsChatExpanded(false);
+    setMessages([]);
+    setChatQuery('');
     onNewChat?.();
+  };
+
+  const openChatIfHasMessages = () => {
+    if (messages.length > 0) setIsChatOpen(true);
   };
 
   const handleSendMessage = (e: FormEvent) => {
@@ -694,7 +704,7 @@ export function DocumentDetail({
                 </button>
               )}
 
-              {isChatOpen ? (
+              {isChatOpen && messages.length > 0 ? (
                 <div className="overflow-hidden rounded-[20px] border border-border bg-card shadow-xl">
                   <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border bg-muted/40 shrink-0">
                     <span className="text-sm font-medium text-foreground truncate pr-2">Chat</span>
@@ -753,7 +763,7 @@ export function DocumentDetail({
                     isExtendedKnowledgeMode={isExtendedKnowledgeMode}
                     onExtendedKnowledgeChange={setIsExtendedKnowledgeMode}
                     onChange={setChatQuery}
-                    onFocus={() => setIsChatOpen(true)}
+                    onFocus={openChatIfHasMessages}
                     onSubmit={handleSendMessage}
                     onStop={stopGeneration}
                   />
@@ -766,7 +776,7 @@ export function DocumentDetail({
                   isExtendedKnowledgeMode={isExtendedKnowledgeMode}
                   onExtendedKnowledgeChange={setIsExtendedKnowledgeMode}
                   onChange={setChatQuery}
-                  onFocus={() => setIsChatOpen(true)}
+                  onFocus={openChatIfHasMessages}
                   onSubmit={handleSendMessage}
                   onStop={stopGeneration}
                 />
@@ -827,7 +837,7 @@ export function DocumentDetail({
               isExtendedKnowledgeMode={isExtendedKnowledgeMode}
               onExtendedKnowledgeChange={setIsExtendedKnowledgeMode}
               onChange={setChatQuery}
-              onFocus={() => setIsChatOpen(true)}
+              onFocus={openChatIfHasMessages}
               onSubmit={handleSendMessage}
               onStop={stopGeneration}
             />
