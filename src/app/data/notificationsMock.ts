@@ -3,27 +3,29 @@ import type { AppNotification } from '../types/notifications';
 
 /**
  * Seed inbox covering every in-app notification kind the platform surfaces:
- * chats (reply / added / invite / shared thread), resources (shared / upload complete),
+ * chats (reply / added / invite / shared thread), resources (shared / upload ready),
  * Risk IQ briefings, reports (ready / shared), workflows, workspace sync, and access.
+ * Resource uploads refer to the resource (which may contain many documents), not a single file.
  * Ordered newest → oldest within each day group.
  */
 export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: 'notif-doc-sync',
     kind: 'doc-sync',
-    title: 'Upload complete',
-    description: 'Baidoa IDP cholera assessment.pdf finished uploading and is ready to use.',
+    title: 'Your resource is ready',
+    description:
+      'Baidoa IDP cholera assessment finished uploading. All documents in this resource are ready to use.',
     time: 'Just now',
     dayGroup: 'today',
     unread: true,
     action: { type: 'navigate', view: 'resources' },
-    ctaLabel: 'View document',
+    ctaLabel: 'Open resource',
   },
   {
     id: 'notif-resource-shared',
     kind: 'resource-shared',
     title: 'Sara Ahmed shared a resource with you',
-    description: 'Nutrition Cluster Sitrep — Feb 2026',
+    description: 'Nutrition Cluster Sitrep — Feb 2026 is now available in My Resources.',
     time: '5 min ago',
     dayGroup: 'today',
     unread: true,
@@ -34,23 +36,9 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
     ctaLabel: 'Open resource',
   },
   {
-    id: 'notif-chat-reply',
-    kind: 'chat-reply',
-    title: 'Shared chat update',
-    description: 'Amina Hassan replied in your cholera trends thread.',
-    time: '12 min ago',
-    dayGroup: 'today',
-    unread: true,
-    action: { type: 'open-chat', threadId: '2' },
-    actorName: 'Amina Hassan',
-    actorInitials: 'AH',
-    actorColor: palette.warning,
-    ctaLabel: 'Open chat',
-  },
-  {
     id: 'notif-chat-added',
     kind: 'chat-added',
-    title: 'John Osman added you to chat',
+    title: 'John Osman added you to a chat',
     description: 'Security incidents in Lower Shabelle in the last 30 days',
     time: '28 min ago',
     dayGroup: 'today',
@@ -64,7 +52,7 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: 'notif-invite',
     kind: 'invite',
-    title: 'Amina Hassan sent you an invite link',
+    title: 'Amina Hassan invited you to a chat',
     description: 'What are the cholera outbreak trends in Baidoa IDP camps?',
     time: '43 min ago',
     dayGroup: 'today',
@@ -78,7 +66,7 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: 'notif-report-ready',
     kind: 'report-ready',
-    title: 'Report ready',
+    title: 'Your report is ready',
     description: 'Humanitarian Access Dashboard has finished generating.',
     time: '1 hr ago',
     dayGroup: 'today',
@@ -89,25 +77,25 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: 'notif-briefing',
     kind: 'briefing',
-    title: 'Briefing ready',
+    title: 'Your briefing is ready',
     description: 'February operational risk summary is available in Risk IQ.',
     time: '2 hr ago',
     dayGroup: 'today',
     unread: true,
     action: { type: 'open-briefing', threadId: '4' },
-    ctaLabel: 'View briefing',
+    ctaLabel: 'Open briefing',
   },
   {
     id: 'notif-shared-thread',
     kind: 'shared-thread',
-    title: 'A thread has been shared with you',
-    description: 'Show escalating security threats in South-Central Somalia',
+    title: 'A chat was shared with you',
+    description: 'Escalating security threats in South-Central Somalia',
     time: '3 hr ago',
     dayGroup: 'today',
     unread: true,
     action: { type: 'join-shared-chat', threadId: '18' },
     useAlertAvatar: true,
-    ctaLabel: 'Open shared chat',
+    ctaLabel: 'Open chat',
   },
   {
     id: 'notif-report-shared',
@@ -121,13 +109,13 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
     actorName: 'Fatima Noor',
     actorInitials: 'FN',
     actorColor: palette.info,
-    ctaLabel: 'View report',
+    ctaLabel: 'Open report',
   },
   {
     id: 'notif-workflow-alert',
     kind: 'workflow-alert',
-    title: 'Compliance check needs attention',
-    description: 'Partner due diligence marked action-needed in Assurance Workflow.',
+    title: 'A workflow needs your attention',
+    description: 'Partner due diligence in Assurance Workflow is marked action needed.',
     time: 'Yesterday',
     dayGroup: 'yesterday',
     unread: false,
@@ -138,8 +126,8 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: 'notif-workspace-sync',
     kind: 'workspace-sync',
-    title: 'Workspace sync',
-    description: 'Humanitarian snapshot data refreshed overnight.',
+    title: 'Workspace data refreshed',
+    description: 'Humanitarian snapshot data was updated overnight.',
     time: 'Yesterday',
     dayGroup: 'yesterday',
     unread: false,
@@ -149,8 +137,8 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: 'notif-access-approved',
     kind: 'access-approved',
-    title: 'Access approved',
-    description: 'You were approved as Field Coordinator for Humanity Hub.',
+    title: 'Your access was approved',
+    description: "You're approved as Field Coordinator for Humanity Hub.",
     time: '3 days ago',
     dayGroup: 'earlier',
     unread: false,

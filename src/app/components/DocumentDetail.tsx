@@ -13,7 +13,6 @@ import {
   Maximize2,
   MessageSquarePlus,
   Minus,
-  Send,
   Sparkles,
   X,
 } from 'lucide-react';
@@ -24,6 +23,7 @@ import { BackLink } from './ui/back-link';
 import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { ChatStopButton } from './ui/ChatStopButton';
+import { ComposerSendButton } from './ui/ComposerSendButton';
 import { cn } from './ui/utils';
 import { getDocumentContent, type DocumentContent } from '../data/documentDetailData';
 import type { AppView } from '../types/navigation';
@@ -257,17 +257,10 @@ function DocumentChatComposer({
           {isTyping ? (
             <ChatStopButton onClick={onStop} className="shrink-0" />
           ) : (
-            <button
+            <ComposerSendButton
               type="submit"
               disabled={!canSend}
-              className={cn(
-                'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white transition-colors',
-                canSend ? 'bg-primary hover:bg-primary-hover' : 'bg-muted cursor-not-allowed',
-              )}
-              aria-label="Send message"
-            >
-              <Send size={16} className={canSend ? 'text-white' : 'text-text-subtle'} />
-            </button>
+            />
           )}
         </div>
       </div>

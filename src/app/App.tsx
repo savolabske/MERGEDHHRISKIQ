@@ -1,6 +1,10 @@
 import { Sidebar } from "./components/Sidebar";
 import { AppTopBar } from "./components/AppTopBar";
 import { Auth } from "./components/Auth";
+import {
+  isTermsPageRequest,
+  TermsAndConditionsPage,
+} from "./components/TermsAndConditionsPage";
 import { Chat } from "./components/Chat";
 import { Reports, type ActiveReport } from "./components/Reports";
 import { MapView } from "./components/MapView";
@@ -59,6 +63,7 @@ import {
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import { Button } from "./components/ui/button";
+import { ComposerSendButton } from "./components/ui/ComposerSendButton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./components/ui/tooltip";
 import { cn } from "./components/ui/utils";
 import { CURRENT_USER, getUserById } from "./utils/mockUsers";
@@ -1070,6 +1075,11 @@ export default function App() {
     setNeedsOnboarding(true);
   };
 
+  // Public legal page — reachable without authentication (e.g. from sign-up)
+  if (isTermsPageRequest()) {
+    return <TermsAndConditionsPage />;
+  }
+
   // Show Auth screen if not authenticated
   if (!isAuthenticated) {
     return <Auth onLogin={handleLogin} />;
@@ -1955,9 +1965,7 @@ export default function App() {
                             </TooltipContent>
                           </Tooltip>
                         </div>
-                        <Button
-                          type="button"
-                          size="icon"
+                        <ComposerSendButton
                           disabled={!aiSearchInput.trim()}
                           onClick={() => {
                             if (aiSearchInput.trim()) {
@@ -1965,12 +1973,7 @@ export default function App() {
                               setAiSearchInput('');
                             }
                           }}
-                          className="size-10 shrink-0 rounded-xl"
-                        >
-                          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-                            <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </Button>
+                        />
                       </div>
                     </div>
                   </div>

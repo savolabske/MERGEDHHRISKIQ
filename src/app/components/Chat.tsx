@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, UserPlus, Sparkles, CircleHelp, Check, Lock } from 'lucide-react';
+import { FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, ArrowRight, Sparkles, CircleHelp, Check, Lock } from 'lucide-react';
 import { RiskIQChatHeader } from './RiskIQChatHeader';
 import { BackLink } from './ui/back-link';
 import { RiskMatrix } from './RiskMatrix';
@@ -9,6 +9,7 @@ import { LowerShabelleIncidentMap, incidents } from './LowerShabelleIncidentMap'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { ChatStopButton } from './ui/ChatStopButton';
+import { ComposerSendButton } from './ui/ComposerSendButton';
 import { ShareThreadModal } from './ShareThreadModal';
 import { CURRENT_USER, RISK_IQ_USER, getUserById } from '../utils/mockUsers';
 import { toast } from 'sonner';
@@ -996,6 +997,13 @@ export function Chat({
     return getWebIntelligenceSummary(userQueryPreview);
   };
 
+  const isResponseReadyForFeedback = (message: Message) =>
+    message.type === 'assistant' &&
+    message.contentType !== 'loading' &&
+    message.contentType !== 'searching' &&
+    !message.isTyping &&
+    !message.isWebIntelTyping;
+
   const buildConversationSnapshot = (upToMessageId: string): ConversationSnapshotMessage[] => {
     const snapshot: ConversationSnapshotMessage[] = [];
 
@@ -1274,16 +1282,18 @@ export function Chat({
                 })()
               )}
             </div>
-            <ResponseFeedbackButtons
-              messageId={message.id}
-              responseContent={message.content}
-              webIntelligenceContent={resolveAssistantWebIntelligence(message, userQueryPreview)}
-              threadId={threadId}
-              threadTitle={threadTitle || initialQuery}
-              userQueryPreview={userQueryPreview}
-              conversationSnapshot={conversationSnapshot}
-              className={sources.length === 0 ? 'ml-auto' : undefined}
-            />
+            {isResponseReadyForFeedback(message) && (
+              <ResponseFeedbackButtons
+                messageId={message.id}
+                responseContent={message.content}
+                webIntelligenceContent={resolveAssistantWebIntelligence(message, userQueryPreview)}
+                threadId={threadId}
+                threadTitle={threadTitle || initialQuery}
+                userQueryPreview={userQueryPreview}
+                conversationSnapshot={conversationSnapshot}
+                className={sources.length === 0 ? 'ml-auto' : undefined}
+              />
+            )}
           </div>
         )}
 
@@ -1812,7 +1822,7 @@ export function Chat({
                 onClick={() => setIsShareOpen(true)}
                 className={cn(outlineControlClass, 'inline-flex items-center gap-2 rounded-xl text-sm font-medium text-foreground-emphasis')}
               >
-                <UserPlus size={16} className="text-muted-foreground" />
+                <ArrowRight size={16} className="text-muted-foreground" strokeWidth={2.25} />
                 <span>Invite</span>
               </button>
             </div>
@@ -1887,7 +1897,7 @@ export function Chat({
                   onClick={() => setIsShareOpen(true)}
                   className={cn(outlineControlClass, 'inline-flex items-center gap-2 rounded-xl text-sm font-medium text-foreground-emphasis')}
                 >
-                  <UserPlus size={16} className="text-muted-foreground" />
+                  <ArrowRight size={16} className="text-muted-foreground" strokeWidth={2.25} />
                   <span>Invite</span>
                 </button>
               </div>
@@ -1994,7 +2004,7 @@ export function Chat({
                       ) : (
                         <div className="space-y-2">
                           {renderMessageContent(message)}
-                          {!message.isTyping && (
+                          {isResponseReadyForFeedback(message) && (
                             <div className="flex justify-end">
                               <ResponseFeedbackButtons
                                 messageId={message.id}
@@ -2135,22 +2145,10 @@ export function Chat({
                 isProcessing ? (
                   <ChatStopButton onClick={stopGeneration} className="shrink-0" />
                 ) : (
-                  <button
-                    type="button"
+                  <ComposerSendButton
                     onClick={handleSend}
                     disabled={!inputValue.trim()}
-                    aria-label="Send message"
-                    className={cn(
-                      'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
-                      inputValue.trim()
-                        ? 'bg-primary hover:bg-primary-hover cursor-pointer'
-                        : 'bg-muted cursor-not-allowed',
-                    )}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                      <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke={inputValue.trim() ? "white" : "var(--text-subtle)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
+                  />
                 )
               ) : null}
             </div>
@@ -2266,22 +2264,10 @@ export function Chat({
                   {isProcessing ? (
                     <ChatStopButton onClick={stopGeneration} className="shrink-0" />
                   ) : (
-                    <button
-                      type="button"
+                    <ComposerSendButton
                       onClick={handleSend}
                       disabled={!inputValue.trim()}
-                      aria-label="Send message"
-                      className={cn(
-                        'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
-                        inputValue.trim()
-                          ? 'bg-primary hover:bg-primary-hover cursor-pointer'
-                          : 'bg-muted cursor-not-allowed',
-                      )}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75" stroke={inputValue.trim() ? "white" : "var(--text-subtle)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
+                    />
                   )}
                 </div>
               </div>

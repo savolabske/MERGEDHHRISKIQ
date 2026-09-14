@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Map as MapIcon, Send, Table2, FileBarChart2 } from 'lucide-react';
+import { Map as MapIcon, Table2, FileBarChart2 } from 'lucide-react';
 import type { ManagedWorkflow } from '../../data/workflowAdminMock';
 import {
   buildWorkflowOutputPayload,
@@ -11,6 +11,7 @@ import {
 } from './workflow-outputs/WorkflowOutputView';
 import { PageScrollShell } from '../PageScrollShell';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
+import { ComposerSendButton } from '../ui/ComposerSendButton';
 import { cn } from '../ui/utils';
 
 interface AiWorkflowWorkspaceProps {
@@ -269,17 +270,16 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
                       if (e.key === 'Enter') sendChat(chatInput);
                     }}
                     placeholder="Ask about these outputs…"
-                    className="composer-shell w-full rounded-xl border py-2.5 pl-3 pr-10 text-sm outline-none focus:border-primary"
+                    className="composer-shell w-full rounded-xl border py-2.5 pl-3 pr-12 text-sm outline-none focus:border-primary"
                   />
-                  <button
-                    type="button"
+                  <ComposerSendButton
                     onClick={() => sendChat(chatInput)}
                     disabled={!chatInput.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-primary disabled:opacity-40"
+                    size="sm"
+                    rounded="lg"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
                     aria-label="Send"
-                  >
-                    <Send size={14} />
-                  </button>
+                  />
                 </div>
               </div>
             )}

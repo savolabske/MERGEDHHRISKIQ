@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { ChevronDown, Send } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
 import { ChatStopButton } from '../../../components/ui/ChatStopButton';
+import { ComposerSendButton } from '../../../components/ui/ComposerSendButton';
 import { useReportChatPanel } from './ReportChatLayout';
 
 export interface ReportChatPromptTheme {
@@ -148,18 +149,17 @@ export function ReportChatPromptInput({
           {isGenerating && onStop ? (
             <ChatStopButton onClick={onStop} size="sm" className="shrink-0" />
           ) : (
-            <button
-              type="button"
+            <ComposerSendButton
               onClick={handleSubmit}
               disabled={disabled || !value.trim()}
+              size="sm"
+              rounded="lg"
               className={cn(
-                'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white disabled:opacity-50',
+                'shadow-none text-white disabled:opacity-50',
                 theme.buttonBg,
                 theme.buttonHover,
               )}
-            >
-              <Send size={14} />
-            </button>
+            />
           )}
         </div>
       </div>

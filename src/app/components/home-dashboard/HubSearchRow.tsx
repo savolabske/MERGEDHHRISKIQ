@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  ArrowRight,
   FileText,
   GraduationCap,
   Lock,
@@ -17,6 +16,7 @@ import {
 } from '../../data/homeDashboardMock';
 import type { DashboardChatPayload } from '../../utils/dashboardChatContext';
 import { toast } from 'sonner';
+import { ComposerSendButton } from '../ui/ComposerSendButton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { cn } from '../ui/utils';
 import { HubKeyInsightsCard } from './HubKeyInsightsCard';
@@ -274,15 +274,13 @@ export function HubSearchRow({
                 </TooltipContent>
               </Tooltip>
             </div>
-            <button
-              type="button"
+            <ComposerSendButton
               onClick={() => submitSearch()}
               disabled={!query.trim()}
               aria-label="Search"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ArrowRight size={18} strokeWidth={2.25} aria-hidden />
-            </button>
+              size="md"
+              rounded="full"
+            />
           </div>
         </div>
 

@@ -29,7 +29,7 @@ const KIND_FOOTER_ICON: Record<NotificationKind, typeof Share2> = {
   invite: Share2,
   'shared-thread': AlertTriangle,
   briefing: FileText,
-  'doc-sync': FileCheck2,
+  'doc-sync': FolderOpen,
   'workspace-sync': RefreshCw,
   'resource-shared': FolderOpen,
   'report-ready': FileBarChart2,
@@ -46,7 +46,7 @@ const SYSTEM_ICON_KINDS = new Set<NotificationKind>([
 ]);
 
 const SYSTEM_KIND_ICON: Partial<Record<NotificationKind, typeof Share2>> = {
-  'doc-sync': FileCheck2,
+  'doc-sync': FolderOpen,
   'workspace-sync': RefreshCw,
   'report-ready': FileBarChart2,
   'access-approved': CheckCircle2,

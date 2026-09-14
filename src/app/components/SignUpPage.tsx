@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { User, Mail, Building2, Eye, EyeOff } from 'lucide-react';
-import { AuthHeroPanel } from './AuthHeroPanel';
+import { AuthPageLayout } from './AuthPageLayout';
+import { TERMS_PAGE_HREF } from './TermsAndConditionsPage';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import {
   FieldError,
@@ -132,6 +133,8 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
   const [organisation, setOrganisation] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsError, setTermsError] = useState<string | undefined>();
   const formRef = useRef<HTMLFormElement>(null);
   const { errors, validate } = useFormValidation(
     { name, email, organisation, password },
@@ -145,16 +148,22 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate(formRef.current)) return;
+    const fieldsOk = validate(formRef.current);
+    const nextTermsError = acceptedTerms
+      ? undefined
+      : 'You must agree to the terms and conditions';
+    setTermsError(nextTermsError);
+    if (!fieldsOk || nextTermsError) {
+      if (fieldsOk && nextTermsError) {
+        document.getElementById('signup-terms')?.focus();
+      }
+      return;
+    }
     onSubmit({ name: name.trim(), email: email.trim(), organisation, password });
   };
 
   return (
-    <div className="min-h-screen flex bg-white p-4">
-      <AuthHeroPanel />
-
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-[400px]">
+    <AuthPageLayout>
           <div className="mb-8 -ml-2">
             <img src={unLogo} alt="United Nations Somalia" className="h-14 w-auto" />
           </div>
@@ -244,6 +253,61 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
               <FieldError id="signup-password" message={errors.password} />
             </div>
 
+            <div>
+              <div className="flex items-start gap-2.5">
+                <button
+                  type="button"
+                  id="signup-terms"
+                  role="checkbox"
+                  aria-checked={acceptedTerms}
+                  aria-invalid={Boolean(termsError) || undefined}
+                  aria-describedby={termsError ? 'signup-terms-error' : undefined}
+                  onClick={() => {
+                    setAcceptedTerms((prev) => {
+                      const next = !prev;
+                      if (next) setTermsError(undefined);
+                      return next;
+                    });
+                  }}
+                  className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all focus:outline-none focus:ring-3 focus:ring-primary/20 ${
+                    termsError
+                      ? 'border-destructive'
+                      : 'border-border-muted'
+                  } ${
+                    acceptedTerms
+                      ? 'bg-primary border-primary'
+                      : 'bg-card hover:border-text-subtle'
+                  }`}
+                >
+                  {acceptedTerms && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden>
+                      <path
+                        d="M1 4L3.5 6.5L9 1"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </button>
+                <p className="text-sm text-foreground leading-snug">
+                  <label htmlFor="signup-terms" className="cursor-pointer">
+                    I agree to the{' '}
+                  </label>
+                  <a
+                    href={TERMS_PAGE_HREF}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary hover:text-primary-hover hover:underline transition-colors"
+                  >
+                    Terms and conditions
+                  </a>
+                </p>
+              </div>
+              <FieldError id="signup-terms" message={termsError} />
+            </div>
+
             <button
               type="submit"
               className="w-full py-3.5 rounded-full text-sm font-semibold transition-colors bg-primary text-white hover:bg-primary-hover active:bg-primary-active"
@@ -256,14 +320,12 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
             Already have an account?{' '}
             <button
               type="button"
-              className="text-sm text-foreground font-semibold hover:text-primary transition-colors underline"
+              className="text-sm font-medium text-primary hover:text-primary-hover hover:underline transition-colors"
               onClick={onNavigateToSignIn}
             >
               Sign in
             </button>
           </p>
-        </div>
-      </div>
-    </div>
+    </AuthPageLayout>
   );
 }

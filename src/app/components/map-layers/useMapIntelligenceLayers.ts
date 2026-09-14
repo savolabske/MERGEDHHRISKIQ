@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { Map as MapboxMap, MapLayerMouseEvent } from 'mapbox-gl';
-import { mapboxgl } from '../../config/mapbox';
+import { mapboxgl, type MapBasemapTheme } from '../../config/mapbox';
 import somaliaAdm1 from '../../data/somalia-adm1.json';
 import { getHubRegionIdFromAdm1Name } from '../../data/somaliaRegionMapping';
 import {
@@ -72,6 +72,9 @@ export type MapIntelligenceLayerOptions = {
   selectedOverlays: Set<MapOverlayId>;
   riskDimension: RiskDimension;
   selectedRegionId: string | null;
+  /** Bumps after map.setStyle so custom layers are reattached. */
+  styleEpoch?: number;
+  basemapTheme?: MapBasemapTheme;
   onHoverRegion: (region: MapRegionIntelligence | null) => void;
   onSelectRegion: (region: MapRegionIntelligence | null) => void;
   onHoverAlert: (alert: MapAlertPoint | null) => void;
@@ -172,6 +175,8 @@ export function useMapIntelligenceLayers({
   selectedOverlays,
   riskDimension,
   selectedRegionId,
+  styleEpoch = 0,
+  basemapTheme = 'dark',
   onHoverRegion,
   onSelectRegion,
   onHoverAlert,
@@ -180,6 +185,8 @@ export function useMapIntelligenceLayers({
   const handlersBoundRef = useRef(false);
   const selectedLayersRef = useRef(selectedLayers);
   selectedLayersRef.current = selectedLayers;
+  const basemapThemeRef = useRef(basemapTheme);
+  basemapThemeRef.current = basemapTheme;
 
   const clearHoverPopup = useCallback(() => {
     hoverPopupRef.current?.remove();
@@ -194,11 +201,17 @@ export function useMapIntelligenceLayers({
     ALL_SOURCE_IDS.forEach((id) => {
       if (map.getSource(id)) map.removeSource(id);
     });
+    // Layer event handlers are tied to layer ids; after setStyle they must rebind.
     handlersBoundRef.current = false;
   }, [clearHoverPopup]);
 
   const ensureSourcesAndLayers = useCallback(
     (map: MapboxMap) => {
+      const isLight = basemapThemeRef.current === 'light';
+      const outlineColor = isLight ? '#334155' : '#E2E8F0';
+      const droughtHalo = isLight ? '#F8FAFC' : '#0F172A';
+      const portsFill = isLight ? '#0F172A' : '#F8FAFC';
+
       if (!map.getSource(SOURCE_ADM1)) {
         map.addSource(SOURCE_ADM1, {
           type: 'geojson',
@@ -259,12 +272,14 @@ export function useMapIntelligenceLayers({
           type: 'line',
           source: SOURCE_ADM1,
           paint: {
-            'line-color': '#E2E8F0',
+            'line-color': outlineColor,
             'line-width': 1,
             'line-opacity': 0.55,
           },
           layout: { visibility: 'none' },
         });
+      } else {
+        map.setPaintProperty(LAYER_OUTLINE, 'line-color', outlineColor);
       }
 
       if (!map.getLayer(LAYER_HIGHLIGHT)) {
@@ -288,12 +303,14 @@ export function useMapIntelligenceLayers({
           type: 'line',
           source: SOURCE_ROADS,
           paint: {
-            'line-color': '#94A3B8',
+            'line-color': isLight ? '#64748B' : '#94A3B8',
             'line-width': 2,
             'line-opacity': 0.7,
           },
           layout: { visibility: 'none' },
         });
+      } else {
+        map.setPaintProperty(LAYER_ROADS, 'line-color', isLight ? '#64748B' : '#94A3B8');
       }
 
       if (!map.getLayer(LAYER_DISPLACEMENT)) {
@@ -350,12 +367,14 @@ export function useMapIntelligenceLayers({
           source: SOURCE_PORTS,
           paint: {
             'circle-radius': 6,
-            'circle-color': '#F8FAFC',
+            'circle-color': portsFill,
             'circle-stroke-width': 2,
             'circle-stroke-color': '#3B82F6',
           },
           layout: { visibility: 'none' },
         });
+      } else {
+        map.setPaintProperty(LAYER_PORTS, 'circle-color', portsFill);
       }
 
       if (!map.getLayer(LAYER_DROUGHT_LABELS)) {
@@ -371,11 +390,13 @@ export function useMapIntelligenceLayers({
           },
           paint: {
             'text-color': '#FDBA74',
-            'text-halo-color': '#0F172A',
+            'text-halo-color': droughtHalo,
             'text-halo-width': 1.2,
           },
           filter: ['!=', ['get', 'droughtLabel'], ''],
         });
+      } else {
+        map.setPaintProperty(LAYER_DROUGHT_LABELS, 'text-halo-color', droughtHalo);
       }
     },
     [riskDimension],
@@ -481,6 +502,11 @@ export function useMapIntelligenceLayers({
         return;
       }
 
+      // After setStyle, Mapbox drops custom sources/layers but keeps our handler flag.
+      if (!map.getSource(SOURCE_ADM1)) {
+        handlersBoundRef.current = false;
+      }
+
       ensureSourcesAndLayers(map);
       bindHandlers(map);
 
@@ -533,9 +559,10 @@ export function useMapIntelligenceLayers({
     if (map.isStyleLoaded()) {
       sync();
     } else {
-      map.once('load', sync);
+      map.once('style.load', sync);
     }
   }, [
+    basemapTheme,
     bindHandlers,
     enabled,
     ensureSourcesAndLayers,
@@ -545,6 +572,7 @@ export function useMapIntelligenceLayers({
     selectedLayers,
     selectedOverlays,
     selectedRegionId,
+    styleEpoch,
   ]);
 
   // Cleanup on unmount

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { MapPin, PanelRightClose, MessageSquare, MessageSquarePlus, Send, Sparkles, AlertTriangle, Utensils, Tent, ShieldAlert, ChevronRight, ChevronUp, ChevronDown, ChevronsUp, Users, X, Zap, TrendingDown, Package, Route, Crosshair, Calendar, Filter as FilterIcon, History, Clock } from 'lucide-react';
+import { MapPin, PanelRightClose, MessageSquare, MessageSquarePlus, Sparkles, AlertTriangle, Utensils, Tent, ShieldAlert, ChevronRight, ChevronUp, ChevronDown, ChevronsUp, ChevronsDown, Users, X, Zap, TrendingDown, Package, Route, Crosshair, Calendar, Filter as FilterIcon, History, Clock } from 'lucide-react';
 import { cn } from './ui/utils';
 import {
   chipRemoveClass,
@@ -9,8 +9,9 @@ import {
 } from './ui/interaction';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { ChatStopButton } from './ui/ChatStopButton';
+import { ComposerSendButton } from './ui/ComposerSendButton';
 import { useKeyboardBottomInset } from '../hooks/useKeyboardBottomInset';
-import { hasMapboxAccessToken, mapboxgl } from '../config/mapbox';
+import { hasMapboxAccessToken, mapboxgl, MAP_BASEMAP_STYLES, DEFAULT_MAP_BASEMAP_THEME, type MapBasemapTheme } from '../config/mapbox';
 import {
   DEFAULT_SELECTED_LAYERS,
   DEFAULT_SELECTED_OVERLAYS,
@@ -21,10 +22,12 @@ import {
   type RiskDimension,
 } from '../data/mapLayersMock';
 import {
+  MapBasemapToggle,
   MapDataLayersPanel,
   MapLayersLegend,
   MapRegionDetailPanel,
   useMapIntelligenceLayers,
+  type MapLegendSection,
 } from './map-layers';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -1005,6 +1008,13 @@ Filtering to show **4 health and nutrition programs** serving **204,500 benefici
 ];
 
 const LG_BREAKPOINT = 1024;
+
+const FLOW_LAYER_PRESETS: Record<string, MapDataLayerId[]> = {
+  refugees: ['displacement', 'alerts'],
+  diversion: ['aid', 'alerts'],
+  hunger2026: ['drought', 'alerts'],
+  unicef: ['aid', 'alerts'],
+};
 const MAP_LOADING_PHASE_MS = 2200;
 
 const MAP_LOADING_PHASES: Record<string, string[]> = {
@@ -1044,6 +1054,34 @@ function getMapLoadingPhases(flowId: string): string[] {
   return MAP_LOADING_PHASES[flowId] ?? MAP_LOADING_PHASES.default;
 }
 
+function ensureHatchingPattern(map: mapboxgl.Map | null | undefined) {
+  if (!map || map.hasImage('hatching-pattern')) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = 16;
+  canvas.height = 16;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.strokeStyle = 'rgba(255, 100, 100, 0.7)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 16);
+  ctx.lineTo(16, 0);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-4, 4);
+  ctx.lineTo(4, -4);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(12, 20);
+  ctx.lineTo(20, 12);
+  ctx.stroke();
+  map.addImage('hatching-pattern', {
+    width: 16,
+    height: 16,
+    data: ctx.getImageData(0, 0, 16, 16).data,
+  } as any);
+}
+
 // ══════════════════════════════════════════════════════════════
 // ── MAIN COMPONENT ──
 // ══════════════════════════════════════════════════════════════
@@ -1076,6 +1114,8 @@ export function MapView() {
   const [selectedRegion, setSelectedRegion] = useState<MapRegionIntelligence | null>(null);
   const [isLayersPanelCollapsed, setIsLayersPanelCollapsed] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [basemapTheme, setBasemapTheme] = useState<MapBasemapTheme>(DEFAULT_MAP_BASEMAP_THEME);
+  const [styleEpoch, setStyleEpoch] = useState(0);
 
   const keyboardBottomInset = useKeyboardBottomInset();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -1094,8 +1134,30 @@ export function MapView() {
 
   const activeFlow = activeFlowId ? CONVERSATION_FLOWS.find(f => f.id === activeFlowId) : null;
   const currentStep = activeFlow ? activeFlow.steps[currentStepIndex] : null;
-  const intelligenceEnabled = !activeFlowId && !isMapLoading;
+  // Keep Data layers + Legend chrome during prompts; only pause base map intel layers while a flow owns the map
+  const showIntelligenceChrome = mapReady;
+  const intelligenceMapLayersEnabled = mapReady && !activeFlowId && !isMapLoading;
   const fillLayer = useMemo(() => getActiveFillLayer(selectedLayers), [selectedLayers]);
+
+  const promptLegendSections = useMemo<MapLegendSection[]>(() => {
+    if (!currentStep?.legendItems?.length) return [];
+    return [
+      {
+        id: `prompt-${activeFlowId ?? 'step'}-${currentStepIndex}`,
+        title: currentStep.legendTitle,
+        items: currentStep.legendItems.map((item, i) => ({
+          id: `prompt-item-${i}`,
+          label: item.label,
+          swatch:
+            item.type === 'line'
+              ? { kind: 'line' as const, color: item.color }
+              : item.type === 'square' || item.type === 'hatch'
+                ? { kind: 'square' as const, color: item.color }
+                : { kind: 'circle' as const, color: item.color },
+        })),
+      },
+    ];
+  }, [activeFlowId, currentStep, currentStepIndex]);
 
   const toggleDataLayer = useCallback((id: MapDataLayerId) => {
     setSelectedLayers((prev) => {
@@ -1134,12 +1196,14 @@ export function MapView() {
   }, []);
 
   useMapIntelligenceLayers({
-    enabled: intelligenceEnabled && mapReady,
+    enabled: intelligenceMapLayersEnabled,
     mapRef: mapInstanceRef,
     selectedLayers,
     selectedOverlays,
     riskDimension,
     selectedRegionId: selectedRegion?.id ?? null,
+    styleEpoch,
+    basemapTheme,
     onHoverRegion: () => {},
     onSelectRegion: handleSelectRegion,
     onHoverAlert: () => {},
@@ -1207,7 +1271,7 @@ export function MapView() {
 
       map = new mapboxgl.Map({
         container,
-        style: 'mapbox://styles/mapbox/navigation-night-v1',
+        style: MAP_BASEMAP_STYLES[DEFAULT_MAP_BASEMAP_THEME],
         center: [46.0, 5.0],
         zoom: 5.2,
         attributionControl: false,
@@ -1217,17 +1281,7 @@ export function MapView() {
       map.addControl(new mapboxgl.ScaleControl({ maxWidth: 150 }), 'bottom-left');
       map.on('load', () => {
         map?.resize();
-        // Hatching pattern
-        const canvas = document.createElement('canvas');
-        canvas.width = 16;
-        canvas.height = 16;
-        const ctx = canvas.getContext('2d')!;
-        ctx.strokeStyle = 'rgba(255, 100, 100, 0.7)';
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(0, 16); ctx.lineTo(16, 0); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(-4, 4); ctx.lineTo(4, -4); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(12, 20); ctx.lineTo(20, 12); ctx.stroke();
-        map?.addImage('hatching-pattern', { width: 16, height: 16, data: ctx.getImageData(0, 0, 16, 16).data } as any);
+        ensureHatchingPattern(map);
         setMapReady(true);
       });
       // Click on empty map area dismisses pinned popup / region detail
@@ -1850,6 +1904,25 @@ export function MapView() {
     waitForStyle();
   }, [renderRefugeeCamps, renderDiversionMap, renderHungerProjection, renderUNICEFProjects]);
 
+  const handleBasemapThemeChange = useCallback(
+    (theme: MapBasemapTheme) => {
+      if (theme === basemapTheme) return;
+      const map = mapInstanceRef.current;
+      setBasemapTheme(theme);
+      if (!map) return;
+
+      map.setStyle(MAP_BASEMAP_STYLES[theme]);
+      map.once('style.load', () => {
+        ensureHatchingPattern(map);
+        setStyleEpoch((epoch) => epoch + 1);
+        if (activeFlowId != null) {
+          renderMapForStep(activeFlowId, currentStepIndex);
+        }
+      });
+    },
+    [activeFlowId, basemapTheme, currentStepIndex, renderMapForStep],
+  );
+
   const clearMapLoading = useCallback(() => {
     mapLoadingTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
     mapLoadingTimeoutsRef.current = [];
@@ -1920,6 +1993,13 @@ export function MapView() {
     setSelectedRegion(null);
     setIsTransitioning(true);
     setActiveFilters([]);
+    setIsLayersPanelCollapsed(false);
+
+    // Keep Data layers selection aligned with what the prompt is visualizing
+    const preset = FLOW_LAYER_PRESETS[flowId];
+    if (preset) {
+      setSelectedLayers(new Set(preset));
+    }
 
     if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
 
@@ -2174,20 +2254,12 @@ export function MapView() {
                 className={compact ? 'size-8' : 'size-9'}
               />
             ) : (
-              <button
+              <ComposerSendButton
                 type="submit"
                 disabled={!mapQuery.trim()}
                 aria-label="Send question"
-                className={cn(
-                  'inline-flex items-center justify-center rounded-xl transition-colors',
-                  compact ? 'size-8' : 'size-9',
-                  mapQuery.trim()
-                    ? 'bg-[#2463EB] text-white hover:bg-[#1D4ED8] active:bg-[#1E40AF]'
-                    : 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed',
-                )}
-              >
-                <Send size={compact ? 14 : 15} strokeWidth={2} />
-              </button>
+                size={compact ? 'sm' : 'md'}
+              />
             )}
           </div>
         </div>
@@ -2297,6 +2369,16 @@ export function MapView() {
         }
         .mapboxgl-ctrl-group button { border-bottom-color: #1E293B !important; }
         .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon { filter: invert(1) brightness(0.8); }
+        .map-legend-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #475569 transparent;
+        }
+        .map-legend-scroll::-webkit-scrollbar { width: 4px; }
+        .map-legend-scroll::-webkit-scrollbar-track { background: transparent; }
+        .map-legend-scroll::-webkit-scrollbar-thumb {
+          background: #475569;
+          border-radius: 999px;
+        }
       `}</style>
 
       {/* ════ Map Container ════ */}
@@ -2363,91 +2445,155 @@ export function MapView() {
           </div>
         )}
 
-        {/* Data layers panel — default intelligence before chat flows */}
-        {intelligenceEnabled && !isMobileViewport && (
+        {/* Basemap theme — top-right keeps clear of layers (left), legend, and zoom */}
+        {mapReady && (
+          <MapBasemapToggle
+            theme={basemapTheme}
+            onChange={handleBasemapThemeChange}
+            className={cn(
+              'absolute z-[14]',
+              activeFilters.length > 0 ? 'top-[4.25rem]' : 'top-4',
+              selectedRegion && !activeFlowId && !isMobileViewport
+                ? 'right-[calc(380px+1.25rem)]'
+                : 'right-3',
+            )}
+          />
+        )}
+
+        {/* Left stack: Data layers + Legend (shared column prevents overlap) */}
+        {showIntelligenceChrome && !isMobileViewport && (
           <div
             className={cn(
-              'absolute top-4 z-[14] transition-[left] duration-300',
+              'absolute left-3 z-[14] flex w-[220px] flex-col gap-2',
               activeFilters.length > 0 ? 'top-16' : 'top-4',
-              isLayersPanelCollapsed ? 'left-4' : 'left-4',
+              'bottom-10',
             )}
           >
-            {isLayersPanelCollapsed ? (
-              <button
-                type="button"
-                onClick={() => setIsLayersPanelCollapsed(false)}
-                className="flex items-center gap-2 rounded-xl border border-[#1E293B] bg-[#0F172A]/92 px-3 py-2.5 text-[0.75rem] font-semibold text-[#E2E8F0] shadow-lg backdrop-blur-md transition-colors hover:border-[#334155]"
-              >
-                <span className="size-2 rounded-full bg-[#3B82F6]" aria-hidden />
-                Data layers
-                <span className="rounded-md bg-[#1E293B] px-1.5 py-0.5 text-[0.625rem] text-[#94A3B8]">
-                  {selectedLayers.size}
-                </span>
-              </button>
-            ) : (
-              <div className="relative">
-                <MapDataLayersPanel
+            <div className="relative min-h-0 shrink">
+              {isLayersPanelCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsLayersPanelCollapsed(false)}
+                  className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#1E293B]/90 bg-[#0F172A]/92 px-3 py-2 shadow-lg backdrop-blur-md transition-colors hover:border-[#334155]"
+                  aria-expanded={false}
+                  aria-label="Expand data layers"
+                >
+                  <span className="text-[0.6875rem] font-semibold tracking-[0.08em] text-white uppercase">
+                    Data layers
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="rounded-md bg-[#1E293B] px-1.5 py-0.5 text-[0.625rem] text-[#94A3B8]">
+                      {selectedLayers.size + selectedOverlays.size}
+                    </span>
+                    <ChevronsDown size={14} className="text-[#94A3B8]" strokeWidth={2} />
+                  </span>
+                </button>
+              ) : (
+                <div className="relative">
+                  <MapDataLayersPanel
+                    selectedLayers={selectedLayers}
+                    selectedOverlays={selectedOverlays}
+                    fillLayer={fillLayer}
+                    riskDimension={riskDimension}
+                    onToggleLayer={toggleDataLayer}
+                    onToggleOverlay={toggleOverlay}
+                    onRiskDimensionChange={setRiskDimension}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsLayersPanelCollapsed(true)}
+                    aria-label="Collapse data layers"
+                    title="Collapse"
+                    className="absolute top-1.5 right-2 z-[2] flex size-7 items-center justify-center rounded-lg text-[#64748B] transition-colors hover:bg-[#1E293B] hover:text-[#E2E8F0]"
+                  >
+                    <ChevronsUp size={14} strokeWidth={2} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {(selectedLayers.size > 0 ||
+              selectedOverlays.size > 0 ||
+              promptLegendSections.length > 0) &&
+              !(selectedRegion && !activeFlowId) && (
+              <div className="mt-auto min-h-0 shrink">
+                <MapLayersLegend
                   selectedLayers={selectedLayers}
                   selectedOverlays={selectedOverlays}
                   fillLayer={fillLayer}
-                  riskDimension={riskDimension}
-                  onToggleLayer={toggleDataLayer}
-                  onToggleOverlay={toggleOverlay}
-                  onRiskDimensionChange={setRiskDimension}
+                  promptSections={promptLegendSections}
                 />
-                <button
-                  type="button"
-                  onClick={() => setIsLayersPanelCollapsed(true)}
-                  aria-label="Collapse data layers"
-                  title="Collapse"
-                  className="absolute top-2.5 right-2.5 flex size-7 items-center justify-center rounded-lg text-[#64748B] transition-colors hover:bg-[#1E293B] hover:text-[#E2E8F0]"
-                >
-                  <ChevronsUp size={14} strokeWidth={2} />
-                </button>
               </div>
             )}
           </div>
         )}
 
-        {/* Mobile layers affordance */}
-        {intelligenceEnabled && isMobileViewport && (
-          <div className="absolute top-3 left-3 z-[14]">
-            {isLayersPanelCollapsed ? (
-              <button
-                type="button"
-                onClick={() => setIsLayersPanelCollapsed(false)}
-                className="flex items-center gap-2 rounded-xl border border-[#1E293B] bg-[#0F172A]/92 px-3 py-2 text-[0.75rem] font-semibold text-[#E2E8F0] shadow-lg backdrop-blur-md"
-              >
-                Layers · {selectedLayers.size}
-              </button>
-            ) : (
-              <div className="relative max-h-[55vh]">
-                <MapDataLayersPanel
-                  className="max-h-[55vh] w-[min(100vw-1.5rem,220px)]"
+        {/* Mobile: layers top-left, legend bottom */}
+        {showIntelligenceChrome && isMobileViewport && (
+          <>
+            <div className="absolute top-3 left-3 z-[14] w-[220px] max-w-[calc(100vw-1.5rem)]">
+              {isLayersPanelCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setIsLayersPanelCollapsed(false)}
+                  className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#1E293B]/90 bg-[#0F172A]/92 px-3 py-2 shadow-lg backdrop-blur-md transition-colors hover:border-[#334155]"
+                  aria-expanded={false}
+                  aria-label="Expand data layers"
+                >
+                  <span className="text-[0.6875rem] font-semibold tracking-[0.08em] text-white uppercase">
+                    Data layers
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="rounded-md bg-[#1E293B] px-1.5 py-0.5 text-[0.625rem] text-[#94A3B8]">
+                      {selectedLayers.size + selectedOverlays.size}
+                    </span>
+                    <ChevronsDown size={14} className="text-[#94A3B8]" strokeWidth={2} />
+                  </span>
+                </button>
+              ) : (
+                <div className="relative">
+                  <MapDataLayersPanel
+                    className="w-full [&_.map-legend-scroll]:max-h-[min(32vh,260px)]"
+                    selectedLayers={selectedLayers}
+                    selectedOverlays={selectedOverlays}
+                    fillLayer={fillLayer}
+                    riskDimension={riskDimension}
+                    onToggleLayer={toggleDataLayer}
+                    onToggleOverlay={toggleOverlay}
+                    onRiskDimensionChange={setRiskDimension}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsLayersPanelCollapsed(true)}
+                    aria-label="Collapse data layers"
+                    title="Collapse"
+                    className="absolute top-1.5 right-2 z-[2] flex size-7 items-center justify-center rounded-lg text-[#64748B] transition-colors hover:bg-[#1E293B] hover:text-[#E2E8F0]"
+                  >
+                    <ChevronsUp size={14} strokeWidth={2} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {(selectedLayers.size > 0 ||
+              selectedOverlays.size > 0 ||
+              promptLegendSections.length > 0) &&
+              !(selectedRegion && !activeFlowId) && (
+              <div className="absolute right-3 bottom-[5.75rem] z-[13] w-[220px] max-w-[calc(100vw-1.5rem)]">
+                <MapLayersLegend
+                  className="w-full"
                   selectedLayers={selectedLayers}
                   selectedOverlays={selectedOverlays}
                   fillLayer={fillLayer}
-                  riskDimension={riskDimension}
-                  onToggleLayer={toggleDataLayer}
-                  onToggleOverlay={toggleOverlay}
-                  onRiskDimensionChange={setRiskDimension}
+                  promptSections={promptLegendSections}
                 />
-                <button
-                  type="button"
-                  onClick={() => setIsLayersPanelCollapsed(true)}
-                  aria-label="Collapse data layers"
-                  title="Collapse"
-                  className="absolute top-2.5 right-2.5 flex size-7 items-center justify-center rounded-lg text-[#64748B] transition-colors hover:bg-[#1E293B] hover:text-[#E2E8F0]"
-                >
-                  <ChevronsUp size={14} strokeWidth={2} />
-                </button>
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Region detail dossier — docked to the right edge of the map */}
-        {intelligenceEnabled && selectedRegion && (
+        {showIntelligenceChrome && selectedRegion && !activeFlowId && (
           <div
             className={cn(
               'pointer-events-none absolute top-3 bottom-3 z-[16] flex items-stretch justify-end',
@@ -2463,59 +2609,6 @@ export function MapView() {
                 isMobileViewport ? 'ml-auto w-full max-w-md' : 'w-[380px]',
               )}
             />
-          </div>
-        )}
-
-        {/* Dynamic legend for active intelligence layers */}
-        {intelligenceEnabled &&
-          (selectedLayers.size > 0 || selectedOverlays.size > 0) &&
-          !selectedRegion && (
-            <div
-              className={cn(
-                'absolute z-[13]',
-                isMobileViewport
-                  ? 'right-3 bottom-[5.75rem]'
-                  : 'bottom-10 left-3',
-              )}
-            >
-              <MapLayersLegend
-                selectedLayers={selectedLayers}
-                selectedOverlays={selectedOverlays}
-                fillLayer={fillLayer}
-              />
-            </div>
-          )}
-
-        {/* Map Legend */}
-        {currentStep && !isMapLoading && (
-          <div className="absolute top-14 left-4 z-10 bg-[#0F172A]/90 backdrop-blur-sm rounded-xl border border-[#1E293B] shadow-lg p-4 min-w-[200px]" style={{ marginTop: activeFilters.length > 0 ? '8px' : '0' }}>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-[0.6875rem] font-semibold text-[#64748B]">{currentStep.legendTitle}</h4>
-              <button
-                onClick={handleReset}
-                className={cn(iconButtonSmClass, 'size-5 text-[#64748B] hover:bg-transparent hover:text-[#CBD5E1]')}
-              >
-                <X size={14} />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {currentStep.legendItems.map((item, i) => (
-                <div key={i} className="flex items-center gap-2.5">
-                  {item.type === 'circle' ? (
-                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: item.color, border: item.color.includes('rgba') ? `1px dashed ${item.color}` : undefined }} />
-                  ) : item.type === 'line' ? (
-                    <div className="w-4 h-0.5 flex-shrink-0 rounded" style={{ background: item.color }} />
-                  ) : item.type === 'hatch' ? (
-                    <div className="w-4 h-3 rounded-sm flex-shrink-0 relative overflow-hidden" style={{ background: item.color }}>
-                      <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(255,255,255,0.3) 2px, rgba(255,255,255,0.3) 4px)' }} />
-                    </div>
-                  ) : (
-                    <div className="w-4 h-3 rounded-sm flex-shrink-0" style={{ background: item.color }} />
-                  )}
-                  <span className="text-[0.75rem] text-[#CBD5E1]">{item.label}</span>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast as sonnerToast } from 'sonner';
 import {
   createAiWorkflowDraft,
   formatWorkflowUpdatedAt,
@@ -53,6 +54,64 @@ export function ManageWorkflows() {
       persistWorkflows((prev) => prev.map((wf) => (wf.id === updated.id ? updated : wf)));
     },
     [persistWorkflows],
+  );
+
+  const handlePublishFromList = useCallback(
+    (id: string) => {
+      const target = workflows.find((w) => w.id === id);
+      if (!target) return;
+
+      if (isAiWorkflow(target)) {
+        if (!target.definition || !workflowDefinitionComplete(target.definition)) {
+          sonnerToast.error('Finish step prompts before publishing');
+          return;
+        }
+      }
+
+      persistWorkflows((prev) =>
+        prev.map((w) => {
+          if (w.id !== id) return w;
+          return {
+            ...w,
+            status: 'live' as const,
+            publishedToCatalog: true,
+            catalogUserGroups: w.accessViewers ?? w.catalogUserGroups ?? [],
+            updatedAt: formatWorkflowUpdatedAt(),
+          };
+        }),
+      );
+      sonnerToast.success('Workflow published');
+    },
+    [persistWorkflows, workflows],
+  );
+
+  const handleUnpublish = useCallback(
+    (id: string) => {
+      persistWorkflows((prev) =>
+        prev.map((w) => {
+          if (w.id !== id) return w;
+          return {
+            ...w,
+            status: 'draft' as const,
+            publishedToCatalog: false,
+            updatedAt: formatWorkflowUpdatedAt(),
+          };
+        }),
+      );
+      sonnerToast.success('Workflow unpublished');
+    },
+    [persistWorkflows],
+  );
+
+  const handleDelete = useCallback(
+    (id: string) => {
+      persistWorkflows((prev) => prev.filter((w) => w.id !== id));
+      if (activeWorkflowId === id) {
+        setActiveWorkflowId(null);
+        setView('list');
+      }
+    },
+    [activeWorkflowId, persistWorkflows],
   );
 
   const activeWorkflow = workflows.find((wf) => wf.id === activeWorkflowId) ?? null;
@@ -357,6 +416,9 @@ export function ManageWorkflows() {
       <ManageWorkflowsList
         workflows={workflows}
         onCreate={startCreate}
+        onPublish={handlePublishFromList}
+        onUnpublish={handleUnpublish}
+        onDelete={handleDelete}
         onConfigure={(id) => {
           const wf = workflows.find((w) => w.id === id);
           if (!wf) return;

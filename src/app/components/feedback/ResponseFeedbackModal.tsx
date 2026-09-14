@@ -52,8 +52,8 @@ export function ResponseFeedbackModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">
+          <div>
+            <label className="mb-1 block text-sm text-muted-foreground">
               Please provide details: (optional)
             </label>
             <textarea

@@ -4,7 +4,7 @@ const heroImage = '/branding/login-hero-somalia.png';
 
 export function AuthHeroPanel() {
   return (
-    <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden rounded-3xl">
+    <div className="hidden lg:flex lg:w-[52%] relative overflow-hidden rounded-3xl h-full shrink-0">
       <ImageWithFallback
         src={heroImage}
         alt="Aerial view of Somalia coastline"

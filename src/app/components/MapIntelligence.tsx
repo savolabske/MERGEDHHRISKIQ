@@ -1,6 +1,5 @@
 import {
   History,
-  SendHorizontal,
   Tent,
   Shield,
   CloudRain,
@@ -2141,10 +2140,19 @@ export function MapIntelligence() {
                   ) : (
                     <button
                       onClick={() => submitMapQuery(mapQuery, { isFollowUp: chatMessages.length > 0 })}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle hover:text-muted-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                       disabled={!mapQuery.trim()}
+                      aria-label="Send"
                     >
-                      <SendHorizontal size={18} />
+                      <svg width="14" height="14" viewBox="0 0 18 18" fill="none" aria-hidden>
+                        <path
+                          d="M16.5 1.5L8.25 9.75M16.5 1.5L11.25 16.5L8.25 9.75M16.5 1.5L1.5 6.75L8.25 9.75"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                     </button>
                   )}
                 </div>

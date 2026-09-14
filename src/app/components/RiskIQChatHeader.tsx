@@ -1,4 +1,4 @@
-import { UserPlus } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { BackLink } from './ui/back-link';
 
 interface RiskIQChatHeaderProps {
@@ -18,7 +18,7 @@ export function RiskIQChatHeader({ onBack, onInvite }: RiskIQChatHeaderProps) {
               onClick={onInvite}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-foreground-emphasis text-sm font-medium transition-colors"
             >
-              <UserPlus size={16} className="text-muted-foreground" />
+              <ArrowRight size={16} className="text-muted-foreground" strokeWidth={2.25} />
               <span>Invite</span>
             </button>
           ) : null}

@@ -12,4 +12,14 @@ if (hasMapboxAccessToken()) {
   mapboxgl.accessToken = mapboxAccessToken;
 }
 
+/** GIS map basemap schemes — night is the product default. */
+export type MapBasemapTheme = 'dark' | 'light';
+
+export const MAP_BASEMAP_STYLES: Record<MapBasemapTheme, string> = {
+  dark: 'mapbox://styles/mapbox/navigation-night-v1',
+  light: 'mapbox://styles/mapbox/navigation-day-v1',
+};
+
+export const DEFAULT_MAP_BASEMAP_THEME: MapBasemapTheme = 'dark';
+
 export { mapboxgl };
