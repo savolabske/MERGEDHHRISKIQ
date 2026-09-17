@@ -655,8 +655,9 @@ export function UsersAccess() {
                   filterCount={2}
                   filters={
                     <>
-                      <div className="relative min-w-0">
+                      <div className="relative min-w-0 sm:min-w-[140px] sm:w-auto">
                         <button
+                          type="button"
                           onClick={() => setShowRoleDropdown(!showRoleDropdown)}
                           className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
                         >
@@ -668,6 +669,7 @@ export function UsersAccess() {
                             {['All Users', 'Agency', 'Admin', 'Contributor', 'Viewer'].map((role) => (
                               <button
                                 key={role}
+                                type="button"
                                 onClick={() => {
                                   setRoleFilter(role);
                                   setShowRoleDropdown(false);
@@ -681,13 +683,15 @@ export function UsersAccess() {
                         )}
                       </div>
 
-                      <button
-                        type="button"
-                        className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
-                      >
-                        <span className="truncate">All Status</span>
-                        <ChevronDown size={16} className="text-muted-foreground shrink-0" />
-                      </button>
+                      <div className="relative min-w-0 sm:min-w-[140px] sm:w-auto">
+                        <button
+                          type="button"
+                          className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
+                        >
+                          <span className="truncate">All Status</span>
+                          <ChevronDown size={16} className="text-muted-foreground shrink-0" />
+                        </button>
+                      </div>
                     </>
                   }
                 />

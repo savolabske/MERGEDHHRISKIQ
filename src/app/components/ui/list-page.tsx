@@ -82,7 +82,7 @@ export function ListPageSearch({
   id,
 }: ListPageSearchProps) {
   return (
-    <div className={cn('relative min-w-0 flex-1', className)}>
+    <div className={cn('relative min-w-0 flex-1 self-start', className)}>
       <Search
         className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none"
         size={20}
@@ -136,26 +136,26 @@ export function ListPageToolbar({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3">
-        <div className="flex min-w-0 flex-1 gap-2 sm:gap-3 items-stretch">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex min-w-0 flex-1 gap-2 sm:gap-3 items-center">
           {search && <ListPageSearch {...search} />}
           {/* Trailing (e.g. Filters) sits beside search when there are no inline filter selects */}
           {hasTrailing && !hasFilters && (
-            <div className="flex shrink-0 items-stretch">{trailing}</div>
+            <div className="flex shrink-0 items-center">{trailing}</div>
           )}
         </div>
 
         {hasFilters && (
           <div
             className={cn(
-              'grid gap-2 sm:flex sm:shrink-0 sm:flex-wrap sm:items-stretch sm:gap-3',
+              'grid gap-2 sm:flex sm:shrink-0 sm:flex-nowrap sm:items-center sm:gap-3',
               count === 1 ? 'grid-cols-1' : 'grid-cols-2',
             )}
           >
             {filters}
             {hasTrailing && (
-              <div className="col-span-full sm:col-span-1 flex shrink-0 items-stretch sm:contents">
-                <div className="flex w-full sm:w-auto shrink-0 items-stretch">{trailing}</div>
+              <div className="col-span-full sm:col-span-1 flex shrink-0 items-center sm:contents">
+                <div className="flex w-full sm:w-auto shrink-0 items-center">{trailing}</div>
               </div>
             )}
           </div>
