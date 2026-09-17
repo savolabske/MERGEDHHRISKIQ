@@ -9,12 +9,19 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import type { PlatformResource, ResourceUserGroup } from '../../data/resourcesMock';
+import type {
+  PlatformResource,
+  ResourceAccessRole,
+  ResourceGroupAccess,
+  ResourceUserAccess,
+  ResourceUserGroup,
+} from '../../data/resourcesMock';
 import { INITIAL_RESOURCE_USER_GROUPS } from '../../data/resourcesMock';
 import type { ReportResourceLinkContext } from '../../data/reportResourceLink';
 import { Checkbox } from '../ui/checkbox';
 import { chipRemoveClass } from '../ui/interaction';
 import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
+import { PeopleWithAccessList } from './PeopleWithAccessList';
 import { inputClass, textareaClass } from './resourceShared';
 import { UserGroupModal } from './UserGroupModal';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
@@ -24,6 +31,8 @@ import {
   requiredField,
   useFormValidation,
 } from '../ui/form-validation';
+
+const DEFAULT_ACCESS_ROLE: ResourceAccessRole = 'viewer';
 
 interface AddResourceFormProps {
   onBack: () => void;
@@ -44,8 +53,8 @@ export function AddResourceForm({
   const [tagInput, setTagInput] = useState('');
   const [webLinks, setWebLinks] = useState<string[]>([]);
   const [linkInput, setLinkInput] = useState('');
-  const [userGroups, setUserGroups] = useState<string[]>([]);
-  const [individualUsers, setIndividualUsers] = useState<string[]>([]);
+  const [userGroups, setUserGroups] = useState<ResourceGroupAccess[]>([]);
+  const [individualUsers, setIndividualUsers] = useState<ResourceUserAccess[]>([]);
   const [emailInput, setEmailInput] = useState('');
   const [groups, setGroups] = useState<ResourceUserGroup[]>(INITIAL_RESOURCE_USER_GROUPS);
   const [showGroupMenu, setShowGroupMenu] = useState(false);
@@ -112,8 +121,8 @@ export function AddResourceForm({
 
   const addEmail = (raw?: string) => {
     const email = (raw ?? emailInput).trim().replace(/,+$/, '');
-    if (email && !individualUsers.includes(email)) {
-      setIndividualUsers((prev) => [...prev, email]);
+    if (email && !individualUsers.some((u) => u.email === email)) {
+      setIndividualUsers((prev) => [...prev, { email, role: DEFAULT_ACCESS_ROLE }]);
     }
     setEmailInput('');
   };
@@ -164,7 +173,19 @@ export function AddResourceForm({
 
   const toggleUserGroup = (groupName: string) => {
     setUserGroups((prev) =>
-      prev.includes(groupName) ? prev.filter((g) => g !== groupName) : [...prev, groupName],
+      prev.some((g) => g.name === groupName)
+        ? prev.filter((g) => g.name !== groupName)
+        : [...prev, { name: groupName, role: DEFAULT_ACCESS_ROLE }],
+    );
+  };
+
+  const setGroupRole = (name: string, role: ResourceAccessRole) => {
+    setUserGroups((prev) => prev.map((g) => (g.name === name ? { ...g, role } : g)));
+  };
+
+  const setUserRole = (email: string, role: ResourceAccessRole) => {
+    setIndividualUsers((prev) =>
+      prev.map((u) => (u.email === email ? { ...u, role } : u)),
     );
   };
 
@@ -189,7 +210,7 @@ export function AddResourceForm({
         return;
       }
       setGroups((prev) => [...prev, group]);
-      setUserGroups((prev) => [...prev, group.name]);
+      setUserGroups((prev) => [...prev, { name: group.name, role: DEFAULT_ACCESS_ROLE }]);
       toast.success('Group created successfully');
     } else if (editingGroup) {
       const nameTaken = groups.some(
@@ -202,7 +223,9 @@ export function AddResourceForm({
       setGroups((prev) => prev.map((g) => (g.id === group.id ? group : g)));
       if (editingGroup.name !== group.name) {
         setUserGroups((prev) =>
-          prev.map((name) => (name === editingGroup.name ? group.name : name)),
+          prev.map((entry) =>
+            entry.name === editingGroup.name ? { ...entry, name: group.name } : entry,
+          ),
         );
       }
       toast.success('Group updated successfully');
@@ -218,7 +241,7 @@ export function AddResourceForm({
   const confirmDeleteGroup = () => {
     if (!groupToDelete) return;
     setGroups((prev) => prev.filter((g) => g.id !== groupToDelete.id));
-    setUserGroups((prev) => prev.filter((name) => name !== groupToDelete.name));
+    setUserGroups((prev) => prev.filter((entry) => entry.name !== groupToDelete.name));
     setGroupToDelete(null);
     toast.success('Group deleted');
   };
@@ -450,7 +473,7 @@ export function AddResourceForm({
         <section>
           <h3 className="text-sm font-semibold text-foreground mb-1">Access Control</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            This resource will be private. Select user groups or add individual users below.
+            This resource is private. Add groups or people, then set Viewer or Editor for each.
           </p>
 
           <div className="space-y-4">
@@ -495,7 +518,7 @@ export function AddResourceForm({
                             className="flex flex-1 items-center gap-2.5 text-left min-w-0"
                           >
                             <Checkbox
-                              checked={userGroups.includes(group.name)}
+                              checked={userGroups.some((g) => g.name === group.name)}
                               className="pointer-events-none"
                               aria-hidden
                             />
@@ -541,26 +564,6 @@ export function AddResourceForm({
                   </>
                 )}
               </div>
-              {userGroups.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {userGroups.map((g) => (
-                    <span
-                      key={g}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-subtle text-primary text-xs"
-                    >
-                      {g}
-                      <button
-                        type="button"
-                        onClick={() => setUserGroups(userGroups.filter((x) => x !== g))}
-                        className={chipRemoveClass}
-                        aria-label={`Remove group ${g}`}
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div>
@@ -581,29 +584,20 @@ export function AddResourceForm({
                 placeholder="Add users by email (type comma or space to add)..."
                 className={inputClass}
               />
-              {individualUsers.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {individualUsers.map((email) => (
-                    <span
-                      key={email}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-subtle text-primary text-xs font-medium"
-                    >
-                      {email}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setIndividualUsers(individualUsers.filter((e) => e !== email))
-                        }
-                        className={chipRemoveClass}
-                        aria-label={`Remove ${email}`}
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
+
+            <PeopleWithAccessList
+              userGroups={userGroups}
+              individualUsers={individualUsers}
+              onChangeGroupRole={setGroupRole}
+              onRemoveGroup={(name) =>
+                setUserGroups((prev) => prev.filter((g) => g.name !== name))
+              }
+              onChangeUserRole={setUserRole}
+              onRemoveUser={(email) =>
+                setIndividualUsers((prev) => prev.filter((u) => u.email !== email))
+              }
+            />
           </div>
         </section>
       </div>

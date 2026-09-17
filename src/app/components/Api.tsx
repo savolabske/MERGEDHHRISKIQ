@@ -441,7 +441,7 @@ export function Api() {
           </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 pt-4">
           <ListPageSearch
             value={searchQuery}
             onChange={setSearchQuery}

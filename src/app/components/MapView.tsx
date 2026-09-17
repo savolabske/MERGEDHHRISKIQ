@@ -11,7 +11,13 @@ import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { ChatStopButton } from './ui/ChatStopButton';
 import { ComposerSendButton } from './ui/ComposerSendButton';
 import { useKeyboardBottomInset } from '../hooks/useKeyboardBottomInset';
-import { hasMapboxAccessToken, mapboxgl, MAP_BASEMAP_STYLES, DEFAULT_MAP_BASEMAP_THEME, type MapBasemapTheme } from '../config/mapbox';
+import {
+  hasMapboxAccessToken,
+  mapboxgl,
+  MAP_BASEMAP_STYLES,
+  DEFAULT_MAP_BASEMAP_THEME,
+  type MapBasemapTheme,
+} from '../config/mapbox';
 import {
   DEFAULT_SELECTED_LAYERS,
   DEFAULT_SELECTED_OVERLAYS,

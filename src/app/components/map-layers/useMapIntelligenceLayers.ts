@@ -42,6 +42,10 @@ const LAYER_PORTS = 'intel-ports-circle';
 const LAYER_ROADS = 'intel-roads-line';
 const LAYER_WATERS = 'intel-waters-fill';
 const LAYER_DROUGHT_LABELS = 'intel-drought-labels';
+const LAYER_REGION_LABELS = 'intel-region-labels';
+const LAYER_ALERT_LABELS = 'intel-alert-labels';
+const LAYER_PORT_LABELS = 'intel-port-labels';
+const LAYER_DISPLACEMENT_LABELS = 'intel-displacement-labels';
 
 const ALL_LAYER_IDS = [
   LAYER_WATERS,
@@ -54,6 +58,10 @@ const ALL_LAYER_IDS = [
   LAYER_ALERTS,
   LAYER_PORTS,
   LAYER_DROUGHT_LABELS,
+  LAYER_REGION_LABELS,
+  LAYER_ALERT_LABELS,
+  LAYER_PORT_LABELS,
+  LAYER_DISPLACEMENT_LABELS,
 ];
 
 const ALL_SOURCE_IDS = [
@@ -245,6 +253,7 @@ export function useMapIntelligenceLayers({
           id: LAYER_WATERS,
           type: 'fill',
           source: SOURCE_WATERS,
+          slot: 'middle',
           paint: {
             'fill-color': '#38BDF8',
             'fill-opacity': 0.22,
@@ -258,6 +267,7 @@ export function useMapIntelligenceLayers({
           id: LAYER_FILL,
           type: 'fill',
           source: SOURCE_ADM1,
+          slot: 'middle',
           paint: {
             'fill-color': ['get', 'fillColor'],
             'fill-opacity': ['get', 'fillOpacity'],
@@ -271,6 +281,7 @@ export function useMapIntelligenceLayers({
           id: LAYER_OUTLINE,
           type: 'line',
           source: SOURCE_ADM1,
+          slot: 'middle',
           paint: {
             'line-color': outlineColor,
             'line-width': 1,
@@ -287,6 +298,7 @@ export function useMapIntelligenceLayers({
           id: LAYER_HIGHLIGHT,
           type: 'line',
           source: SOURCE_ADM1,
+          slot: 'middle',
           paint: {
             'line-color': '#38BDF8',
             'line-width': 2.5,
@@ -302,6 +314,7 @@ export function useMapIntelligenceLayers({
           id: LAYER_ROADS,
           type: 'line',
           source: SOURCE_ROADS,
+          slot: 'middle',
           paint: {
             'line-color': isLight ? '#64748B' : '#94A3B8',
             'line-width': 2,
@@ -397,6 +410,119 @@ export function useMapIntelligenceLayers({
         });
       } else {
         map.setPaintProperty(LAYER_DROUGHT_LABELS, 'text-halo-color', droughtHalo);
+      }
+
+      const labelColor = isLight ? '#0F172A' : '#F8FAFC';
+      const labelHalo = droughtHalo;
+
+      if (!map.getLayer(LAYER_REGION_LABELS)) {
+        map.addLayer({
+          id: LAYER_REGION_LABELS,
+          type: 'symbol',
+          source: SOURCE_ADM1,
+          minzoom: 5.5,
+          layout: {
+            'text-field': ['get', 'regionName'],
+            'text-size': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              5.5, 10,
+              8, 13,
+            ],
+            'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
+            'text-allow-overlap': false,
+            'text-ignore-placement': false,
+            visibility: 'none',
+          },
+          paint: {
+            'text-color': labelColor,
+            'text-halo-color': labelHalo,
+            'text-halo-width': 1.4,
+          },
+          filter: ['!=', ['get', 'regionName'], ''],
+        });
+      } else {
+        map.setPaintProperty(LAYER_REGION_LABELS, 'text-color', labelColor);
+        map.setPaintProperty(LAYER_REGION_LABELS, 'text-halo-color', labelHalo);
+      }
+
+      if (!map.getLayer(LAYER_ALERT_LABELS)) {
+        map.addLayer({
+          id: LAYER_ALERT_LABELS,
+          type: 'symbol',
+          source: SOURCE_ALERTS,
+          minzoom: 7,
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': 11,
+            'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
+            'text-offset': [0, 1.25],
+            'text-anchor': 'top',
+            'text-allow-overlap': false,
+            visibility: 'none',
+          },
+          paint: {
+            'text-color': labelColor,
+            'text-halo-color': labelHalo,
+            'text-halo-width': 1.2,
+          },
+        });
+      } else {
+        map.setPaintProperty(LAYER_ALERT_LABELS, 'text-color', labelColor);
+        map.setPaintProperty(LAYER_ALERT_LABELS, 'text-halo-color', labelHalo);
+      }
+
+      if (!map.getLayer(LAYER_PORT_LABELS)) {
+        map.addLayer({
+          id: LAYER_PORT_LABELS,
+          type: 'symbol',
+          source: SOURCE_PORTS,
+          minzoom: 6,
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': 12,
+            'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
+            'text-offset': [0, 1.15],
+            'text-anchor': 'top',
+            'text-allow-overlap': false,
+            visibility: 'none',
+          },
+          paint: {
+            'text-color': labelColor,
+            'text-halo-color': labelHalo,
+            'text-halo-width': 1.3,
+          },
+        });
+      } else {
+        map.setPaintProperty(LAYER_PORT_LABELS, 'text-color', labelColor);
+        map.setPaintProperty(LAYER_PORT_LABELS, 'text-halo-color', labelHalo);
+      }
+
+      if (!map.getLayer(LAYER_DISPLACEMENT_LABELS)) {
+        map.addLayer({
+          id: LAYER_DISPLACEMENT_LABELS,
+          type: 'symbol',
+          source: SOURCE_DISPLACEMENT,
+          minzoom: 6.5,
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': 11,
+            'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
+            'text-offset': [0, 1.35],
+            'text-anchor': 'top',
+            'text-allow-overlap': false,
+            visibility: 'none',
+          },
+          paint: {
+            'text-color': labelColor,
+            'text-halo-color': labelHalo,
+            'text-halo-width': 1.2,
+          },
+        });
+      } else {
+        map.setPaintProperty(LAYER_DISPLACEMENT_LABELS, 'text-color', labelColor);
+        map.setPaintProperty(LAYER_DISPLACEMENT_LABELS, 'text-halo-color', labelHalo);
       }
     },
     [riskDimension],
@@ -539,6 +665,10 @@ export function useMapIntelligenceLayers({
       setVisibility(map, LAYER_ALERTS_GLOW, selectedLayers.has('alerts'));
       setVisibility(map, LAYER_DISPLACEMENT, selectedLayers.has('displacement'));
       setVisibility(map, LAYER_DROUGHT_LABELS, selectedLayers.has('drought'));
+      setVisibility(map, LAYER_REGION_LABELS, showOutline);
+      setVisibility(map, LAYER_ALERT_LABELS, selectedLayers.has('alerts'));
+      setVisibility(map, LAYER_PORT_LABELS, selectedOverlays.has('sea-ports'));
+      setVisibility(map, LAYER_DISPLACEMENT_LABELS, selectedLayers.has('displacement'));
       setVisibility(map, LAYER_PORTS, selectedOverlays.has('sea-ports'));
       setVisibility(map, LAYER_ROADS, selectedOverlays.has('roads'));
       setVisibility(map, LAYER_WATERS, selectedOverlays.has('detected-waters'));

@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Mail, Eye, EyeOff } from 'lucide-react';
 import { AuthPageLayout } from './AuthPageLayout';
+import { TERMS_PAGE_HREF } from './TermsAndConditionsPage';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import {
   FieldError,
@@ -25,7 +26,8 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsError, setTermsError] = useState<string | undefined>();
   const formRef = useRef<HTMLFormElement>(null);
   const { errors, validate } = useFormValidation(
     { email, password },
@@ -37,7 +39,17 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate(formRef.current)) return;
+    const fieldsOk = validate(formRef.current);
+    const nextTermsError = acceptedTerms
+      ? undefined
+      : 'You must agree to the terms and conditions';
+    setTermsError(nextTermsError);
+    if (!fieldsOk || nextTermsError) {
+      if (fieldsOk && nextTermsError) {
+        document.getElementById('login-terms')?.focus();
+      }
+      return;
+    }
     onLogin();
   };
 
@@ -111,23 +123,59 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
           <FieldError id="login-password" message={errors.password} />
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => setRememberMe(!rememberMe)}
-            className={`w-4 h-4 rounded border border-border-muted flex items-center justify-center flex-shrink-0 transition-all focus:outline-none focus:ring-3 focus:ring-primary/20 ${
-              rememberMe
-                ? 'bg-primary border-primary'
-                : 'bg-card hover:border-text-subtle'
-            }`}
-          >
-            {rememberMe && (
-              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </button>
-          <span className="text-sm text-foreground">Remember me</span>
+        <div>
+          <div className="flex items-start gap-2.5">
+            <button
+              type="button"
+              id="login-terms"
+              role="checkbox"
+              aria-checked={acceptedTerms}
+              aria-invalid={Boolean(termsError) || undefined}
+              aria-describedby={termsError ? 'login-terms-error' : undefined}
+              onClick={() => {
+                setAcceptedTerms((prev) => {
+                  const next = !prev;
+                  if (next) setTermsError(undefined);
+                  return next;
+                });
+              }}
+              className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all focus:outline-none focus:ring-3 focus:ring-primary/20 ${
+                termsError
+                  ? 'border-destructive'
+                  : 'border-border-muted'
+              } ${
+                acceptedTerms
+                  ? 'bg-primary border-primary'
+                  : 'bg-card hover:border-text-subtle'
+              }`}
+            >
+              {acceptedTerms && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden>
+                  <path
+                    d="M1 4L3.5 6.5L9 1"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+            <p className="text-sm text-foreground leading-snug">
+              <label htmlFor="login-terms" className="cursor-pointer">
+                By signing in you agree to the{' '}
+              </label>
+              <a
+                href={TERMS_PAGE_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary hover:text-primary-hover hover:underline transition-colors"
+              >
+                Terms and Conditions
+              </a>
+            </p>
+          </div>
+          <FieldError id="login-terms" message={termsError} />
         </div>
 
         <button

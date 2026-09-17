@@ -5,6 +5,7 @@ import {
   Clock,
   Globe,
   User,
+  Users,
   Edit2,
   MessagesSquare,
 } from 'lucide-react';
@@ -15,11 +16,11 @@ import {
   OwnershipBadge,
   ChatsAvailabilityBadge,
   SidebarTagBadge,
-  SidebarUserGroupBadge,
   DetailSectionTitle,
   DetailFieldLabel,
   DetailEmptyValue,
 } from './resourceShared';
+import { ResourceAccessRoleBadge } from './PeopleWithAccessList';
 import { ResourceDocumentsList } from './ResourceDocumentsList';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
 import { Button } from '../ui/button';
@@ -150,9 +151,20 @@ export function ResourceDetailView({
             <div>
               <DetailFieldLabel>User Group</DetailFieldLabel>
               {resource.userGroups.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
                   {resource.userGroups.map((group) => (
-                    <SidebarUserGroupBadge key={group} group={group} />
+                    <div
+                      key={group.name}
+                      className="flex items-center justify-between gap-2 text-sm text-foreground"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <Users size={14} className="text-muted-foreground" />
+                        </span>
+                        <span className="truncate font-medium">{group.name}</span>
+                      </div>
+                      <ResourceAccessRoleBadge role={group.role} />
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -164,12 +176,18 @@ export function ResourceDetailView({
               <DetailFieldLabel>Individual Users</DetailFieldLabel>
               {individualUsers.length > 0 ? (
                 <div className="space-y-2">
-                  {visibleIndividualUsers.map((email) => (
-                    <div key={email} className="flex items-center gap-2 text-sm text-foreground">
-                      <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                        <User size={14} className="text-muted-foreground" />
-                      </span>
-                      <span className="truncate">{email}</span>
+                  {visibleIndividualUsers.map((user) => (
+                    <div
+                      key={user.email}
+                      className="flex items-center justify-between gap-2 text-sm text-foreground"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <User size={14} className="text-muted-foreground" />
+                        </span>
+                        <span className="truncate">{user.email}</span>
+                      </div>
+                      <ResourceAccessRoleBadge role={user.role} />
                     </div>
                   ))}
                   {individualUsers.length > 2 && !showAllIndividualUsers && (

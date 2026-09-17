@@ -293,7 +293,7 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
                 </button>
                 <p className="text-sm text-foreground leading-snug">
                   <label htmlFor="signup-terms" className="cursor-pointer">
-                    I agree to the{' '}
+                    By registering you agree to the{' '}
                   </label>
                   <a
                     href={TERMS_PAGE_HREF}
@@ -301,7 +301,7 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
                     rel="noopener noreferrer"
                     className="font-medium text-primary hover:text-primary-hover hover:underline transition-colors"
                   >
-                    Terms and conditions
+                    Terms and Conditions
                   </a>
                 </p>
               </div>

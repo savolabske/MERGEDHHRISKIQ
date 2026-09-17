@@ -29,6 +29,7 @@ import {
   Map,
   BarChart3,
   Lock,
+  Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProgressiveList } from '../hooks/useProgressiveList';
@@ -42,11 +43,13 @@ import {
   listFilterTriggerClass,
   menuItemClass,
   paginationControlClass,
+  textLinkActionClass,
 } from './ui/interaction';
 import { cn } from './ui/utils';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { ResourceFileUploadModal } from './ResourceFileUploadModal';
 import { Button } from './ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import {
   ListPageHeader,
   ListPageToolbar,
@@ -1552,10 +1555,10 @@ export function Documents({
   const [userGroupFilter, setUserGroupFilter] = useState('All Groups');
   const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
   const [tagFilterSearchQuery, setTagFilterSearchQuery] = useState('');
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  const [showAvailabilityFilterDropdown, setShowAvailabilityFilterDropdown] = useState(false);
-  const [showUserGroupFilterDropdown, setShowUserGroupFilterDropdown] = useState(false);
-  const [showTagFilterDropdown, setShowTagFilterDropdown] = useState(false);
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [openFilterField, setOpenFilterField] = useState<
+    null | 'status' | 'destination' | 'group' | 'tags'
+  >(null);
   const [showBulkActionsDropdown, setShowBulkActionsDropdown] = useState(false);
   const [detailSearchQuery, setDetailSearchQuery] = useState('');
   const [detailCurrentPage, setDetailCurrentPage] = useState(1);
@@ -1611,10 +1614,6 @@ export function Documents({
   const [showEditTagsDropdown, setShowEditTagsDropdown] = useState(false);
   const [editTagSearchQuery, setEditTagSearchQuery] = useState('');
 
-  const statusDropdownRef = useRef<HTMLDivElement>(null);
-  const availabilityFilterDropdownRef = useRef<HTMLDivElement>(null);
-  const userGroupFilterDropdownRef = useRef<HTMLDivElement>(null);
-  const tagFilterDropdownRef = useRef<HTMLDivElement>(null);
   const bulkActionsDropdownRef = useRef<HTMLDivElement>(null);
   const userGroupDropdownRef = useRef<HTMLDivElement>(null);
   const tagsDropdownRef = useRef<HTMLDivElement>(null);
@@ -1633,18 +1632,6 @@ export function Documents({
   // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
-        setShowStatusDropdown(false);
-      }
-      if (availabilityFilterDropdownRef.current && !availabilityFilterDropdownRef.current.contains(event.target as Node)) {
-        setShowAvailabilityFilterDropdown(false);
-      }
-      if (userGroupFilterDropdownRef.current && !userGroupFilterDropdownRef.current.contains(event.target as Node)) {
-        setShowUserGroupFilterDropdown(false);
-      }
-      if (tagFilterDropdownRef.current && !tagFilterDropdownRef.current.contains(event.target as Node)) {
-        setShowTagFilterDropdown(false);
-      }
       if (bulkActionsDropdownRef.current && !bulkActionsDropdownRef.current.contains(event.target as Node)) {
         setShowBulkActionsDropdown(false);
       }
@@ -1696,10 +1683,11 @@ export function Documents({
   }, [detailFileMenuAnchor]);
 
   useEffect(() => {
-    if (!showTagFilterDropdown) {
+    if (!showFiltersPanel) {
+      setOpenFilterField(null);
       setTagFilterSearchQuery('');
     }
-  }, [showTagFilterDropdown]);
+  }, [showFiltersPanel]);
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1756,6 +1744,54 @@ export function Documents({
       : selectedTagFilters.length === 1
         ? selectedTagFilters[0]
         : `${selectedTagFilters.length} tags`;
+
+  const toggleFilterField = (field: 'status' | 'destination' | 'group' | 'tags') => {
+    setOpenFilterField((current) => (current === field ? null : field));
+  };
+
+  const activeFilterChips: { id: string; label: string; onClear: () => void }[] = [];
+  if (statusFilter !== 'All Status') {
+    activeFilterChips.push({
+      id: 'status',
+      label: `Status: ${statusFilter}`,
+      onClear: () => setStatusFilter('All Status'),
+    });
+  }
+  if (availabilityFilter !== 'All Destinations') {
+    activeFilterChips.push({
+      id: 'destination',
+      label: `Destination: ${availabilityFilter}`,
+      onClear: () => setAvailabilityFilter('All Destinations'),
+    });
+  }
+  if (userGroupFilter !== 'All Groups') {
+    activeFilterChips.push({
+      id: 'group',
+      label: `Group: ${userGroupFilter}`,
+      onClear: () => setUserGroupFilter('All Groups'),
+    });
+  }
+  selectedTagFilters.forEach((tag) => {
+    const display = normalizeTagValue(tag);
+    activeFilterChips.push({
+      id: `tag-${display.toLowerCase()}`,
+      label: `Tag: ${display}`,
+      onClear: () =>
+        setSelectedTagFilters((prev) =>
+          prev.filter((t) => normalizeTagValue(t).toLowerCase() !== display.toLowerCase()),
+        ),
+    });
+  });
+
+  const activeFiltersCount = activeFilterChips.length;
+
+  const clearAllFilters = () => {
+    setStatusFilter('All Status');
+    setAvailabilityFilter('All Destinations');
+    setUserGroupFilter('All Groups');
+    setSelectedTagFilters([]);
+    setOpenFilterField(null);
+  };
 
   const normalizedTagQuery = normalizeTagValue(tagSearchQuery).toLowerCase();
   const filteredTags = availableTags.filter((tag) => normalizeTagValue(tag).toLowerCase().includes(normalizedTagQuery));
@@ -4093,188 +4129,359 @@ export function Documents({
               }
             />
 
-            {/* Search and Filter */}
+            {/* Search + Filters popover card (anchored to Filters button) + active chips */}
             <ListPageToolbar
               search={{
                 value: searchQuery,
                 onChange: setSearchQuery,
                 placeholder: 'Search resources...',
               }}
-              filterCount={4}
-              filters={
-                <>
-                {/* Status Filter Dropdown */}
-                <div className="relative min-w-0" ref={statusDropdownRef}>
-                  <button
-                    onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                    className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
+              trailing={
+                <Popover open={showFiltersPanel} onOpenChange={setShowFiltersPanel}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        listFilterTriggerClass,
+                        'shrink-0 py-2.5',
+                        (showFiltersPanel || activeFiltersCount > 0) &&
+                          'border-primary bg-primary-subtle text-primary',
+                        !(showFiltersPanel || activeFiltersCount > 0) && 'text-muted-foreground',
+                      )}
+                      aria-expanded={showFiltersPanel}
+                    >
+                      <Filter size={18} />
+                      Filters
+                      {activeFiltersCount > 0 && (
+                        <span className="px-2 py-0.5 bg-primary text-white rounded-full text-xs font-semibold">
+                          {activeFiltersCount}
+                        </span>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="end"
+                    sideOffset={8}
+                    className="w-[min(calc(100vw-2rem),30rem)] p-0 overflow-visible rounded-xl border-border shadow-lg"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
                   >
-                    <span className="truncate">{statusFilter}</span>
-                    <ChevronDown size={16} className={`text-muted-foreground shrink-0 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                  {showStatusDropdown && (
-                    <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-48 bg-card border border-border rounded-lg shadow-lg z-10">
-                      {['All Status', 'Uploading', 'Completed', 'Processing', 'Pending', 'Failed'].map((status) => (
+                    <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+                      <h3 className="text-sm font-semibold text-foreground">Filters</h3>
+                      {activeFiltersCount > 0 && (
                         <button
-                          key={status}
-                          onClick={() => {
-                            setStatusFilter(status);
-                            setShowStatusDropdown(false);
-                          }}
-                          className={menuItemClass}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Availability Filter Dropdown */}
-                <div className="relative min-w-0" ref={availabilityFilterDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setShowAvailabilityFilterDropdown(!showAvailabilityFilterDropdown)}
-                    className={cn(
-                      listFilterTriggerClass,
-                      'w-full justify-between py-2.5',
-                      (showAvailabilityFilterDropdown || availabilityFilter !== 'All Destinations') &&
-                        'border-primary',
-                    )}
-                  >
-                    <span className="truncate">{availabilityFilter}</span>
-                    <ChevronDown
-                      size={16}
-                      className={`text-muted-foreground shrink-0 transition-transform ${showAvailabilityFilterDropdown ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                  {showAvailabilityFilterDropdown && (
-                    <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-52 bg-card border border-border rounded-lg shadow-lg z-10">
-                      {AVAILABILITY_FILTER_OPTIONS.map((option) => (
-                        <button
-                          key={option}
                           type="button"
-                          onClick={() => {
-                            setAvailabilityFilter(option);
-                            setShowAvailabilityFilterDropdown(false);
-                          }}
-                          className={cn(
-                            menuItemClass,
-                            availabilityFilter === option
-                              ? 'text-primary font-medium bg-muted'
-                              : 'text-foreground',
-                          )}
+                          onClick={clearAllFilters}
+                          className={cn(textLinkActionClass, 'text-primary-text shrink-0')}
                         >
-                          {option}
+                          Clear all
                         </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* User Group Filter Dropdown */}
-                <div className="relative min-w-0" ref={userGroupFilterDropdownRef}>
-                  <button
-                    onClick={() => setShowUserGroupFilterDropdown(!showUserGroupFilterDropdown)}
-                    className={cn(listFilterTriggerClass, 'w-full justify-between py-2.5')}
-                  >
-                    <span className="truncate">{userGroupFilter}</span>
-                    <ChevronDown size={16} className={`text-muted-foreground shrink-0 transition-transform ${showUserGroupFilterDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                  {showUserGroupFilterDropdown && (
-                    <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-full sm:w-48 bg-card border border-border rounded-lg shadow-lg z-10">
-                      {['All Groups', ...userGroups].map((group) => (
-                        <button
-                          key={group}
-                          onClick={() => {
-                            setUserGroupFilter(group);
-                            setShowUserGroupFilterDropdown(false);
-                          }}
-                          className={menuItemClass}
-                        >
-                          {group}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Tag Filter Dropdown (multi-select + search) */}
-                <div className="relative min-w-0" ref={tagFilterDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setShowTagFilterDropdown(!showTagFilterDropdown)}
-                    className={cn(
-                      listFilterTriggerClass,
-                      'w-full justify-between py-2.5 max-w-none',
-                      (showTagFilterDropdown || selectedTagFilters.length > 0) && 'border-primary',
-                    )}
-                  >
-                    <span className="truncate">{tagFilterButtonLabel}</span>
-                    <ChevronDown size={16} className={`text-muted-foreground shrink-0 transition-transform ${showTagFilterDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                  {showTagFilterDropdown && (
-                    <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 w-[min(100vw-2rem,16rem)] sm:w-64 bg-card border border-border rounded-lg shadow-lg z-10 flex flex-col overflow-hidden">
-                      <div className="p-2 border-b border-border shrink-0">
-                        <div className="relative">
-                          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none" />
-                          <input
-                            type="search"
-                            value={tagFilterSearchQuery}
-                            onChange={(e) => setTagFilterSearchQuery(e.target.value)}
-                            placeholder="Search tags..."
-                            className="w-full pl-8 pr-3 py-2 border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary"
-                            autoComplete="off"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                      </div>
-                      <div className="max-h-[min(280px,calc(100vh-220px))] overflow-y-auto overscroll-contain py-1">
-                        {filteredTagFilterOptions.length === 0 ? (
-                          <p className="px-3 py-3 text-sm text-muted-foreground">No tags match your search.</p>
-                        ) : (
-                          filteredTagFilterOptions.map((tag) => {
-                            const display = normalizeTagValue(tag);
-                            const selected = selectedTagFilters.some(
-                              (t) => normalizeTagValue(t).toLowerCase() === display.toLowerCase()
-                            );
-                            return (
-                              <button
-                                type="button"
-                                key={display}
-                                onClick={() => toggleTagFilterSelection(tag)}
-                                className={cn(menuItemClass, 'flex items-center gap-3 px-3')}
-                              >
-                                <div
-                                  className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
-                                    selected ? 'bg-primary border-primary' : 'border-border-muted'
-                                  }`}
-                                >
-                                  {selected && <Check size={12} className="text-white" strokeWidth={3} />}
-                                </div>
-                                <span className="text-foreground truncate">{display}</span>
-                              </button>
-                            );
-                          })
-                        )}
-                      </div>
-                      {selectedTagFilters.length > 0 && (
-                        <div className="px-2 py-2 border-t border-border shrink-0 bg-surface-subtle">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedTagFilters([])}
-                            className="w-full px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary-subtle rounded-md transition-colors text-center"
-                          >
-                            Clear selection
-                          </button>
-                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-                </>
+
+                    <div className="grid grid-cols-2 gap-3 p-4">
+                      {/* Status */}
+                      <div className="relative min-w-0 space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">Status</label>
+                        <button
+                          type="button"
+                          onClick={() => toggleFilterField('status')}
+                          className={cn(
+                            listFilterTriggerClass,
+                            'w-full justify-between py-2.5',
+                            (openFilterField === 'status' || statusFilter !== 'All Status') &&
+                              'border-primary',
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'truncate',
+                              statusFilter === 'All Status' ? 'text-text-subtle' : 'text-foreground',
+                            )}
+                          >
+                            {statusFilter === 'All Status' ? 'All' : statusFilter}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className={cn(
+                              'text-muted-foreground shrink-0 transition-transform',
+                              openFilterField === 'status' && 'rotate-180',
+                            )}
+                          />
+                        </button>
+                        {openFilterField === 'status' && (
+                          <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-card border border-border rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                            {['All Status', 'Uploading', 'Completed', 'Processing', 'Pending', 'Failed'].map(
+                              (status) => (
+                                <button
+                                  key={status}
+                                  type="button"
+                                  onClick={() => {
+                                    setStatusFilter(status);
+                                    setOpenFilterField(null);
+                                  }}
+                                  className={cn(
+                                    menuItemClass,
+                                    statusFilter === status
+                                      ? 'text-primary font-medium bg-muted'
+                                      : 'text-foreground',
+                                  )}
+                                >
+                                  {status === 'All Status' ? 'All' : status}
+                                </button>
+                              ),
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Destination */}
+                      <div className="relative min-w-0 space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">
+                          Destination
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => toggleFilterField('destination')}
+                          className={cn(
+                            listFilterTriggerClass,
+                            'w-full justify-between py-2.5',
+                            (openFilterField === 'destination' ||
+                              availabilityFilter !== 'All Destinations') &&
+                              'border-primary',
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'truncate',
+                              availabilityFilter === 'All Destinations'
+                                ? 'text-text-subtle'
+                                : 'text-foreground',
+                            )}
+                          >
+                            {availabilityFilter === 'All Destinations' ? 'All' : availabilityFilter}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className={cn(
+                              'text-muted-foreground shrink-0 transition-transform',
+                              openFilterField === 'destination' && 'rotate-180',
+                            )}
+                          />
+                        </button>
+                        {openFilterField === 'destination' && (
+                          <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-card border border-border rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                            {AVAILABILITY_FILTER_OPTIONS.map((option) => (
+                              <button
+                                key={option}
+                                type="button"
+                                onClick={() => {
+                                  setAvailabilityFilter(option);
+                                  setOpenFilterField(null);
+                                }}
+                                className={cn(
+                                  menuItemClass,
+                                  availabilityFilter === option
+                                    ? 'text-primary font-medium bg-muted'
+                                    : 'text-foreground',
+                                )}
+                              >
+                                {option === 'All Destinations' ? 'All' : option}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* User group */}
+                      <div className="relative min-w-0 space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">
+                          User group
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => toggleFilterField('group')}
+                          className={cn(
+                            listFilterTriggerClass,
+                            'w-full justify-between py-2.5',
+                            (openFilterField === 'group' || userGroupFilter !== 'All Groups') &&
+                              'border-primary',
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'truncate',
+                              userGroupFilter === 'All Groups'
+                                ? 'text-text-subtle'
+                                : 'text-foreground',
+                            )}
+                          >
+                            {userGroupFilter === 'All Groups' ? 'All' : userGroupFilter}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className={cn(
+                              'text-muted-foreground shrink-0 transition-transform',
+                              openFilterField === 'group' && 'rotate-180',
+                            )}
+                          />
+                        </button>
+                        {openFilterField === 'group' && (
+                          <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-card border border-border rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                            {['All Groups', ...userGroups].map((group) => (
+                              <button
+                                key={group}
+                                type="button"
+                                onClick={() => {
+                                  setUserGroupFilter(group);
+                                  setOpenFilterField(null);
+                                }}
+                                className={cn(
+                                  menuItemClass,
+                                  userGroupFilter === group
+                                    ? 'text-primary font-medium bg-muted'
+                                    : 'text-foreground',
+                                )}
+                              >
+                                {group === 'All Groups' ? 'All' : group}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Tags */}
+                      <div className="relative min-w-0 space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">Tags</label>
+                        <button
+                          type="button"
+                          onClick={() => toggleFilterField('tags')}
+                          className={cn(
+                            listFilterTriggerClass,
+                            'w-full justify-between py-2.5',
+                            (openFilterField === 'tags' || selectedTagFilters.length > 0) &&
+                              'border-primary',
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'truncate',
+                              selectedTagFilters.length === 0
+                                ? 'text-text-subtle'
+                                : 'text-foreground',
+                            )}
+                          >
+                            {tagFilterButtonLabel === 'All Tags' ? 'All' : tagFilterButtonLabel}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className={cn(
+                              'text-muted-foreground shrink-0 transition-transform',
+                              openFilterField === 'tags' && 'rotate-180',
+                            )}
+                          />
+                        </button>
+                        {openFilterField === 'tags' && (
+                          <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-card border border-border rounded-lg shadow-lg flex flex-col overflow-hidden min-w-[14rem]">
+                            <div className="p-2 border-b border-border shrink-0">
+                              <div className="relative">
+                                <Search
+                                  size={14}
+                                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle pointer-events-none"
+                                />
+                                <input
+                                  type="search"
+                                  value={tagFilterSearchQuery}
+                                  onChange={(e) => setTagFilterSearchQuery(e.target.value)}
+                                  placeholder="Search tags..."
+                                  className="w-full pl-8 pr-3 py-2 border border-border rounded-lg text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary"
+                                  autoComplete="off"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-48 overflow-y-auto overscroll-contain py-1">
+                              {filteredTagFilterOptions.length === 0 ? (
+                                <p className="px-3 py-3 text-sm text-muted-foreground">
+                                  No tags match your search.
+                                </p>
+                              ) : (
+                                filteredTagFilterOptions.map((tag) => {
+                                  const display = normalizeTagValue(tag);
+                                  const selected = selectedTagFilters.some(
+                                    (t) =>
+                                      normalizeTagValue(t).toLowerCase() === display.toLowerCase(),
+                                  );
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={display}
+                                      onClick={() => toggleTagFilterSelection(tag)}
+                                      className={cn(menuItemClass, 'flex items-center gap-3 px-3')}
+                                    >
+                                      <div
+                                        className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
+                                          selected
+                                            ? 'bg-primary border-primary'
+                                            : 'border-border-muted'
+                                        }`}
+                                      >
+                                        {selected && (
+                                          <Check size={12} className="text-white" strokeWidth={3} />
+                                        )}
+                                      </div>
+                                      <span className="text-foreground truncate">{display}</span>
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                            {selectedTagFilters.length > 0 && (
+                              <div className="px-2 py-2 border-t border-border shrink-0 bg-surface-subtle">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTagFilters([])}
+                                  className="w-full px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary-subtle rounded-md transition-colors text-center"
+                                >
+                                  Clear tags
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               }
-            />
+            >
+              {activeFiltersCount > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {activeFilterChips.map((chip) => (
+                    <span
+                      key={chip.id}
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-card pl-2.5 pr-1 py-1 text-xs font-medium text-foreground"
+                    >
+                      {chip.label}
+                      <button
+                        type="button"
+                        onClick={chip.onClear}
+                        className={chipRemoveClass}
+                        aria-label={`Remove ${chip.label}`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className={cn(textLinkActionClass, 'text-primary-text ml-1')}
+                  >
+                    Clear all
+                  </button>
+                </div>
+              )}
+            </ListPageToolbar>
 
             {establishedReportHubIds.size === 0 && (
               <div className="rounded-xl border border-border bg-card p-5">

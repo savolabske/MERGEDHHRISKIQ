@@ -4,6 +4,26 @@ export type ResourceFileType = 'PDF' | 'DOCX' | 'XLSX' | 'PPTX' | 'OTHER';
 
 export type PlatformResourceStatus = 'uploading' | 'completed';
 
+/** Share permission for a group or individual on a resource. */
+export type ResourceAccessRole = 'viewer' | 'editor';
+
+export const RESOURCE_ACCESS_ROLES: ResourceAccessRole[] = ['viewer', 'editor'];
+
+export const RESOURCE_ACCESS_ROLE_LABEL: Record<ResourceAccessRole, string> = {
+  viewer: 'Viewer',
+  editor: 'Editor',
+};
+
+export interface ResourceGroupAccess {
+  name: string;
+  role: ResourceAccessRole;
+}
+
+export interface ResourceUserAccess {
+  email: string;
+  role: ResourceAccessRole;
+}
+
 export interface PlatformResourceStatusInfo {
   state: PlatformResourceStatus;
   updatedAt: string;
@@ -36,8 +56,8 @@ export interface PlatformResource {
   status?: PlatformResourceStatusInfo;
   files: ResourceFile[];
   webLinks: ResourceWebLink[];
-  userGroups: string[];
-  individualUsers: string[];
+  userGroups: ResourceGroupAccess[];
+  individualUsers: ResourceUserAccess[];
 }
 
 export interface ResourceUserGroup {
@@ -92,10 +112,43 @@ interface ResourceTemplate {
   ownership: ResourceOwnership;
   tags: string[];
   fileCount: number;
-  userGroups: string[];
+  userGroups: ResourceGroupAccess[];
   lastModified: string;
   createdAt: string;
   status?: PlatformResourceStatusInfo;
+}
+
+function groupAccess(
+  name: string,
+  role: ResourceAccessRole = 'viewer',
+): ResourceGroupAccess {
+  return { name, role };
+}
+
+function userAccess(
+  email: string,
+  role: ResourceAccessRole = 'viewer',
+): ResourceUserAccess {
+  return { email, role };
+}
+
+/** Normalize legacy string[] shares (localStorage) into role-bearing entries. */
+export function normalizeGroupAccess(
+  groups: Array<string | ResourceGroupAccess> | undefined,
+): ResourceGroupAccess[] {
+  if (!Array.isArray(groups)) return [];
+  return groups.map((g) =>
+    typeof g === 'string' ? groupAccess(g) : { name: g.name, role: g.role ?? 'viewer' },
+  );
+}
+
+export function normalizeUserAccess(
+  users: Array<string | ResourceUserAccess> | undefined,
+): ResourceUserAccess[] {
+  if (!Array.isArray(users)) return [];
+  return users.map((u) =>
+    typeof u === 'string' ? userAccess(u) : { email: u.email, role: u.role ?? 'viewer' },
+  );
 }
 
 const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
@@ -106,7 +159,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['nutrition', 'sitrep', '2026'],
     fileCount: 4,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 19, 2026',
     createdAt: 'Feb 14, 2026',
   },
@@ -117,7 +170,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'created_by_me',
     tags: ['protection', 'monitoring', 'framework'],
     fileCount: 7,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 17, 2026',
     createdAt: 'Feb 05, 2026',
   },
@@ -128,7 +181,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['CCCM', 'displacement', 'guidelines'],
     fileCount: 5,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 16, 2026',
     createdAt: 'Jan 22, 2026',
   },
@@ -139,7 +192,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'created_by_me',
     tags: ['education', 'baseline', 'assessment'],
     fileCount: 9,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 14, 2026',
     createdAt: 'Jan 30, 2026',
   },
@@ -150,7 +203,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['shelter', 'NFI', 'distribution'],
     fileCount: 6,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 13, 2026',
     createdAt: 'Jan 25, 2026',
   },
@@ -161,7 +214,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'created_by_me',
     tags: ['health', 'surveillance', 'epidemiology'],
     fileCount: 3,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 12, 2026',
     createdAt: 'Feb 01, 2026',
   },
@@ -172,7 +225,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['logistics', 'transport', 'supply chain'],
     fileCount: 4,
-    userGroups: ['Mission Leadership'],
+    userGroups: [groupAccess('Mission Leadership')],
     lastModified: 'Feb 11, 2026',
     createdAt: 'Jan 18, 2026',
   },
@@ -183,7 +236,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'created_by_me',
     tags: ['food security', 'FSNAU', 'analysis'],
     fileCount: 8,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 10, 2026',
     createdAt: 'Jan 20, 2026',
   },
@@ -194,7 +247,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['drought', 'response', 'operations'],
     fileCount: 11,
-    userGroups: ['Humanitarian Affairs', 'Mission Leadership'],
+    userGroups: [groupAccess('Humanitarian Affairs', 'viewer'), groupAccess('Mission Leadership', 'editor')],
     lastModified: 'Feb 09, 2026',
     createdAt: 'Jan 12, 2026',
   },
@@ -205,7 +258,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'created_by_me',
     tags: ['DTM', 'displacement', 'tracking'],
     fileCount: 5,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 07, 2026',
     createdAt: 'Jan 08, 2026',
   },
@@ -216,7 +269,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['GBV', 'protection', 'referral'],
     fileCount: 4,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 06, 2026',
     createdAt: 'Jan 05, 2026',
   },
@@ -227,7 +280,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'created_by_me',
     tags: ['CVA', 'cash', 'toolkit'],
     fileCount: 10,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Feb 05, 2026',
     createdAt: 'Dec 28, 2025',
   },
@@ -238,7 +291,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['mine action', 'EO', 'survey'],
     fileCount: 6,
-    userGroups: ['Security & Access'],
+    userGroups: [groupAccess('Security & Access')],
     lastModified: 'Feb 04, 2026',
     createdAt: 'Jan 02, 2026',
   },
@@ -249,7 +302,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'created_by_me',
     tags: ['early warning', 'famine', 'IPC'],
     fileCount: 3,
-    userGroups: ['Humanitarian Affairs', 'Mission Leadership'],
+    userGroups: [groupAccess('Humanitarian Affairs', 'viewer'), groupAccess('Mission Leadership', 'editor')],
     lastModified: 'Feb 03, 2026',
     createdAt: 'Dec 20, 2025',
   },
@@ -260,7 +313,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['partners', 'capacity', 'assessment'],
     fileCount: 7,
-    userGroups: ['Mission Leadership'],
+    userGroups: [groupAccess('Mission Leadership')],
     lastModified: 'Feb 02, 2026',
     createdAt: 'Jan 10, 2026',
   },
@@ -271,7 +324,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'created_by_me',
     tags: ['logistics', 'stock', 'map'],
     fileCount: 4,
-    userGroups: ['Mission Leadership'],
+    userGroups: [groupAccess('Mission Leadership')],
     lastModified: 'Feb 01, 2026',
     createdAt: 'Jan 03, 2026',
   },
@@ -282,7 +335,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['coordination', 'clusters', 'minutes'],
     fileCount: 2,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Jan 31, 2026',
     createdAt: 'Jan 31, 2026',
   },
@@ -293,7 +346,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'created_by_me',
     tags: ['environment', 'compliance', 'guidelines'],
     fileCount: 5,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Jan 30, 2026',
     createdAt: 'Jan 15, 2026',
   },
@@ -304,7 +357,7 @@ const ADDITIONAL_RESOURCE_TEMPLATES: ResourceTemplate[] = [
     ownership: 'shared_with_me',
     tags: ['CEA', 'accountability', 'community'],
     fileCount: 6,
-    userGroups: ['Humanitarian Affairs'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
     lastModified: 'Jan 29, 2026',
     createdAt: 'Jan 07, 2026',
   },
@@ -329,7 +382,7 @@ function generateAdditionalResources(): PlatformResource[] {
       files: generateFiles(slug, template.fileCount),
       webLinks: [],
       userGroups: template.userGroups,
-      individualUsers: index % 3 === 0 ? ['field.ops@un.org'] : [],
+      individualUsers: index % 3 === 0 ? [userAccess('field.ops@un.org')] : [],
     };
   });
 }
@@ -362,11 +415,11 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
         addedAt: 'Feb 15, 2026',
       },
     ],
-    userGroups: ['Humanitarian Affairs', 'Mission Leadership'],
+    userGroups: [groupAccess('Humanitarian Affairs', 'viewer'), groupAccess('Mission Leadership', 'editor')],
     individualUsers: [
-      'sarah.johnson@un.org',
-      'ahmed.hassan@un.org',
-      'maria.garcia@un.org',
+      userAccess('sarah.johnson@un.org', 'editor'),
+      userAccess('ahmed.hassan@un.org', 'viewer'),
+      userAccess('maria.garcia@un.org', 'viewer'),
     ],
   },
   {
@@ -384,8 +437,8 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
     },
     files: generateFiles('WASH_Q1', 12),
     webLinks: [],
-    userGroups: ['WASH Cluster'],
-    individualUsers: ['wash.lead@un.org'],
+    userGroups: [groupAccess('WASH Cluster')],
+    individualUsers: [userAccess('wash.lead@un.org', 'editor')],
   },
   {
     id: '3',
@@ -408,7 +461,7 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
         addedAt: 'Jan 30, 2026',
       },
     ],
-    userGroups: ['Security & Access'],
+    userGroups: [groupAccess('Security & Access')],
     individualUsers: [],
   },
   {
@@ -426,8 +479,11 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
     },
     files: generateFiles('Mogadishu_Map', 5),
     webLinks: [],
-    userGroups: ['Mission Leadership'],
-    individualUsers: ['geo.analyst@un.org', 'field.ops@un.org'],
+    userGroups: [groupAccess('Mission Leadership')],
+    individualUsers: [
+      userAccess('geo.analyst@un.org', 'editor'),
+      userAccess('field.ops@un.org', 'viewer'),
+    ],
   },
   {
     id: '5',
@@ -444,20 +500,32 @@ export const INITIAL_RESOURCES: PlatformResource[] = [
     },
     files: generateFiles('Risk_Strategy_2026', 6),
     webLinks: [],
-    userGroups: ['Humanitarian Affairs'],
-    individualUsers: ['risk.officer@un.org'],
+    userGroups: [groupAccess('Humanitarian Affairs')],
+    individualUsers: [userAccess('risk.officer@un.org', 'editor')],
   },
   ...generateAdditionalResources(),
 ];
 
 const PLATFORM_RESOURCES_KEY = 'hh.platformResources';
 
+function normalizePlatformResource(resource: PlatformResource): PlatformResource {
+  return {
+    ...resource,
+    userGroups: normalizeGroupAccess(resource.userGroups as Array<string | ResourceGroupAccess>),
+    individualUsers: normalizeUserAccess(
+      resource.individualUsers as Array<string | ResourceUserAccess>,
+    ),
+  };
+}
+
 export function loadPlatformResources(): PlatformResource[] {
   try {
     const raw = localStorage.getItem(PLATFORM_RESOURCES_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as PlatformResource[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(normalizePlatformResource);
+      }
     }
   } catch {
     /* ignore */

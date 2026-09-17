@@ -3,7 +3,6 @@ import {
   X,
   Globe,
   ExternalLink,
-  User,
   Calendar,
   Clock,
   ChevronDown,
@@ -13,12 +12,19 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import type { PlatformResource, ResourceUserGroup } from '../../data/resourcesMock';
+import type {
+  PlatformResource,
+  ResourceAccessRole,
+  ResourceGroupAccess,
+  ResourceUserAccess,
+  ResourceUserGroup,
+} from '../../data/resourcesMock';
 import { INITIAL_RESOURCE_USER_GROUPS } from '../../data/resourcesMock';
 import { Checkbox } from '../ui/checkbox';
 import { chipRemoveClass } from '../ui/interaction';
 import { ConfirmDeleteDialog } from '../ui/ConfirmDeleteDialog';
 import { DetailFieldLabel, DetailSectionTitle, inputClass } from './resourceShared';
+import { PeopleWithAccessList } from './PeopleWithAccessList';
 import { ResourceDocumentsList } from './ResourceDocumentsList';
 import { UserGroupModal } from './UserGroupModal';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
@@ -28,6 +34,8 @@ import {
   requiredField,
   useFormValidation,
 } from '../ui/form-validation';
+
+const DEFAULT_ACCESS_ROLE: ResourceAccessRole = 'viewer';
 
 interface ResourceEditViewProps {
   resource: PlatformResource;
@@ -56,8 +64,10 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
   const [showTagsDropdown, setShowTagsDropdown] = useState(false);
   const [webLinks, setWebLinks] = useState([...resource.webLinks]);
   const [linkInput, setLinkInput] = useState('');
-  const [userGroups, setUserGroups] = useState([...resource.userGroups]);
-  const [individualUsers, setIndividualUsers] = useState([...resource.individualUsers]);
+  const [userGroups, setUserGroups] = useState<ResourceGroupAccess[]>([...resource.userGroups]);
+  const [individualUsers, setIndividualUsers] = useState<ResourceUserAccess[]>([
+    ...resource.individualUsers,
+  ]);
   const [emailInput, setEmailInput] = useState('');
   const [groups, setGroups] = useState<ResourceUserGroup[]>(INITIAL_RESOURCE_USER_GROUPS);
   const [showGroupMenu, setShowGroupMenu] = useState(false);
@@ -152,8 +162,8 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
 
   const addEmail = (raw?: string) => {
     const email = (raw ?? emailInput).trim().replace(/,+$/, '');
-    if (email && !individualUsers.includes(email)) {
-      setIndividualUsers((prev) => [...prev, email]);
+    if (email && !individualUsers.some((u) => u.email === email)) {
+      setIndividualUsers((prev) => [...prev, { email, role: DEFAULT_ACCESS_ROLE }]);
     }
     setEmailInput('');
   };
@@ -168,7 +178,19 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
 
   const toggleUserGroup = (groupName: string) => {
     setUserGroups((prev) =>
-      prev.includes(groupName) ? prev.filter((g) => g !== groupName) : [...prev, groupName],
+      prev.some((g) => g.name === groupName)
+        ? prev.filter((g) => g.name !== groupName)
+        : [...prev, { name: groupName, role: DEFAULT_ACCESS_ROLE }],
+    );
+  };
+
+  const setGroupRole = (name: string, role: ResourceAccessRole) => {
+    setUserGroups((prev) => prev.map((g) => (g.name === name ? { ...g, role } : g)));
+  };
+
+  const setUserRole = (email: string, role: ResourceAccessRole) => {
+    setIndividualUsers((prev) =>
+      prev.map((u) => (u.email === email ? { ...u, role } : u)),
     );
   };
 
@@ -193,7 +215,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
         return;
       }
       setGroups((prev) => [...prev, group]);
-      setUserGroups((prev) => [...prev, group.name]);
+      setUserGroups((prev) => [...prev, { name: group.name, role: DEFAULT_ACCESS_ROLE }]);
       toast.success('Group created successfully');
     } else if (editingGroup) {
       const nameTaken = groups.some(
@@ -206,7 +228,9 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
       setGroups((prev) => prev.map((g) => (g.id === group.id ? group : g)));
       if (editingGroup.name !== group.name) {
         setUserGroups((prev) =>
-          prev.map((name) => (name === editingGroup.name ? group.name : name)),
+          prev.map((entry) =>
+            entry.name === editingGroup.name ? { ...entry, name: group.name } : entry,
+          ),
         );
       }
       toast.success('Group updated successfully');
@@ -222,7 +246,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
   const confirmDeleteGroup = () => {
     if (!groupToDelete) return;
     setGroups((prev) => prev.filter((g) => g.id !== groupToDelete.id));
-    setUserGroups((prev) => prev.filter((name) => name !== groupToDelete.name));
+    setUserGroups((prev) => prev.filter((entry) => entry.name !== groupToDelete.name));
     setGroupToDelete(null);
     toast.success('Group deleted');
   };
@@ -393,7 +417,7 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
                           className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                         >
                           <Checkbox
-                            checked={userGroups.includes(group.name)}
+                            checked={userGroups.some((g) => g.name === group.name)}
                             className="pointer-events-none"
                             aria-hidden
                           />
@@ -438,26 +462,6 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
                   </div>
                 )}
               </div>
-              {userGroups.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {userGroups.map((g) => (
-                    <span
-                      key={g}
-                      className="inline-flex items-center gap-1 rounded-md bg-primary-subtle px-2.5 py-1 text-xs text-primary"
-                    >
-                      {g}
-                      <button
-                        type="button"
-                        onClick={() => setUserGroups(userGroups.filter((x) => x !== g))}
-                        className={chipRemoveClass}
-                        aria-label={`Remove group ${g}`}
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div>
@@ -478,31 +482,20 @@ export function ResourceEditView({ resource, onBack, onCancel, onSave }: Resourc
                 placeholder="Add users by email (type comma or space to add)..."
                 className={inputClass}
               />
-              {individualUsers.length > 0 && (
-                <div className="space-y-2 mt-3">
-                  {individualUsers.map((email) => (
-                    <div key={email} className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 text-sm min-w-0">
-                        <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                          <User size={14} className="text-muted-foreground" />
-                        </span>
-                        <span className="truncate">{email}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setIndividualUsers(individualUsers.filter((e) => e !== email))
-                        }
-                        className={chipRemoveClass}
-                        aria-label={`Remove ${email}`}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
+
+            <PeopleWithAccessList
+              userGroups={userGroups}
+              individualUsers={individualUsers}
+              onChangeGroupRole={setGroupRole}
+              onRemoveGroup={(name) =>
+                setUserGroups((prev) => prev.filter((g) => g.name !== name))
+              }
+              onChangeUserRole={setUserRole}
+              onRemoveUser={(email) =>
+                setIndividualUsers((prev) => prev.filter((u) => u.email !== email))
+              }
+            />
 
             <div>
               <DetailFieldLabel>Tags</DetailFieldLabel>

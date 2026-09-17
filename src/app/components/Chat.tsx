@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, ArrowRight, Sparkles, CircleHelp, Check, Lock } from 'lucide-react';
+import { FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, UserPlus, Sparkles, CircleHelp, Check, Lock } from 'lucide-react';
 import { RiskIQChatHeader } from './RiskIQChatHeader';
 import { BackLink } from './ui/back-link';
 import { RiskMatrix } from './RiskMatrix';
@@ -1822,7 +1822,7 @@ export function Chat({
                 onClick={() => setIsShareOpen(true)}
                 className={cn(outlineControlClass, 'inline-flex items-center gap-2 rounded-xl text-sm font-medium text-foreground-emphasis')}
               >
-                <ArrowRight size={16} className="text-muted-foreground" strokeWidth={2.25} />
+                <UserPlus size={16} className="text-muted-foreground" strokeWidth={2.25} />
                 <span>Invite</span>
               </button>
             </div>
@@ -1897,7 +1897,7 @@ export function Chat({
                   onClick={() => setIsShareOpen(true)}
                   className={cn(outlineControlClass, 'inline-flex items-center gap-2 rounded-xl text-sm font-medium text-foreground-emphasis')}
                 >
-                  <ArrowRight size={16} className="text-muted-foreground" strokeWidth={2.25} />
+                  <UserPlus size={16} className="text-muted-foreground" strokeWidth={2.25} />
                   <span>Invite</span>
                 </button>
               </div>

@@ -139,8 +139,9 @@ export function ListPageToolbar({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3">
         <div className="flex min-w-0 flex-1 gap-2 sm:gap-3 items-stretch">
           {search && <ListPageSearch {...search} />}
-          {hasTrailing && (
-            <div className="flex shrink-0 items-stretch sm:hidden">{trailing}</div>
+          {/* Trailing (e.g. Filters) sits beside search when there are no inline filter selects */}
+          {hasTrailing && !hasFilters && (
+            <div className="flex shrink-0 items-stretch">{trailing}</div>
           )}
         </div>
 
@@ -152,11 +153,12 @@ export function ListPageToolbar({
             )}
           >
             {filters}
+            {hasTrailing && (
+              <div className="col-span-full sm:col-span-1 flex shrink-0 items-stretch sm:contents">
+                <div className="flex w-full sm:w-auto shrink-0 items-stretch">{trailing}</div>
+              </div>
+            )}
           </div>
-        )}
-
-        {hasTrailing && (
-          <div className="hidden sm:flex shrink-0 items-stretch">{trailing}</div>
         )}
       </div>
 
