@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, MoreVertical, ChevronLeft, Check, Shield, Users, Trash2, X, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageFooter } from './PageFooter';
@@ -22,6 +22,8 @@ import {
   requiredField,
   useFormValidation,
 } from './ui/form-validation';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 
 interface Role {
   id: string;
@@ -211,16 +213,33 @@ export function RolesPermissions() {
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [activeTab, setActiveTab] = useState<'permissions' | 'users'>('permissions');
   const [isEditing, setIsEditing] = useState(false);
+  const [sort, setSort] = useState<SortState<'name' | 'users' | 'permissions' | 'created'>>(null);
   const { errors, validate, reset } = useFormValidation(
     { roleName },
     { roleName: requiredField('Role name') },
   );
 
-  const filteredRoles = roles.filter(role =>
-    role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    role.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    role.users.toString().includes(searchQuery.toLowerCase()) ||
-    role.created.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredRoles = useMemo(
+    () =>
+      roles.filter(
+        (role) =>
+          role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          role.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          role.users.toString().includes(searchQuery.toLowerCase()) ||
+          role.created.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [roles, searchQuery],
+  );
+
+  const sortedRoles = useMemo(
+    () =>
+      applySort(filteredRoles, sort, {
+        name: { getValue: (r) => r.name, kind: 'text' },
+        users: { getValue: (r) => r.users, kind: 'number' },
+        permissions: { getValue: (r) => r.permissions, kind: 'number' },
+        created: { getValue: (r) => r.created, kind: 'date' },
+      }),
+    [filteredRoles, sort],
   );
 
   const getProgressColor = (permissions: number, total: number) => {
@@ -649,24 +668,48 @@ export function RolesPermissions() {
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         {/* Table Header - Desktop */}
         <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
-          <div className="col-span-4 table-header-label">
-            Role
+          <div className="col-span-4">
+            <SortableHeader
+              label="Role"
+              column="name"
+              kind="text"
+              sort={sort}
+              onSortChange={setSort}
+            />
           </div>
-          <div className="col-span-2 table-header-label">
-            Users
+          <div className="col-span-2">
+            <SortableHeader
+              label="Users"
+              column="users"
+              kind="number"
+              sort={sort}
+              onSortChange={setSort}
+            />
           </div>
-          <div className="col-span-3 table-header-label">
-            Permissions
+          <div className="col-span-3">
+            <SortableHeader
+              label="Permissions"
+              column="permissions"
+              kind="number"
+              sort={sort}
+              onSortChange={setSort}
+            />
           </div>
-          <div className="col-span-2 table-header-label">
-            Created
+          <div className="col-span-2">
+            <SortableHeader
+              label="Created"
+              column="created"
+              kind="date"
+              sort={sort}
+              onSortChange={setSort}
+            />
           </div>
           <div className="col-span-1"></div>
         </div>
 
         {/* Table Rows */}
         <div className="divide-y divide-border">
-          {filteredRoles.map((role) => (
+          {sortedRoles.map((role) => (
             <div
               key={role.id}
               className={cn(listRowClass, 'relative cursor-pointer')}
@@ -798,7 +841,7 @@ export function RolesPermissions() {
           ))}
         </div>
 
-        {filteredRoles.length === 0 && (
+        {sortedRoles.length === 0 && (
           <div className="py-12 text-center">
             <p className="text-sm text-muted-foreground">No roles found</p>
           </div>

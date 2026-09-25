@@ -1,30 +1,45 @@
+import {
+  ChatThinkingStatus,
+  CHAT_THINKING_PHASES,
+} from '../../../components/ui/ChatThinkingStatus';
 import { cn } from '../../../components/ui/utils';
 
 interface ReportThinkingIndicatorProps {
-  accentColor?: string;
-  textClassName?: string;
   className?: string;
+  textClassName?: string;
+  spinnerClassName?: string;
+  /** Optional fixed message; otherwise rotates through contextual phases */
   message?: string;
+  phases?: readonly string[];
+  extendedKnowledge?: boolean;
+  mode?: 'chat' | 'dashboard';
 }
 
 export function ReportThinkingIndicator({
-  accentColor = '#1f6feb',
-  textClassName = 'text-[#6b7a8d]',
   className,
-  message = 'Customizing the dashboard for your question…',
+  textClassName,
+  spinnerClassName,
+  message,
+  phases,
+  extendedKnowledge = false,
+  mode = 'chat',
 }: ReportThinkingIndicatorProps) {
+  const resolvedPhases =
+    phases ??
+    (mode === 'dashboard'
+      ? extendedKnowledge
+        ? CHAT_THINKING_PHASES.reportDashboardExtended
+        : CHAT_THINKING_PHASES.reportDashboard
+      : CHAT_THINKING_PHASES.default);
+
   return (
-    <div className={cn('flex items-center gap-2 rounded-xl px-3 py-2.5', className)}>
-      <span className={cn('text-[12.5px]', textClassName)}>{message}</span>
-      <span className="inline-flex items-center gap-1" aria-hidden>
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="report-thinking-dot h-[7px] w-[7px] rounded-full"
-            style={{ backgroundColor: accentColor, animationDelay: `${i * 0.2}s` }}
-          />
-        ))}
-      </span>
-    </div>
+    <ChatThinkingStatus
+      message={message}
+      phases={resolvedPhases}
+      size="sm"
+      className={cn(className)}
+      textClassName={textClassName}
+      spinnerClassName={spinnerClassName}
+    />
   );
 }

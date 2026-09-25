@@ -11,6 +11,11 @@ import { ChartSkeletonGraphic } from '../manage-reports/reportSkeletonGraphics';
 import { ChartFilledGraphic } from '../manage-reports/reportFilledGraphics';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
 import { filterTriggerClass } from '../ui/interaction';
+import {
+  ChatThinkingStatus,
+  CHAT_THINKING_PHASES,
+  DEFAULT_CHAT_THINKING_DURATION_MS,
+} from '../ui/ChatThinkingStatus';
 import { cn } from '../ui/utils';
 import {
   AID_FLOW_CHAT_PROMPT_THEME,
@@ -456,17 +461,12 @@ function ManagedChatFeed({
           >
             Report assistant · analysing
           </div>
-          <div className="flex items-center gap-2 rounded-[4px_13px_13px_13px] border border-border bg-muted/40 px-3 py-3.5 text-[12.5px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1" aria-hidden>
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="report-thinking-dot h-[7px] w-[7px] rounded-full"
-                  style={{ backgroundColor: accent, animationDelay: `${i * 0.2}s` }}
-                />
-              ))}
-            </span>
-            Reading report sections…
+          <div className="rounded-[4px_13px_13px_13px] border border-border bg-muted/40 px-3 py-3.5">
+            <ChatThinkingStatus
+              phases={CHAT_THINKING_PHASES.reportSections}
+              size="sm"
+              spinnerClassName="border-current border-t-transparent"
+            />
           </div>
         </div>
       ) : null}
@@ -538,7 +538,7 @@ export function ManagedReportView({
       setMessages((prev) => [...prev, { role: 'assistant', text: answerForPrompt(report, q) }]);
       setIsQuerying(false);
       queryTimeoutRef.current = null;
-    }, 900);
+    }, DEFAULT_CHAT_THINKING_DURATION_MS);
   };
 
   const clearAllFilters = () => {

@@ -1088,18 +1088,21 @@ export function ProgrammeAuditDetail({
     clearGenerationTimers();
 
     queryTimerRef.current = window.setTimeout(() => {
-      setThinkingPhase('Preparing answer...');
+      setThinkingPhase('Searching related sources...');
       queryTimerRef.current = window.setTimeout(() => {
-        const assistantId = `a-${Date.now()}`;
-        const fullText = buildProgrammeAssistantReply(programme, prompt);
-        setThinkingPhase(null);
-        setMessages((current) => [
-          ...current,
-          { id: assistantId, role: 'assistant' as const, content: '' },
-        ]);
-        queryTimerRef.current = null;
-        streamAssistantReply(assistantId, fullText);
-      }, 700);
+        setThinkingPhase('Preparing answer...');
+        queryTimerRef.current = window.setTimeout(() => {
+          const assistantId = `a-${Date.now()}`;
+          const fullText = buildProgrammeAssistantReply(programme, prompt);
+          setThinkingPhase(null);
+          setMessages((current) => [
+            ...current,
+            { id: assistantId, role: 'assistant' as const, content: '' },
+          ]);
+          queryTimerRef.current = null;
+          streamAssistantReply(assistantId, fullText);
+        }, 700);
+      }, 900);
     }, 900);
   };
 

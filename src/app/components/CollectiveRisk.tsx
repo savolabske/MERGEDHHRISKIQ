@@ -1,8 +1,10 @@
-import { Package, AlertTriangle, MapPin, TrendingUp, Settings, Play, Search, ChevronDown, ArrowUpDown, ChevronRight, ChevronLeft, X, Plus, Sparkles, Check, CircleDot, Trash2, Shield, Lightbulb, CheckCircle2, Circle, Clock } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { Package, AlertTriangle, MapPin, TrendingUp, Settings, Play, Search, ChevronDown, ChevronRight, ChevronLeft, X, Plus, Sparkles, Check, CircleDot, Trash2, Shield, Lightbulb, CheckCircle2, Circle, Clock } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { PageFooter } from './PageFooter';
 import { toast } from 'sonner';
 import { useProgressiveList } from '../hooks/useProgressiveList';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 import { TableSkeleton } from './ui/table-skeleton';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { DetailSectionTitle } from './ui/detail-labels';
@@ -94,6 +96,9 @@ export function CollectiveRisk() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
+  const [sort, setSort] = useState<
+    SortState<'description' | 'inherentRisk' | 'mitigation' | 'residualRisk'>
+  >(null);
   const [isEditingResidual, setIsEditingResidual] = useState(false);
   const [tempResidualValue, setTempResidualValue] = useState('');
   const [riskStatuses, setRiskStatuses] = useState<{ [key: string]: string }>({
@@ -518,7 +523,7 @@ export function CollectiveRisk() {
     }
   ];
 
-  const filteredRisks = collectiveRisks.filter((risk) => {
+  const filteredRisks = useMemo(() => collectiveRisks.filter((risk) => {
     const query = searchQuery.toLowerCase().trim();
     const matchesSearch =
       query === '' ||
@@ -546,19 +551,41 @@ export function CollectiveRisk() {
       risk.status.toLowerCase() === statusFilter.toLowerCase();
 
     return matchesSearch && matchesRegion && matchesCategory && matchesStatus;
-  });
+  }), [collectiveRisks, searchQuery, regionFilter, categoryFilter, statusFilter, residualRankings]);
+
+  const sortedRisks = useMemo(
+    () =>
+      applySort(filteredRisks, sort, {
+        description: { getValue: (r) => r.causes, kind: 'text' },
+        inherentRisk: {
+          getValue: (r) => r.inherentLikelihood * r.inherentImpact,
+          kind: 'number',
+        },
+        mitigation: { getValue: (r) => r.mitigationStatus, kind: 'text' },
+        residualRisk: {
+          getValue: (r) => {
+            const v = residualRankings[r.id];
+            if (!v || v === '—') return null;
+            const n = Number(String(v).replace(/[^0-9.-]/g, ''));
+            return Number.isFinite(n) ? n : null;
+          },
+          kind: 'number',
+        },
+      }),
+    [filteredRisks, sort, residualRankings],
+  );
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredRisks.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedRisks.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedRisks = filteredRisks.slice(startIndex, endIndex);
+  const paginatedRisks = sortedRisks.slice(startIndex, endIndex);
   const { visibleItems: visiblePaginatedRisks, isProgressivelyLoading } = useProgressiveList(paginatedRisks, {
     minLoadingMs: 200,
     transitionKey: `${currentPage}-${itemsPerPage}`,
   });
-  const showingStart = filteredRisks.length > 0 ? startIndex + 1 : 0;
-  const showingEnd = Math.min(endIndex, filteredRisks.length);
+  const showingStart = sortedRisks.length > 0 ? startIndex + 1 : 0;
+  const showingEnd = Math.min(endIndex, sortedRisks.length);
 
   // Generate smart page numbers for pagination - Max 3 pages at a time
   const getPageNumbers = () => {
@@ -790,10 +817,52 @@ export function CollectiveRisk() {
               <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-6 py-3 table-header-label w-[35%]">Risk description</th>
-                  <th className="text-right px-6 py-3 table-header-label w-[15%]">Inherent risk</th>
-                  <th className="text-left px-6 py-3 table-header-label w-[15%]">Mitigation</th>
-                  <th className="text-right px-6 py-3 table-header-label w-[15%]">Residual risk</th>
+                  <SortableHeader
+                    as="th"
+                    label="Risk description"
+                    column="description"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <SortableHeader
+                    as="th"
+                    label="Inherent risk"
+                    column="inherentRisk"
+                    kind="number"
+                    align="right"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <SortableHeader
+                    as="th"
+                    label="Mitigation"
+                    column="mitigation"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <SortableHeader
+                    as="th"
+                    label="Residual risk"
+                    column="residualRisk"
+                    kind="number"
+                    align="right"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                   <th className="w-[20%]"></th>
                 </tr>
               </thead>
@@ -895,7 +964,7 @@ export function CollectiveRisk() {
             {/* Right: Page navigation */}
             <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
               <span className="text-sm text-muted-foreground text-center sm:text-left">
-                {isProgressivelyLoading ? 'Loading...' : `${showingStart}-${showingEnd} of ${filteredRisks.length}`}
+                {isProgressivelyLoading ? 'Loading...' : `${showingStart}-${showingEnd} of ${sortedRisks.length}`}
               </span>
               <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
                 <button 
@@ -1059,7 +1128,7 @@ export function CollectiveRisk() {
               </button>
             </div>
             <p className="text-xs text-text-subtle text-center">
-              Showing {showingStart}-{showingEnd} of {filteredRisks.length} collective risks
+              Showing {showingStart}-{showingEnd} of {sortedRisks.length} collective risks
             </p>
           </div>
           )}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Map as MapIcon, Table2, FileBarChart2 } from 'lucide-react';
 import type { ManagedWorkflow } from '../../data/workflowAdminMock';
 import {
@@ -12,6 +12,11 @@ import {
 import { PageScrollShell } from '../PageScrollShell';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
 import { ComposerSendButton } from '../ui/ComposerSendButton';
+import {
+  ChatThinkingStatus,
+  CHAT_THINKING_PHASES,
+  DEFAULT_CHAT_THINKING_DURATION_MS,
+} from '../ui/ChatThinkingStatus';
 import { cn } from '../ui/utils';
 
 interface AiWorkflowWorkspaceProps {
@@ -29,6 +34,8 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>(
     [],
   );
+  const [isQuerying, setIsQuerying] = useState(false);
+  const queryTimeoutRef = useRef<number | null>(null);
 
   const payload = useMemo(() => {
     if (!definition) return null;
@@ -72,22 +79,30 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
 
   const sendChat = (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    setChatMessages((prev) => [
-      ...prev,
-      { role: 'user', text: trimmed },
-      {
-        role: 'assistant',
-        text: consumptionChatReply({
-          template: payload.template,
-          userText: trimmed,
-          selectionLabel: selection?.label,
-          recipeId: payload.recipeId,
-        }),
-      },
-    ]);
+    if (!trimmed || isQuerying) return;
+    setChatMessages((prev) => [...prev, { role: 'user', text: trimmed }]);
     setChatInput('');
     setRailTab('ask');
+    setIsQuerying(true);
+    if (queryTimeoutRef.current !== null) {
+      window.clearTimeout(queryTimeoutRef.current);
+    }
+    queryTimeoutRef.current = window.setTimeout(() => {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          text: consumptionChatReply({
+            template: payload.template,
+            userText: trimmed,
+            selectionLabel: selection?.label,
+            recipeId: payload.recipeId,
+          }),
+        },
+      ]);
+      setIsQuerying(false);
+      queryTimeoutRef.current = null;
+    }, DEFAULT_CHAT_THINKING_DURATION_MS);
   };
 
   return (
@@ -238,6 +253,11 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
                       {m.text}
                     </div>
                   ))}
+                  {isQuerying ? (
+                    <div className="mr-4 rounded-2xl bg-muted/60 px-3 py-2.5">
+                      <ChatThinkingStatus phases={CHAT_THINKING_PHASES.workflow} size="sm" />
+                    </div>
+                  ) : null}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {['Why is this amber?', 'What should I do next?', 'Summarize sources'].map(
@@ -274,7 +294,7 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
                   />
                   <ComposerSendButton
                     onClick={() => sendChat(chatInput)}
-                    disabled={!chatInput.trim()}
+                    disabled={!chatInput.trim() || isQuerying}
                     size="sm"
                     rounded="lg"
                     className="absolute right-2 top-1/2 -translate-y-1/2"

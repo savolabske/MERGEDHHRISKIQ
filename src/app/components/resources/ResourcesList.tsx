@@ -29,6 +29,8 @@ import {
   paginationControlClass,
 } from '../ui/interaction';
 import { cn } from '../ui/utils';
+import { SortableHeader } from '../ui/sortable-header';
+import { applySort, type SortState } from '../../lib/table-sort';
 import {
   OwnershipBadge,
   PlatformResourceStatusCell,
@@ -182,6 +184,7 @@ export function ResourcesList({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(PAGE_SIZE_OPTIONS[0]);
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
+  const [sort, setSort] = useState<SortState<'title' | 'status' | 'lastModified'>>(null);
   const itemsPerPageDropdownRef = useRef<HTMLDivElement>(null);
   const filterMenuRef = useRef<HTMLDivElement>(null);
   const statusFilterMenuRef = useRef<HTMLDivElement>(null);
@@ -201,11 +204,22 @@ export function ResourcesList({
     });
   }, [resources, filter, searchQuery, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  const sorted = useMemo(
+    () =>
+      applySort(filtered, sort, {
+        title: { getValue: (r) => r.title, kind: 'text' },
+        status: { getValue: (r) => r.status?.state ?? 'completed', kind: 'text' },
+        lastModified: { getValue: (r) => r.lastModified, kind: 'date' },
+      }),
+    [filtered, sort],
+  );
+
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedResources = filtered.slice(startIndex, startIndex + itemsPerPage);
-  const showingStart = filtered.length > 0 ? startIndex + 1 : 0;
-  const showingEnd = Math.min(startIndex + itemsPerPage, filtered.length);
+  const paginatedResources = sorted.slice(startIndex, startIndex + itemsPerPage);
+  const showingStart = sorted.length > 0 ? startIndex + 1 : 0;
+  const showingEnd = Math.min(startIndex + itemsPerPage, sorted.length);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -417,14 +431,41 @@ export function ResourcesList({
       {viewMode === 'list' ? (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="hidden min-h-10 md:grid grid-cols-12 gap-4 px-4 sm:px-6 py-3 bg-muted/70 border-b border-border">
-            <div className="col-span-5 table-header-label">
-              Name
+            <div className="col-span-5">
+              <SortableHeader
+                label="Name"
+                column="title"
+                kind="text"
+                sort={sort}
+                onSortChange={(next) => {
+                  setSort(next);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
-            <div className="col-span-3 table-header-label">
-              Status
+            <div className="col-span-3">
+              <SortableHeader
+                label="Status"
+                column="status"
+                kind="text"
+                sort={sort}
+                onSortChange={(next) => {
+                  setSort(next);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
-            <div className="col-span-2 table-header-label">
-              Last Modified
+            <div className="col-span-2">
+              <SortableHeader
+                label="Last Modified"
+                column="lastModified"
+                kind="date"
+                sort={sort}
+                onSortChange={(next) => {
+                  setSort(next);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
             <div className="col-span-2 table-header-label text-right">
               Actions

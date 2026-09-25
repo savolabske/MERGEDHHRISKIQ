@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, X, Trash2, Edit, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
@@ -10,6 +10,8 @@ import {
   listHeaderActionClass,
   listRowClass,
 } from './ui/list-page';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 import { iconButtonClass, menuItemClass } from './ui/interaction';
 import { cn } from './ui/utils';
 import {
@@ -97,6 +99,7 @@ export function Definitions() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState<'name' | 'description'>>(null);
   
   // Form state
   const [shortForm, setShortForm] = useState('');
@@ -109,9 +112,23 @@ export function Definitions() {
     },
   );
 
-  const filteredDefinitions = definitions.filter(def =>
-    def.shortForm.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    def.expandedForm.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDefinitions = useMemo(
+    () =>
+      definitions.filter(
+        (def) =>
+          def.shortForm.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          def.expandedForm.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [definitions, searchQuery],
+  );
+
+  const sortedDefinitions = useMemo(
+    () =>
+      applySort(filteredDefinitions, sort, {
+        name: { getValue: (d) => d.shortForm, kind: 'text' },
+        description: { getValue: (d) => d.expandedForm, kind: 'text' },
+      }),
+    [filteredDefinitions, sort],
   );
 
   const handleAddDefinition = () => {
@@ -197,10 +214,10 @@ export function Definitions() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedDefinitions.size === filteredDefinitions.length) {
+    if (selectedDefinitions.size === sortedDefinitions.length) {
       setSelectedDefinitions(new Set());
     } else {
-      setSelectedDefinitions(new Set(filteredDefinitions.map(d => d.id)));
+      setSelectedDefinitions(new Set(sortedDefinitions.map(d => d.id)));
     }
   };
 
@@ -267,14 +284,26 @@ export function Definitions() {
                 <div className="col-span-3 flex items-center gap-3">
                   <input
                     type="checkbox"
-                    checked={selectedDefinitions.size === filteredDefinitions.length && filteredDefinitions.length > 0}
+                    checked={selectedDefinitions.size === sortedDefinitions.length && sortedDefinitions.length > 0}
                     onChange={toggleSelectAll}
                     className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
-                  <span className="table-header-label">Name</span>
+                  <SortableHeader
+                    label="Name"
+                    column="name"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={setSort}
+                  />
                 </div>
-                <div className="col-span-7 table-header-label">
-                  Description
+                <div className="col-span-7">
+                  <SortableHeader
+                    label="Description"
+                    column="description"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={setSort}
+                  />
                 </div>
                 <div className="col-span-2 table-header-label text-right">
                   Actions
@@ -283,7 +312,7 @@ export function Definitions() {
 
               {/* Table Rows */}
               <div className="divide-y divide-border">
-                {filteredDefinitions.map((definition) => (
+                {sortedDefinitions.map((definition) => (
                   <div key={definition.id} className={cn(listRowClass, 'relative')}>
                     {/* Mobile: compact title + description + kebab */}
                     <div className="lg:hidden min-w-0 pr-10">
@@ -379,7 +408,7 @@ export function Definitions() {
                 ))}
               </div>
 
-              {filteredDefinitions.length === 0 && (
+              {sortedDefinitions.length === 0 && (
                 <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">No definitions found</p>
                 </div>

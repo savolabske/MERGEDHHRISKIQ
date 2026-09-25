@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, EyeOff, Upload, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ManagedReport } from '../../data/reportsAdminMock';
@@ -12,6 +12,8 @@ import {
   listRowClass,
 } from '../ui/list-page';
 import { cn } from '../ui/utils';
+import { SortableHeader } from '../ui/sortable-header';
+import { applySort, type SortState } from '../../lib/table-sort';
 
 interface ManageReportsListProps {
   reports: ManagedReport[];
@@ -35,12 +37,23 @@ export function ManageReportsList({
   const [menuPlacement, setMenuPlacement] = useState<'above' | 'below'>('below');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [unpublishId, setUnpublishId] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState<'title' | 'status' | 'updatedAt'>>(null);
 
   const filtered = reports.filter(
     (r) =>
       !searchQuery ||
       r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.description.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const sorted = useMemo(
+    () =>
+      applySort(filtered, sort, {
+        title: { getValue: (r) => r.title, kind: 'text' },
+        status: { getValue: (r) => r.status, kind: 'text' },
+        updatedAt: { getValue: (r) => r.updatedAt, kind: 'date' },
+      }),
+    [filtered, sort],
   );
 
   const deleteTarget = deleteId ? reports.find((r) => r.id === deleteId) : null;
@@ -75,7 +88,7 @@ export function ManageReportsList({
       return;
     }
 
-    const isLastRow = index === filtered.length - 1;
+    const isLastRow = index === sorted.length - 1;
     const menuHeight = getMenuItemCount(report) * 36 + 8;
     const { bottom, top } = button.getBoundingClientRect();
     const spaceBelow = window.innerHeight - bottom;
@@ -107,14 +120,20 @@ export function ManageReportsList({
 
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
-            <div className="col-span-5 table-header-label">Name</div>
-            <div className="col-span-2 table-header-label">Status</div>
-            <div className="col-span-3 table-header-label">Last updated</div>
+            <div className="col-span-5">
+              <SortableHeader label="Name" column="title" kind="text" sort={sort} onSortChange={setSort} />
+            </div>
+            <div className="col-span-2">
+              <SortableHeader label="Status" column="status" kind="text" sort={sort} onSortChange={setSort} />
+            </div>
+            <div className="col-span-3">
+              <SortableHeader label="Last updated" column="updatedAt" kind="date" sort={sort} onSortChange={setSort} />
+            </div>
             <div className="col-span-2 table-header-label text-right">Actions</div>
           </div>
 
           <div className="divide-y divide-border">
-            {filtered.map((report, index) => (
+            {sorted.map((report, index) => (
               <div
                 key={report.id}
                 onClick={() => onEdit(report.id)}
@@ -248,7 +267,7 @@ export function ManageReportsList({
             ))}
           </div>
 
-          {filtered.length === 0 && (
+          {sorted.length === 0 && (
             <div className="py-12 text-center">
               <p className="text-sm text-muted-foreground">No reports found</p>
             </div>

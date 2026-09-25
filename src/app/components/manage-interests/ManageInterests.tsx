@@ -22,6 +22,8 @@ import { iconButtonClass, menuItemClass } from '../ui/interaction';
 import { cn } from '../ui/utils';
 import { getInterestIcon } from '../onboarding/interestIcons';
 import { InterestIconPicker } from './InterestIconPicker';
+import { SortableHeader } from '../ui/sortable-header';
+import { applySort, type SortState } from '../../lib/table-sort';
 
 type InterestFormState = {
   name: string;
@@ -59,6 +61,7 @@ export function ManageInterests() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<InterestFormState>(toFormState());
+  const [sort, setSort] = useState<SortState<'name' | 'status'>>(null);
 
   useEffect(() => {
     saveManagedInterests(interests);
@@ -74,6 +77,15 @@ export function ManageInterests() {
         item.prompt.toLowerCase().includes(q),
     );
   }, [interests, searchQuery]);
+
+  const sorted = useMemo(
+    () =>
+      applySort(filtered, sort, {
+        name: { getValue: (i) => i.name, kind: 'text' },
+        status: { getValue: (i) => (i.active ? 'Active' : 'Inactive'), kind: 'text' },
+      }),
+    [filtered, sort],
+  );
 
   const activeCount = interests.filter((i) => i.active).length;
 
@@ -198,19 +210,23 @@ export function ManageInterests() {
 
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
-            <div className="col-span-4 table-header-label">Interest</div>
-            <div className="col-span-2 table-header-label">Status</div>
+            <div className="col-span-4">
+              <SortableHeader label="Interest" column="name" kind="text" sort={sort} onSortChange={setSort} />
+            </div>
+            <div className="col-span-2">
+              <SortableHeader label="Status" column="status" kind="text" sort={sort} onSortChange={setSort} />
+            </div>
             <div className="col-span-4 table-header-label">Prompt</div>
             <div className="col-span-2 table-header-label text-right">Actions</div>
           </div>
 
           <div className="divide-y divide-border">
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <div className="px-6 py-12 text-center text-sm text-muted-foreground">
                 No interests match your search.
               </div>
             ) : (
-              filtered.map((interest) => {
+              sorted.map((interest) => {
                 const Icon = getInterestIcon(interest.iconKey);
                 return (
                   <div

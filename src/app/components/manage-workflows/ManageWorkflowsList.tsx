@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Settings2, Trash2, EyeOff, Upload, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ManagedWorkflow } from '../../data/workflowAdminMock';
@@ -12,6 +12,8 @@ import {
   listRowClass,
 } from '../ui/list-page';
 import { cn } from '../ui/utils';
+import { SortableHeader } from '../ui/sortable-header';
+import { applySort, type SortState } from '../../lib/table-sort';
 import { WorkflowAdviserLayout } from './WorkflowAdviserLayout';
 
 function workflowMetaLabel(workflow: ManagedWorkflow): string {
@@ -44,12 +46,30 @@ export function ManageWorkflowsList({
   const [menuPlacement, setMenuPlacement] = useState<'above' | 'below'>('below');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [unpublishId, setUnpublishId] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState<'name' | 'status' | 'steps' | 'updatedAt'>>(null);
 
   const filtered = workflows.filter(
     (w) =>
       !searchQuery ||
       w.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       w.description.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const sorted = useMemo(
+    () =>
+      applySort(filtered, sort, {
+        name: { getValue: (w) => w.name, kind: 'text' },
+        status: { getValue: (w) => w.status, kind: 'text' },
+        steps: {
+          getValue: (w) =>
+            w.kind === 'ai'
+              ? (w.definition?.steps?.length ?? 0)
+              : w.audits.length,
+          kind: 'number',
+        },
+        updatedAt: { getValue: (w) => w.updatedAt, kind: 'date' },
+      }),
+    [filtered, sort],
   );
 
   const deleteTarget = deleteId ? workflows.find((w) => w.id === deleteId) : null;
@@ -84,7 +104,7 @@ export function ManageWorkflowsList({
       return;
     }
 
-    const isLastRow = index === filtered.length - 1;
+    const isLastRow = index === sorted.length - 1;
     const menuHeight = getMenuItemCount(workflow) * 36 + 8;
     const { bottom } = button.getBoundingClientRect();
     const spaceBelow = window.innerHeight - bottom;
@@ -117,15 +137,23 @@ export function ManageWorkflowsList({
 
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
-              <div className="col-span-5 table-header-label">Name</div>
-              <div className="col-span-2 table-header-label">Status</div>
-              <div className="col-span-2 table-header-label">Steps</div>
-              <div className="col-span-1 table-header-label">Last updated</div>
+              <div className="col-span-5">
+                <SortableHeader label="Name" column="name" kind="text" sort={sort} onSortChange={setSort} />
+              </div>
+              <div className="col-span-2">
+                <SortableHeader label="Status" column="status" kind="text" sort={sort} onSortChange={setSort} />
+              </div>
+              <div className="col-span-2">
+                <SortableHeader label="Steps" column="steps" kind="number" sort={sort} onSortChange={setSort} />
+              </div>
+              <div className="col-span-1">
+                <SortableHeader label="Last updated" column="updatedAt" kind="date" sort={sort} onSortChange={setSort} />
+              </div>
               <div className="col-span-2 table-header-label text-right">Actions</div>
             </div>
 
             <div className="divide-y divide-border">
-              {filtered.map((workflow, index) => (
+              {sorted.map((workflow, index) => (
                 <div
                   key={workflow.id}
                   onClick={() => onConfigure(workflow.id)}
@@ -247,7 +275,7 @@ export function ManageWorkflowsList({
               ))}
             </div>
 
-            {filtered.length === 0 && (
+            {sorted.length === 0 && (
               <div className="py-12 text-center">
                 <p className="text-sm text-muted-foreground">No workflows found</p>
               </div>

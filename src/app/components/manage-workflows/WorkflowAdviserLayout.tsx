@@ -17,6 +17,11 @@ import {
   type ReportChatLayoutHandle,
 } from '../../features/insights/shared';
 import { cn } from '../ui/utils';
+import {
+  ChatThinkingStatus,
+  CHAT_THINKING_PHASES,
+  DEFAULT_CHAT_THINKING_DURATION_MS,
+} from '../ui/ChatThinkingStatus';
 
 type ChatMessage =
   | { role: 'user'; text: string }
@@ -82,7 +87,7 @@ export function WorkflowAdviserLayout({
       ]);
       setIsQuerying(false);
       queryTimeoutRef.current = null;
-    }, 450);
+    }, DEFAULT_CHAT_THINKING_DURATION_MS);
   };
 
   const hasUser = messages.some((m) => m.role === 'user');
@@ -179,19 +184,8 @@ export function WorkflowAdviserLayout({
               ) : null}
 
               {isQuerying ? (
-                <div className="max-w-full rounded-[4px_13px_13px_13px] bg-muted/50 px-3.5 py-3 text-[13px] text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    Thinking
-                    <span className="inline-flex items-center gap-1" aria-hidden>
-                      {[0, 1, 2].map((i) => (
-                        <span
-                          key={i}
-                          className="report-thinking-dot h-[6px] w-[6px] rounded-full bg-primary"
-                          style={{ animationDelay: `${i * 0.2}s` }}
-                        />
-                      ))}
-                    </span>
-                  </span>
+                <div className="max-w-full rounded-[4px_13px_13px_13px] bg-muted/50 px-3.5 py-3">
+                  <ChatThinkingStatus phases={CHAT_THINKING_PHASES.workflow} size="sm" />
                 </div>
               ) : null}
             </div>

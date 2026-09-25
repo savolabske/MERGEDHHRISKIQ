@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReportResourceLinkContext } from '../data/reportResourceLink';
 import {
@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProgressiveList } from '../hooks/useProgressiveList';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 import { PageFooter } from './PageFooter';
 import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { TableSkeleton } from './ui/table-skeleton';
@@ -1550,6 +1552,9 @@ export function Documents({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
+  const [sort, setSort] = useState<
+    SortState<'title' | 'destinations' | 'userGroup' | 'status'>
+  >(null);
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [availabilityFilter, setAvailabilityFilter] = useState('All Destinations');
   const [userGroupFilter, setUserGroupFilter] = useState('All Groups');
@@ -1721,7 +1726,24 @@ export function Documents({
     return matchesSearch && matchesStatus && matchesAvailability && matchesUserGroup && matchesTag;
   });
 
-  const documentTagFilterTags = deduplicateTags(documents.flatMap((doc) => doc.tags ?? []));
+  const sortedDocuments = useMemo(
+    () =>
+      applySort(filteredDocuments, sort, {
+        title: { getValue: (d) => d.title, kind: 'text' },
+        destinations: { getValue: (d) => getDocumentDestinationSearchText(d), kind: 'text' },
+        userGroup: { getValue: (d) => d.userGroup, kind: 'text' },
+        status: {
+          getValue: (d) =>
+            d.uploadStatus === 'uploading'
+              ? 'Uploading'
+              : groupProcessingStatusLabel(d.processingStatus),
+          kind: 'text',
+        },
+      }),
+    [filteredDocuments, sort],
+  );
+
+    const documentTagFilterTags = deduplicateTags(documents.flatMap((doc) => doc.tags ?? []));
   const normalizedTagFilterSearch = normalizeTagValue(tagFilterSearchQuery).toLowerCase();
   const filteredTagFilterOptions = documentTagFilterTags.filter((tag) =>
     normalizeTagValue(tag).toLowerCase().includes(normalizedTagFilterSearch)
@@ -2511,8 +2533,8 @@ export function Documents({
   };
 
   // Pagination — report hubs stay pinned above paginated standard resources
-  const filteredReportHubs = filteredDocuments.filter(isReportHub);
-  const filteredStandardResources = filteredDocuments.filter((doc) => !isReportHub(doc));
+  const filteredReportHubs = sortedDocuments.filter(isReportHub);
+  const filteredStandardResources = sortedDocuments.filter((doc) => !isReportHub(doc));
   const totalPages = Math.ceil(filteredStandardResources.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -4566,16 +4588,52 @@ export function Documents({
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
-                  <span className="table-header-label">Resource</span>
+                  <SortableHeader
+                    label="Resource"
+                    column="title"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
-                <div className="col-span-2 col-start-6 table-header-label">
-                  Destinations
+                <div className="col-span-2 col-start-6">
+                  <SortableHeader
+                    label="Destinations"
+                    column="destinations"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
-                <div className="col-span-2 col-start-8 table-header-label">
-                  User group
+                <div className="col-span-2 col-start-8">
+                  <SortableHeader
+                    label="User group"
+                    column="userGroup"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
-                <div className="col-span-2 col-start-10 table-header-label">
-                  Status
+                <div className="col-span-2 col-start-10">
+                  <SortableHeader
+                    label="Status"
+                    column="status"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
                 <div className="col-span-1 col-start-12 table-header-label text-right">
                   Actions

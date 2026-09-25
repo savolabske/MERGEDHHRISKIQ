@@ -10,6 +10,9 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { ChatStopButton } from './ui/ChatStopButton';
 import { ComposerSendButton } from './ui/ComposerSendButton';
+import {
+  useRotatingThinkingPhase,
+} from './ui/ChatThinkingStatus';
 import { ShareThreadModal } from './ShareThreadModal';
 import { CURRENT_USER, RISK_IQ_USER, getUserById } from '../utils/mockUsers';
 import { toast } from 'sonner';
@@ -55,6 +58,69 @@ const RISK_EMOJI_CLASS: Record<string, string> = {
   '💧': 'text-primary font-semibold',
   '🌊': 'text-primary font-semibold',
 };
+
+const KB_SEARCH_STATUSES = [
+  'Looking through knowledge base…',
+  'Matching relevant documents…',
+  'Preparing answer…',
+] as const;
+
+const WEB_SEARCH_STATUSES = [
+  'Searching web sources…',
+  'Cross-checking external signals…',
+  'Synthesizing web intelligence…',
+] as const;
+
+/** Main KB + Web Intelligence cards with spinner + rotating shimmer text inside. */
+function ChatSearchShimmerCards() {
+  const knowledgeStatus = useRotatingThinkingPhase(true, KB_SEARCH_STATUSES, 1400);
+  const webStatus = useRotatingThinkingPhase(true, WEB_SEARCH_STATUSES, 1600);
+
+  return (
+    <div className="mt-1 space-y-3 w-full max-w-3xl" role="status" aria-live="polite">
+      <div className="border border-border rounded-xl bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border bg-muted">
+          <div className="flex items-center gap-2">
+            <Database size={16} className="text-primary" />
+            <span className="text-sm font-semibold text-foreground">Knowledge Base</span>
+          </div>
+        </div>
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="size-5 shrink-0 rounded-full border-2 border-primary border-t-transparent animate-spin"
+              aria-hidden
+            />
+            <span className="text-base font-medium shimmer-text">
+              {knowledgeStatus ?? KB_SEARCH_STATUSES[0]}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="border border-border rounded-xl bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Globe size={16} className="text-muted-foreground" />
+            <span className="text-sm font-semibold text-foreground">Web Intelligence</span>
+            <span className="text-xs text-text-subtle font-normal">Supplementary, unverified</span>
+          </div>
+        </div>
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="size-5 shrink-0 rounded-full border-2 border-primary border-t-transparent animate-spin"
+              aria-hidden
+            />
+            <span className="text-base font-medium shimmer-text">
+              {webStatus ?? WEB_SEARCH_STATUSES[0]}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface Source {
   id: string;
@@ -434,6 +500,9 @@ export function Chat({
     const generationId = ++generationIdRef.current;
     clearActiveTimeouts();
     setIsProcessing(true);
+    // Drop any leftover searching rows (cancelled runs / Strict Mode remounts)
+    setMessages((prev) => prev.filter((msg) => msg.type !== 'searching'));
+
     const responseConfig = prebuiltResponse ? null : getAIResponse(query, messageCountRef.current);
     
     // Special handling for briefing content type
@@ -446,44 +515,29 @@ export function Chat({
     const searchingId = `search-${timestamp}`;
     const responseId = `response-${timestamp}`;
     
-    // Step 1: Add searching message - single line that transitions
-    setMessages(prev => [...prev, {
-      id: searchingId,
-      type: 'searching',
-      content: '',
-      contentType: 'searching',
-      data: { 
-        currentPhase: trigger === 'extend' ? 'extending-ai' : (isBriefing ? 'analyzing-risks' : 'knowledge-base'),
-        isBriefing,
-        useExtendedKnowledge
-      }
-    }]);
+    setMessages((prev) => [
+      ...prev.filter((msg) => msg.type !== 'searching'),
+      {
+        id: searchingId,
+        type: 'searching',
+        content: '',
+        contentType: 'searching',
+        data: {
+          isBriefing,
+          useExtendedKnowledge,
+        },
+      },
+    ]);
 
-    // First phase
-    if (!(await waitForGeneration(1800, generationId))) return;
-    
-    // Switch to second phase
-    const shouldRunSecondPhase = isBriefing || useExtendedKnowledge;
-    if (shouldRunSecondPhase) {
-      setMessages(prev => prev.map(msg => 
-        msg.id === searchingId 
-          ? { ...msg, data: { ...msg.data, currentPhase: trigger === 'extend' ? 'web-sources' : (isBriefing ? 'comparing-trends' : 'web-sources') } }
-          : msg
-      ));
-      if (!(await waitForGeneration(1800, generationId))) return;
+    // Single wait — both cards shimmer in parallel; status rotates inside each card
+    const searchDurationMs = isBriefing || useExtendedKnowledge ? 2800 : 2200;
+    if (!(await waitForGeneration(searchDurationMs, generationId))) {
+      setMessages((prev) => prev.filter((msg) => msg.id !== searchingId));
+      return;
     }
-    
-    // Switch to third phase
-    setMessages(prev => prev.map(msg => 
-      msg.id === searchingId 
-        ? { ...msg, data: { ...msg.data, currentPhase: isBriefing ? 'mapping-clusters' : 'preparing' } }
-        : msg
-    ));
-
-    if (!(await waitForGeneration(1200, generationId))) return;
 
     // Remove searching message
-    setMessages(prev => prev.filter(msg => msg.id !== searchingId));
+    setMessages((prev) => prev.filter((msg) => msg.id !== searchingId));
 
     // Step 2: Generate sources
     const knowledgeBaseSources: Source[] = [
@@ -943,29 +997,6 @@ export function Chat({
           <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
           <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
           <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-        </div>
-      </div>
-    );
-  };
-
-  const SearchingIndicator = ({ data }: { data: { currentPhase: 'knowledge-base' | 'web-sources' | 'preparing' | 'analyzing-risks' | 'comparing-trends' | 'mapping-clusters' | 'extending-ai'; isBriefing?: boolean } }) => {
-    const phases = {
-      'knowledge-base': 'Looking through knowledge base...',
-      'web-sources': 'Searching web sources...',
-      'preparing': 'Preparing answer...',
-      'analyzing-risks': 'Analyzing 42 active risks…',
-      'comparing-trends': 'Comparing trends (Jan → Feb)…',
-      'mapping-clusters': 'Mapping regional clusters…',
-      'extending-ai': 'Extending response with AI...'
-    };
-
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0"></div>
-          <span className="text-base text-foreground font-medium shimmer-text">
-            {phases[data.currentPhase]}
-          </span>
         </div>
       </div>
     );
@@ -1615,8 +1646,8 @@ export function Chat({
       return <LoadingIndicator steps={message.data.steps} currentStep={message.data.currentStep} />;
     }
 
-    if (message.contentType === 'searching' && message.data) {
-      return <SearchingIndicator data={message.data} />;
+    if (message.contentType === 'searching') {
+      return <ChatSearchShimmerCards />;
     }
 
     if (message.contentType === 'table' && message.data) {

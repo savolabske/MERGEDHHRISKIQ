@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Users, UserCog, Shield, Plus, Download, Calendar, MoreVertical, ChevronLeft, ChevronRight, Ban, Trash2, ChevronDown, X, Edit, Key, Activity, HelpCircle, UserPlus } from 'lucide-react';
 import { RolesPermissions } from './RolesPermissions';
 import { toast } from 'sonner';
@@ -21,6 +21,8 @@ import {
   menuItemClass,
   paginationControlClass,
 } from './ui/interaction';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 
 interface User {
   id: string;
@@ -286,34 +288,68 @@ export function UsersAccess() {
   const [showBulkRoleModal, setShowBulkRoleModal] = useState(false);
   const [bulkSelectedGroup, setBulkSelectedGroup] = useState('');
   const [bulkSelectedRole, setBulkSelectedRole] = useState('');
+  const [userSort, setUserSort] = useState<SortState<'name' | 'role' | 'group' | 'status' | 'lastLogin'>>(null);
+  const [groupSort, setGroupSort] = useState<SortState<'name' | 'userCount' | 'dateCreated'>>(null);
 
   const activeUsers = users.filter(u => u.status === 'Active').length;
   const pendingUsers = users.filter(u => u.status === 'Pending').length;
   const blockedUsers = users.filter(u => u.status === 'Blocked').length;
   const totalMembers = userGroups.reduce((sum, group) => sum + group.userCount, 0);
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.group.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.lastLogin.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRole = roleFilter === 'All Users' || user.role === roleFilter;
-    
-    return matchesSearch && matchesRole;
-  });
+  const filteredUsers = useMemo(
+    () =>
+      users.filter((user) => {
+        const matchesSearch =
+          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.group.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.lastLogin.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const filteredGroups = userGroups.filter(group =>
-    group.name.toLowerCase().includes(groupSearchQuery.toLowerCase()) ||
-    group.userCount.toString().includes(groupSearchQuery.toLowerCase()) ||
-    formatDate(group.dateCreated).toLowerCase().includes(groupSearchQuery.toLowerCase())
+        const matchesRole = roleFilter === 'All Users' || user.role === roleFilter;
+
+        return matchesSearch && matchesRole;
+      }),
+    [users, searchQuery, roleFilter],
+  );
+
+  const sortedUsers = useMemo(
+    () =>
+      applySort(filteredUsers, userSort, {
+        name: { getValue: (u) => u.name, kind: 'text' },
+        role: { getValue: (u) => u.role, kind: 'text' },
+        group: { getValue: (u) => u.group, kind: 'text' },
+        status: { getValue: (u) => u.status, kind: 'text' },
+        lastLogin: { getValue: (u) => u.lastLogin, kind: 'relativeTime' },
+      }),
+    [filteredUsers, userSort],
+  );
+
+  const filteredGroups = useMemo(
+    () =>
+      userGroups.filter(
+        (group) =>
+          group.name.toLowerCase().includes(groupSearchQuery.toLowerCase()) ||
+          group.userCount.toString().includes(groupSearchQuery.toLowerCase()) ||
+          formatDate(group.dateCreated).toLowerCase().includes(groupSearchQuery.toLowerCase()),
+      ),
+    [userGroups, groupSearchQuery],
+  );
+
+  const sortedGroups = useMemo(
+    () =>
+      applySort(filteredGroups, groupSort, {
+        name: { getValue: (g) => g.name, kind: 'text' },
+        userCount: { getValue: (g) => g.userCount, kind: 'number' },
+        dateCreated: { getValue: (g) => g.dateCreated, kind: 'date' },
+      }),
+    [filteredGroups, groupSort],
   );
 
   // Pagination for All Users
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const currentUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage);
+  const currentUsers = sortedUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const { visibleItems: visibleCurrentUsers, isProgressivelyLoading } = useProgressiveList(currentUsers, {
     minLoadingMs: 200,
     transitionKey: `${currentPage}-${itemsPerPage}`,
@@ -411,10 +447,10 @@ export function UsersAccess() {
   };
 
   const toggleAllUsers = () => {
-    if (selectedUsers.length === filteredUsers.length) {
+    if (selectedUsers.length === sortedUsers.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(filteredUsers.map(u => u.id));
+      setSelectedUsers(sortedUsers.map(u => u.id));
     }
   };
 
@@ -425,10 +461,10 @@ export function UsersAccess() {
   };
 
   const toggleAllGroups = () => {
-    if (selectedGroups.length === filteredGroups.length) {
+    if (selectedGroups.length === sortedGroups.length) {
       setSelectedGroups([]);
     } else {
-      setSelectedGroups(filteredGroups.map(g => g.id));
+      setSelectedGroups(sortedGroups.map(g => g.id));
     }
   };
 
@@ -751,23 +787,68 @@ export function UsersAccess() {
                     <div className="col-span-4 flex items-center gap-3">
                       <input
                         type="checkbox"
-                        checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                        checked={selectedUsers.length === sortedUsers.length && sortedUsers.length > 0}
                         onChange={toggleAllUsers}
                         className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                       />
-                      <span className="table-header-label">User</span>
+                      <SortableHeader
+                        label="User"
+                        column="name"
+                        kind="text"
+                        sort={userSort}
+                        onSortChange={(next) => {
+                          setUserSort(next);
+                          setCurrentPage(1);
+                        }}
+                      />
                     </div>
-                    <div className="col-span-2 table-header-label">
-                      Role
+                    <div className="col-span-2">
+                      <SortableHeader
+                        label="Role"
+                        column="role"
+                        kind="text"
+                        sort={userSort}
+                        onSortChange={(next) => {
+                          setUserSort(next);
+                          setCurrentPage(1);
+                        }}
+                      />
                     </div>
-                    <div className="col-span-2 table-header-label">
-                      Group
+                    <div className="col-span-2">
+                      <SortableHeader
+                        label="Group"
+                        column="group"
+                        kind="text"
+                        sort={userSort}
+                        onSortChange={(next) => {
+                          setUserSort(next);
+                          setCurrentPage(1);
+                        }}
+                      />
                     </div>
-                    <div className="col-span-2 table-header-label">
-                      Status
+                    <div className="col-span-2">
+                      <SortableHeader
+                        label="Status"
+                        column="status"
+                        kind="text"
+                        sort={userSort}
+                        onSortChange={(next) => {
+                          setUserSort(next);
+                          setCurrentPage(1);
+                        }}
+                      />
                     </div>
-                    <div className="col-span-2 table-header-label">
-                      Last Login
+                    <div className="col-span-2">
+                      <SortableHeader
+                        label="Last Login"
+                        column="lastLogin"
+                        kind="relativeTime"
+                        sort={userSort}
+                        onSortChange={(next) => {
+                          setUserSort(next);
+                          setCurrentPage(1);
+                        }}
+                      />
                     </div>
                   </div>
 
@@ -868,7 +949,7 @@ export function UsersAccess() {
                     )}
                   </div>
 
-                  {filteredUsers.length === 0 && (
+                  {sortedUsers.length === 0 && (
                     <div className="py-12 text-center">
                       <p className="text-sm text-muted-foreground">No users found</p>
                     </div>
@@ -918,7 +999,7 @@ export function UsersAccess() {
                         <span className="text-sm text-muted-foreground text-center sm:text-left">
                           {isProgressivelyLoading
                             ? 'Loading...'
-                            : `${startIndex + 1}-${Math.min(endIndex, filteredUsers.length)} of ${filteredUsers.length}`}
+                            : `${startIndex + 1}-${Math.min(endIndex, sortedUsers.length)} of ${sortedUsers.length}`}
                         </span>
                         <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
                           <button 
@@ -996,24 +1077,42 @@ export function UsersAccess() {
                     <div className="col-span-5 flex items-center gap-3">
                       <input
                         type="checkbox"
-                        checked={selectedGroups.length === filteredGroups.length && filteredGroups.length > 0}
+                        checked={selectedGroups.length === sortedGroups.length && sortedGroups.length > 0}
                         onChange={toggleAllGroups}
                         className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                       />
-                      <span className="table-header-label">Group Name</span>
+                      <SortableHeader
+                        label="Group Name"
+                        column="name"
+                        kind="text"
+                        sort={groupSort}
+                        onSortChange={setGroupSort}
+                      />
                     </div>
-                    <div className="col-span-3 table-header-label">
-                      Users
+                    <div className="col-span-3">
+                      <SortableHeader
+                        label="Users"
+                        column="userCount"
+                        kind="number"
+                        sort={groupSort}
+                        onSortChange={setGroupSort}
+                      />
                     </div>
-                    <div className="col-span-3 table-header-label">
-                      Date Created
+                    <div className="col-span-3">
+                      <SortableHeader
+                        label="Date Created"
+                        column="dateCreated"
+                        kind="date"
+                        sort={groupSort}
+                        onSortChange={setGroupSort}
+                      />
                     </div>
                     <div className="col-span-1"></div>
                   </div>
 
                   {/* Table Rows */}
                   <div className="divide-y divide-border">
-                    {filteredGroups.map((group) => (
+                    {sortedGroups.map((group) => (
                       <div 
                         key={group.id} 
                         className={cn(listRowClass, 'relative cursor-pointer')}
@@ -1079,7 +1178,7 @@ export function UsersAccess() {
                     ))}
                   </div>
 
-                  {filteredGroups.length === 0 && (
+                  {sortedGroups.length === 0 && (
                     <div className="py-12 text-center">
                       <p className="text-sm text-muted-foreground">No groups found</p>
                     </div>

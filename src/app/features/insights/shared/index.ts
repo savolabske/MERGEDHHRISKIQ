@@ -59,6 +59,14 @@ export {
   type ReportCustomizeTheme,
 } from './ReportDashboardCustomizeOverlay';
 export {
+  REPORT_MOBILE_BREAKPOINT,
+  REPORT_CHAT_SIDEBAR_MIN_WIDTH,
+  useIsBelowLg,
+  useReportChatLayoutMode,
+  readReportChatLayoutMode,
+  type ReportChatLayoutMode,
+} from './useIsBelowLg';
+export {
   ReportChatLayout,
   ReportChatHeaderCollapse,
   reportChatAsideClassName,

@@ -24,6 +24,11 @@ import { PageBreadcrumb } from './ui/page-breadcrumb';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { ChatStopButton } from './ui/ChatStopButton';
 import { ComposerSendButton } from './ui/ComposerSendButton';
+import {
+  ChatThinkingStatus,
+  CHAT_THINKING_PHASES,
+  DEFAULT_CHAT_THINKING_DURATION_MS,
+} from './ui/ChatThinkingStatus';
 import { cn } from './ui/utils';
 import { getDocumentContent, type DocumentContent } from '../data/documentDetailData';
 import type { AppView } from '../types/navigation';
@@ -403,62 +408,55 @@ export function DocumentDetail({
     setMessages((prev) => [...prev, { role: 'user', content: userQuery }]);
     setIsTyping(true);
 
-    if (useExtendedKnowledge) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: '',
-          isThinking: true,
-          thinkingPhase: 'Looking through knowledge base...',
-        },
-      ]);
+    const phases = useExtendedKnowledge
+      ? CHAT_THINKING_PHASES.extended
+      : CHAT_THINKING_PHASES.default;
+    const phaseStepMs = 900;
+    const replyDelay = useExtendedKnowledge
+      ? phaseStepMs * phases.length
+      : DEFAULT_CHAT_THINKING_DURATION_MS;
 
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: '',
+        isThinking: true,
+        thinkingPhase: phases[0],
+      },
+    ]);
+
+    phases.slice(1).forEach((phase, index) => {
       scheduleResponseTimeout(() => {
         setMessages((prev) =>
-          prev.map((message, index) =>
-            index === prev.length - 1 && message.isThinking
-              ? { ...message, thinkingPhase: 'Searching web sources...' }
+          prev.map((message, messageIndex) =>
+            messageIndex === prev.length - 1 && message.isThinking
+              ? { ...message, thinkingPhase: phase }
               : message,
           ),
         );
-      }, 900);
-
-      scheduleResponseTimeout(() => {
-        setMessages((prev) =>
-          prev.map((message, index) =>
-            index === prev.length - 1 && message.isThinking
-              ? { ...message, thinkingPhase: 'Preparing answer...' }
-              : message,
-          ),
-        );
-      }, 1800);
-
-      scheduleResponseTimeout(() => {
-        setMessages((prev) => {
-          const withoutThinking = prev.filter((message) => !message.isThinking);
-          return [
-            ...withoutThinking,
-            {
-              role: 'assistant',
-              content: generateDocumentResponse(userQuery, content),
-              webIntelligenceSummary: generateExtendedWebIntelligence(userQuery, content),
-              isExtended: true,
-            },
-          ];
-        });
-        setIsTyping(false);
-      }, 2700);
-      return;
-    }
+      }, phaseStepMs * (index + 1));
+    });
 
     scheduleResponseTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: generateDocumentResponse(userQuery, content) },
-      ]);
+      setMessages((prev) => {
+        const withoutThinking = prev.filter((message) => !message.isThinking);
+        return [
+          ...withoutThinking,
+          {
+            role: 'assistant',
+            content: generateDocumentResponse(userQuery, content),
+            ...(useExtendedKnowledge
+              ? {
+                  webIntelligenceSummary: generateExtendedWebIntelligence(userQuery, content),
+                  isExtended: true,
+                }
+              : {}),
+          },
+        ];
+      });
       setIsTyping(false);
-    }, 900);
+    }, replyDelay);
   };
 
   const renderChatMessages = () => (
@@ -489,10 +487,10 @@ export function DocumentDetail({
               {!message.isExtended && (
                 <div className="px-1 text-sm text-secondary-foreground whitespace-pre-wrap leading-relaxed">
                   {message.isThinking ? (
-                    <span className="inline-flex items-center gap-2 text-primary">
-                      <span className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
-                      {message.thinkingPhase || 'Thinking…'}
-                    </span>
+                    <ChatThinkingStatus
+                      message={message.thinkingPhase}
+                      size="sm"
+                    />
                   ) : (
                     <div className="space-y-0.5">{renderFormattedAssistantText(message.content)}</div>
                   )}
@@ -508,15 +506,7 @@ export function DocumentDetail({
       {isTyping && !messages.some((message) => message.isThinking) && (
         <div>
           <div className="px-1">
-            <div className="flex gap-1">
-              {[0, 150, 300].map((delay) => (
-                <span
-                  key={delay}
-                  className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce"
-                  style={{ animationDelay: `${delay}ms` }}
-                />
-              ))}
-            </div>
+            <ChatThinkingStatus phases={CHAT_THINKING_PHASES.default} size="sm" />
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Filter, Download, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProgressiveList } from '../hooks/useProgressiveList';
 import { toast } from 'sonner';
@@ -17,6 +17,8 @@ import {
   menuItemClass,
   paginationControlClass,
 } from './ui/interaction';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 
 interface AuditEvent {
   id: string;
@@ -265,6 +267,9 @@ export function AuditTrail() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
+  const [sort, setSort] = useState<
+    SortState<'userName' | 'action' | 'dateTime' | 'ipAddress'>
+  >(null);
 
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const actionDropdownRef = useRef<HTMLDivElement>(null);
@@ -294,27 +299,37 @@ export function AuditTrail() {
   const uniqueUsers = Array.from(new Set(mockEvents.map(e => e.userName))).sort();
   const uniqueActions = Array.from(new Set(mockEvents.map(e => e.action))).sort();
 
-  const filteredEvents = mockEvents.filter(event => {
-    // Text search filter
-    const matchesSearch = searchQuery === '' || 
-      event.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.actionDetail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.dateTime.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.timeAgo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.ipAddress.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredEvents = useMemo(
+    () =>
+      mockEvents.filter((event) => {
+        const matchesSearch =
+          searchQuery === '' ||
+          event.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.actionDetail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.dateTime.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.timeAgo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.ipAddress.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // User filter
-    const matchesUser = selectedUser === '' || event.userName === selectedUser;
+        const matchesUser = selectedUser === '' || event.userName === selectedUser;
+        const matchesAction = selectedAction === '' || event.action === selectedAction;
+        const matchesDate = true;
 
-    // Action filter
-    const matchesAction = selectedAction === '' || event.action === selectedAction;
+        return matchesSearch && matchesUser && matchesAction && matchesDate;
+      }),
+    [searchQuery, selectedUser, selectedAction],
+  );
 
-    // Date filter (simplified - just checking if dates are in the filter range)
-    const matchesDate = true; // Simplified for demo - in production would parse dateTime
-
-    return matchesSearch && matchesUser && matchesAction && matchesDate;
-  });
+  const sortedEvents = useMemo(
+    () =>
+      applySort(filteredEvents, sort, {
+        userName: { getValue: (e) => e.userName, kind: 'text' },
+        action: { getValue: (e) => e.action, kind: 'text' },
+        dateTime: { getValue: (e) => e.dateTime, kind: 'date' },
+        ipAddress: { getValue: (e) => e.ipAddress, kind: 'text' },
+      }),
+    [filteredEvents, sort],
+  );
 
   const activeFiltersCount = [selectedUser, selectedAction, dateFrom, dateTo].filter(f => f !== '').length;
 
@@ -330,8 +345,8 @@ export function AuditTrail() {
     return user ? { avatar: user.userAvatar, color: user.userAvatarColor } : null;
   };
 
-  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
-  const currentEvents = filteredEvents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(sortedEvents.length / itemsPerPage);
+  const currentEvents = sortedEvents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const { visibleItems: visibleCurrentEvents, isProgressivelyLoading } = useProgressiveList(currentEvents, {
     minLoadingMs: 200,
     transitionKey: `${currentPage}-${itemsPerPage}`,
@@ -566,17 +581,53 @@ export function AuditTrail() {
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               {/* Table Header - Desktop Only */}
               <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
-                <div className="col-span-3 table-header-label">
-                  User
+                <div className="col-span-3">
+                  <SortableHeader
+                    label="User"
+                    column="userName"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
-                <div className="col-span-4 table-header-label">
-                  Action
+                <div className="col-span-4">
+                  <SortableHeader
+                    label="Action"
+                    column="action"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
-                <div className="col-span-3 table-header-label">
-                  Date & Time
+                <div className="col-span-3">
+                  <SortableHeader
+                    label="Date & Time"
+                    column="dateTime"
+                    kind="date"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
-                <div className="col-span-2 table-header-label">
-                  IP Address
+                <div className="col-span-2">
+                  <SortableHeader
+                    label="IP Address"
+                    column="ipAddress"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
               </div>
 
@@ -620,7 +671,7 @@ export function AuditTrail() {
                 )}
               </div>
 
-              {filteredEvents.length === 0 && (
+              {sortedEvents.length === 0 && (
                 <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">No audit events found</p>
                 </div>
@@ -668,7 +719,7 @@ export function AuditTrail() {
                   {/* Right: Page navigation */}
                   <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                     <span className="text-sm text-muted-foreground text-center sm:text-left">
-                      {isProgressivelyLoading ? 'Loading...' : `${startIndex + 1}-${Math.min(endIndex, filteredEvents.length)} of ${filteredEvents.length}`}
+                      {isProgressivelyLoading ? 'Loading...' : `${startIndex + 1}-${Math.min(endIndex, sortedEvents.length)} of ${sortedEvents.length}`}
                     </span>
                     <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
                       {/* Previous Arrow */}

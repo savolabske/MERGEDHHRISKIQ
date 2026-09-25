@@ -11,7 +11,12 @@ import React, {
 import { ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
 import { useKeyboardBottomInset } from '../../../hooks/useKeyboardBottomInset';
-import { useIsBelowLg } from './useIsBelowLg';
+import {
+  readReportChatLayoutMode,
+  useIsBelowLg,
+  useReportChatLayoutMode,
+  type ReportChatLayoutMode,
+} from './useIsBelowLg';
 
 export const reportChatAsideClassName = 'flex h-full min-h-0 w-full flex-col overflow-hidden';
 
@@ -19,7 +24,7 @@ interface ReportChatPanelContextValue {
   collapse: () => void;
   expand: () => void;
   collapsed: boolean;
-  variant: 'sidebar' | 'sheet';
+  variant: ReportChatLayoutMode;
   mobileChatOpen: boolean;
   openMobileChat: () => void;
   closeMobileChat: () => void;
@@ -61,12 +66,12 @@ interface ReportChatLayoutProps {
   messageCount?: number;
   /** Start collapsed on desktop (expand rail). Default false. */
   initialCollapsed?: boolean;
-  /** Desktop sidebar width in pixels. Default 320. */
+  /** Desktop sidebar / overlay width in pixels. Default 320. */
   sidebarWidthPx?: number;
   mainClassName?: string;
   className?: string;
   sidebarClassName?: string;
-  /** Fires when the chat panel opens or closes (desktop sidebar or mobile sheet). */
+  /** Fires when the chat panel opens or closes (desktop sidebar, overlay, or mobile sheet). */
   onChatOpenChange?: (open: boolean) => void;
 }
 
@@ -170,11 +175,25 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
     },
     ref,
   ) {
-    const [chatCollapsed, setChatCollapsed] = useState(initialCollapsed);
+    // Compact laptops use overlay — start collapsed so the report isn't covered on load.
+    const [chatCollapsed, setChatCollapsed] = useState(() => {
+      if (initialCollapsed) return true;
+      return readReportChatLayoutMode() === 'overlay';
+    });
     const [mobileChatOpen, setMobileChatOpen] = useState(false);
+    const layoutMode = useReportChatLayoutMode();
     const isBelowLg = useIsBelowLg();
     const keyboardBottomInset = useKeyboardBottomInset();
     const focusPromptAfterOpenRef = useRef(false);
+    const prevModeRef = useRef(layoutMode);
+    const chatCollapsedRef = useRef(chatCollapsed);
+    const mobileChatOpenRef = useRef(mobileChatOpen);
+    chatCollapsedRef.current = chatCollapsed;
+    mobileChatOpenRef.current = mobileChatOpen;
+
+    const isSheet = layoutMode === 'sheet';
+    const isOverlay = layoutMode === 'overlay';
+    const isSidebar = layoutMode === 'sidebar';
 
     const openMobileChat = useCallback(() => setMobileChatOpen(true), []);
     const closeMobileChat = useCallback(() => setMobileChatOpen(false), []);
@@ -188,30 +207,61 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
     }, []);
 
     const openChat = useCallback(() => {
-      if (isBelowLg) {
+      if (isSheet) {
         setMobileChatOpen(true);
       } else {
         setChatCollapsed(false);
       }
-    }, [isBelowLg]);
+    }, [isSheet]);
 
     const collapseChat = useCallback(() => {
-      if (isBelowLg) {
+      if (isSheet) {
         setMobileChatOpen(false);
       } else {
         setChatCollapsed(true);
       }
-    }, [isBelowLg]);
+    }, [isSheet]);
 
     useImperativeHandle(ref, () => ({ openChat, collapseChat }), [openChat, collapseChat]);
 
+    // Preserve open/closed intent across breakpoint mode changes (resize).
+    // Entering overlay always collapses — report must stay readable on compact laptops.
     useEffect(() => {
-      if (!isBelowLg) {
-        setMobileChatOpen(false);
-      }
-    }, [isBelowLg]);
+      const prev = prevModeRef.current;
+      if (prev === layoutMode) return;
+      prevModeRef.current = layoutMode;
 
-    const chatOpen = isBelowLg ? mobileChatOpen : !chatCollapsed;
+      if (layoutMode === 'sheet') {
+        const wasOpen = prev === 'sheet' ? mobileChatOpenRef.current : !chatCollapsedRef.current;
+        setMobileChatOpen(wasOpen);
+        return;
+      }
+
+      if (layoutMode === 'overlay') {
+        setChatCollapsed(true);
+        setMobileChatOpen(false);
+        return;
+      }
+
+      if (prev === 'sheet') {
+        setChatCollapsed(!mobileChatOpenRef.current);
+      }
+      setMobileChatOpen(false);
+    }, [layoutMode]);
+
+    // Escape closes overlay so the report is fully visible again.
+    useEffect(() => {
+      if (!isOverlay || chatCollapsed) return;
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          setChatCollapsed(true);
+        }
+      };
+      window.addEventListener('keydown', onKeyDown);
+      return () => window.removeEventListener('keydown', onKeyDown);
+    }, [isOverlay, chatCollapsed]);
+
+    const chatOpen = isSheet ? mobileChatOpen : !chatCollapsed;
 
     useEffect(() => {
       onChatOpenChange?.(chatOpen);
@@ -227,7 +277,7 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
       collapsed: chatCollapsed,
       collapse: () => setChatCollapsed(true),
       expand: () => setChatCollapsed(false),
-      variant: isBelowLg ? 'sheet' : 'sidebar',
+      variant: layoutMode,
       mobileChatOpen,
       openMobileChat,
       closeMobileChat,
@@ -236,7 +286,7 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
       consumePromptFocusRequest,
     };
 
-    const mobileSheetStyle = isBelowLg
+    const mobileSheetStyle = isSheet
       ? {
           bottom: keyboardBottomInset,
           maxHeight:
@@ -249,7 +299,11 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
               : undefined,
         }
       : undefined;
-    const mobileDockStyle = isBelowLg ? { bottom: keyboardBottomInset } : undefined;
+    const mobileDockStyle = isSheet ? { bottom: keyboardBottomInset } : undefined;
+
+    // Overlay open: no in-flow width (report stays full width). Collapsed: 40px rail.
+    // Sidebar: full sidebar width when open.
+    const desktopRailWidth = chatCollapsed ? 40 : isSidebar ? sidebarWidthPx : 0;
 
     return (
       <ReportChatPanelContext.Provider value={panelContext}>
@@ -265,28 +319,48 @@ export const ReportChatLayout = forwardRef<ReportChatLayoutHandle, ReportChatLay
             {children}
           </main>
 
-          {/* Desktop sidebar (lg+) */}
-          <div
-            className="hidden shrink-0 self-stretch overflow-hidden transition-[width] duration-200 ease-out lg:block"
-            style={{ width: chatCollapsed ? 40 : sidebarWidthPx }}
-          >
-            {chatCollapsed ? (
-              <ReportChatExpandRail label={chatLabel} onClick={() => setChatCollapsed(false)} />
-            ) : (
-              <div className="relative h-full" style={{ width: sidebarWidthPx }}>
-                <DesktopChatSidebar
-                  chatHeader={chatHeader}
-                  chatFeed={chatFeed}
-                  promptInput={promptInput}
-                  showPromptInput={showPromptInput}
-                  className={sidebarClassName}
-                />
-              </div>
-            )}
-          </div>
+          {/* Desktop: in-flow sidebar (wide) or collapse rail (overlay + sidebar when collapsed) */}
+          {(isSidebar || isOverlay) && (
+            <div
+              className="hidden shrink-0 self-stretch overflow-hidden transition-[width] duration-200 ease-out lg:block"
+              style={{ width: desktopRailWidth }}
+            >
+              {chatCollapsed ? (
+                <ReportChatExpandRail label={chatLabel} onClick={() => setChatCollapsed(false)} />
+              ) : isSidebar ? (
+                <div className="relative h-full" style={{ width: sidebarWidthPx }}>
+                  <DesktopChatSidebar
+                    chatHeader={chatHeader}
+                    chatFeed={chatFeed}
+                    promptInput={promptInput}
+                    showPromptInput={showPromptInput}
+                    className={sidebarClassName}
+                  />
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* Compact laptop: float over report — no backdrop so charts stay readable */}
+          {isOverlay && !chatCollapsed && (
+            <div
+              className="absolute inset-y-0 right-0 z-[1220] hidden h-full flex-col border-l border-border bg-card shadow-lg lg:flex"
+              style={{ width: sidebarWidthPx }}
+              role="complementary"
+              aria-label={chatLabel}
+            >
+              <DesktopChatSidebar
+                chatHeader={chatHeader}
+                chatFeed={chatFeed}
+                promptInput={promptInput}
+                showPromptInput={showPromptInput}
+                className={sidebarClassName}
+              />
+            </div>
+          )}
 
           {/* Mobile/tablet: bottom dock + sheet (below lg) */}
-          {isBelowLg && (
+          {isSheet && (
             <>
               <div
                 className={cn(

@@ -17,6 +17,11 @@ import { cn } from "./ui/utils";
 import { iconButtonSmClass } from "./ui/interaction";
 import { ConfirmDeleteDialog } from "./ui/ConfirmDeleteDialog";
 import { ChatStopButton } from "./ui/ChatStopButton";
+import {
+  ChatThinkingStatus,
+  CHAT_THINKING_PHASES,
+  DEFAULT_CHAT_THINKING_DURATION_MS,
+} from "./ui/ChatThinkingStatus";
 
 const riskPrompts = [
   {
@@ -1463,16 +1468,18 @@ export function MapIntelligence() {
   const [selectedListItemId, setSelectedListItemId] = useState<string | null>(null);
   const [contextAnchorQuery, setContextAnchorQuery] = useState<string | null>(null);
   const [isAssistantStreaming, setIsAssistantStreaming] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const overlayLayerGroupRef = useRef<any>(null);
   const streamTimerRef = useRef<number | null>(null);
+  const thinkingTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
+  }, [chatMessages, isThinking]);
 
   useEffect(() => {
     const syncViewport = () => {
@@ -1488,6 +1495,9 @@ export function MapIntelligence() {
     return () => {
       if (streamTimerRef.current) {
         window.clearTimeout(streamTimerRef.current);
+      }
+      if (thinkingTimerRef.current) {
+        window.clearTimeout(thinkingTimerRef.current);
       }
     };
   }, []);
@@ -1780,43 +1790,54 @@ export function MapIntelligence() {
       content: trimmedQuery,
     };
     const assistantMessageId = now + 1;
-    const assistantMessage: ChatMessage = {
-      id: assistantMessageId,
-      role: "assistant",
-      content: "",
-    };
 
-    setChatMessages((prev) => [...prev, userMessage, assistantMessage]);
+    setChatMessages((prev) => [...prev, userMessage]);
+    setIsThinking(true);
     setIsAssistantStreaming(true);
 
     const fullAssistantText = visualization?.assistantText ?? "Map focus updated based on your prompt.";
     const textParts = fullAssistantText.split(/(\s+)/).filter((part) => part.length > 0);
-    let cursor = 0;
 
     if (streamTimerRef.current) {
       window.clearTimeout(streamTimerRef.current);
     }
+    if (thinkingTimerRef.current) {
+      window.clearTimeout(thinkingTimerRef.current);
+    }
 
-    const streamNextPart = () => {
-      if (cursor >= textParts.length) {
-        streamTimerRef.current = null;
-        setIsAssistantStreaming(false);
-        return;
-      }
+    const startStreaming = () => {
+      setIsThinking(false);
+      const assistantMessage: ChatMessage = {
+        id: assistantMessageId,
+        role: "assistant",
+        content: "",
+      };
+      setChatMessages((prev) => [...prev, assistantMessage]);
 
-      const nextChunk = textParts[cursor];
-      setChatMessages((prev) =>
-        prev.map((message) =>
-          message.id === assistantMessageId
-            ? { ...message, content: `${message.content}${nextChunk}` }
-            : message
-        )
-      );
-      cursor += 1;
-      streamTimerRef.current = window.setTimeout(streamNextPart, 28);
+      let cursor = 0;
+      const streamNextPart = () => {
+        if (cursor >= textParts.length) {
+          streamTimerRef.current = null;
+          setIsAssistantStreaming(false);
+          return;
+        }
+
+        const nextChunk = textParts[cursor];
+        setChatMessages((prev) =>
+          prev.map((message) =>
+            message.id === assistantMessageId
+              ? { ...message, content: `${message.content}${nextChunk}` }
+              : message
+          )
+        );
+        cursor += 1;
+        streamTimerRef.current = window.setTimeout(streamNextPart, 28);
+      };
+
+      streamNextPart();
     };
 
-    streamNextPart();
+    thinkingTimerRef.current = window.setTimeout(startStreaming, DEFAULT_CHAT_THINKING_DURATION_MS);
 
     setHistoryItems((prev) => [newHistoryItem, ...prev]);
     setIsHistoryOpen(false);
@@ -1831,6 +1852,11 @@ export function MapIntelligence() {
       window.clearTimeout(streamTimerRef.current);
       streamTimerRef.current = null;
     }
+    if (thinkingTimerRef.current) {
+      window.clearTimeout(thinkingTimerRef.current);
+      thinkingTimerRef.current = null;
+    }
+    setIsThinking(false);
     setIsAssistantStreaming(false);
   };
 
@@ -1845,10 +1871,15 @@ export function MapIntelligence() {
     setSuggestedFollowUps([]);
     setContextAnchorQuery(null);
     setSelectedListItemId(null);
+    setIsThinking(false);
     setIsAssistantStreaming(false);
     if (streamTimerRef.current) {
       window.clearTimeout(streamTimerRef.current);
       streamTimerRef.current = null;
+    }
+    if (thinkingTimerRef.current) {
+      window.clearTimeout(thinkingTimerRef.current);
+      thinkingTimerRef.current = null;
     }
     if (overlayLayerGroupRef.current) {
       overlayLayerGroupRef.current.clearLayers();
@@ -2035,6 +2066,13 @@ export function MapIntelligence() {
                             )}
                           </div>
                         ))}
+                        {isThinking ? (
+                          <div className="flex justify-start">
+                            <div className="max-w-[96%] rounded-2xl border border-border bg-gradient-to-br from-primary-subtle to-secondary px-4 py-3.5">
+                              <ChatThinkingStatus phases={CHAT_THINKING_PHASES.map} size="sm" />
+                            </div>
+                          </div>
+                        ) : null}
                         {!isAssistantStreaming && activeSecondaryList && activeSecondaryList.items.length > 0 && (
                           <div className="space-y-2 pl-1">
                             <div className="text-xs font-semibold text-text-subtle">

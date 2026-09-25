@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Plus, X, RefreshCw, Trash2, ChevronLeft, ChevronRight, ChevronDown, Eye, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
@@ -13,6 +13,8 @@ import {
   listHeaderActionClass,
   listRowClass,
 } from './ui/list-page';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 import {
   iconButtonSmClass,
   listFilterTriggerClass,
@@ -291,6 +293,7 @@ export function URLSources() {
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [sort, setSort] = useState<SortState<'url' | 'status' | 'lastCrawled'>>(null);
   
   // Add form state
   const [url, setUrl] = useState('');
@@ -608,8 +611,18 @@ export function URLSources() {
     );
   };
 
-  const totalPages = Math.ceil(filteredSources.length / itemsPerPage);
-  const currentSources = filteredSources.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const sortedSources = useMemo(
+    () =>
+      applySort(filteredSources, sort, {
+        url: { getValue: (s) => s.url, kind: 'text' },
+        status: { getValue: (s) => s.status, kind: 'text' },
+        lastCrawled: { getValue: (s) => s.lastCrawled, kind: 'date' },
+      }),
+    [filteredSources, sort],
+  );
+
+  const totalPages = Math.ceil(sortedSources.length / itemsPerPage);
+  const currentSources = sortedSources.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const { visibleItems: visibleCurrentSources, isProgressivelyLoading } = useProgressiveList(currentSources, {
     minLoadingMs: 200,
     transitionKey: `${currentPage}-${itemsPerPage}`,
@@ -763,13 +776,40 @@ export function URLSources() {
                     onChange={toggleSelectAll}
                     className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-2 focus:ring-ring/20 cursor-pointer"
                   />
-                  <span className="table-header-label">URL</span>
+                  <SortableHeader
+                    label="URL"
+                    column="url"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
-                <div className="col-span-2 table-header-label">
-                  Status
+                <div className="col-span-2">
+                  <SortableHeader
+                    label="Status"
+                    column="status"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
-                <div className="col-span-2 table-header-label">
-                  Last Crawled
+                <div className="col-span-2">
+                  <SortableHeader
+                    label="Last Crawled"
+                    column="lastCrawled"
+                    kind="date"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                 </div>
                 <div className="col-span-3 table-header-label text-right">
                   Actions
@@ -859,7 +899,7 @@ export function URLSources() {
                 )}
               </div>
 
-              {filteredSources.length === 0 && (
+              {sortedSources.length === 0 && (
                 <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">No URL sources found</p>
                 </div>
@@ -907,7 +947,7 @@ export function URLSources() {
                   {/* Right: Page navigation */}
                   <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                     <span className="text-sm text-muted-foreground text-center sm:text-left">
-                      {isProgressivelyLoading ? 'Loading...' : `${startIndex + 1}-${Math.min(endIndex, filteredSources.length)} of ${filteredSources.length}`}
+                      {isProgressivelyLoading ? 'Loading...' : `${startIndex + 1}-${Math.min(endIndex, sortedSources.length)} of ${sortedSources.length}`}
                     </span>
                     <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
                       <button 

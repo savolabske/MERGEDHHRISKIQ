@@ -2011,7 +2011,7 @@ export default function App() {
         ) : currentView === 'profile' ? (
           <Profile onUpdateHomeInterests={handleRedoOnboarding} />
         ) : currentView === 'adminDashboard' ? (
-          <AdminDashboard />
+          <AdminDashboard onNavigate={setCurrentView} />
         ) : currentView === 'approvals' ? (
           <Approvals />
         ) : currentView === 'usersAccess' ? (

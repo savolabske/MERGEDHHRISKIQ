@@ -1,8 +1,10 @@
 import { Search, Plus, MapPin, Edit2, Trash2, ChevronLeft, ChevronRight, X, ChevronDown, Upload, MoreVertical, Eye, FileText, CheckCircle2, Sparkles, Shield, Lightbulb, Check, Circle, Clock } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { PageFooter } from './PageFooter';
 import { useProgressiveList } from '../hooks/useProgressiveList';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 import { TableSkeleton } from './ui/table-skeleton';
 import { DetailSectionTitle } from './ui/detail-labels';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
@@ -104,6 +106,9 @@ export function RiskRegister() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
+  const [sort, setSort] = useState<
+    SortState<'description' | 'category' | 'inherentRisk' | 'mitigation' | 'residualRisk' | 'owner'>
+  >(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [riskToDelete, setRiskToDelete] = useState<string | null>(null);
@@ -540,7 +545,7 @@ export function RiskRegister() {
   }, []);
 
   // Filter risks
-  const filteredRisks = risks.filter(risk => {
+  const filteredRisks = useMemo(() => risks.filter(risk => {
     const matchesSearch = risk.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          risk.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          risk.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -557,17 +562,38 @@ export function RiskRegister() {
     const matchesRiskLevel = riskLevelFilter === 'all' || risk.riskLevel === riskLevelFilter;
     
     return matchesSearch && matchesLocation && matchesCategory && matchesRiskLevel;
-  });
+  }), [risks, searchQuery, locationFilter, categoryFilter, riskLevelFilter, residualRankings]);
 
-  const totalPages = Math.ceil(filteredRisks.length / itemsPerPage);
+  const sortedRisks = useMemo(
+    () =>
+      applySort(filteredRisks, sort, {
+        description: { getValue: (r) => r.description, kind: 'text' },
+        category: { getValue: (r) => r.category, kind: 'text' },
+        inherentRisk: { getValue: (r) => r.inherentRisk, kind: 'number' },
+        mitigation: { getValue: (r) => r.mitigationStatus, kind: 'text' },
+        residualRisk: {
+          getValue: (r) => {
+            const v = residualRankings[r.id];
+            if (!v || v === '—') return null;
+            const n = Number(String(v).replace(/[^0-9.-]/g, ''));
+            return Number.isFinite(n) ? n : null;
+          },
+          kind: 'number',
+        },
+        owner: { getValue: (r) => r.owner, kind: 'text' },
+      }),
+    [filteredRisks, sort, residualRankings],
+  );
+
+  const totalPages = Math.ceil(sortedRisks.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRisks = filteredRisks.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedRisks = sortedRisks.slice(startIndex, startIndex + itemsPerPage);
   const { visibleItems: visiblePaginatedRisks, isProgressivelyLoading } = useProgressiveList(paginatedRisks, {
     minLoadingMs: 200,
     transitionKey: `${currentPage}-${itemsPerPage}`,
   });
-  const showingStart = filteredRisks.length > 0 ? startIndex + 1 : 0;
-  const showingEnd = Math.min(startIndex + itemsPerPage, filteredRisks.length);
+  const showingStart = sortedRisks.length > 0 ? startIndex + 1 : 0;
+  const showingEnd = Math.min(startIndex + itemsPerPage, sortedRisks.length);
 
   // Generate smart page numbers for pagination - Max 3 pages at a time
   const getPageNumbers = () => {
@@ -742,12 +768,74 @@ export function RiskRegister() {
               <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-6 py-3 table-header-label">Risk description</th>
-                  <th className="text-left px-6 py-3 table-header-label">Risk category</th>
-                  <th className="text-right px-6 py-3 table-header-label">Inherent risk</th>
-                  <th className="text-left px-6 py-3 table-header-label">Mitigation</th>
-                  <th className="text-right px-6 py-3 table-header-label">Residual risk</th>
-                  <th className="text-left px-6 py-3 table-header-label">Risk owner</th>
+                  <SortableHeader
+                    as="th"
+                    label="Risk description"
+                    column="description"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <SortableHeader
+                    as="th"
+                    label="Risk category"
+                    column="category"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <SortableHeader
+                    as="th"
+                    label="Inherent risk"
+                    column="inherentRisk"
+                    kind="number"
+                    align="right"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <SortableHeader
+                    as="th"
+                    label="Mitigation"
+                    column="mitigation"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <SortableHeader
+                    as="th"
+                    label="Residual risk"
+                    column="residualRisk"
+                    kind="number"
+                    align="right"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <SortableHeader
+                    as="th"
+                    label="Risk owner"
+                    column="owner"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={(next) => {
+                      setSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
                   <th className="w-12"></th>
                 </tr>
               </thead>
@@ -905,7 +993,7 @@ export function RiskRegister() {
             {/* Right: Page navigation */}
             <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
               <span className="text-sm text-muted-foreground text-center sm:text-left">
-                {isProgressivelyLoading ? 'Loading...' : `${showingStart}-${showingEnd} of ${filteredRisks.length}`}
+                {isProgressivelyLoading ? 'Loading...' : `${showingStart}-${showingEnd} of ${sortedRisks.length}`}
               </span>
               <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
                 <button
@@ -1054,7 +1142,7 @@ export function RiskRegister() {
               </button>
             </div>
             <p className="text-xs text-text-subtle text-center">
-              Showing {showingStart}-{showingEnd} of {filteredRisks.length} risks
+              Showing {showingStart}-{showingEnd} of {sortedRisks.length} risks
             </p>
           </div>
           )}

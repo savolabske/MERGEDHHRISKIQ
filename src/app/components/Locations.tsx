@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, X, MapPin, Trash2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
@@ -16,6 +16,8 @@ import {
   requiredField,
   useFormValidation,
 } from './ui/form-validation';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 
 interface Location {
   id: string;
@@ -116,6 +118,9 @@ export function Locations() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [sort, setSort] = useState<
+    SortState<'name' | 'level' | 'latitude' | 'longitude' | 'dateAdded'>
+  >(null);
   
   // Form state
   const [name, setName] = useState('');
@@ -143,12 +148,29 @@ export function Locations() {
     },
   );
 
-  const filteredLocations = locations.filter(loc =>
-    loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    loc.level.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    loc.latitude.toString().includes(searchQuery.toLowerCase()) ||
-    loc.longitude.toString().includes(searchQuery.toLowerCase()) ||
-    loc.dateAdded.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredLocations = useMemo(
+    () =>
+      locations.filter(
+        (loc) =>
+          loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          loc.level.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          loc.latitude.toString().includes(searchQuery.toLowerCase()) ||
+          loc.longitude.toString().includes(searchQuery.toLowerCase()) ||
+          loc.dateAdded.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [locations, searchQuery],
+  );
+
+  const sortedLocations = useMemo(
+    () =>
+      applySort(filteredLocations, sort, {
+        name: { getValue: (l) => l.name, kind: 'text' },
+        level: { getValue: (l) => l.level, kind: 'text' },
+        latitude: { getValue: (l) => l.latitude, kind: 'number' },
+        longitude: { getValue: (l) => l.longitude, kind: 'number' },
+        dateAdded: { getValue: (l) => l.dateAdded, kind: 'date' },
+      }),
+    [filteredLocations, sort],
   );
 
   const handleAddLocation = () => {
@@ -219,20 +241,52 @@ export function Locations() {
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               {/* Table Header - Desktop */}
               <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
-                <div className="col-span-3 table-header-label">
-                  Location Name
+                <div className="col-span-3">
+                  <SortableHeader
+                    label="Location Name"
+                    column="name"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={setSort}
+                  />
                 </div>
-                <div className="col-span-2 table-header-label">
-                  Level
+                <div className="col-span-2">
+                  <SortableHeader
+                    label="Level"
+                    column="level"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={setSort}
+                  />
                 </div>
-                <div className="col-span-2 table-header-label text-right">
-                  Latitude
+                <div className="col-span-2 flex justify-end">
+                  <SortableHeader
+                    label="Latitude"
+                    column="latitude"
+                    kind="number"
+                    sort={sort}
+                    onSortChange={setSort}
+                    align="right"
+                  />
                 </div>
-                <div className="col-span-2 table-header-label text-right">
-                  Longitude
+                <div className="col-span-2 flex justify-end">
+                  <SortableHeader
+                    label="Longitude"
+                    column="longitude"
+                    kind="number"
+                    sort={sort}
+                    onSortChange={setSort}
+                    align="right"
+                  />
                 </div>
-                <div className="col-span-2 table-header-label">
-                  Date Added
+                <div className="col-span-2">
+                  <SortableHeader
+                    label="Date Added"
+                    column="dateAdded"
+                    kind="date"
+                    sort={sort}
+                    onSortChange={setSort}
+                  />
                 </div>
                 <div className="col-span-1 table-header-label text-right">
                   Actions
@@ -241,7 +295,7 @@ export function Locations() {
 
               {/* Table Rows */}
               <div className="divide-y divide-border">
-                {filteredLocations.map((location) => (
+                {sortedLocations.map((location) => (
                   <div key={location.id} className={`${listRowClass} relative`}>
                     {/* Mobile compact */}
                     <div className="lg:hidden flex items-start gap-3 pr-10">
@@ -301,7 +355,7 @@ export function Locations() {
                 ))}
               </div>
 
-              {filteredLocations.length === 0 && (
+              {sortedLocations.length === 0 && (
                 <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">No locations found</p>
                 </div>

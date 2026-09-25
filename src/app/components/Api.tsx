@@ -18,6 +18,8 @@ import {
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
 import { useProgressiveList } from '../hooks/useProgressiveList';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 import { TableSkeleton } from './ui/table-skeleton';
 import { cn } from './ui/utils';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
@@ -126,6 +128,12 @@ export function Api() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [datasetSort, setDatasetSort] = useState<
+    SortState<'title' | 'org' | 'fileCount' | 'updatedAt' | 'collection'>
+  >(null);
+  const [subscriptionSort, setSubscriptionSort] = useState<
+    SortState<'title' | 'org' | 'fileCount' | 'collection' | 'lastRefreshedAt' | 'status'>
+  >(null);
 
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [subscribingDataset, setSubscribingDataset] = useState<ApiDataset | null>(null);
@@ -205,7 +213,32 @@ export function Api() {
     return matchesSearch && matchesOrg && matchesCollection && matchesStatus;
   });
 
-  const activeList = activeTab === 'all' ? filteredDatasets : filteredSubscriptions;
+  const sortedDatasets = useMemo(
+    () =>
+      applySort(filteredDatasets, datasetSort, {
+        title: { getValue: (d) => d.title, kind: 'text' },
+        org: { getValue: (d) => d.org, kind: 'text' },
+        fileCount: { getValue: (d) => d.fileCount, kind: 'number' },
+        updatedAt: { getValue: (d) => d.updatedAt, kind: 'date' },
+        collection: { getValue: (d) => d.collectionName, kind: 'text' },
+      }),
+    [filteredDatasets, datasetSort],
+  );
+
+  const sortedSubscriptions = useMemo(
+    () =>
+      applySort(filteredSubscriptions, subscriptionSort, {
+        title: { getValue: (s) => s.title, kind: 'text' },
+        org: { getValue: (s) => s.org, kind: 'text' },
+        fileCount: { getValue: (s) => s.fileCount, kind: 'number' },
+        collection: { getValue: (s) => s.collectionName, kind: 'text' },
+        lastRefreshedAt: { getValue: (s) => s.lastRefreshedAt, kind: 'date' },
+        status: { getValue: (s) => s.status, kind: 'text' },
+      }),
+    [filteredSubscriptions, subscriptionSort],
+  );
+
+  const activeList = activeTab === 'all' ? sortedDatasets : sortedSubscriptions;
   const totalPages = Math.ceil(activeList.length / itemsPerPage) || 1;
   const currentItems = activeList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const { visibleItems, isProgressivelyLoading } = useProgressiveList(currentItems, {
@@ -540,11 +573,66 @@ export function Api() {
           {activeTab === 'all' ? (
             <>
               <div className="hidden lg:grid lg:grid-cols-12 lg:items-center gap-3 px-6 py-3 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <div className="lg:col-span-3">Dataset</div>
-                <div className="lg:col-span-2">Org</div>
-                <div className="lg:col-span-1">Files</div>
-                <div className="lg:col-span-2">Updated</div>
-                <div className="lg:col-span-1">Collection</div>
+                <div className="lg:col-span-3">
+                  <SortableHeader
+                    label="Dataset"
+                    column="title"
+                    kind="text"
+                    sort={datasetSort}
+                    onSortChange={(next) => {
+                      setDatasetSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                <div className="lg:col-span-2">
+                  <SortableHeader
+                    label="Org"
+                    column="org"
+                    kind="text"
+                    sort={datasetSort}
+                    onSortChange={(next) => {
+                      setDatasetSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <SortableHeader
+                    label="Files"
+                    column="fileCount"
+                    kind="number"
+                    sort={datasetSort}
+                    onSortChange={(next) => {
+                      setDatasetSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                <div className="lg:col-span-2">
+                  <SortableHeader
+                    label="Updated"
+                    column="updatedAt"
+                    kind="date"
+                    sort={datasetSort}
+                    onSortChange={(next) => {
+                      setDatasetSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <SortableHeader
+                    label="Collection"
+                    column="collection"
+                    kind="text"
+                    sort={datasetSort}
+                    onSortChange={(next) => {
+                      setDatasetSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
                 <div className="lg:col-span-3 text-right">Actions</div>
               </div>
               <div className="divide-y divide-border">
@@ -619,12 +707,78 @@ export function Api() {
           ) : (
             <>
               <div className="hidden lg:grid lg:grid-cols-12 lg:items-center gap-3 px-6 py-3 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <div className="lg:col-span-3">Dataset</div>
-                <div className="lg:col-span-2">Org</div>
-                <div className="lg:col-span-1">Files</div>
-                <div className="lg:col-span-1">Collection</div>
-                <div className="lg:col-span-2">Last refreshed</div>
-                <div className="lg:col-span-1">Status</div>
+                <div className="lg:col-span-3">
+                  <SortableHeader
+                    label="Dataset"
+                    column="title"
+                    kind="text"
+                    sort={subscriptionSort}
+                    onSortChange={(next) => {
+                      setSubscriptionSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                <div className="lg:col-span-2">
+                  <SortableHeader
+                    label="Org"
+                    column="org"
+                    kind="text"
+                    sort={subscriptionSort}
+                    onSortChange={(next) => {
+                      setSubscriptionSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <SortableHeader
+                    label="Files"
+                    column="fileCount"
+                    kind="number"
+                    sort={subscriptionSort}
+                    onSortChange={(next) => {
+                      setSubscriptionSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <SortableHeader
+                    label="Collection"
+                    column="collection"
+                    kind="text"
+                    sort={subscriptionSort}
+                    onSortChange={(next) => {
+                      setSubscriptionSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                <div className="lg:col-span-2">
+                  <SortableHeader
+                    label="Last refreshed"
+                    column="lastRefreshedAt"
+                    kind="date"
+                    sort={subscriptionSort}
+                    onSortChange={(next) => {
+                      setSubscriptionSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <SortableHeader
+                    label="Status"
+                    column="status"
+                    kind="text"
+                    sort={subscriptionSort}
+                    onSortChange={(next) => {
+                      setSubscriptionSort(next);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
                 <div className="lg:col-span-2 text-right">Actions</div>
               </div>
               <div className="divide-y divide-border">

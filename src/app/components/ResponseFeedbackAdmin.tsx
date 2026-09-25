@@ -11,6 +11,8 @@ import { cn } from './ui/utils';
 import {
   listFilterTriggerClass,
 } from './ui/interaction';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 import { ResponseFeedbackThreadDrawer } from './feedback/ResponseFeedbackThreadDrawer';
 import {
   formatFeedbackOneLinePreview,
@@ -59,6 +61,9 @@ export function ResponseFeedbackAdmin() {
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [drawerFeedback, setDrawerFeedback] = useState<ResponseFeedback | null>(null);
+  const [sort, setSort] = useState<
+    SortState<'rating' | 'response' | 'user' | 'thread' | 'submitted'>
+  >(null);
 
   useEffect(() => {
     const refresh = () => setFeedbackItems(loadResponseFeedback());
@@ -88,6 +93,21 @@ export function ResponseFeedbackAdmin() {
       return haystack.includes(query);
     });
   }, [feedbackItems, ratingFilter, searchQuery]);
+
+  const sorted = useMemo(
+    () =>
+      applySort(filtered, sort, {
+        rating: { getValue: (item) => item.rating, kind: 'text' },
+        response: {
+          getValue: (item) => getFeedbackResponseContent(item) || item.responsePreview,
+          kind: 'text',
+        },
+        user: { getValue: (item) => item.submittedBy, kind: 'text' },
+        thread: { getValue: (item) => item.threadTitle, kind: 'text' },
+        submitted: { getValue: (item) => item.submittedAt, kind: 'date' },
+      }),
+    [filtered, sort],
+  );
 
   const toggleExpanded = (id: string) => {
     setExpandedId((current) => (current === id ? null : id));
@@ -127,20 +147,60 @@ export function ResponseFeedbackAdmin() {
 
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
-            <div className="col-span-2 table-header-label">Rating</div>
-            <div className="col-span-4 table-header-label">Response</div>
-            <div className="col-span-2 table-header-label">User</div>
-            <div className="col-span-2 table-header-label">Thread</div>
-            <div className="col-span-2 table-header-label">Submitted</div>
+            <div className="col-span-2">
+              <SortableHeader
+                label="Rating"
+                column="rating"
+                kind="text"
+                sort={sort}
+                onSortChange={setSort}
+              />
+            </div>
+            <div className="col-span-4">
+              <SortableHeader
+                label="Response"
+                column="response"
+                kind="text"
+                sort={sort}
+                onSortChange={setSort}
+              />
+            </div>
+            <div className="col-span-2">
+              <SortableHeader
+                label="User"
+                column="user"
+                kind="text"
+                sort={sort}
+                onSortChange={setSort}
+              />
+            </div>
+            <div className="col-span-2">
+              <SortableHeader
+                label="Thread"
+                column="thread"
+                kind="text"
+                sort={sort}
+                onSortChange={setSort}
+              />
+            </div>
+            <div className="col-span-2">
+              <SortableHeader
+                label="Submitted"
+                column="submitted"
+                kind="date"
+                sort={sort}
+                onSortChange={setSort}
+              />
+            </div>
           </div>
 
           <div className="divide-y divide-border">
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <div className="px-6 py-12 text-center text-sm text-muted-foreground">
                 No feedback submissions match your search.
               </div>
             ) : (
-              filtered.map((item) => {
+              sorted.map((item) => {
                 const isExpanded = expandedId === item.id;
                 const fullResponse = getFeedbackResponseContent(item);
 

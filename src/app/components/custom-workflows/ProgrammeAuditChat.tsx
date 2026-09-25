@@ -4,6 +4,7 @@ import {
   type ComplianceAreaDetail,
   type ProgrammeAudit,
 } from '../../data/customWorkflowsMock';
+import { ChatThinkingStatus } from '../ui/ChatThinkingStatus';
 import { cn } from '../ui/utils';
 
 export type ProgrammeChatRole = 'user' | 'assistant';
@@ -309,12 +310,7 @@ export function ProgrammeAuditChatFeed({
             <Sparkles size={12} className="text-primary" />
             Audit assistant
           </div>
-          <div className="flex items-center gap-2.5 px-1 py-1">
-            <div className="size-4 shrink-0 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-            <span className="text-[13px] font-medium text-foreground shimmer-text">
-              {thinkingPhase}
-            </span>
-          </div>
+          <ChatThinkingStatus message={thinkingPhase} size="sm" className="px-1 py-1" />
         </div>
       ) : null}
     </div>

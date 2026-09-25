@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Check, X, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
@@ -8,6 +8,8 @@ import {
   ListPageSearch,
   listRowClass,
 } from './ui/list-page';
+import { SortableHeader } from './ui/sortable-header';
+import { applySort, type SortState } from '../lib/table-sort';
 
 interface PendingUser {
   id: string;
@@ -73,20 +75,39 @@ export function Approvals() {
   const [usersToDecline, setUsersToDecline] = useState<PendingUser[]>([]);
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [sort, setSort] = useState<
+    SortState<'name' | 'organization' | 'submitted' | 'waitingDays'>
+  >(null);
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.submitted.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.waitingDays.toString().includes(searchQuery.toLowerCase())
+  const filteredUsers = useMemo(
+    () =>
+      users.filter(
+        (user) =>
+          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.submitted.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.waitingDays.toString().includes(searchQuery.toLowerCase()),
+      ),
+    [users, searchQuery],
+  );
+
+  const sortedUsers = useMemo(
+    () =>
+      applySort(filteredUsers, sort, {
+        name: { getValue: (u) => u.name, kind: 'text' },
+        organization: { getValue: (u) => u.organization, kind: 'text' },
+        submitted: { getValue: (u) => u.submitted, kind: 'date' },
+        waitingDays: { getValue: (u) => u.waitingDays, kind: 'number' },
+      }),
+    [filteredUsers, sort],
   );
 
   const toggleSelectAll = () => {
-    if (selectedUserIds.length === filteredUsers.length) {
+    if (selectedUserIds.length === sortedUsers.length) {
       setSelectedUserIds([]);
     } else {
-      setSelectedUserIds(filteredUsers.map(u => u.id));
+      setSelectedUserIds(sortedUsers.map((u) => u.id));
     }
   };
 
@@ -218,23 +239,47 @@ export function Approvals() {
 
               {/* Table Header - Desktop Only */}
               <div className="hidden min-h-10 lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/70 border-b border-border">
-                <div className="col-span-3 table-header-label flex items-center gap-3">
+                <div className="col-span-3 flex items-center gap-3">
                   <input
                     type="checkbox"
-                    checked={selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0}
+                    checked={selectedUserIds.length === sortedUsers.length && sortedUsers.length > 0}
                     onChange={toggleSelectAll}
                     className="w-4 h-4 rounded border-checkbox-unchecked text-primary focus:ring-0 focus:ring-offset-0 cursor-pointer"
                   />
-                  Applicant
+                  <SortableHeader
+                    label="Applicant"
+                    column="name"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={setSort}
+                  />
                 </div>
-                <div className="col-span-2 table-header-label">
-                  Organization
+                <div className="col-span-2">
+                  <SortableHeader
+                    label="Organization"
+                    column="organization"
+                    kind="text"
+                    sort={sort}
+                    onSortChange={setSort}
+                  />
                 </div>
-                <div className="col-span-2 table-header-label">
-                  Submitted
+                <div className="col-span-2">
+                  <SortableHeader
+                    label="Submitted"
+                    column="submitted"
+                    kind="date"
+                    sort={sort}
+                    onSortChange={setSort}
+                  />
                 </div>
-                <div className="col-span-2 table-header-label">
-                  Waiting
+                <div className="col-span-2">
+                  <SortableHeader
+                    label="Waiting"
+                    column="waitingDays"
+                    kind="number"
+                    sort={sort}
+                    onSortChange={setSort}
+                  />
                 </div>
                 <div className="col-span-3 table-header-label text-right">
                   Actions
@@ -243,7 +288,7 @@ export function Approvals() {
 
               {/* Table Rows */}
               <div className="divide-y divide-border">
-                {filteredUsers.map((user) => (
+                {sortedUsers.map((user) => (
                   <div key={user.id} className={listRowClass}>
                     {/* Mobile & Desktop Layout */}
                     <div className="lg:col-span-3 flex items-center gap-3 min-w-0">
@@ -307,7 +352,7 @@ export function Approvals() {
                 ))}
               </div>
 
-              {filteredUsers.length === 0 && (
+              {sortedUsers.length === 0 && (
                 <div className="py-12 text-center">
                   <p className="text-base text-muted-foreground">No pending approvals found</p>
                 </div>

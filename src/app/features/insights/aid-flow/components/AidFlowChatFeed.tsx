@@ -1,4 +1,8 @@
 import React from 'react';
+import {
+  ChatThinkingStatus,
+  CHAT_THINKING_PHASES,
+} from '../../../../components/ui/ChatThinkingStatus';
 import { ReportChipButton, type ReportQueryingMode } from '../../shared';
 import { AI_CHIPS } from '../data/aidFlowData';
 import type { AidFlowChatMessage } from '../types';
@@ -28,6 +32,11 @@ function AidFlowThinkingIndicator({
   extendedKnowledge: boolean;
 }) {
   const isChat = queryingMode === 'chat';
+  const phases = isChat
+    ? CHAT_THINKING_PHASES.default
+    : extendedKnowledge
+      ? CHAT_THINKING_PHASES.reportDashboardExtended
+      : CHAT_THINKING_PHASES.reportDashboard;
 
   return (
     <div className="max-w-[92%]">
@@ -35,21 +44,12 @@ function AidFlowThinkingIndicator({
         <AnalystIcon />
         Aid Flow · {isChat ? 'looking up' : 'analysing'}
       </div>
-      <div className="flex items-center gap-2 rounded-[4px_13px_13px_13px] border border-[#e6e9ef] bg-[#f8f9fb] px-3 py-3.5 text-[12.5px] text-[#6b7a8d]">
-        <span className="inline-flex items-center gap-1" aria-hidden>
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="report-thinking-dot h-[7px] w-[7px] rounded-full bg-[#1f6feb]"
-              style={{ animationDelay: `${i * 0.2}s` }}
-            />
-          ))}
-        </span>
-        {isChat
-          ? 'Looking that up…'
-          : extendedKnowledge
-            ? 'Reading data, cross-checking linked reports…'
-            : 'Reading data, choosing charts…'}
+      <div className="rounded-[4px_13px_13px_13px] border border-[#e6e9ef] bg-[#f8f9fb] px-3 py-3.5">
+        <ChatThinkingStatus
+          phases={phases}
+          size="sm"
+          spinnerClassName="border-[#1f6feb] border-t-transparent"
+        />
       </div>
     </div>
   );
