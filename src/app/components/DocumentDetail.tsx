@@ -29,17 +29,25 @@ import {
   CHAT_THINKING_PHASES,
   DEFAULT_CHAT_THINKING_DURATION_MS,
 } from './ui/ChatThinkingStatus';
+import { ChatRequestError } from './ui/ChatRequestError';
+import {
+  querySimulatesAssistantFailure,
+  querySimulatesKnowledgeBaseFailure,
+} from '../utils/chatRequestFailure';
 import { cn } from './ui/utils';
 import { getDocumentContent, type DocumentContent } from '../data/documentDetailData';
+import { chatEmphasisClass } from './chat/chatEmphasis';
 import type { AppView } from '../types/navigation';
 
 interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'error';
   content: string;
   isThinking?: boolean;
   thinkingPhase?: string;
+  failedQuery?: string;
   webIntelligenceSummary?: string;
   isExtended?: boolean;
+  knowledgeBaseUnavailable?: boolean;
 }
 
 export type DocumentChatMessage = ChatMessage;
@@ -62,7 +70,7 @@ function renderInlineBold(text: string): Array<string | JSX.Element> {
   return parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
-        <strong key={`bold-${index}`} className="font-semibold text-foreground">
+        <strong key={`bold-${index}`} className={chatEmphasisClass(part.slice(2, -2))}>
           {part.slice(2, -2)}
         </strong>
       );
@@ -397,15 +405,17 @@ export function DocumentDetail({
     if (messages.length > 0) setIsChatOpen(true);
   };
 
-  const handleSendMessage = (e: FormEvent) => {
-    e.preventDefault();
-    if (!chatQuery.trim() || isTyping) return;
-
-    const userQuery = chatQuery.trim();
+  const startAssistantReply = (userQuery: string, isRetry = false) => {
     const useExtendedKnowledge = isExtendedKnowledgeMode;
     setChatQuery('');
     setIsChatOpen(true);
-    setMessages((prev) => [...prev, { role: 'user', content: userQuery }]);
+    setMessages((prev) => {
+      const withoutError = isRetry
+        ? prev.filter((message) => message.role !== 'error' && !message.knowledgeBaseUnavailable)
+        : prev;
+      if (isRetry) return withoutError;
+      return [...withoutError, { role: 'user', content: userQuery }];
+    });
     setIsTyping(true);
 
     const phases = useExtendedKnowledge
@@ -439,6 +449,38 @@ export function DocumentDetail({
     });
 
     scheduleResponseTimeout(() => {
+      if (!isRetry && querySimulatesAssistantFailure(userQuery)) {
+        setMessages((prev) => [
+          ...prev.filter((message) => !message.isThinking),
+          { role: 'error', content: '', failedQuery: userQuery },
+        ]);
+        setIsTyping(false);
+        return;
+      }
+
+      if (!isRetry && querySimulatesKnowledgeBaseFailure(userQuery)) {
+        setMessages((prev) => [
+          ...prev.filter((message) => !message.isThinking),
+          useExtendedKnowledge
+            ? {
+                role: 'assistant',
+                content: '',
+                failedQuery: userQuery,
+                isExtended: true,
+                knowledgeBaseUnavailable: true,
+                webIntelligenceSummary: generateExtendedWebIntelligence(userQuery, content),
+              }
+            : {
+                role: 'error',
+                content: '',
+                failedQuery: userQuery,
+                knowledgeBaseUnavailable: true,
+              },
+        ]);
+        setIsTyping(false);
+        return;
+      }
+
       setMessages((prev) => {
         const withoutThinking = prev.filter((message) => !message.isThinking);
         return [
@@ -459,11 +501,26 @@ export function DocumentDetail({
     }, replyDelay);
   };
 
+  const handleSendMessage = (e: FormEvent) => {
+    e.preventDefault();
+    if (!chatQuery.trim() || isTyping) return;
+    startAssistantReply(chatQuery.trim());
+  };
+
   const renderChatMessages = () => (
     <>
       {messages.map((message, index) => (
         <div key={index}>
-          {message.role === 'user' ? (
+          {message.role === 'error' ? (
+            <ChatRequestError
+              compact
+              disabled={isTyping}
+              onRetry={() => {
+                if (!message.failedQuery || isTyping) return;
+                startAssistantReply(message.failedQuery, true);
+              }}
+            />
+          ) : message.role === 'user' ? (
             <div className="flex justify-end">
               <div className="max-w-[80%] rounded-2xl bg-primary text-primary-foreground px-4 py-2.5 text-sm leading-relaxed shadow-sm">
                 {message.content}
@@ -480,7 +537,17 @@ export function DocumentDetail({
                     </div>
                   </div>
                   <div className="px-4 py-3">
-                    <div className="space-y-0.5">{renderFormattedAssistantText(message.content)}</div>
+                    {message.knowledgeBaseUnavailable ? (
+                      <ChatRequestError
+                        disabled={isTyping}
+                        onRetry={() => {
+                          if (!message.failedQuery || isTyping) return;
+                          startAssistantReply(message.failedQuery, true);
+                        }}
+                      />
+                    ) : (
+                      <div className="space-y-0.5">{renderFormattedAssistantText(message.content)}</div>
+                    )}
                   </div>
                 </div>
               )}

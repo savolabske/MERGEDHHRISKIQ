@@ -33,6 +33,7 @@ interface ResourceDetailViewProps {
   onDelete: () => void;
   onFilesChange?: (files: PlatformResource['files']) => void;
   onChatWithResource?: () => void;
+  breadcrumbItems?: { label: string; onClick?: () => void }[];
 }
 
 export function ResourceDetailView({
@@ -42,6 +43,7 @@ export function ResourceDetailView({
   onDelete,
   onFilesChange,
   onChatWithResource,
+  breadcrumbItems,
 }: ResourceDetailViewProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAllIndividualUsers, setShowAllIndividualUsers] = useState(false);
@@ -75,10 +77,12 @@ export function ResourceDetailView({
     <div className="space-y-6">
       <PageBreadcrumb
         className="mb-4"
-        items={[
-          { label: 'Resources', onClick: onBack },
-          { label: resource.title },
-        ]}
+        items={
+          breadcrumbItems ?? [
+            { label: 'Resources', onClick: onBack },
+            { label: resource.title },
+          ]
+        }
       />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

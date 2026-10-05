@@ -40,6 +40,9 @@ import {
   REPORT_LOAD_ORDER,
   SJF_FILTER_THEME,
   ReportPageShell,
+  ReportSourcesButton,
+  linkedResourceForCatalog,
+  sourcesForCatalogReport,
   reportChatLayoutShellClassName,
   reportHeaderClassName,
   reportMobileHeaderClassName,
@@ -63,7 +66,7 @@ import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
 const FORWARD_ICONS = [Sparkles, AlertTriangle, Calendar, Shield, Sparkles, Shield];
 
-export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
+export function SjfScrollytellingPage({ onBack, onOpenResource }: SjfScrollytellingProps) {
   const [activeScene, setActiveScene] = useState(0);
   const [openMenu, setOpenMenu] = useState<'time' | 'windows' | 'donors' | 'entities' | null>(null);
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
@@ -71,6 +74,7 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
   const filterRef = useRef<HTMLDivElement>(null);
   const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
 
+  const linkedResource = linkedResourceForCatalog('somalia-joint-fund');
   const filters = useSjfFilters();
   const {
     startYear,
@@ -247,11 +251,23 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
               items={[
                 { label: 'Reports', onClick: handleBreadcrumbBack },
                 { label: 'Somalia Joint Fund' },
+                ...(linkedResource
+                  ? [{
+                      label: linkedResource.title,
+                      onClick: () => onOpenResource?.(linkedResource.id, linkedResource.pool),
+                    }]
+                  : []),
               ]}
               suffix={
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E5F3FB] px-2 py-1 text-[11px] font-semibold text-[#00689D]">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00689D]" />
-                  {SJF_THEME.sourceBadge}
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E5F3FB] px-2 py-1 text-[11px] font-semibold text-[#00689D]">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00689D]" />
+                    {SJF_THEME.sourceBadge}
+                  </span>
+                  <ReportSourcesButton
+                    sources={sourcesForCatalogReport('somalia-joint-fund')}
+                    onOpenResource={onOpenResource}
+                  />
                 </span>
               }
             />
@@ -483,6 +499,7 @@ export function SjfScrollytellingPage({ onBack }: SjfScrollytellingProps) {
                   queryingMode={queryingMode}
                   extendedKnowledge={extendedKnowledge}
                   onChipClick={runPrompt}
+                  onRetry={(query) => runPrompt(query, { retry: true })}
                 />
               )}
             </div>

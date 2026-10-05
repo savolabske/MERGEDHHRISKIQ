@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "./ui/utils";
+import { chatEmphasisClass } from "./chat/chatEmphasis";
 import { iconButtonSmClass } from "./ui/interaction";
 import { ConfirmDeleteDialog } from "./ui/ConfirmDeleteDialog";
 import { ChatStopButton } from "./ui/ChatStopButton";
@@ -134,7 +135,10 @@ const renderInlineFormatting = (text: string, keyPrefix: string) => {
     const isBold = part.startsWith("**") && part.endsWith("**") && part.length > 4;
     const value = isBold ? part.slice(2, -2) : part;
     return isBold ? (
-      <strong key={`${keyPrefix}-part-${partIndex}`} className="font-semibold text-foreground-emphasis">
+      <strong
+        key={`${keyPrefix}-part-${partIndex}`}
+        className={chatEmphasisClass(value, { neutralClass: "font-semibold text-foreground-emphasis" })}
+      >
         {value}
       </strong>
     ) : (

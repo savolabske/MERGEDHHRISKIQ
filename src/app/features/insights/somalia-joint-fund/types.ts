@@ -80,10 +80,12 @@ export type SjfChatMessage =
   | { role: 'user'; text: string; extended?: boolean }
   | { role: 'assistant'; lane: 'dashboard'; title: string; chips?: string[]; extended?: boolean }
   | { role: 'assistant'; lane: 'chat'; body: string; chips?: string[]; extended?: boolean }
-  | { role: 'system'; text: string };
+  | { role: 'system'; text: string }
+  | { role: 'error'; query: string };
 
 export interface SjfScrollytellingProps {
   onBack?: () => void;
+  onOpenResource?: (resourceId: string, pool: 'admin' | 'user') => void;
 }
 
 export interface SjfFilterState {

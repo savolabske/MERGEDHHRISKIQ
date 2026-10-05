@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
   BarChart3,
   BookOpen,
@@ -15,10 +15,23 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { AppView } from '../types/navigation';
+import {
+  DASHBOARD_COUNTRIES,
+  adminReportStats,
+  aiUsageStats,
+  countryPortion,
+  distributeCounts,
+  interestStats,
+  splitTotal,
+  serverStats,
+  type DashboardCountryId,
+} from '../data/adminCountryStats';
 import { PageScrollShell } from './PageScrollShell';
 import { cn } from './ui/utils';
 import { segmentPillClass } from './ui/interaction';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from './ui/sheet';
 
 const PREVIEW_LIMIT = 5;
@@ -31,41 +44,6 @@ type PulseMetric = {
   view?: AppView;
   tintClass: string;
 };
-
-const pulseMetrics: PulseMetric[] = [
-  {
-    label: 'Total users',
-    value: '214',
-    hint: '+12 this month',
-    hintTone: 'success',
-    view: 'usersAccess',
-    tintClass: 'from-primary-subtle',
-  },
-  {
-    label: 'Pending approvals',
-    value: '7',
-    hint: 'Oldest: 6 days ago',
-    hintTone: 'warning',
-    view: 'approvals',
-    tintClass: 'from-warning-subtle',
-  },
-  {
-    label: 'Active this week',
-    value: '89',
-    hint: '42% of all users',
-    hintTone: 'muted',
-    view: 'usersAccess',
-    tintClass: 'from-success-subtle',
-  },
-  {
-    label: 'Negative feedback',
-    value: '12',
-    hint: 'Last 24 hours · dipped vs last week',
-    hintTone: 'danger',
-    view: 'responseFeedback',
-    tintClass: 'from-destructive-subtle',
-  },
-];
 
 type UsagePreset = 'today' | 'week' | 'lastWeek' | 'month';
 
@@ -610,18 +588,115 @@ type GroupUsageItem = {
   color: string;
 };
 
-function groupsForPreset(preset: UsagePreset): GroupUsageItem[] {
-  return groupDirectory
-    .map((group) => {
-      const active = group.active[preset];
-      const percent = group.total === 0 ? 0 : Math.round((active / group.total) * 100);
-      return {
-        name: group.name,
-        value: `${percent}% (${active}/${group.total})`,
-        width: `${percent}%`,
-        color: group.color,
-      };
-    });
+function groupsForPreset(preset: UsagePreset, country: DashboardCountryId): GroupUsageItem[] {
+  return groupDirectory.map((group) => {
+    const total = countryPortion(group.total, country);
+    const active = Math.min(countryPortion(group.active[preset], country), total);
+    const percent = total === 0 ? 0 : Math.round((active / total) * 100);
+    return {
+      name: group.name,
+      value: `${percent}% (${active}/${total})`,
+      width: `${percent}%`,
+      color: group.color,
+    };
+  });
+}
+
+function scaleSearchSlice(slice: SearchSlice, searches: number, gapTotal: number): SearchSlice {
+  const ratio = slice.searches === 0 ? 0 : searches / slice.searches;
+  return {
+    searches,
+    clickRate: slice.clickRate,
+    top: slice.top
+      .map((item) => ({ ...item, count: Math.round(item.count * ratio) }))
+      .filter((item) => item.count > 0)
+      .sort((a, b) => b.count - a.count),
+    gaps: distributeCounts(slice.gaps, gapTotal),
+  };
+}
+
+function scaleSearchPeriod(
+  period: Record<SearchSurface, SearchSlice>,
+  country: DashboardCountryId,
+): Record<SearchSurface, SearchSlice> {
+  if (country === 'all') return period;
+  const surfaceIds = ['chats', 'maps', 'reports', 'workflows'] as const;
+  const searchShares = splitTotal(
+    surfaceIds.map((id) => period[id].searches),
+    countryPortion(period.all.searches, country),
+  );
+  const gapShares = splitTotal(
+    surfaceIds.map((id) => period[id].gaps.reduce((sum, gap) => sum + gap.count, 0)),
+    countryPortion(
+      period.all.gaps.reduce((sum, gap) => sum + gap.count, 0),
+      country,
+    ),
+  );
+  const scaled = {
+    chats: scaleSearchSlice(period.chats, searchShares[0], gapShares[0]),
+    maps: scaleSearchSlice(period.maps, searchShares[1], gapShares[1]),
+    reports: scaleSearchSlice(period.reports, searchShares[2], gapShares[2]),
+    workflows: scaleSearchSlice(period.workflows, searchShares[3], gapShares[3]),
+  };
+  const allGapTotal = gapShares.reduce((sum, count) => sum + count, 0);
+  return {
+    ...scaled,
+    all: {
+      searches: searchShares.reduce((sum, count) => sum + count, 0),
+      clickRate: period.all.clickRate,
+      top: period.all.top
+        .map((item) => ({ ...item, count: countryPortion(item.count, country) }))
+        .filter((item) => item.count > 0)
+        .sort((a, b) => b.count - a.count),
+      gaps: distributeCounts(period.all.gaps, allGapTotal),
+    },
+  };
+}
+
+function buildPulseMetrics(country: DashboardCountryId): PulseMetric[] {
+  const users = countryPortion(214, country);
+  const joined = countryPortion(12, country);
+  const pending = countryPortion(7, country);
+  const active = countryPortion(89, country);
+  const feedback = countryPortion(12, country);
+  const activePct = users === 0 ? 0 : Math.round((active / users) * 100);
+  const oldest =
+    pending === 0 ? 'None waiting' : country === 'somalia' || country === 'all' ? 'Oldest: 6 days ago' : 'Oldest: 2 days ago';
+
+  return [
+    {
+      label: 'Total users',
+      value: users.toLocaleString('en-US'),
+      hint: `+${joined} this month`,
+      hintTone: 'success',
+      view: 'usersAccess',
+      tintClass: 'from-primary-subtle',
+    },
+    {
+      label: 'Pending approvals',
+      value: String(pending),
+      hint: oldest,
+      hintTone: pending === 0 ? 'muted' : 'warning',
+      view: 'approvals',
+      tintClass: 'from-warning-subtle',
+    },
+    {
+      label: 'Active this week',
+      value: String(active),
+      hint: `${activePct}% of all users`,
+      hintTone: 'muted',
+      view: 'usersAccess',
+      tintClass: 'from-success-subtle',
+    },
+    {
+      label: 'Negative feedback',
+      value: String(feedback),
+      hint: 'Last 24 hours · dipped vs last week',
+      hintTone: 'danger',
+      view: 'responseFeedback',
+      tintClass: 'from-destructive-subtle',
+    },
+  ];
 }
 
 function searchSurfaceShares(period: Record<SearchSurface, SearchSlice>) {
@@ -651,6 +726,87 @@ function UsageBar({ width, color }: { width: string; color: string }) {
     <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-secondary">
       <span className="block h-full rounded-full" style={{ width, backgroundColor: color }} />
     </span>
+  );
+}
+
+function TruncatedLabel({ text }: { text: string }) {
+  const labelRef = useRef<HTMLSpanElement>(null);
+  const [truncated, setTruncated] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = labelRef.current;
+    if (!el) return;
+    const update = () => setTruncated(el.scrollWidth > el.clientWidth + 1);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, truncated]);
+
+  const label = (
+    <span
+      ref={labelRef}
+      className="w-[9.5rem] shrink-0 cursor-default truncate text-sm font-medium text-foreground"
+    >
+      {text}
+    </span>
+  );
+
+  if (!truncated) return label;
+
+  return (
+    <HoverCard openDelay={180} closeDelay={80}>
+      <HoverCardTrigger asChild>{label}</HoverCardTrigger>
+      <HoverCardContent
+        side="top"
+        align="start"
+        sideOffset={8}
+        className="z-[1500] w-auto max-w-xs p-3 text-left text-sm font-medium leading-snug text-foreground"
+      >
+        {text}
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
+function InterestStatList({ items }: { items: ReturnType<typeof interestStats> }) {
+  return (
+    <ol className="space-y-3">
+      {items.map((interest, index) => (
+        <li key={interest.id} className="flex min-w-0 items-center gap-3">
+          <span className="w-4 shrink-0 text-xs tabular-nums text-text-subtle">{index + 1}</span>
+          <TruncatedLabel text={interest.name} />
+          <UsageBar width={interest.barWidth} color={interest.accent} />
+          <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground-emphasis">
+            {interest.count.toLocaleString('en-US')}
+          </span>
+          <span className="w-9 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+            {interest.share}%
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function ReportStatList({ items }: { items: ReturnType<typeof adminReportStats> }) {
+  const max = Math.max(...items.map((report) => report.views), 0);
+  return (
+    <ol className="space-y-3">
+      {items.map((report, index) => (
+        <li key={report.id} className="flex min-w-0 items-center gap-3">
+          <span className="w-4 shrink-0 text-xs tabular-nums text-text-subtle">{index + 1}</span>
+          <TruncatedLabel text={report.title} />
+          <UsageBar
+            width={max === 0 ? '0%' : `${(report.views / max) * 100}%`}
+            color="var(--chart-2)"
+          />
+          <span className="w-10 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground-emphasis">
+            {report.views.toLocaleString('en-US')}
+          </span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -891,6 +1047,60 @@ function usageRangePhrase(range: UsageRange, from: string, to: string) {
   return usageRangeLabel(range, from, to);
 }
 
+const AI_AS_OF = '2026-10-05';
+
+function shiftIsoDate(iso: string, days: number) {
+  const [year, month, day] = iso.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatAiDate(iso: string) {
+  return formatRangeDate(iso, true);
+}
+
+function PeriodMark({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded-full bg-primary-subtle px-2.5 text-xs font-medium text-primary">
+      {children}
+    </span>
+  );
+}
+
+function ScopeMark({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-muted px-2.5 text-xs font-medium text-muted-foreground">
+      {children}
+    </span>
+  );
+}
+
+function aiUsageWindow(range: UsageRange, from: string, to: string) {
+  if (range === 'today') {
+    return { days: 1, label: formatAiDate(AI_AS_OF) };
+  }
+  if (range === 'week') {
+    return { days: 7, label: `${formatAiDate(shiftIsoDate(AI_AS_OF, -6))} – ${formatAiDate(AI_AS_OF)}` };
+  }
+  if (range === 'lastWeek') {
+    return {
+      days: 7,
+      label: `${formatAiDate(shiftIsoDate(AI_AS_OF, -13))} – ${formatAiDate(shiftIsoDate(AI_AS_OF, -7))}`,
+    };
+  }
+  if (range === 'month') {
+    return { days: 30, label: `${formatAiDate(shiftIsoDate(AI_AS_OF, -29))} – ${formatAiDate(AI_AS_OF)}` };
+  }
+  if (from && to) {
+    return { days: Math.max(1, inclusiveDays(from, to)), label: `${formatAiDate(from)} – ${formatAiDate(to)}` };
+  }
+  return { days: 7, label: `${formatAiDate(shiftIsoDate(AI_AS_OF, -6))} – ${formatAiDate(AI_AS_OF)}` };
+}
+
 type AdminDashboardProps = {
   onNavigate?: (view: AppView) => void;
 };
@@ -901,6 +1111,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const [insightsDrawerOpen, setInsightsDrawerOpen] = useState(false);
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [searchSurface, setSearchSurface] = useState<SearchSurface>('all');
+  const [interestsDrawerOpen, setInterestsDrawerOpen] = useState(false);
+  const [reportsDrawerOpen, setReportsDrawerOpen] = useState(false);
+  const [country, setCountry] = useState<DashboardCountryId>('all');
   const [usageRange, setUsageRange] = useState<UsageRange>('week');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -915,27 +1128,51 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         : usageRange;
   const rangeLabel = usageRangeLabel(usageRange, customFrom, customTo);
   const rangePhrase = usageRangePhrase(usageRange, customFrom, customTo);
-  const rankedGroups = groupsForPreset(usagePreset);
+  const countryLabel = DASHBOARD_COUNTRIES.find((item) => item.id === country)?.label ?? 'All countries';
+  const countryPhrase = country === 'all' ? '' : ` in ${countryLabel}`;
+  const pulseMetrics = buildPulseMetrics(country);
+  const rankedGroups = groupsForPreset(usagePreset, country);
   const previewGroups = rankedGroups.slice(0, PREVIEW_LIMIT);
   const previewInsights = platformInsights.slice(0, INSIGHT_PREVIEW);
   const hasMoreGroups = rankedGroups.length > PREVIEW_LIMIT;
   const hasMoreInsights = platformInsights.length > INSIGHT_PREVIEW;
 
   const rankedResources = [...resourceCatalog]
-    .map((resource) => ({ ...resource, viewCount: resource.views[usagePreset] }))
+    .map((resource) => ({
+      ...resource,
+      viewCount: countryPortion(resource.views[usagePreset], country),
+    }))
     .sort((a, b) => b.viewCount - a.viewCount)
     .map((resource, index) => ({
       ...resource,
       rank: index + 1,
       views: `${resource.viewCount.toLocaleString('en-US')} views`,
     }));
-  const searchPeriod = searchActivityByPeriod[usagePreset];
+  const searchPeriod = scaleSearchPeriod(searchActivityByPeriod[usagePreset], country);
   const searchActivity = searchPeriod.all;
   const searchDetail = searchPeriod[searchSurface];
   const surfaceShares = searchSurfaceShares(searchPeriod);
   const searchShare = searchSurface === 'all' ? 100 : surfaceShares[searchSurface];
+  const interests = interestStats(country, usagePreset);
+  const previewInterests = interests.slice(0, PREVIEW_LIMIT);
+  const hasMoreInterests = interests.length > PREVIEW_LIMIT;
+  const adminReports = adminReportStats(country, usagePreset);
+  const previewReports = adminReports.slice(0, PREVIEW_LIMIT);
+  const hasMoreReports = adminReports.length > PREVIEW_LIMIT;
+  const aiWindow = aiUsageWindow(usageRange, customFrom, customTo);
+  const aiUsage = aiUsageStats(country, aiWindow.days);
+  const periodMarkLabel =
+    usageRange === 'custom'
+      ? aiWindow.label
+      : (USAGE_PRESETS.find((preset) => preset.id === usageRange)?.label ?? 'This week');
 
-  const rankedFeatures = rankFeatureUsage(featureUsageByPeriod[usagePreset]);
+  const rankedFeatures = rankFeatureUsage(
+    featureUsageByPeriod[usagePreset].map((item) => {
+      if (country === 'all') return item;
+      const visits = countryPortion(item.visits, country);
+      return { ...item, visits, users: Math.min(countryPortion(item.users, country), visits) };
+    }),
+  );
   const previewFeatures = rankedFeatures.slice(0, PREVIEW_LIMIT);
   const hasMoreFeatures = rankedFeatures.length > PREVIEW_LIMIT;
   const leadingFeature = rankedFeatures[0];
@@ -965,7 +1202,34 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         Monitor platform usage and key signals across Humanity Hub.
       </p>
 
-      <div className="mt-6 grid grid-cols-1 items-stretch gap-4 xl:grid-cols-2">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground">Country</p>
+        <Select value={country} onValueChange={(value) => setCountry(value as DashboardCountryId)}>
+          <SelectTrigger
+            size="sm"
+            aria-label="Country"
+            className="w-[11.5rem] shrink-0 gap-2 rounded-lg border-border bg-card px-3 text-sm font-medium shadow-none"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end" className="min-w-[11.5rem] rounded-lg border-border bg-card shadow-md">
+            {DASHBOARD_COUNTRIES.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <section className="mt-6">
+        <h3 className="text-sm font-semibold text-foreground-emphasis">Overview</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Current snapshot. These cards keep their own time window and do not use the time filter.
+        </p>
+      </section>
+
+      <div className="mt-3 grid grid-cols-1 items-stretch gap-4 xl:grid-cols-2">
         <div className="grid h-full grid-cols-1 gap-4 sm:grid-cols-2 sm:grid-rows-2">
           {pulseMetrics.map((metric) => {
             const interactive = Boolean(metric.view && onNavigate);
@@ -1018,12 +1282,12 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-foreground-emphasis">AI platform Insights</h3>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                Current briefing · {INSIGHTS_UPDATED}
+                {country === 'all' ? 'Current briefing' : 'Platform briefing · all countries'} · {INSIGHTS_UPDATED}
+                {' · '}
+                {platformInsights.filter(insightNeedsAction).length} to act on
               </p>
             </div>
-            <p className="shrink-0 text-xs text-muted-foreground">
-              {platformInsights.filter(insightNeedsAction).length} to act on
-            </p>
+            <ScopeMark>Current</ScopeMark>
           </div>
           <div className="mt-1 flex-1">
             <InsightsList insights={previewInsights} onAction={onNavigate ? go : undefined} />
@@ -1040,10 +1304,17 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-muted-foreground">
-          Activity for <span className="font-medium text-foreground">{rangeLabel}</span>
-        </p>
+      <section className="mt-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-foreground-emphasis">Activity</h3>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            These cards follow the time filter
+            {' · '}
+            <span className="font-medium text-foreground">{aiWindow.label}</span>
+            {country === 'all' ? '' : ` · ${countryLabel}`}
+          </p>
+        </div>
         <div className="flex w-fit max-w-full flex-wrap items-center gap-0.5 rounded-lg border border-border bg-muted p-0.5">
           {USAGE_PRESETS.map((preset) => (
             <button
@@ -1072,7 +1343,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-72">
               <p className="text-sm font-semibold text-foreground">Custom range</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">Applies to the activity cards below.</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Applies to every card in Activity, for the selected country.
+              </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <label className="text-xs text-muted-foreground">
                   From
@@ -1108,12 +1381,14 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
       <div className="mt-3 grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div className="min-w-0 bg-card border border-border rounded-2xl p-5">
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-foreground-emphasis">Most used features</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {leadingFeature.name} accounts for {leadingFeature.share}% of visits {rangePhrase} ·{' '}
-              {leadingFeature.users.toLocaleString('en-US')} users.
-            </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground-emphasis">Most used features</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {leadingFeature.name} accounts for {leadingFeature.share}% of visits · {leadingFeature.users.toLocaleString('en-US')} users.
+              </p>
+            </div>
+            <PeriodMark>{periodMarkLabel}</PeriodMark>
           </div>
 
           <div className="mt-5">
@@ -1135,11 +1410,12 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         </div>
 
         <div className="min-w-0 bg-card border border-border rounded-2xl p-5">
-          <div>
-            <h3 className="text-sm font-semibold text-foreground-emphasis">Usage by user groups</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Active {rangePhrase} vs total registered
-            </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground-emphasis">Usage by user groups</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">Active people vs total registered</p>
+            </div>
+            <PeriodMark>{periodMarkLabel}</PeriodMark>
           </div>
 
           <div className="mt-5">
@@ -1163,11 +1439,12 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-foreground-emphasis">Search activity</h3>
-              <p className="text-sm text-muted-foreground mt-0.5">{rangeLabel}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Searches across the platform
+                {usageRange === 'today' ? ' · updated 2 min ago' : ''}
+              </p>
             </div>
-            {usageRange === 'today' ? (
-              <p className="shrink-0 text-xs text-muted-foreground">Updated 2 min ago</p>
-            ) : null}
+            <PeriodMark>{periodMarkLabel}</PeriodMark>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-3">
@@ -1206,7 +1483,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             </ol>
           </div>
 
-          <div className="mt-4 rounded-xl bg-destructive-subtle px-4 py-3">
+          <div className="mt-4 rounded-xl border border-[#f3d4d4] bg-[#fff6f6] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-semibold text-destructive-text">Searched but not found</p>
               <p className="text-xs text-destructive-text/80">Content gaps</p>
@@ -1241,9 +1518,12 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         </div>
 
         <div className="min-w-0 bg-card border border-border rounded-2xl p-5">
-          <div>
-            <h3 className="text-sm font-semibold text-foreground-emphasis">Top resources being accessed</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">Opens {rangePhrase}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground-emphasis">Top resources being accessed</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">Document and dataset opens</p>
+            </div>
+            <PeriodMark>{periodMarkLabel}</PeriodMark>
           </div>
 
           <div className="mt-4">
@@ -1277,6 +1557,163 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         </div>
       </div>
 
+      <div className="mt-4 grid grid-cols-1 items-stretch gap-4 xl:grid-cols-2">
+        <div className="flex h-full min-w-0 flex-col rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground-emphasis">Top areas of interest</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {interests[0]
+                  ? `${interests[0].name} leads · ${interests[0].count.toLocaleString('en-US')} people`
+                  : 'No interests selected'}
+              </p>
+            </div>
+            <PeriodMark>{periodMarkLabel}</PeriodMark>
+          </div>
+          <div className="mt-4">
+            <InterestStatList items={previewInterests} />
+          </div>
+          <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+            {hasMoreInterests ? (
+              <button
+                type="button"
+                onClick={() => setInterestsDrawerOpen(true)}
+                className="text-sm font-medium text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 rounded-sm"
+              >
+                View more
+              </button>
+            ) : (
+              <span />
+            )}
+            <button
+              type="button"
+              onClick={() => go('manageInterests')}
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 rounded-sm"
+            >
+              Manage interests
+            </button>
+          </div>
+        </div>
+
+        <div className="flex h-full min-w-0 flex-col rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground-emphasis">Admin report views</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">Opens on reports added by admin</p>
+            </div>
+            <PeriodMark>{periodMarkLabel}</PeriodMark>
+          </div>
+          <div className="mt-3">
+            <ReportStatList items={previewReports} />
+          </div>
+          <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+            {hasMoreReports ? (
+              <button
+                type="button"
+                onClick={() => setReportsDrawerOpen(true)}
+                className="text-sm font-medium text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 rounded-sm"
+              >
+                View more
+              </button>
+            ) : (
+              <span />
+            )}
+            <button
+              type="button"
+              onClick={() => go('manageReports')}
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 rounded-sm"
+            >
+              Manage reports
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 items-stretch gap-4 xl:grid-cols-2">
+        <div className="flex h-full min-w-0 flex-col rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground-emphasis">AI usage</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">Requests, tokens, and estimated cost</p>
+            </div>
+            <PeriodMark>{periodMarkLabel}</PeriodMark>
+          </div>
+          <div className="mt-4 grid flex-1 grid-cols-2 gap-3">
+            {[
+              { label: 'Total requests', value: aiUsage.requestsLabel },
+              { label: 'Total token count', value: aiUsage.tokensLabel, note: aiUsage.tokensAvgLabel },
+              { label: 'Input tokens', value: aiUsage.inputLabel, note: aiUsage.inputAvgLabel },
+              { label: 'Output tokens', value: aiUsage.outputLabel, note: aiUsage.outputAvgLabel },
+            ].map((metric) => (
+              <div
+                key={metric.label}
+                className="flex flex-col justify-center rounded-xl border border-border bg-muted/40 px-4 py-3"
+              >
+                <p className="text-2xl font-semibold leading-none tabular-nums text-foreground-emphasis">
+                  {metric.value}
+                </p>
+                <p className="mt-1.5 text-xs text-muted-foreground">{metric.label}</p>
+                {metric.note ? (
+                  <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">{metric.note}</p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
+            <span className="text-xs text-muted-foreground">Estimated total cost</span>
+            <span className="text-2xl font-semibold leading-none tabular-nums text-foreground-emphasis">
+              {aiUsage.costLabel}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex h-full min-w-0 flex-col rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground-emphasis">Server</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Platform-wide · all countries. Each row keeps its own window.
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <ScopeMark>Live</ScopeMark>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success-text">
+                <span className="size-1.5 rounded-full bg-success" aria-hidden />
+                Operational
+              </span>
+            </div>
+          </div>
+          <ul className="mt-3 divide-y divide-border">
+            {serverStats.map((stat) => (
+              <li key={stat.label} className="py-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">{stat.label}</span>
+                  <span
+                    className={cn(
+                      'shrink-0 text-sm font-semibold tabular-nums',
+                      stat.tone === 'success' && 'text-success',
+                      stat.tone === 'warning' && 'text-warning-strong',
+                      stat.tone === 'muted' && 'text-foreground',
+                    )}
+                  >
+                    {stat.value}
+                    {stat.meter && !stat.value.endsWith('%') ? (
+                      <span className="font-medium text-muted-foreground"> · {stat.meter}</span>
+                    ) : null}
+                  </span>
+                </div>
+                {stat.meter ? (
+                  <div className="mt-1.5 flex w-full">
+                    <UsageBar width={stat.meter} color="var(--chart-2)" />
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+        </div>
+      </section>
+
       <Sheet open={featuresDrawerOpen} onOpenChange={setFeaturesDrawerOpen}>
         <SheetContent
           side="right"
@@ -1295,7 +1732,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-foreground">Most used features</h2>
                 <p className="text-sm text-muted-foreground">
-                  {rankedFeatures.length} features · {rangeLabel}
+                  {rankedFeatures.length} features · {rangeLabel}{countryPhrase}
                 </p>
               </div>
             </div>
@@ -1341,7 +1778,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-foreground">Usage by user groups</h2>
                 <p className="text-sm text-muted-foreground">
-                  {rankedGroups.length} groups · {rangeLabel}
+                  {rankedGroups.length} groups · {rangeLabel}{countryPhrase}
                 </p>
               </div>
             </div>
@@ -1422,7 +1859,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               </div>
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-foreground">Search activity</h2>
-                <p className="text-sm text-muted-foreground">{rangeLabel}</p>
+                <p className="text-sm text-muted-foreground">
+                  {rangeLabel}{countryPhrase}
+                </p>
               </div>
             </div>
             <SheetClose className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30">
@@ -1531,7 +1970,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               </ol>
             </div>
 
-            <div className="mt-4 rounded-xl bg-destructive-subtle px-4 py-3">
+            <div className="mt-4 rounded-xl border border-[#f3d4d4] bg-[#fff6f6] px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-destructive-text">Searched but not found</p>
                 <p className="text-xs text-destructive-text/80">Content gaps</p>
@@ -1555,6 +1994,67 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                 ))}
               </ul>
             </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={interestsDrawerOpen} onOpenChange={setInterestsDrawerOpen}>
+        <SheetContent
+          side="right"
+          className="w-full gap-0 border-l border-border bg-card p-0 sm:max-w-[440px] [&>button.absolute]:hidden"
+        >
+          <SheetTitle className="sr-only">Top areas of interest</SheetTitle>
+          <SheetDescription className="sr-only">
+            Full list of selected areas of interest for the country and period
+          </SheetDescription>
+          <div className="flex items-center justify-between gap-3 px-5 py-4">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-foreground">Top areas of interest</h2>
+              <p className="text-sm text-muted-foreground">
+                {interests.length} interests · {rangeLabel}{countryPhrase}
+              </p>
+            </div>
+            <SheetClose className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30">
+              <X size={20} strokeWidth={1.75} aria-hidden />
+              <span className="sr-only">Close</span>
+            </SheetClose>
+          </div>
+          <div className="h-px bg-border" />
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            <InterestStatList items={interests} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={reportsDrawerOpen} onOpenChange={setReportsDrawerOpen}>
+        <SheetContent
+          side="right"
+          className="w-full gap-0 border-l border-border bg-card p-0 sm:max-w-[440px] [&>button.absolute]:hidden"
+        >
+          <SheetTitle className="sr-only">Admin report views</SheetTitle>
+          <SheetDescription className="sr-only">
+            Views on reports added by admin for the country and period
+          </SheetDescription>
+          <div className="flex items-center justify-between gap-3 px-5 py-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-subtle text-primary">
+                <FileText size={18} strokeWidth={1.75} aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-foreground">Admin report views</h2>
+                <p className="text-sm text-muted-foreground">
+                  {adminReports.length} reports · {rangeLabel}{countryPhrase}
+                </p>
+              </div>
+            </div>
+            <SheetClose className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30">
+              <X size={20} strokeWidth={1.75} aria-hidden />
+              <span className="sr-only">Close</span>
+            </SheetClose>
+          </div>
+          <div className="h-px bg-border" />
+          <div className="flex-1 overflow-y-auto px-5 py-3">
+            <ReportStatList items={adminReports} />
           </div>
         </SheetContent>
       </Sheet>

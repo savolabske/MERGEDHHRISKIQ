@@ -74,6 +74,11 @@ interface ReportsProps {
   onReportOpen?: () => void;
   onReportClose?: () => void;
   onCreateResourceForReport?: (ctx: ReportResourceLinkContext) => void;
+  onOpenResource?: (
+    resourceId: string,
+    pool: 'admin' | 'user',
+    origin?: { reportId: string; reportTitle: string },
+  ) => void;
 }
 
 export function Reports({
@@ -82,7 +87,13 @@ export function Reports({
   onReportOpen,
   onReportClose,
   onCreateResourceForReport,
+  onOpenResource,
 }: ReportsProps) {
+  const openResourceFromReport = (reportId: string, reportTitle: string) => {
+    return (resourceId: string, pool: 'admin' | 'user') => {
+      onOpenResource?.(resourceId, pool, { reportId, reportTitle });
+    };
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [activeReport, setActiveReport] = useState<ActiveReport>(null);
   const [catalogCards, setCatalogCards] = useState<ReportHubCardData[]>(() => buildReportCards());
@@ -403,11 +414,12 @@ export function Reports({
   if (builderReport && isPreviewMode) {
     return (
       <ReportDetailShell>
-        <ManagedReportView
+          <ManagedReportView
           report={builderReport}
           isPreviewMode
           onBack={exitBuilderPreview}
           onEdit={exitBuilderPreview}
+          onOpenResource={openResourceFromReport(builderReport.id, builderReport.title)}
         />
       </ReportDetailShell>
     );
@@ -442,7 +454,10 @@ export function Reports({
   if (activeReport === 'aid-flow') {
     return (
       <ReportDetailShell>
-        <AidFlowScrollytelling onBack={handleReportBack} />
+        <AidFlowScrollytelling
+          onBack={handleReportBack}
+          onOpenResource={openResourceFromReport('aid-flow', 'Aid Flow Intelligence')}
+        />
       </ReportDetailShell>
     );
   }
@@ -450,7 +465,10 @@ export function Reports({
   if (activeReport === 'migration-data') {
     return (
       <ReportDetailShell>
-        <MigrationDataScrollytelling onBack={handleReportBack} />
+        <MigrationDataScrollytelling
+          onBack={handleReportBack}
+          onOpenResource={openResourceFromReport('migration-data', 'Migration & Displacement Intelligence')}
+        />
       </ReportDetailShell>
     );
   }
@@ -458,7 +476,10 @@ export function Reports({
   if (activeReport === 'somalia-joint-fund') {
     return (
       <ReportDetailShell>
-        <SomaliaJointFundScrollytelling onBack={handleReportBack} />
+        <SomaliaJointFundScrollytelling
+          onBack={handleReportBack}
+          onOpenResource={openResourceFromReport('somalia-joint-fund', 'Somalia Joint Fund')}
+        />
       </ReportDetailShell>
     );
   }
@@ -468,7 +489,11 @@ export function Reports({
     if (managed) {
       return (
         <ReportDetailShell>
-          <ManagedReportView report={managed} onBack={handleReportBack} />
+          <ManagedReportView
+            report={managed}
+            onBack={handleReportBack}
+            onOpenResource={openResourceFromReport(managed.id, managed.title)}
+          />
         </ReportDetailShell>
       );
     }

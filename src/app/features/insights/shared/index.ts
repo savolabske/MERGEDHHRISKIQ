@@ -88,6 +88,14 @@ export {
   type ReportExtendedKnowledgeTheme,
 } from './ReportExtendedKnowledgeToggle';
 export { ReportChipButton } from './ReportChipButton';
+export { ReportSourcesButton } from './ReportSourcesButton';
+export {
+  linkedResourceForCatalog,
+  linkedResourceForReport,
+  sourcesForCatalogReport,
+  sourcesForManagedReport,
+  type ReportSource,
+} from './reportSources';
 export { ReportThinkingIndicator } from './ReportThinkingIndicator';
 export { useReportChatAutoScroll, ReportChatScrollSync } from './useReportChatAutoScroll';
 export { useReportPrompt } from './useReportPrompt';

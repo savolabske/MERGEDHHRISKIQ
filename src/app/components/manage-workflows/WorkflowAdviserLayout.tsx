@@ -17,15 +17,18 @@ import {
   type ReportChatLayoutHandle,
 } from '../../features/insights/shared';
 import { cn } from '../ui/utils';
+import { ChatRequestError } from '../ui/ChatRequestError';
 import {
   ChatThinkingStatus,
   CHAT_THINKING_PHASES,
   DEFAULT_CHAT_THINKING_DURATION_MS,
 } from '../ui/ChatThinkingStatus';
+import { querySimulatesAssistantFailure } from '../../utils/chatRequestFailure';
 
 type ChatMessage =
   | { role: 'user'; text: string }
-  | { role: 'assistant'; text: string };
+  | { role: 'assistant'; text: string }
+  | { role: 'error'; query: string };
 
 interface WorkflowAdviserLayoutProps {
   mode: WorkflowAdviserMode;
@@ -72,10 +75,17 @@ export function WorkflowAdviserLayout({
     };
   }, []);
 
-  const runPrompt = (query?: string) => {
+  const runPrompt = (query?: string, options?: { retry?: boolean }) => {
     const q = (query ?? promptInput).trim();
     if (!q || isQuerying) return;
-    setMessages((prev) => [...prev, { role: 'user', text: q }]);
+    const failRequest = !options?.retry && querySimulatesAssistantFailure(q);
+    setMessages((prev) => {
+      const withoutError = options?.retry
+        ? prev.filter((message) => message.role !== 'error')
+        : prev;
+      if (options?.retry) return withoutError;
+      return [...withoutError, { role: 'user', text: q }];
+    });
     setPromptInput('');
     setIsQuerying(true);
     chatLayoutRef.current?.openChat();
@@ -83,7 +93,9 @@ export function WorkflowAdviserLayout({
     queryTimeoutRef.current = window.setTimeout(() => {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', text: answerWorkflowAdviser(q) },
+        failRequest
+          ? { role: 'error', query: q }
+          : { role: 'assistant', text: answerWorkflowAdviser(q) },
       ]);
       setIsQuerying(false);
       queryTimeoutRef.current = null;
@@ -146,7 +158,14 @@ export function WorkflowAdviserLayout({
             />
             <div className="flex flex-col gap-3.5">
               {messages.map((msg, i) =>
-                msg.role === 'user' ? (
+                msg.role === 'error' ? (
+                  <ChatRequestError
+                    key={`msg-${i}`}
+                    compact
+                    disabled={isQuerying}
+                    onRetry={() => runPrompt(msg.query, { retry: true })}
+                  />
+                ) : msg.role === 'user' ? (
                   <div
                     key={`msg-${i}`}
                     className="ml-auto max-w-[85%] rounded-[13px_13px_4px_13px] bg-primary px-3.5 py-2.5 text-[13.5px] leading-relaxed text-white"

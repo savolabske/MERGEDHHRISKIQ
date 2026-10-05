@@ -463,7 +463,7 @@ export function createBuiltinManagedReport(
 
 export function buildInitialManagedReports(): ManagedReport[] {
   return [
-    createBuiltinManagedReport('aid-flow', { resourceId: '2' }),
+    createBuiltinManagedReport('aid-flow', { resourceId: '5' }),
     createBuiltinManagedReport('migration-displacement', { resourceId: '2' }),
     createBuiltinManagedReport('somalia-joint-fund', { resourceId: '3' }),
   ];
@@ -495,8 +495,12 @@ function mergeWithBuiltins(stored: ManagedReport[]): ManagedReport[] {
       ...existing,
       id: builtin.id,
       catalogId: builtin.catalogId,
-      // Keep seeded resource links unless the stored report already has one
-      resourceId: existing.resourceId ?? builtin.resourceId,
+      // Keep a link the user chose. The old demo pointed Aid Flow at the same
+      // resource as Migration; pick up the seeded Aid Flow pack instead.
+      resourceId:
+        builtin.catalogId === 'aid-flow' && existing.resourceId === '2'
+          ? builtin.resourceId
+          : (existing.resourceId ?? builtin.resourceId),
       themeId: resolveThemeId(existing.themeId ?? builtin.themeId),
       kpiTiles: existing.kpiTiles?.length ? existing.kpiTiles : builtin.kpiTiles,
       sections: existing.sections?.length ? existing.sections : builtin.sections,

@@ -36,6 +36,9 @@ import {
   REPORT_LOAD_ORDER,
   MIGRATION_FILTER_THEME,
   ReportPageShell,
+  ReportSourcesButton,
+  linkedResourceForCatalog,
+  sourcesForCatalogReport,
   reportChatLayoutShellClassName,
   reportHeaderClassName,
   reportMobileHeaderClassName,
@@ -57,7 +60,7 @@ import { cn } from '../../../../components/ui/utils';
 import { filterTriggerClass, textLinkActionClass } from '../../../../components/ui/interaction';
 import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
-export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps) {
+export function MigrationDisplacementPage({ onBack, onOpenResource }: MigrationDisplacementProps) {
   const [activeScene, setActiveScene] = useState(0);
   const [openMenu, setOpenMenu] = useState<'time' | 'regions' | 'causes' | null>(null);
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
@@ -65,6 +68,7 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
   const filterRef = useRef<HTMLDivElement>(null);
   const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
 
+  const linkedResource = linkedResourceForCatalog('migration-displacement');
   const filters = useMigrationFilters();
   const {
     startYear,
@@ -250,10 +254,22 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
               items={[
                 { label: 'Reports', onClick: handleBreadcrumbBack },
                 { label: MIGRATION_THEME.title },
+                ...(linkedResource
+                  ? [{
+                      label: linkedResource.title,
+                      onClick: () => onOpenResource?.(linkedResource.id, linkedResource.pool),
+                    }]
+                  : []),
               ]}
               suffix={
-                <span className="rounded-full bg-[#e7f3f1] px-2 py-1 text-[11px] font-semibold text-[#1f7a6e]">
-                  IOM DTM · ETT weekly
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-[#e7f3f1] px-2 py-1 text-[11px] font-semibold text-[#1f7a6e]">
+                    IOM DTM · ETT weekly
+                  </span>
+                  <ReportSourcesButton
+                    sources={sourcesForCatalogReport('migration-displacement')}
+                    onOpenResource={onOpenResource}
+                  />
                 </span>
               }
             />
@@ -453,6 +469,7 @@ export function MigrationDisplacementPage({ onBack }: MigrationDisplacementProps
                   queryingMode={queryingMode}
                   extendedKnowledge={extendedKnowledge}
                   onChipClick={runPrompt}
+                  onRetry={(query) => runPrompt(query, { retry: true })}
                 />
               )}
             </div>

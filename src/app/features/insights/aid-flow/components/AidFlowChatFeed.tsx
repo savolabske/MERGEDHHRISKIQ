@@ -3,6 +3,7 @@ import {
   ChatThinkingStatus,
   CHAT_THINKING_PHASES,
 } from '../../../../components/ui/ChatThinkingStatus';
+import { ChatRequestError } from '../../../../components/ui/ChatRequestError';
 import { ReportChipButton, type ReportQueryingMode } from '../../shared';
 import { AI_CHIPS } from '../data/aidFlowData';
 import type { AidFlowChatMessage } from '../types';
@@ -13,6 +14,7 @@ interface AidFlowChatFeedProps {
   queryingMode?: ReportQueryingMode;
   extendedKnowledge: boolean;
   onChipClick: (prompt: string) => void;
+  onRetry: (query: string) => void;
 }
 
 function AnalystIcon() {
@@ -61,6 +63,7 @@ export function AidFlowChatFeed({
   queryingMode = 'dashboard',
   extendedKnowledge,
   onChipClick,
+  onRetry,
 }: AidFlowChatFeedProps) {
   const hasUserMessages = messages.some((m) => m.role === 'user');
 
@@ -86,6 +89,22 @@ export function AidFlowChatFeed({
       )}
 
       {messages.map((msg, i) => {
+        if (msg.role === 'error') {
+          return (
+            <div key={`msg-${i}`} className="max-w-[92%]">
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#6b7a8d]">
+                <AnalystIcon />
+                Aid Flow · AI Analyst
+              </div>
+              <ChatRequestError
+                compact
+                disabled={isQuerying}
+                onRetry={() => onRetry(msg.query)}
+              />
+            </div>
+          );
+        }
+
         if (msg.role === 'user') {
           return (
             <div key={`msg-${i}`} className="ml-auto max-w-[92%] self-end">

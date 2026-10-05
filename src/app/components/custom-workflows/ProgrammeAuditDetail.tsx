@@ -18,6 +18,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { querySimulatesAssistantFailure } from '../../utils/chatRequestFailure';
 import {
   AREA_STATUS_META,
   NOT_ASSESSED_META,
@@ -1068,9 +1069,11 @@ export function ProgrammeAuditDetail({
     chatLayoutRef.current?.openChat();
   };
 
-  const runPrompt = (rawPrompt?: string) => {
+  const runPrompt = (rawPrompt?: string, options?: { retry?: boolean }) => {
     const prompt = (rawPrompt ?? promptInput).trim();
     if (!prompt || isQueryingRef.current) return;
+
+    const failRequest = !options?.retry && querySimulatesAssistantFailure(prompt);
 
     openProgrammeChat();
     setIsHistoryOpen(false);
@@ -1080,10 +1083,16 @@ export function ProgrammeAuditDetail({
       role: 'user',
       content: prompt,
     };
-    setMessages((current) => [...current, userMessage]);
+    setMessages((current) => {
+      const withoutError = options?.retry
+        ? current.filter((message) => message.role !== 'error')
+        : current;
+      if (options?.retry) return withoutError;
+      return [...withoutError, userMessage];
+    });
     isQueryingRef.current = true;
     setIsQuerying(true);
-    setThinkingPhase('Looking through knowledge base...');
+    setThinkingPhase('Reading through connected sources...');
 
     clearGenerationTimers();
 
@@ -1092,6 +1101,23 @@ export function ProgrammeAuditDetail({
       queryTimerRef.current = window.setTimeout(() => {
         setThinkingPhase('Preparing answer...');
         queryTimerRef.current = window.setTimeout(() => {
+          queryTimerRef.current = null;
+          if (failRequest) {
+            setThinkingPhase(null);
+            isQueryingRef.current = false;
+            setIsQuerying(false);
+            setMessages((current) => [
+              ...current,
+              {
+                id: `e-${Date.now()}`,
+                role: 'error',
+                content: '',
+                failedQuery: prompt,
+              },
+            ]);
+            return;
+          }
+
           const assistantId = `a-${Date.now()}`;
           const fullText = buildProgrammeAssistantReply(programme, prompt);
           setThinkingPhase(null);
@@ -1099,7 +1125,6 @@ export function ProgrammeAuditDetail({
             ...current,
             { id: assistantId, role: 'assistant' as const, content: '' },
           ]);
-          queryTimerRef.current = null;
           streamAssistantReply(assistantId, fullText);
         }, 700);
       }, 900);
@@ -1198,6 +1223,7 @@ export function ProgrammeAuditDetail({
                   thinkingPhase={thinkingPhase}
                   suggestedPrompts={suggestedPrompts}
                   onPrompt={runPrompt}
+                  onRetry={(query) => runPrompt(query, { retry: true })}
                 />
               </>
             )}

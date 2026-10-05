@@ -379,7 +379,7 @@ function situationalBriefDefinition(): WorkflowDefinition {
         'check',
         'Corridor & route status',
         'Review corridor updates and access constraints for the map focus area. Flag blocked or high-risk routes.',
-        { agent: 'Corridor Agent', files: ['Humanitarian Access Incident Tracker — regional annexes'] },
+        { agent: 'Corridor Agent', files: ['Displacement, arrivals, and access evidence'] },
       ),
       step(
         'check',

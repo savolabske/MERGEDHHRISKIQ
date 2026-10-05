@@ -23,9 +23,11 @@ import {
   Workflow,
   Compass,
   ThumbsUp,
+  Flag,
   type LucideIcon,
 } from 'lucide-react';
 import type { AppView } from '../types/navigation';
+import { countOpenFraudReports, FRAUD_REPORTS_CHANGED_EVENT } from '../data/fraudReportStore';
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import logoImage from '../../assets/un-somalia-logo.png';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -51,6 +53,7 @@ const ADMIN_NAV_ITEMS: {
   { view: 'resources', label: 'Resources', icon: FileText },
   { view: 'links', label: 'URL Sources', icon: Link },
   { view: 'api', label: 'API', icon: Braces },
+  { view: 'fraudReports', label: 'Fraud reports', icon: Flag },
   { view: 'responseFeedback', label: 'Response Feedback', icon: ThumbsUp },
   { view: 'auditTrails', label: 'Audit Trails', icon: ClipboardList },
 ];
@@ -233,6 +236,7 @@ export function Sidebar({
     }
   };
   const [isAdminExpanded, setIsAdminExpanded] = useState(false);
+  const [openFraudCount, setOpenFraudCount] = useState(() => countOpenFraudReports());
   const menuRef = useRef<HTMLDivElement>(null);
   const adminMenuRef = useRef<HTMLDivElement>(null);
 
@@ -246,6 +250,8 @@ export function Sidebar({
     currentView === 'links' ||
     currentView === 'api' ||
     currentView === 'auditTrails' ||
+    currentView === 'fraudReports' ||
+    currentView === 'responseFeedback' ||
     currentView === 'manageReports' ||
     currentView === 'manageWorkflows';
 
@@ -293,6 +299,13 @@ export function Sidebar({
       setIsAdminExpanded(true);
     }
   }, [currentView, isAdminView]);
+
+  useEffect(() => {
+    const refresh = () => setOpenFraudCount(countOpenFraudReports());
+    refresh();
+    window.addEventListener(FRAUD_REPORTS_CHANGED_EVENT, refresh);
+    return () => window.removeEventListener(FRAUD_REPORTS_CHANGED_EVENT, refresh);
+  }, []);
 
   const handleNavigate = (view: AppView) => {
     onNavigate?.(view);
@@ -474,7 +487,9 @@ export function Sidebar({
                       displayCollapsed ? 'mt-0.5' : 'mt-0.5 ml-2 pl-2 border-l border-[var(--sidebar-divider)]',
                     )}
                   >
-                    {ADMIN_NAV_ITEMS.map(({ view, label, icon: Icon, badge }) => (
+                    {ADMIN_NAV_ITEMS.map(({ view, label, icon: Icon, badge: staticBadge }) => {
+                      const badge = view === 'fraudReports' ? openFraudCount || undefined : staticBadge;
+                      return (
                       <NavTooltip key={view} label={label} show={displayCollapsed}>
                         <button
                           type="button"
@@ -495,7 +510,8 @@ export function Sidebar({
                           )}
                         </button>
                       </NavTooltip>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 </div>

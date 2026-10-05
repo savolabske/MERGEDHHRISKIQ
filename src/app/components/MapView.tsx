@@ -9,7 +9,14 @@ import {
 } from './ui/interaction';
 import { ConfirmDeleteDialog } from './ui/ConfirmDeleteDialog';
 import { ChatStopButton } from './ui/ChatStopButton';
+import { ChatRequestError } from './ui/ChatRequestError';
+import {
+  ChatThinkingStatus,
+  CHAT_THINKING_PHASES,
+  DEFAULT_CHAT_THINKING_DURATION_MS,
+} from './ui/ChatThinkingStatus';
 import { ComposerSendButton } from './ui/ComposerSendButton';
+import { querySimulatesAssistantFailure } from '../utils/chatRequestFailure';
 import { useKeyboardBottomInset } from '../hooks/useKeyboardBottomInset';
 import {
   hasMapboxAccessToken,
@@ -39,10 +46,11 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 // ── Types ──
 interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'error';
   content: string;
   displayedText?: string;
   isTyping?: boolean;
+  failedQuery?: string;
 }
 
 interface ActiveFilter {
@@ -1104,6 +1112,7 @@ export function MapView() {
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isMapLoading, setIsMapLoading] = useState(false);
+  const [isChatPending, setIsChatPending] = useState(false);
   const [mapLoadingPhase, setMapLoadingPhase] = useState(0);
   const [queryHistory, setQueryHistory] = useState<HistoryItem[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -1136,6 +1145,7 @@ export function MapView() {
   const focusPromptAfterOpenRef = useRef(false);
   const typingIntervalRef = useRef<number | null>(null);
   const mapLoadingTimeoutsRef = useRef<number[]>([]);
+  const failureTimeoutRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
   const activeFlow = activeFlowId ? CONVERSATION_FLOWS.find(f => f.id === activeFlowId) : null;
@@ -2084,11 +2094,16 @@ export function MapView() {
   }, []);
 
   // ── Custom query handler ──
-  const handleCustomQuery = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!mapQuery.trim()) return;
-    setIsMobilePanelOpen(true);
-    const q = mapQuery.toLowerCase();
+  const clearFailedRequest = () => {
+    if (failureTimeoutRef.current !== null) {
+      window.clearTimeout(failureTimeoutRef.current);
+      failureTimeoutRef.current = null;
+    }
+    setIsChatPending(false);
+  };
+
+  const routeMapQuery = (raw: string) => {
+    const q = raw.toLowerCase();
     if (q.includes('refugee') || q.includes('camp') || q.includes('idp') || q.includes('mogadishu')) {
       startFlow('refugees');
     } else if (q.includes('diversion') || q.includes('aid') || q.includes('stolen') || q.includes('diverted')) {
@@ -2100,11 +2115,55 @@ export function MapView() {
     } else {
       startFlow('hunger2026');
     }
+  };
+
+  const beginFailedMapRequest = (query: string) => {
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    clearFailedRequest();
+    setIsTransitioning(false);
+    setChatMessages((prev) => {
+      const settled = prev.map((message) =>
+        message.isTyping
+          ? { ...message, isTyping: false, displayedText: message.displayedText ?? message.content }
+          : message,
+      );
+      return [...settled.filter((message) => message.role !== 'error'), { role: 'user', content: query }];
+    });
+    setIsChatPending(true);
+    failureTimeoutRef.current = window.setTimeout(() => {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: 'error', content: '', failedQuery: query },
+      ]);
+      setIsChatPending(false);
+      failureTimeoutRef.current = null;
+    }, DEFAULT_CHAT_THINKING_DURATION_MS);
+  };
+
+  const handleCustomQuery = (e: React.FormEvent) => {
+    e.preventDefault();
+    const raw = mapQuery.trim();
+    if (!raw) return;
+    setIsMobilePanelOpen(true);
     setMapQuery('');
+    if (querySimulatesAssistantFailure(raw)) {
+      beginFailedMapRequest(raw);
+      return;
+    }
+    clearFailedRequest();
+    routeMapQuery(raw);
   };
 
   const stopGeneration = useCallback(() => {
     clearMapLoading();
+    if (failureTimeoutRef.current !== null) {
+      window.clearTimeout(failureTimeoutRef.current);
+      failureTimeoutRef.current = null;
+    }
+    setIsChatPending(false);
     if (typingIntervalRef.current) {
       clearInterval(typingIntervalRef.current);
       typingIntervalRef.current = null;
@@ -2150,6 +2209,11 @@ export function MapView() {
   const handleReset = () => {
     saveToHistory(); // Save current conversation before resetting
     clearMapLoading();
+    if (failureTimeoutRef.current !== null) {
+      window.clearTimeout(failureTimeoutRef.current);
+      failureTimeoutRef.current = null;
+    }
+    setIsChatPending(false);
     setActiveFlowId(null);
     setCurrentStepIndex(0);
     setSelectedItem(null);
@@ -2164,6 +2228,7 @@ export function MapView() {
   useEffect(() => {
     return () => {
       clearMapLoading();
+      if (failureTimeoutRef.current !== null) window.clearTimeout(failureTimeoutRef.current);
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
@@ -2173,10 +2238,18 @@ export function MapView() {
   const currentLoadingMessage = activeLoadingPhases[Math.min(mapLoadingPhase, activeLoadingPhases.length - 1)];
 
   // Check if last message is done typing
-  const isLastMessageDone = chatMessages.length > 0 && !chatMessages[chatMessages.length - 1]?.isTyping && !isMapLoading;
-  const isGenerating = isMapLoading || chatMessages.some((msg) => msg.isTyping) || isTransitioning;
+  const lastChatMessage = chatMessages[chatMessages.length - 1];
+  const showChatThread = Boolean(activeFlow) || chatMessages.length > 0;
+  const isLastMessageDone =
+    chatMessages.length > 0 &&
+    lastChatMessage?.role === 'assistant' &&
+    !lastChatMessage.isTyping &&
+    !isMapLoading &&
+    !isChatPending;
+  const isGenerating =
+    isMapLoading || isChatPending || chatMessages.some((msg) => msg.isTyping) || isTransitioning;
 
-  const promptPlaceholder = isMapLoading
+  const promptPlaceholder = isMapLoading || isChatPending
     ? 'Analyzing...'
     : activeFlow
       ? 'Ask a follow-up question...'
@@ -2663,7 +2736,7 @@ export function MapView() {
             <div
               className={cn(
                 'flex shrink-0 items-center justify-between gap-2 px-4 pt-4',
-                activeFlow ? 'border-b border-[#E5E7EB] pb-3' : 'mb-6',
+                showChatThread ? 'border-b border-[#E5E7EB] pb-3' : 'mb-6',
               )}
             >
               <div className="flex min-w-0 items-center gap-2">
@@ -2679,7 +2752,7 @@ export function MapView() {
                 >
                   <History size={16} />
                 </button>
-                {activeFlow && (
+                {showChatThread && (
                   <button
                     type="button"
                     onClick={handleReset}
@@ -2706,7 +2779,7 @@ export function MapView() {
             </div>
           )}
 
-          {!activeFlow ? (
+          {!showChatThread ? (
             /* ── Default State: Suggested Prompts ── */
             <div className="flex min-h-0 flex-1 flex-col">
               {isMobileViewport && (
@@ -2806,7 +2879,18 @@ export function MapView() {
               <div ref={chatScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
                 {chatMessages.map((msg, idx) => (
                   <div key={idx}>
-                    {msg.role === 'user' ? (
+                    {msg.role === 'error' ? (
+                      <ChatRequestError
+                        compact
+                        disabled={isGenerating}
+                        onRetry={() => {
+                          if (!msg.failedQuery || isGenerating) return;
+                          const query = msg.failedQuery;
+                          setChatMessages((prev) => prev.filter((entry) => entry.role !== 'error'));
+                          routeMapQuery(query);
+                        }}
+                      />
+                    ) : msg.role === 'user' ? (
                       <div className="flex justify-end mb-3">
                         <div className="bg-[#2463EB] text-white px-4 py-2.5 rounded-2xl rounded-br-md max-w-[90%]">
                           <p className="text-[0.8125rem] leading-relaxed">{msg.content}</p>
@@ -2830,6 +2914,12 @@ export function MapView() {
                 ))}
 
                 {/* Map loading indicator */}
+                {isChatPending && (
+                  <div className="bg-[#F9FAFB] rounded-2xl rounded-tl-md p-4 border border-[#F3F4F6]">
+                    <ChatThinkingStatus phases={CHAT_THINKING_PHASES.map} size="sm" />
+                  </div>
+                )}
+
                 {isMapLoading && (
                   <div className="bg-[#F9FAFB] rounded-2xl rounded-tl-md p-4 border border-[#F3F4F6]">
                     <div className="flex items-center gap-3">

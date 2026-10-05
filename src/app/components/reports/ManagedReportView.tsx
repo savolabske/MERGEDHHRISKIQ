@@ -16,6 +16,8 @@ import {
   CHAT_THINKING_PHASES,
   DEFAULT_CHAT_THINKING_DURATION_MS,
 } from '../ui/ChatThinkingStatus';
+import { ChatRequestError } from '../ui/ChatRequestError';
+import { querySimulatesAssistantFailure } from '../../utils/chatRequestFailure';
 import { cn } from '../ui/utils';
 import {
   AID_FLOW_CHAT_PROMPT_THEME,
@@ -32,6 +34,9 @@ import {
   ReportExtendedKnowledgeToggle,
   ReportFilterBar,
   ReportPageShell,
+  ReportSourcesButton,
+  linkedResourceForReport,
+  sourcesForManagedReport,
   SJF_CHAT_PROMPT_THEME,
   SJF_EXTENDED_KNOWLEDGE_THEME,
   SJF_FILTER_THEME,
@@ -49,11 +54,13 @@ interface ManagedReportViewProps {
   onBack: () => void;
   isPreviewMode?: boolean;
   onEdit?: () => void;
+  onOpenResource?: (resourceId: string, pool: 'admin' | 'user') => void;
 }
 
 type ChatMessage =
   | { role: 'user'; text: string }
-  | { role: 'assistant'; text: string };
+  | { role: 'assistant'; text: string }
+  | { role: 'error'; query: string };
 
 const PERIOD_OPTIONS = ['All periods', 'Last 12 months', '2024 – 2026', '2023 – 2026'] as const;
 const SCOPE_OPTIONS = ['All sources', 'Primary resource', 'Linked knowledge'] as const;
@@ -387,6 +394,7 @@ function ManagedChatFeed({
   accent,
   muted,
   onChipClick,
+  onRetry,
 }: {
   messages: ChatMessage[];
   isQuerying: boolean;
@@ -394,6 +402,7 @@ function ManagedChatFeed({
   accent: string;
   muted: string;
   onChipClick: (prompt: string) => void;
+  onRetry: (query: string) => void;
 }) {
   const hasUser = messages.some((m) => m.role === 'user');
 
@@ -425,7 +434,21 @@ function ManagedChatFeed({
       ) : null}
 
       {messages.map((msg, i) =>
-        msg.role === 'user' ? (
+        msg.role === 'error' ? (
+          <div key={`msg-${i}`} className="max-w-[92%]">
+            <div
+              className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold"
+              style={{ color: muted }}
+            >
+              <span
+                className="inline-flex h-4 w-4 shrink-0 rounded-[5px]"
+                style={{ background: `linear-gradient(135deg, ${accent}, ${muted})` }}
+              />
+              Report assistant
+            </div>
+            <ChatRequestError compact disabled={isQuerying} onRetry={() => onRetry(msg.query)} />
+          </div>
+        ) : msg.role === 'user' ? (
           <div key={`msg-${i}`} className="ml-auto max-w-[92%] self-end">
             <div
               className="rounded-[13px_13px_4px_13px] px-3 py-2.5 text-[12.5px] font-medium"
@@ -480,7 +503,9 @@ export function ManagedReportView({
   onBack,
   isPreviewMode = false,
   onEdit,
+  onOpenResource,
 }: ManagedReportViewProps) {
+  const linkedResource = linkedResourceForReport(report);
   const theme = getReportThemeTokens(report.themeId);
   const chrome = chromeForTheme(theme.id);
   const sections = useMemo(
@@ -526,16 +551,28 @@ export function ManagedReportView({
     };
   }, []);
 
-  const runPrompt = (query?: string) => {
+  const runPrompt = (query?: string, options?: { retry?: boolean }) => {
     const q = (query ?? promptInput).trim();
     if (!q || isQuerying) return;
-    setMessages((prev) => [...prev, { role: 'user', text: q }]);
+    const failRequest = !options?.retry && querySimulatesAssistantFailure(q);
+    setMessages((prev) => {
+      const withoutError = options?.retry
+        ? prev.filter((message) => message.role !== 'error')
+        : prev;
+      if (options?.retry) return withoutError;
+      return [...withoutError, { role: 'user', text: q }];
+    });
     setPromptInput('');
     setIsQuerying(true);
     chatLayoutRef.current?.openChat();
     if (queryTimeoutRef.current !== null) window.clearTimeout(queryTimeoutRef.current);
     queryTimeoutRef.current = window.setTimeout(() => {
-      setMessages((prev) => [...prev, { role: 'assistant', text: answerForPrompt(report, q) }]);
+      setMessages((prev) => [
+        ...prev,
+        failRequest
+          ? { role: 'error', query: q }
+          : { role: 'assistant', text: answerForPrompt(report, q) },
+      ]);
       setIsQuerying(false);
       queryTimeoutRef.current = null;
     }, DEFAULT_CHAT_THINKING_DURATION_MS);
@@ -567,7 +604,19 @@ export function ManagedReportView({
           items={[
             { label: 'Reports', onClick: onBack },
             { label: report.title },
+            ...(linkedResource
+              ? [{
+                  label: linkedResource.title,
+                  onClick: () => onOpenResource?.(linkedResource.id, linkedResource.pool),
+                }]
+              : []),
           ]}
+          suffix={
+            <ReportSourcesButton
+              sources={sourcesForManagedReport(report)}
+              onOpenResource={onOpenResource}
+            />
+          }
         />
         <div className={reportTitleFilterRowClassName}>
           <div className="lg:min-w-0 lg:flex-1">
@@ -754,6 +803,7 @@ export function ManagedReportView({
               accent={theme.accent}
               muted={theme.textMuted}
               onChipClick={runPrompt}
+              onRetry={(query) => runPrompt(query, { retry: true })}
             />
           </div>
         }

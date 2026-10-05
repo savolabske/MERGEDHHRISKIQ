@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   LayoutGrid,
   LayoutDashboard,
@@ -6,6 +6,7 @@ import {
   Users,
   FolderKanban,
   Sparkles,
+  Flag,
 } from 'lucide-react';
 import { Dashboard } from './Dashboard';
 import { RiskMatrix } from './RiskMatrix';
@@ -18,6 +19,7 @@ import type { ChatHistoryItem } from '../types/chat';
 import { Button } from './ui/button';
 import { useIsMobile } from './ui/use-mobile';
 import { cn } from './ui/utils';
+import { ReportFraudDialog } from './fraud/ReportFraudDialog';
 
 const TABS: {
   id: RiskIqTab;
@@ -60,6 +62,7 @@ export function RiskIQPage({
   const isMobile = useIsMobile();
   const tabRefs = useRef<Partial<Record<RiskIqTab, HTMLButtonElement | null>>>({});
   const showMobileFab = Boolean(onNewChat && isMobile && activeTab !== 'chats');
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     if (!isMobile) return;
@@ -114,18 +117,30 @@ export function RiskIQPage({
       <div className="shrink-0 border-b border-border bg-card">
         <div className="px-4 sm:px-8 pt-3 pb-0">
           <div className="max-w-[1400px] mx-auto">
-            <div className="flex items-center gap-3 -mb-px md:flex">
+            <div className="flex items-center gap-2 -mb-px">
               {renderTabs({ mobilePadding: isMobile })}
-              {onNewChat && (
+              <div className="flex items-center gap-2 shrink-0 mb-2.5">
                 <Button
                   type="button"
-                  onClick={onNewChat}
-                  className="hidden md:inline-flex shrink-0 gap-2 mb-2.5"
+                  variant="outline"
+                  onClick={() => setReportOpen(true)}
+                  className="gap-2"
+                  aria-label="Report fraud"
                 >
-                  <Sparkles size={18} strokeWidth={1.8} />
-                  Chat with Risk iQ
+                  <Flag size={16} strokeWidth={1.8} />
+                  <span className="hidden sm:inline">Report fraud</span>
                 </Button>
-              )}
+                {onNewChat && (
+                  <Button
+                    type="button"
+                    onClick={onNewChat}
+                    className="hidden md:inline-flex shrink-0 gap-2"
+                  >
+                    <Sparkles size={18} strokeWidth={1.8} />
+                    Chat with Risk iQ
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -155,6 +170,8 @@ export function RiskIQPage({
           />
         )}
       </div>
+
+      <ReportFraudDialog open={reportOpen} onOpenChange={setReportOpen} />
 
       {showMobileFab && (
         <button

@@ -15,6 +15,7 @@ import { Approvals } from "./components/Approvals";
 import { UsersAccess } from "./components/UsersAccess";
 import { AuditTrail } from "./components/AuditTrail";
 import { ResponseFeedbackAdmin } from "./components/ResponseFeedbackAdmin";
+import { FraudReportsAdmin } from "./components/FraudReportsAdmin";
 import { URLSources } from "./components/URLSources";
 import { Api } from "./components/Api";
 import { Definitions } from "./components/Definitions";
@@ -36,8 +37,10 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { HomeDashboard } from "./components/HomeDashboard";
 import { DocumentDetail } from "./components/DocumentDetail";
 import {
-  getPlatformResourceById,
+  adminResourceIdFromChatId,
+  getChatResourceTitle,
   resolveChatEligibleResourceId,
+  toAdminResourceChatId,
 } from "./data/documentDetailData";
 import type { DocumentChatMessage } from "./components/DocumentDetail";
 import { PlatformChats } from "./components/PlatformChats";
@@ -144,6 +147,12 @@ export default function App() {
   const [documentChatThreadId, setDocumentChatThreadId] = useState<string | null>(null);
   const [documentChatOpen, setDocumentChatOpen] = useState(false);
   const [resourcesHubFocusedResourceId, setResourcesHubFocusedResourceId] = useState<string | null>(null);
+  const [adminResourceFocusId, setAdminResourceFocusId] = useState<string | null>(null);
+  const [reportResourceOrigin, setReportResourceOrigin] = useState<{
+    reportId: string;
+    reportTitle: string;
+    resourceId: string;
+  } | null>(null);
   const [reportLinkContext, setReportLinkContext] = useState<ReportResourceLinkContext | null>(() =>
     loadReportResourceLinkContext(),
   );
@@ -842,8 +851,8 @@ export default function App() {
 
   const openResourceChat = useCallback(
     (resourceId: string, returnView: AppView | 'aiSearch' = 'resourcesHub') => {
-      const resource = getPlatformResourceById(resourceId);
-      if (!resource || !resolveChatEligibleResourceId(resourceId)) return;
+      const title = getChatResourceTitle(resourceId);
+      if (!title || !resolveChatEligibleResourceId(resourceId)) return;
 
       const { timeString, dateLabel } = getCurrentDateMeta();
       const existing = chatHistory.find((chat) => chat.resourceId === resourceId);
@@ -852,14 +861,14 @@ export default function App() {
       if (!existing) {
         const newHistoryItem: ChatHistoryItem = {
           id: threadId,
-          query: resource.title,
+          query: title,
           timestamp: timeString,
           date: dateLabel,
           messages: [],
           sharedWith: [],
           source: 'resource',
           resourceId,
-          resourceTitle: resource.title,
+          resourceTitle: title,
           createdBy: CURRENT_USER.id,
           createdByName: CURRENT_USER.name,
           unread: false,
@@ -879,6 +888,10 @@ export default function App() {
       setDocumentChatOpen(true);
       if (returnView === 'resourcesHub') {
         setResourcesHubFocusedResourceId(resourceId);
+      }
+      if (returnView === 'resources') {
+        const adminId = adminResourceIdFromChatId(resourceId);
+        if (adminId) setAdminResourceFocusId(adminId);
       }
       setCurrentView('documentDetail');
       setInvitePreviewThreadId(null);
@@ -957,21 +970,21 @@ export default function App() {
   );
 
   const handleResourceNewChat = useCallback(() => {
-    const resource = getPlatformResourceById(currentDocumentId);
-    if (!resource || !resolveChatEligibleResourceId(currentDocumentId)) return;
+    const title = getChatResourceTitle(currentDocumentId);
+    if (!title || !resolveChatEligibleResourceId(currentDocumentId)) return;
 
     const { timeString, dateLabel } = getCurrentDateMeta();
     const newChatId = `resource-${currentDocumentId}-${Date.now()}`;
     const newHistoryItem: ChatHistoryItem = {
       id: newChatId,
-      query: resource.title,
+      query: title,
       timestamp: timeString,
       date: dateLabel,
       messages: [],
       sharedWith: [],
       source: 'resource',
       resourceId: currentDocumentId,
-      resourceTitle: resource.title,
+      resourceTitle: title,
       createdBy: CURRENT_USER.id,
       createdByName: CURRENT_USER.name,
       unread: false,
@@ -1201,6 +1214,10 @@ export default function App() {
     if (view !== 'resourcesHub') {
       setResourcesHubFocusedResourceId(null);
     }
+    if (view !== 'resources') {
+      setAdminResourceFocusId(null);
+    }
+    setReportResourceOrigin(null);
     if (view === 'riskIQ') {
       setRiskIqTab('dashboard');
       saveRiskIqTab('dashboard');
@@ -1575,7 +1592,20 @@ export default function App() {
             breadcrumbParent={
               documentReturnView === 'resourcesHub'
                 ? { label: 'Resources', onClick: handleDocumentDetailBack }
-                : undefined
+                : documentReturnView === 'resources' &&
+                    reportResourceOrigin &&
+                    adminResourceIdFromChatId(currentDocumentId) === reportResourceOrigin.resourceId
+                  ? {
+                      label: reportResourceOrigin.reportTitle,
+                      onClick: () => {
+                        const reportId = reportResourceOrigin.reportId;
+                        setAdminResourceFocusId(null);
+                        setReportResourceOrigin(null);
+                        setPendingHubReport(reportId);
+                        setCurrentView('reports');
+                      },
+                    }
+                  : undefined
             }
             breadcrumbCurrentOnClick={
               documentReturnView === 'resourcesHub'
@@ -1583,10 +1613,21 @@ export default function App() {
                     setResourcesHubFocusedResourceId(currentDocumentId);
                     setCurrentView('resourcesHub');
                   }
-                : undefined
+                : documentReturnView === 'resources' && adminResourceIdFromChatId(currentDocumentId)
+                  ? () => {
+                      const adminId = adminResourceIdFromChatId(currentDocumentId);
+                      if (adminId) setAdminResourceFocusId(adminId);
+                      setCurrentView('resources');
+                    }
+                  : undefined
             }
             breadcrumbChildLabel={
-              documentReturnView === 'resourcesHub' && documentChatThreadId ? 'Chat' : undefined
+              documentChatThreadId &&
+              (documentReturnView === 'resourcesHub' ||
+                (documentReturnView === 'resources' &&
+                  Boolean(adminResourceIdFromChatId(currentDocumentId))))
+                ? 'Chat'
+                : undefined
             }
           />
         ) : currentView === 'platformChats' ? (
@@ -1601,6 +1642,24 @@ export default function App() {
           <PlatformResources
             onChatWithResource={(id) => openResourceChat(id, 'resourcesHub')}
             focusedResourceId={resourcesHubFocusedResourceId}
+            fromReport={reportResourceOrigin}
+            onBackToReports={() => {
+              setResourcesHubFocusedResourceId(null);
+              setReportResourceOrigin(null);
+              setPendingHubReport(null);
+              setCurrentView('reports');
+            }}
+            onBackToReport={
+              reportResourceOrigin
+                ? () => {
+                    const reportId = reportResourceOrigin.reportId;
+                    setResourcesHubFocusedResourceId(null);
+                    setReportResourceOrigin(null);
+                    setPendingHubReport(reportId);
+                    setCurrentView('reports');
+                  }
+                : undefined
+            }
             reportLinkContext={
               reportLinkContext?.resourcePool === 'user' ? reportLinkContext : null
             }
@@ -2005,6 +2064,24 @@ export default function App() {
               }
             }}
             onCreateResourceForReport={handleCreateResourceForUserReport}
+            onOpenResource={(resourceId, pool, origin) => {
+              if (sidebarCollapsedBeforeReportRef.current !== null) {
+                setIsSidebarCollapsed(sidebarCollapsedBeforeReportRef.current);
+                sidebarCollapsedBeforeReportRef.current = null;
+              }
+              setReportResourceOrigin(
+                origin
+                  ? { reportId: origin.reportId, reportTitle: origin.reportTitle, resourceId }
+                  : null,
+              );
+              if (pool === 'admin') {
+                setAdminResourceFocusId(resourceId);
+                setCurrentView('resources');
+                return;
+              }
+              setResourcesHubFocusedResourceId(resourceId);
+              setCurrentView('resourcesHub');
+            }}
           />
         ) : currentView === 'customWorkflows' ? (
           <CustomWorkflows />
@@ -2020,6 +2097,8 @@ export default function App() {
           <AuditTrail />
         ) : currentView === 'responseFeedback' ? (
           <ResponseFeedbackAdmin />
+        ) : currentView === 'fraudReports' ? (
+          <FraudReportsAdmin />
         ) : currentView === 'links' ? (
           <URLSources />
         ) : currentView === 'api' ? (
@@ -2039,6 +2118,28 @@ export default function App() {
             }
             onReportLinkComplete={handleReportLinkComplete}
             onReportLinkBack={handleReportLinkBack}
+            focusedResourceId={adminResourceFocusId}
+            fromReport={reportResourceOrigin}
+            onBackToReports={() => {
+              setAdminResourceFocusId(null);
+              setReportResourceOrigin(null);
+              setPendingHubReport(null);
+              setCurrentView('reports');
+            }}
+            onBackToReport={
+              reportResourceOrigin
+                ? () => {
+                    const reportId = reportResourceOrigin.reportId;
+                    setAdminResourceFocusId(null);
+                    setReportResourceOrigin(null);
+                    setPendingHubReport(reportId);
+                    setCurrentView('reports');
+                  }
+                : undefined
+            }
+            onChatWithResource={(resourceId) =>
+              openResourceChat(toAdminResourceChatId(resourceId), 'resources')
+            }
           />
         ) : currentView === 'locations' ? (
           <Locations />

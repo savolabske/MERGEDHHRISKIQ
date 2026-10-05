@@ -6,6 +6,7 @@ import {
   type ReportQueryingMode,
 } from '../../shared';
 import type { ReportCustomizePhase } from '../../shared/ReportDashboardCustomizeOverlay';
+import { querySimulatesAssistantFailure } from '../../../../utils/chatRequestFailure';
 import { resolveAidFlowPrompt } from '../data/aidFlowPromptRecipes';
 import type { AidFlowChatMessage, AidFlowRecipeResult } from '../types';
 
@@ -100,29 +101,40 @@ export function useAidFlowReportPrompt(options?: { onChatLaneReady?: () => void 
   }, [cancelQuery]);
 
   const runPrompt = useCallback(
-    (query?: string) => {
+    (query?: string, options?: { retry?: boolean }) => {
       const q = (query ?? promptInput).trim();
       if (!q || isQueryingRef.current) return;
 
       const ext = extendedRef.current;
+      const failRequest = !options?.retry && querySimulatesAssistantFailure(q);
       const resolution = resolveAidFlowPrompt(q, ext);
       pendingResolutionRef.current = resolution;
-      setMessages((prev) => [...prev, { role: 'user', text: q, extended: ext || undefined }]);
+      setMessages((prev) => {
+        const withoutError = options?.retry
+          ? prev.filter((message) => !(message.role === 'error' && message.query === q))
+          : prev;
+        if (options?.retry) return withoutError;
+        return [...withoutError, { role: 'user', text: q, extended: ext || undefined }];
+      });
       setActiveQuery(q);
       setPromptInput('');
 
-      if (resolution.lane === 'dashboard') {
+      if (!failRequest && resolution.lane === 'dashboard') {
         setActiveRecipe(resolution.recipe);
         setResultTitle(resolution.recipe.title);
       }
 
       executeReportPrompt({
-        lane: resolution.lane,
+        lane: failRequest ? 'chat' : resolution.lane,
         timers,
         setIsQuerying,
         setQueryingMode,
         setCustomizePhase,
         setResultMode,
+        failRequest,
+        onFailed: () => {
+          setMessages((prev) => [...prev, { role: 'error', query: q }]);
+        },
         onDashboardReady: () => {
           const pending = pendingResolutionRef.current;
           if (!pending || pending.lane !== 'dashboard') return;

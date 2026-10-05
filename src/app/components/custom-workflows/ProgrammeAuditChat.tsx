@@ -4,15 +4,17 @@ import {
   type ComplianceAreaDetail,
   type ProgrammeAudit,
 } from '../../data/customWorkflowsMock';
+import { ChatRequestError } from '../ui/ChatRequestError';
 import { ChatThinkingStatus } from '../ui/ChatThinkingStatus';
 import { cn } from '../ui/utils';
 
-export type ProgrammeChatRole = 'user' | 'assistant';
+export type ProgrammeChatRole = 'user' | 'assistant' | 'error';
 
 export interface ProgrammeChatMessage {
   id: string;
   role: ProgrammeChatRole;
   content: string;
+  failedQuery?: string;
 }
 
 function statusPhrase(status: ComplianceAreaDetail['status']): string {
@@ -210,6 +212,7 @@ interface ProgrammeAuditChatFeedProps {
   thinkingPhase?: string | null;
   suggestedPrompts?: string[];
   onPrompt?: (prompt: string) => void;
+  onRetry?: (query: string) => void;
 }
 
 export function ProgrammeAuditTryAsking({
@@ -259,6 +262,7 @@ export function ProgrammeAuditChatFeed({
   thinkingPhase,
   suggestedPrompts = [],
   onPrompt,
+  onRetry,
 }: ProgrammeAuditChatFeedProps) {
   const showSuggestions =
     messages.length === 0 && !isQuerying && suggestedPrompts.length > 0 && Boolean(onPrompt);
@@ -274,6 +278,19 @@ export function ProgrammeAuditChatFeed({
       ) : null}
 
       {messages.map((message) => {
+        if (message.role === 'error') {
+          return (
+            <ChatRequestError
+              key={message.id}
+              compact
+              disabled={isQuerying}
+              onRetry={() => {
+                if (message.failedQuery) onRetry?.(message.failedQuery);
+              }}
+            />
+          );
+        }
+
         if (message.role === 'assistant' && !message.content) return null;
 
         return (

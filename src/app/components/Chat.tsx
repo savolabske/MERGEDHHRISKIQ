@@ -13,6 +13,8 @@ import { ComposerSendButton } from './ui/ComposerSendButton';
 import {
   useRotatingThinkingPhase,
 } from './ui/ChatThinkingStatus';
+import { ChatRequestError } from './ui/ChatRequestError';
+import { querySimulatesAssistantFailure, querySimulatesKnowledgeBaseFailure } from '../utils/chatRequestFailure';
 import { ShareThreadModal } from './ShareThreadModal';
 import { CURRENT_USER, RISK_IQ_USER, getUserById } from '../utils/mockUsers';
 import { toast } from 'sonner';
@@ -37,6 +39,7 @@ import {
 } from '../utils/dashboardChatContext';
 import { ResponseFeedbackButtons } from './feedback/ResponseFeedbackButtons';
 import type { ConversationSnapshotMessage } from '../data/responseFeedbackStore';
+import { chatEmphasisClass } from './chat/chatEmphasis';
 
 // Utility function to clean markdown from content for better typing display
 const cleanMarkdown = (text: string) => text.replace(/\*\*/g, '');
@@ -60,8 +63,7 @@ const RISK_EMOJI_CLASS: Record<string, string> = {
 };
 
 const KB_SEARCH_STATUSES = [
-  'Looking through knowledge base…',
-  'Matching relevant documents…',
+  'Reading through connected sources...',
   'Preparing answer…',
 ] as const;
 
@@ -135,11 +137,11 @@ interface Source {
 
 interface Message {
   id: string;
-  type: 'user' | 'assistant' | 'loading' | 'searching';
+  type: 'user' | 'assistant' | 'loading' | 'searching' | 'error';
   content: string;
   senderId?: string;
   senderName?: string;
-  contentType: 'text' | 'table' | 'matrix' | 'loading' | 'searching' | 'briefing' | 'comparison' | 'geographic' | 'incidents';
+  contentType: 'text' | 'table' | 'matrix' | 'loading' | 'searching' | 'error' | 'briefing' | 'comparison' | 'geographic' | 'incidents';
   data?: any;
   isTyping?: boolean;
   displayedContent?: string;
@@ -150,6 +152,8 @@ interface Message {
   originatingQuery?: string;
   isAiExtended?: boolean;
   usedForAiExtension?: boolean;
+  /** Knowledge base search failed; web intelligence can still be shown. */
+  knowledgeBaseUnavailable?: boolean;
 }
 
 interface ChatProps {
@@ -495,7 +499,8 @@ export function Chat({
       contentType: Message['contentType'];
       data?: Message['data'];
       sources: Source[];
-    }
+    },
+    skipSimulatedFailure = false,
   ) => {
     const generationId = ++generationIdRef.current;
     clearActiveTimeouts();
@@ -581,15 +586,22 @@ export function Chat({
       }
     ];
     const isExtendedRefinement = trigger === 'extend' || useExtendedPrimaryResponse;
+    const knowledgeBaseUnavailable =
+      !skipSimulatedFailure &&
+      !prebuiltResponse &&
+      (querySimulatesKnowledgeBaseFailure(query) || querySimulatesAssistantFailure(query));
     const sources: Source[] = prebuiltResponse
       ? prebuiltResponse.sources
-      : useExtendedKnowledge
-        ? [...knowledgeBaseSources, ...webSources]
-        : knowledgeBaseSources;
+      : knowledgeBaseUnavailable
+        ? webSources
+        : useExtendedKnowledge
+          ? [...knowledgeBaseSources, ...webSources]
+          : knowledgeBaseSources;
 
     const webIntelligenceContent = getWebIntelligenceSummary(query);
     const formattedRefinedWebIntelligenceContent = buildRefinedWebIntelligence(query);
     const shouldIncludeWebIntel =
+      knowledgeBaseUnavailable ||
       isExtendedRefinement ||
       sources.length > 0 ||
       (useExtendedKnowledge && trigger !== 'extend');
@@ -613,12 +625,12 @@ export function Chat({
     const assistantMessage: Message = {
       id: responseId,
       type: 'assistant',
-      content: responseContent,
+      content: knowledgeBaseUnavailable ? '' : responseContent,
       senderId: RISK_IQ_USER.id,
       senderName: RISK_IQ_USER.name,
       contentType: responseContentType,
       data: responseData,
-      isTyping: true,
+      isTyping: !knowledgeBaseUnavailable,
       displayedContent: '',
       sources: sources,
       webIntelligenceSummary: shouldIncludeWebIntel
@@ -626,11 +638,22 @@ export function Chat({
           ? formattedRefinedWebIntelligenceContent
           : webIntelligenceContent
         : undefined,
+      displayedWebIntelligence: knowledgeBaseUnavailable
+        ? isExtendedRefinement
+          ? formattedRefinedWebIntelligenceContent
+          : webIntelligenceContent
+        : undefined,
       originatingQuery: query,
-      isAiExtended: isExtendedRefinement
+      isAiExtended: isExtendedRefinement,
+      knowledgeBaseUnavailable,
     };
 
     setMessages(prev => [...prev, assistantMessage]);
+
+    if (knowledgeBaseUnavailable) {
+      setIsProcessing(false);
+      return;
+    }
 
     const cleanedText = await streamTextOntoMessage(
       responseId,
@@ -1040,7 +1063,7 @@ export function Chat({
 
     for (let index = 0; index < messages.length; index += 1) {
       const msg = messages[index];
-      if (msg.type === 'loading' || msg.type === 'searching') {
+      if (msg.type === 'loading' || msg.type === 'searching' || msg.type === 'error') {
         continue;
       }
 
@@ -1110,6 +1133,23 @@ export function Chat({
             </div>
           </div>
           <div className="px-5 py-4">
+            {message.knowledgeBaseUnavailable ? (
+              <ChatRequestError
+                disabled={isProcessing}
+                onRetry={() => {
+                  if (!message.originatingQuery || isProcessing) return;
+                  setMessages((prev) => prev.filter((entry) => entry.id !== message.id));
+                  processAIResponse(
+                    message.originatingQuery,
+                    true,
+                    'default',
+                    isExtendedKnowledgeMode,
+                    undefined,
+                    true,
+                  );
+                }}
+              />
+            ) : (
             <div className="text-sm text-foreground leading-relaxed">
               {message.contentType === 'text' && (
                 <div className="space-y-3">
@@ -1208,11 +1248,12 @@ export function Chat({
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
 
         {/* Web Intelligence Card - AI Synthesized Answer */}
-        {message.webIntelligenceSummary && !message.isTyping && (
+        {message.webIntelligenceSummary && (!message.isTyping || message.knowledgeBaseUnavailable) && (
           <div className="border border-border rounded-xl bg-card overflow-hidden">
             <button
               onClick={() => setIsWebIntelExpanded(!isWebIntelExpanded)}
@@ -1275,7 +1316,7 @@ export function Chat({
                   <span>{sources.length} sources</span>
                 </button>
               )}
-              {sources.length > 0 && !message.isAiExtended && (
+              {sources.length > 0 && !message.isAiExtended && !message.knowledgeBaseUnavailable && (
                 (() => {
                   const canResolveExtensionQuery = Boolean(resolveExtensionQuery(message));
                   return (
@@ -1472,13 +1513,19 @@ export function Chat({
   // Helper to fix escaped newlines in response text
   const fixEscapedNewlines = (str: string) => str.replace(/\\n/g, '\n');
 
-  const renderInlineFormattedParts = (content: string, sources: Source[] | undefined, partKeyPrefix: string) => {
+  const renderInlineFormattedParts = (
+    content: string,
+    sources: Source[] | undefined,
+    partKeyPrefix: string,
+    options?: { inherit?: boolean },
+  ) => {
     const parts = content.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, idx) => {
       if (part.startsWith('**') && part.endsWith('**')) {
+        const label = part.slice(2, -2);
         return (
-          <strong key={`${partKeyPrefix}-bold-${idx}`} className="font-semibold text-foreground">
-            {part.slice(2, -2)}
+          <strong key={`${partKeyPrefix}-bold-${idx}`} className={chatEmphasisClass(label, options)}>
+            {label}
           </strong>
         );
       }
@@ -1574,7 +1621,7 @@ export function Chat({
       if (riskEmojiClass) {
         elements.push(
           <div key={`risk-line-${baseKey}-${key++}`} className={`text-sm leading-6 mb-1.5 ${riskEmojiClass}`}>
-            {renderInlineFormattedParts(line, sources, `risk-${baseKey}-${key}`)}
+            {renderInlineFormattedParts(line, sources, `risk-${baseKey}-${key}`, { inherit: true })}
           </div>
         );
         i++;
@@ -1592,7 +1639,7 @@ export function Chat({
         continue;
       }
 
-      // Bold headings (line starts with **)
+      // Bold headings stay ink. Colour belongs on a verdict, not a title.
       if (line.startsWith('**') && line.endsWith('**')) {
         elements.push(
           <div key={`heading-${baseKey}-${key++}`} className="font-semibold text-foreground-emphasis text-sm mt-2 mb-1">
@@ -1648,6 +1695,26 @@ export function Chat({
 
     if (message.contentType === 'searching') {
       return <ChatSearchShimmerCards />;
+    }
+
+    if (message.contentType === 'error') {
+      return (
+        <ChatRequestError
+          disabled={isProcessing}
+          onRetry={() => {
+            if (!message.originatingQuery || isProcessing) return;
+            setMessages((prev) => prev.filter((entry) => entry.id !== message.id));
+            processAIResponse(
+              message.originatingQuery,
+              true,
+              'default',
+              isExtendedKnowledgeMode,
+              undefined,
+              true,
+            );
+          }}
+        />
+      );
     }
 
     if (message.contentType === 'table' && message.data) {
@@ -2023,7 +2090,8 @@ export function Chat({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {message.isAiExtended ||
+                      {message.knowledgeBaseUnavailable ||
+                      message.isAiExtended ||
                       message.id?.startsWith('dashboard-assistant') ||
                       (message.sources && message.sources.length > 0) ? (
                         <SourcesDisplay

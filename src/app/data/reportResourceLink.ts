@@ -2,13 +2,13 @@
 export const LINKABLE_KNOWLEDGE_SOURCES = [
   {
     id: '2',
-    title: 'Humanitarian Access Incident Tracker — regional annexes',
+    title: 'Displacement, arrivals, and access evidence',
     /** Reports already using this resource — excluded from the create-report picker */
-    usedByReports: ['Aid Flow Intelligence', 'Migration & Displacement Intelligence'],
+    usedByReports: ['Migration & Displacement Intelligence'],
   },
   {
     id: '3',
-    title: 'IPC Food Security Phase Classification Bay & Bakool',
+    title: 'Somalia Joint Fund portfolio and results',
     usedByReports: ['Somalia Joint Fund Intelligence'],
   },
   {

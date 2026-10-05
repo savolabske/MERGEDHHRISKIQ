@@ -271,7 +271,7 @@ const DEFAULT_WORKFLOWS: ManagedWorkflow[] = [
         description: 'Nationwide humanitarian assistance and resilience support across Somalia.',
         addedAt: 'Jan 12, 2026',
         projectDocId: '2',
-        projectDocTitle: 'Humanitarian Access Incident Tracker — regional annexes',
+        projectDocTitle: 'Displacement, arrivals, and access evidence',
         checklistDocId: '4',
         checklistDocTitle: 'WASH Cluster Assessment — Baidoa & Dollow',
         userGroups: ['Humanitarian Affairs', 'Mission Leadership'],
@@ -287,7 +287,7 @@ const DEFAULT_WORKFLOWS: ManagedWorkflow[] = [
         description: 'Education access for girls across Puntland and Somaliland, with an FCDO Somalia strand.',
         addedAt: 'Jan 12, 2026',
         projectDocId: '3',
-        projectDocTitle: 'IPC Food Security Phase Classification Bay & Bakool',
+        projectDocTitle: 'Somalia Joint Fund portfolio and results',
         checklistDocId: '4',
         checklistDocTitle: 'WASH Cluster Assessment — Baidoa & Dollow',
         userGroups: ['Humanitarian Affairs'],
@@ -304,7 +304,7 @@ const DEFAULT_WORKFLOWS: ManagedWorkflow[] = [
         description: 'WASH and resilience programme in Bay and Bakool regions.',
         addedAt: 'Feb 3, 2026',
         projectDocId: '2',
-        projectDocTitle: 'Humanitarian Access Incident Tracker — regional annexes',
+        projectDocTitle: 'Displacement, arrivals, and access evidence',
         checklistDocId: '4',
         checklistDocTitle: 'WASH Cluster Assessment — Baidoa & Dollow',
         userGroups: ['WASH Cluster'],
@@ -720,8 +720,8 @@ export function clearWorkflowReturnContext(): void {
 
 /** All resources available to be picked as project or checklist documents */
 export const LINKABLE_WORKFLOW_RESOURCES = [
-  { id: '2', title: 'Humanitarian Access Incident Tracker — regional annexes' },
-  { id: '3', title: 'IPC Food Security Phase Classification Bay & Bakool' },
+  { id: '2', title: 'Displacement, arrivals, and access evidence' },
+  { id: '3', title: 'Somalia Joint Fund portfolio and results' },
   { id: '4', title: 'WASH Cluster Assessment — Baidoa & Dollow' },
   { id: '5', title: 'Partner registry — Somalia implementing partners' },
   { id: '6', title: 'Donor reporting pack — Q2 evidence folder' },

@@ -29,6 +29,9 @@ import {
   ReportLoadItem,
   REPORT_LOAD_ORDER,
   ReportPageShell,
+  ReportSourcesButton,
+  linkedResourceForCatalog,
+  sourcesForCatalogReport,
   reportChatLayoutShellClassName,
   reportHeaderClassName,
   reportMobileHeaderClassName,
@@ -52,9 +55,10 @@ import { PageBreadcrumb } from '../../../../components/ui/page-breadcrumb';
 
 interface AidFlowScrollytellingProps {
   onBack?: () => void;
+  onOpenResource?: (resourceId: string, pool: 'admin' | 'user') => void;
 }
 
-export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps) {
+export function AidFlowScrollytellingPage({ onBack, onOpenResource }: AidFlowScrollytellingProps) {
   const [activeScene, setActiveScene] = useState(0);
   const [openMenu, setOpenMenu] = useState<'time' | 'donors' | 'sectors' | 'regions' | null>(null);
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
@@ -62,6 +66,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
   const filterRef = useRef<HTMLDivElement>(null);
   const chatLayoutRef = useRef<ReportChatLayoutHandle>(null);
 
+  const linkedResource = linkedResourceForCatalog('aid-flow');
   const filters = useAidFlowFilters();
   const {
     selectedDonors,
@@ -237,10 +242,22 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
               items={[
                 { label: 'Reports', onClick: handleBreadcrumbBack },
                 { label: 'Aid Flow Intelligence' },
+                ...(linkedResource
+                  ? [{
+                      label: linkedResource.title,
+                      onClick: () => onOpenResource?.(linkedResource.id, linkedResource.pool),
+                    }]
+                  : []),
               ]}
               suffix={
-                <span className="rounded-full bg-[#eafaf0] px-2 py-1 text-[11px] font-semibold text-[#3fa85a]">
-                  AIMS + SSF - synced nightly
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-[#eafaf0] px-2 py-1 text-[11px] font-semibold text-[#3fa85a]">
+                    AIMS + SSF - synced nightly
+                  </span>
+                  <ReportSourcesButton
+                    sources={sourcesForCatalogReport('aid-flow')}
+                    onOpenResource={onOpenResource}
+                  />
                 </span>
               }
             />
@@ -466,6 +483,7 @@ export function AidFlowScrollytellingPage({ onBack }: AidFlowScrollytellingProps
                   queryingMode={queryingMode}
                   extendedKnowledge={extendedKnowledge}
                   onChipClick={runPrompt}
+                  onRetry={(query) => runPrompt(query, { retry: true })}
                 />
               )}
             </div>

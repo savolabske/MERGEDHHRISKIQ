@@ -20,6 +20,9 @@ interface PlatformResourcesProps {
   reportLinkContext?: ReportResourceLinkContext | null;
   onReportLinkComplete?: (resourceId: string) => void;
   onReportLinkBack?: () => void;
+  fromReport?: { reportId: string; reportTitle: string; resourceId: string } | null;
+  onBackToReports?: () => void;
+  onBackToReport?: () => void;
 }
 
 export function PlatformResources({
@@ -28,6 +31,9 @@ export function PlatformResources({
   reportLinkContext = null,
   onReportLinkComplete,
   onReportLinkBack,
+  fromReport = null,
+  onBackToReports,
+  onBackToReport,
 }: PlatformResourcesProps) {
   const [resources, setResources] = useState<PlatformResource[]>(() => loadPlatformResources());
   const [view, setView] = useState<HubView>('list');
@@ -127,6 +133,18 @@ export function PlatformResources({
               <ResourceDetailView
                 resource={selectedResource}
                 onBack={goToList}
+                breadcrumbItems={
+                  fromReport &&
+                  fromReport.resourceId === selectedResource.id &&
+                  onBackToReports &&
+                  onBackToReport
+                    ? [
+                        { label: 'Reports', onClick: onBackToReports },
+                        { label: fromReport.reportTitle, onClick: onBackToReport },
+                        { label: selectedResource.title },
+                      ]
+                    : undefined
+                }
                 onEdit={() => setView('edit')}
                 onDelete={() => handleDelete(selectedResource.id)}
                 onChatWithResource={

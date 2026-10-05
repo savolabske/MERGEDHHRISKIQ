@@ -65,6 +65,7 @@ export interface AidFlowScene {
 export type AidFlowChatMessage =
   | { role: 'user'; text: string; extended?: boolean }
   | { role: 'system'; text: string }
+  | { role: 'error'; query: string }
   | { role: 'assistant'; lane: 'dashboard'; title: string; chips?: string[]; extended?: boolean }
   | { role: 'assistant'; lane: 'chat'; body: string; chips?: string[]; extended?: boolean };
 

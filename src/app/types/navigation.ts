@@ -16,6 +16,7 @@ export type AppView =
   | 'usersAccess'
   | 'auditTrails'
   | 'responseFeedback'
+  | 'fraudReports'
   | 'locations'
   | 'definitions'
   | 'resources'

@@ -20,6 +20,9 @@ interface ExecuteReportPromptOptions {
   setResultMode: (v: boolean) => void;
   onDashboardReady: () => void;
   onChatReady: () => void;
+  /** After the searching state, show a failure instead of an answer. */
+  failRequest?: boolean;
+  onFailed?: () => void;
 }
 
 export function clearReportPromptTimers(timers: PromptTimerRefs) {
@@ -43,10 +46,21 @@ export function executeReportPrompt({
   setResultMode,
   onDashboardReady,
   onChatReady,
+  failRequest = false,
+  onFailed,
 }: ExecuteReportPromptOptions) {
   setQueryingMode(lane);
   setIsQuerying(true);
   timers.isQueryingRef.current = true;
+
+  const finishFailure = () => {
+    onFailed?.();
+    timers.isQueryingRef.current = false;
+    setIsQuerying(false);
+    setQueryingMode(null);
+    setCustomizePhase('idle');
+    timers.queryTimeoutRef.current = null;
+  };
 
   if (lane === 'dashboard') {
     setCustomizePhase('customizing');
@@ -56,6 +70,10 @@ export function executeReportPrompt({
     });
 
     timers.queryTimeoutRef.current = window.setTimeout(() => {
+      if (failRequest) {
+        finishFailure();
+        return;
+      }
       onDashboardReady();
       timers.isQueryingRef.current = false;
       setIsQuerying(false);
@@ -73,6 +91,10 @@ export function executeReportPrompt({
   }
 
   timers.queryTimeoutRef.current = window.setTimeout(() => {
+    if (failRequest) {
+      finishFailure();
+      return;
+    }
     onChatReady();
     timers.isQueryingRef.current = false;
     setIsQuerying(false);

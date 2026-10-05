@@ -3,29 +3,29 @@ import { cn } from './utils';
 
 /** Shared copy for chat prompt loading — rotate so users see context of what’s happening. */
 export const CHAT_THINKING_PHASES = {
-  default: ['Looking through knowledge base...', 'Preparing answer...'],
+  default: ['Reading through connected sources...', 'Preparing answer...'],
   extended: [
-    'Looking through knowledge base...',
+    'Reading through connected sources...',
     'Searching web sources...',
     'Preparing answer...',
   ],
-  reportDashboard: ['Reading data...', 'Choosing charts...', 'Preparing answer...'],
+  reportDashboard: ['Reading through connected sources...', 'Choosing charts...', 'Preparing answer...'],
   reportDashboardExtended: [
-    'Reading data...',
+    'Reading through connected sources...',
     'Cross-checking linked reports...',
     'Preparing answer...',
   ],
   reportSections: [
-    'Looking through knowledge base...',
+    'Reading through connected sources...',
     'Reading report sections...',
     'Preparing answer...',
   ],
   map: [
-    'Looking through knowledge base...',
+    'Reading through connected sources...',
     'Updating map layers...',
     'Preparing answer...',
   ],
-  workflow: ['Looking through knowledge base...', 'Preparing answer...'],
+  workflow: ['Reading through connected sources...', 'Preparing answer...'],
 } as const;
 
 export const DEFAULT_THINKING_PHASE_MS = 900;

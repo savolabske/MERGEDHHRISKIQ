@@ -1,4 +1,18 @@
+import { getAdminKnowledgeResource } from './adminKnowledgeResources';
 import { INITIAL_RESOURCES, type PlatformResource } from './resourcesMock';
+
+/** Admin library resources use the same numeric ids as My Resources, so chat ids are namespaced. */
+const ADMIN_RESOURCE_CHAT_PREFIX = 'admin:';
+
+export function toAdminResourceChatId(resourceId: string): string {
+  return `${ADMIN_RESOURCE_CHAT_PREFIX}${resourceId}`;
+}
+
+export function adminResourceIdFromChatId(chatId: string): string | null {
+  if (!chatId.startsWith(ADMIN_RESOURCE_CHAT_PREFIX)) return null;
+  const resourceId = chatId.slice(ADMIN_RESOURCE_CHAT_PREFIX.length);
+  return resourceId || null;
+}
 
 /** Resources added via main menu → Resources are eligible for per-document chat. */
 export const CHAT_ELIGIBLE_PLATFORM_RESOURCE_IDS = new Set(
@@ -108,6 +122,12 @@ export function getPlatformResourceById(id: string): PlatformResource | undefine
   return INITIAL_RESOURCES.find((r) => r.id === id);
 }
 
+export function getChatResourceTitle(id: string): string | null {
+  const adminId = adminResourceIdFromChatId(id);
+  if (adminId) return getAdminKnowledgeResource(adminId)?.title ?? null;
+  return getPlatformResourceById(id)?.title ?? null;
+}
+
 export function getPlatformResourceByTitle(title: string): PlatformResource | undefined {
   const exact = INITIAL_RESOURCES.find((r) => r.title === title);
   if (exact) return exact;
@@ -118,8 +138,10 @@ export function getPlatformResourceByTitle(title: string): PlatformResource | un
   });
 }
 
-/** Resolve to a main-menu Resources id, or null if not chat-eligible. */
+/** Resolve to a chat-eligible resource id, including an admin resource opened from a report. */
 export function resolveChatEligibleResourceId(titleOrId: string): string | null {
+  const adminId = adminResourceIdFromChatId(titleOrId);
+  if (adminId) return getAdminKnowledgeResource(adminId) ? titleOrId : null;
   if (isChatEligiblePlatformResource(titleOrId)) return titleOrId;
   const byTitle = getPlatformResourceByTitle(titleOrId);
   return byTitle && isChatEligiblePlatformResource(byTitle.id) ? byTitle.id : null;
@@ -138,7 +160,48 @@ export function isChatEligibleKnowledgeSource(source: {
   return id !== null;
 }
 
+function fileTypeFromName(name: string): ResourceFileItem['fileType'] {
+  const extension = name.split('.').pop()?.toLowerCase();
+  if (extension === 'pdf') return 'pdf';
+  if (extension === 'doc' || extension === 'docx') return 'doc';
+  if (extension === 'xls' || extension === 'xlsx') return 'xlsx';
+  if (extension === 'ppt' || extension === 'pptx') return 'pptx';
+  return 'other';
+}
+
+function buildContentFromAdminResource(resourceId: string): DocumentContent | null {
+  const resource = getAdminKnowledgeResource(resourceId);
+  if (!resource) return null;
+  return {
+    id: toAdminResourceChatId(resource.id),
+    platformResourceId: toAdminResourceChatId(resource.id),
+    title: resource.title,
+    summary: resource.description,
+    createdAt: resource.lastModified,
+    tags: resource.tags,
+    views: '—',
+    fileCount: resource.files.length,
+    files: resource.files.map((file) => ({
+      id: file.id,
+      name: file.name,
+      type: 'Document',
+      size: file.size ?? '—',
+      uploadedAt: file.uploadedAt ?? resource.lastModified,
+      fileType: fileTypeFromName(file.name),
+    })),
+    webLinks: resource.webLinks.map((url, index) => ({
+      id: `${resource.id}-link-${index}`,
+      url,
+      addedAt: resource.lastModified,
+    })),
+  };
+}
+
 export function getDocumentContent(titleOrId: string): DocumentContent {
+  const adminId = adminResourceIdFromChatId(titleOrId);
+  if (adminId) {
+    return buildContentFromAdminResource(adminId) ?? { ...FALLBACK, id: titleOrId, title: titleOrId };
+  }
   const resourceId = resolveChatEligibleResourceId(titleOrId);
   if (!resourceId) return { ...FALLBACK, title: titleOrId };
   const resource = getPlatformResourceById(resourceId);

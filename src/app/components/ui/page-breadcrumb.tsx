@@ -33,7 +33,19 @@ export function PageBreadcrumb({ items, suffix, className }: PageBreadcrumbProps
               )}
             >
               {index > 0 && <span aria-hidden="true" className="shrink-0">/</span>}
-              {isLast || !item.onClick ? (
+              {item.onClick ? (
+                <button
+                  type="button"
+                  onClick={item.onClick}
+                  title={item.label}
+                  className={cn(
+                    'text-[#64748B] transition-colors hover:text-[#334155]',
+                    isLast ? 'truncate max-w-[min(100%,14rem)] sm:max-w-[20rem]' : 'shrink-0',
+                  )}
+                >
+                  {item.label}
+                </button>
+              ) : (
                 <span
                   className={cn(
                     'text-[#334155]',
@@ -43,14 +55,6 @@ export function PageBreadcrumb({ items, suffix, className }: PageBreadcrumbProps
                 >
                   {item.label}
                 </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={item.onClick}
-                  className="shrink-0 text-[#64748B] transition-colors hover:text-[#334155]"
-                >
-                  {item.label}
-                </button>
               )}
             </li>
           );

@@ -3,6 +3,7 @@ export type MigrationPairWithColor = [string, number, string?];
 
 export interface MigrationDisplacementProps {
   onBack?: () => void;
+  onOpenResource?: (resourceId: string, pool: 'admin' | 'user') => void;
 }
 
 export interface MigrationScene {
@@ -20,6 +21,7 @@ export interface MigrationScene {
 export type MigrationChatMessage =
   | { role: 'user'; text: string; extended?: boolean }
   | { role: 'system'; text: string }
+  | { role: 'error'; query: string }
   | { role: 'assistant'; lane: 'dashboard'; title: string; chips?: string[]; extended?: boolean }
   | { role: 'assistant'; lane: 'chat'; body: string; chips?: string[]; extended?: boolean };
 

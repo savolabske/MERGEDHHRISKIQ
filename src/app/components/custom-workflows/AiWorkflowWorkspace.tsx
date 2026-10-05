@@ -12,12 +12,18 @@ import {
 import { PageScrollShell } from '../PageScrollShell';
 import { PageBreadcrumb } from '../ui/page-breadcrumb';
 import { ComposerSendButton } from '../ui/ComposerSendButton';
+import { ChatRequestError } from '../ui/ChatRequestError';
 import {
   ChatThinkingStatus,
   CHAT_THINKING_PHASES,
   DEFAULT_CHAT_THINKING_DURATION_MS,
 } from '../ui/ChatThinkingStatus';
+import { querySimulatesAssistantFailure } from '../../utils/chatRequestFailure';
 import { cn } from '../ui/utils';
+
+type WorkspaceChatMessage =
+  | { role: 'user' | 'assistant'; text: string }
+  | { role: 'error'; query: string };
 
 interface AiWorkflowWorkspaceProps {
   workflow: ManagedWorkflow;
@@ -31,9 +37,7 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
   const [selection, setSelection] = useState<OutputSelection>(null);
   const [railTab, setRailTab] = useState<RailTab>('ask');
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>(
-    [],
-  );
+  const [chatMessages, setChatMessages] = useState<WorkspaceChatMessage[]>([]);
   const [isQuerying, setIsQuerying] = useState(false);
   const queryTimeoutRef = useRef<number | null>(null);
 
@@ -77,10 +81,17 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
     { id: 'ask', label: 'Ask' },
   ];
 
-  const sendChat = (text: string) => {
+  const sendChat = (text: string, options?: { retry?: boolean }) => {
     const trimmed = text.trim();
     if (!trimmed || isQuerying) return;
-    setChatMessages((prev) => [...prev, { role: 'user', text: trimmed }]);
+    const failRequest = !options?.retry && querySimulatesAssistantFailure(trimmed);
+    setChatMessages((prev) => {
+      const withoutError = options?.retry
+        ? prev.filter((message) => message.role !== 'error')
+        : prev;
+      if (options?.retry) return withoutError;
+      return [...withoutError, { role: 'user', text: trimmed }];
+    });
     setChatInput('');
     setRailTab('ask');
     setIsQuerying(true);
@@ -90,15 +101,17 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
     queryTimeoutRef.current = window.setTimeout(() => {
       setChatMessages((prev) => [
         ...prev,
-        {
-          role: 'assistant',
-          text: consumptionChatReply({
-            template: payload.template,
-            userText: trimmed,
-            selectionLabel: selection?.label,
-            recipeId: payload.recipeId,
-          }),
-        },
+        failRequest
+          ? { role: 'error', query: trimmed }
+          : {
+              role: 'assistant',
+              text: consumptionChatReply({
+                template: payload.template,
+                userText: trimmed,
+                selectionLabel: selection?.label,
+                recipeId: payload.recipeId,
+              }),
+            },
       ]);
       setIsQuerying(false);
       queryTimeoutRef.current = null;
@@ -240,19 +253,28 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
                       {payload.chatPrompt}
                     </p>
                   )}
-                  {chatMessages.map((m, i) => (
-                    <div
-                      key={`${m.role}-${i}`}
-                      className={cn(
-                        'rounded-2xl px-3 py-2 text-sm leading-relaxed',
-                        m.role === 'user'
-                          ? 'ml-6 bg-primary text-white'
-                          : 'mr-4 bg-muted text-foreground',
-                      )}
-                    >
-                      {m.text}
-                    </div>
-                  ))}
+                  {chatMessages.map((m, i) =>
+                    m.role === 'error' ? (
+                      <ChatRequestError
+                        key={`error-${i}`}
+                        compact
+                        disabled={isQuerying}
+                        onRetry={() => sendChat(m.query, { retry: true })}
+                      />
+                    ) : (
+                      <div
+                        key={`${m.role}-${i}`}
+                        className={cn(
+                          'rounded-2xl px-3 py-2 text-sm leading-relaxed',
+                          m.role === 'user'
+                            ? 'ml-6 bg-primary text-white'
+                            : 'mr-4 bg-muted text-foreground',
+                        )}
+                      >
+                        {m.text}
+                      </div>
+                    ),
+                  )}
                   {isQuerying ? (
                     <div className="mr-4 rounded-2xl bg-muted/60 px-3 py-2.5">
                       <ChatThinkingStatus phases={CHAT_THINKING_PHASES.workflow} size="sm" />
