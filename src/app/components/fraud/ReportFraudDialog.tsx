@@ -60,14 +60,16 @@ export function ReportFraudDialog({ open, onOpenChange }: ReportFraudDialogProps
         <form onSubmit={handleSubmit} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>Report fraud</DialogTitle>
-            <DialogDescription>
-              Describe what you noticed. Compliance reviews every report filed from Risk IQ.
+            <DialogDescription className="font-normal !text-muted-foreground">
+              Describe what happened, who was involved, where it happened, and who the arbitrator was.
             </DialogDescription>
           </DialogHeader>
 
           <div>
-            <label htmlFor="fraud-description" className="mb-2 block text-sm font-medium text-foreground">
-              What happened <span className="text-destructive-text">*</span>
+            <label htmlFor="fraud-description" className="mb-2 block">
+              <span className="text-sm font-semibold leading-5 text-foreground">
+                What happened? <span className="text-destructive-text">*</span>
+              </span>
             </label>
             <textarea
               value={description}
@@ -75,7 +77,7 @@ export function ReportFraudDialog({ open, onOpenChange }: ReportFraudDialogProps
                 setDescription(event.target.value);
                 if (descriptionError) setDescriptionError(undefined);
               }}
-              placeholder="What did you see, who was involved, and when? Include amounts if you have them."
+              placeholder="What happened, who was involved, and when? Include any amounts if you have them."
               rows={5}
               className={textareaClass}
               {...fieldControlProps('fraud-description', descriptionError)}
@@ -91,9 +93,9 @@ export function ReportFraudDialog({ open, onOpenChange }: ReportFraudDialogProps
               className="mt-0.5 size-4 shrink-0 rounded border-border accent-primary"
             />
             <span>
-              <span className="block text-sm font-medium text-foreground">Submit anonymously</span>
-              <span className="block text-sm text-muted-foreground">
-                Your name stays hidden on this report.
+              <span className="block text-sm font-semibold leading-5 text-foreground">Submit anonymously</span>
+              <span className="block text-[13px] font-normal leading-[18px] text-text-subtle">
+                Your name and email will remain private and will not be displayed on this report.
               </span>
             </span>
           </label>
