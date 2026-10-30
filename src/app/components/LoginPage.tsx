@@ -11,7 +11,7 @@ import {
   useFormValidation,
 } from './ui/form-validation';
 
-const unLogo = '/branding/un-somalia-login-logo.png';
+const unLogo = '/branding/un-humanity-hub-logo.png';
 
 const authInputClass =
   'w-full px-4 py-3 bg-input-background border border-input rounded-lg hover:border-border-muted focus:outline-none focus:border-primary transition-all text-sm placeholder:text-text-subtle pr-12';
@@ -56,7 +56,7 @@ export function LoginPage({ onLogin, onNavigateToSignUp, onNavigateToForgotPassw
   return (
     <AuthPageLayout>
       <div className="mb-8 -ml-2">
-        <img src={unLogo} alt="United Nations Somalia" className="h-14 w-auto" />
+        <img src={unLogo} alt="United Nations Humanity Hub" className="h-14 w-auto" />
       </div>
 
       <h2 className="text-page-title mb-6">Sign In</h2>

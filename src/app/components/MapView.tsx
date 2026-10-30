@@ -18,6 +18,7 @@ import {
 import { ComposerSendButton } from './ui/ComposerSendButton';
 import { querySimulatesAssistantFailure } from '../utils/chatRequestFailure';
 import { useKeyboardBottomInset } from '../hooks/useKeyboardBottomInset';
+import { useAutoResizeTextarea } from '../hooks/useAutoResizeTextarea';
 import {
   hasMapboxAccessToken,
   mapboxgl,
@@ -1142,6 +1143,7 @@ export function MapView() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
+  useAutoResizeTextarea(promptInputRef, mapQuery, 200);
   const focusPromptAfterOpenRef = useRef(false);
   const typingIntervalRef = useRef<number | null>(null);
   const mapLoadingTimeoutsRef = useRef<number[]>([]);

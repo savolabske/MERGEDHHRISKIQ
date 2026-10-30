@@ -61,10 +61,7 @@ export function DashboardHeroSection({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
-            Hey, {firstName}{' '}
-            <span className="wave-hand" aria-hidden>
-              👋
-            </span>
+            Welcome back, {firstName}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isHub

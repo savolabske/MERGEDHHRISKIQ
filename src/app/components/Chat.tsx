@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { FileText, Link, Database, Globe, ChevronDown, ChevronUp, X, ExternalLink, UserPlus, Sparkles, CircleHelp, Check, Lock } from 'lucide-react';
 import { RiskIQChatHeader } from './RiskIQChatHeader';
 import { BackLink } from './ui/back-link';
@@ -823,21 +823,26 @@ export function Chat({
     }, 0);
   };
 
+  const invokesAiInComposer = /@humanity\s*hub/i.test(inputValue);
+  /** Group chats hide the AI toolbar until @humanityhub is present — keep the composer short until then. */
+  const sharedComposerCompact = isSharedThread && !invokesAiInComposer;
+
   const resizeComposerInput = (expanded = false) => {
     const el = inputRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const maxH = expanded ? 320 : 120;
+    const maxH = sharedComposerCompact ? 36 : expanded ? 320 : 200;
     el.style.height = `${Math.min(el.scrollHeight, maxH)}px`;
+    el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden';
     const lineHeight = parseInt(getComputedStyle(el).lineHeight, 10) || 24;
     const multiline = el.scrollHeight > lineHeight * 1.8;
     setInputIsMultiline(multiline);
     if (!multiline) setIsInputExpanded(false);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     resizeComposerInput(isInputExpanded);
-  }, [inputValue, isInputExpanded]);
+  }, [inputValue, isInputExpanded, sharedComposerCompact]);
 
   const getRiskLevelColor = (level: string) => {
     switch (level) {
@@ -1894,15 +1899,11 @@ export function Chat({
     return null;
   }, [messages]);
 
-  const invokesAiInComposer = /@humanity\s*hub/i.test(inputValue);
   const isExtendedInputActive = isSharedThread
     ? invokesAiInComposer && isSharedExtendedPillVisible
     : isExtendedKnowledgeMode;
   const isHubEmptyState = startEmpty && messages.length === 0;
   const composerMaxWidthClass = isHubEmptyState ? 'max-w-[680px]' : 'max-w-[750px]';
-
-  /** Group chats hide the AI toolbar until @humanityhub is present — keep the composer short until then. */
-  const sharedComposerCompact = isSharedThread && !invokesAiInComposer;
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -2234,10 +2235,10 @@ export function Chat({
                       : "Ask a follow-up question..."
                 }
                 className={cn(
-                  'focus-ring-container-control min-w-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent text-base leading-6 text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors',
+                  'focus-ring-container-control min-w-0 resize-none border-0 bg-transparent text-base leading-6 text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors',
                   sharedComposerCompact
-                    ? 'max-h-9 py-1.5'
-                    : 'min-h-6 py-0.5',
+                    ? 'flex-1 py-1.5'
+                    : 'w-full flex-none min-h-6 py-0.5',
                 )}
               />
               {sharedComposerCompact ? (
@@ -2267,7 +2268,7 @@ export function Chat({
                                 const nextState = !isPrivateToMe;
                                 setIsPrivateToMe(nextState);
                                 toast.success(
-                                  nextState ? 'Private to me is on' : 'Private to me is off',
+                                  nextState ? 'My Resources Only is on' : 'My Resources Only is off',
                                 );
                               }}
                               className={cn(
@@ -2278,8 +2279,8 @@ export function Chat({
                               )}
                             >
                               <Lock size={12} strokeWidth={2.25} aria-hidden />
-                              <span className="ml-1.5 truncate sm:hidden">Private</span>
-                              <span className="ml-1.5 hidden truncate sm:inline">Private to me</span>
+                              <span className="ml-1.5 truncate sm:hidden">My resources</span>
+                              <span className="ml-1.5 hidden truncate sm:inline">My Resources Only</span>
                               {isPrivateToMe ? (
                                 <span className="ml-1.5">
                                   <X size={12} />

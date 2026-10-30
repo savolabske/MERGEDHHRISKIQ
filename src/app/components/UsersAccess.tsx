@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Users, UserCog, Shield, Plus, Download, Calendar, MoreVertical, ChevronLeft, ChevronRight, Ban, Trash2, ChevronDown, X, Edit, Key, Activity, HelpCircle, UserPlus } from 'lucide-react';
+import { Users, UserCog, Shield, Plus, Download, Calendar, MoreVertical, ChevronLeft, ChevronRight, Ban, Trash2, ChevronDown, X, Edit, Key, Activity, HelpCircle, UserPlus, Check } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { RolesPermissions } from './RolesPermissions';
 import { toast } from 'sonner';
 import { PageScrollShell } from './PageScrollShell';
@@ -30,11 +32,31 @@ interface User {
   email: string;
   role: 'Agency' | 'Admin' | 'Contributor' | 'Viewer';
   group: string;
+  groups?: string[];
+  organisation?: string;
+  country?: string;
   status: 'Active' | 'Pending' | 'Blocked';
   lastLogin: string;
   initials: string;
   color: string;
 }
+
+const ROLE_OPTIONS: User['role'][] = ['Viewer', 'Contributor', 'Agency', 'Admin'];
+
+const EXTRA_GROUP_OPTIONS = [
+  'Donors', 'FAO', 'FCDO', 'GENERAL', 'ILO', 'IOM', 'NGOs', 'OCHA', 'Risk Management Unit', 'RMU',
+  'UN Agencies', 'UNCDF', 'UNDP', 'UNDSS', 'UNEP', 'UNESCO', 'UNFPA', 'UN Habitat', 'UNHCR', 'UNICEF',
+  'UNIDO', 'UNMAS', 'UNSOS', 'UNTMIS', 'UN Women', 'WFP', 'World Bank', 'World Vision',
+];
+
+const COUNTRY_OPTIONS = ['Somalia', 'Kenya', 'Ethiopia', 'South Sudan', 'Sudan'];
+
+const getUserGroups = (user: User) => user.groups ?? [user.group];
+const getUserOrganisation = (user: User) => user.organisation ?? user.group;
+const getUserCountry = (user: User) => user.country ?? 'Somalia';
+
+const drawerSelectClass =
+  'w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-card text-foreground focus:outline-none focus:border-primary';
 
 interface UserGroup {
   id: string;
@@ -288,7 +310,60 @@ export function UsersAccess() {
   const [showBulkRoleModal, setShowBulkRoleModal] = useState(false);
   const [bulkSelectedGroup, setBulkSelectedGroup] = useState('');
   const [bulkSelectedRole, setBulkSelectedRole] = useState('');
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [editRole, setEditRole] = useState<User['role']>('Viewer');
+  const [editGroups, setEditGroups] = useState<string[]>([]);
+  const [editOrganisation, setEditOrganisation] = useState('');
+  const [editCountry, setEditCountry] = useState('');
+  const [groupPickerOpen, setGroupPickerOpen] = useState(false);
   const [userSort, setUserSort] = useState<SortState<'name' | 'role' | 'group' | 'status' | 'lastLogin'>>(null);
+
+  const groupOptions = useMemo(
+    () => Array.from(new Set([...userGroups.map((g) => g.name), ...EXTRA_GROUP_OPTIONS])),
+    [userGroups],
+  );
+  const organisationOptions = useMemo(
+    () => Array.from(new Set([...userGroups.map((g) => g.name), ...users.map(getUserOrganisation)])),
+    [userGroups, users],
+  );
+
+  const startEditingUser = (user: User) => {
+    setEditRole(user.role);
+    setEditGroups(getUserGroups(user));
+    setEditOrganisation(getUserOrganisation(user));
+    setEditCountry(getUserCountry(user));
+    setIsEditingUser(true);
+  };
+
+  const closeUserDrawer = () => {
+    setShowUserDrawer(false);
+    setIsEditingUser(false);
+    setGroupPickerOpen(false);
+  };
+
+  const toggleEditGroup = (group: string) => {
+    setEditGroups((prev) => (prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]));
+  };
+
+  const saveUserEdits = () => {
+    if (!selectedUser) return;
+    if (editGroups.length === 0) {
+      toast.error('Select at least one group');
+      return;
+    }
+    const updated: User = {
+      ...selectedUser,
+      role: editRole,
+      groups: editGroups,
+      group: editGroups[0],
+      organisation: editOrganisation,
+      country: editCountry,
+    };
+    setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+    setSelectedUser(updated);
+    setIsEditingUser(false);
+    toast.success(`Updated ${updated.name}`);
+  };
   const [groupSort, setGroupSort] = useState<SortState<'name' | 'userCount' | 'dateCreated'>>(null);
 
   const activeUsers = users.filter(u => u.status === 'Active').length;
@@ -863,6 +938,7 @@ export function UsersAccess() {
                         className={cn(listRowClass, 'items-center cursor-pointer')}
                         onClick={() => {
                           setSelectedUser(user);
+                          setIsEditingUser(false);
                           setShowUserDrawer(true);
                         }}
                       >
@@ -1336,7 +1412,7 @@ export function UsersAccess() {
 
       {/* User Drawer */}
       {showUserDrawer && selectedUser && (
-        <div className="fixed inset-0 bg-black/30 z-[1400] flex justify-end" onClick={() => setShowUserDrawer(false)}>
+        <div className="fixed inset-0 bg-black/30 z-[1400] flex justify-end" onClick={closeUserDrawer}>
           <div 
             className="bg-card w-full max-w-md h-full overflow-y-auto" 
             onClick={(e) => e.stopPropagation()}
@@ -1357,7 +1433,7 @@ export function UsersAccess() {
                   </p>
                 </div>
                 <button 
-                  onClick={() => setShowUserDrawer(false)}
+                  onClick={closeUserDrawer}
                   className={cn(iconButtonSmClass, 'size-8 shrink-0')}
                 >
                   <X size={20} className="text-muted-foreground" />
@@ -1398,10 +1474,10 @@ export function UsersAccess() {
                 <span className="text-sm font-medium text-primary">{selectedUser.email}</span>
               </div>
 
-              {/* Organization */}
+              {/* Country */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-text-subtle">Organization</span>
-                <span className="text-sm font-medium text-foreground">{selectedUser.group}</span>
+                <span className="text-sm text-text-subtle">Country</span>
+                <span className="text-sm font-medium text-foreground">{getUserCountry(selectedUser)}</span>
               </div>
 
               {/* Role */}
@@ -1413,21 +1489,152 @@ export function UsersAccess() {
               </div>
 
               {/* User Group */}
+              <div className="flex items-start justify-between gap-4">
+                <span className="text-sm text-text-subtle shrink-0">User Group</span>
+                <span className="text-sm font-medium text-foreground text-right">{getUserGroups(selectedUser).join(', ')}</span>
+              </div>
+
+              {/* Organisation */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-text-subtle">User Group</span>
-                <span className="text-sm font-medium text-foreground">{selectedUser.group}</span>
+                <span className="text-sm text-text-subtle">Organisation</span>
+                <span className="text-sm font-medium text-foreground">{getUserOrganisation(selectedUser)}</span>
               </div>
             </div>
+
+            {isEditingUser && (
+              <div className="px-6 py-5 border-t border-border space-y-4">
+                <h3 className="text-base font-semibold text-foreground">Edit Role, Group & Organisation</h3>
+
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-1.5">Role</label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value as User['role'])}
+                    className={drawerSelectClass}
+                  >
+                    {ROLE_OPTIONS.map((role) => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-1.5">Groups</label>
+                  <Popover open={groupPickerOpen} onOpenChange={setGroupPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(drawerSelectClass, 'flex items-center justify-between text-left')}
+                      >
+                        <span className={editGroups.length ? 'text-foreground' : 'text-muted-foreground'}>
+                          {editGroups.length
+                            ? `${editGroups.length} group${editGroups.length > 1 ? 's' : ''} selected`
+                            : 'Select groups...'}
+                        </span>
+                        <ChevronDown size={16} className="text-muted-foreground shrink-0" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="z-[1500] w-(--radix-popover-trigger-width) p-0">
+                      <Command>
+                        <CommandInput placeholder="Search groups..." />
+                        <CommandList className="max-h-64">
+                          <CommandEmpty>No groups found.</CommandEmpty>
+                          <CommandGroup>
+                            {groupOptions.map((group) => {
+                              const selected = editGroups.includes(group);
+                              return (
+                                <CommandItem key={group} value={group} onSelect={() => toggleEditGroup(group)}>
+                                  <span
+                                    className={cn(
+                                      'flex size-4 items-center justify-center rounded border',
+                                      selected ? 'bg-primary border-primary text-white' : 'border-border',
+                                    )}
+                                  >
+                                    {selected && <Check size={12} className="text-white" />}
+                                  </span>
+                                  <span className="truncate">{group}</span>
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
+                  {editGroups.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">
+                      {editGroups.map((group) => (
+                        <span
+                          key={group}
+                          className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full bg-sidebar-accent text-primary text-xs font-medium"
+                        >
+                          {group}
+                          <button
+                            type="button"
+                            onClick={() => toggleEditGroup(group)}
+                            className="rounded-full p-0.5 hover:bg-primary/10"
+                            aria-label={`Remove ${group}`}
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-1.5">Organisation</label>
+                  <select
+                    value={editOrganisation}
+                    onChange={(e) => setEditOrganisation(e.target.value)}
+                    className={drawerSelectClass}
+                  >
+                    {organisationOptions.map((org) => (
+                      <option key={org} value={org}>{org}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="pt-1">
+                  <h3 className="text-base font-semibold text-foreground mb-3">Edit Jurisdiction</h3>
+                  <label className="block text-sm text-muted-foreground mb-1.5">Country</label>
+                  <select
+                    value={editCountry}
+                    onChange={(e) => setEditCountry(e.target.value)}
+                    className={drawerSelectClass}
+                  >
+                    {COUNTRY_OPTIONS.map((country) => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                    The country profile decides which country's map, documents and dashboards this user sees.
+                    Changing it removes groups scoped to other countries and assigns the new country's default groups.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 pt-1">
+                  <Button className="flex-1" onClick={saveUserEdits}>Save</Button>
+                  <Button variant="outline" onClick={() => setIsEditingUser(false)}>Cancel</Button>
+                </div>
+              </div>
+            )}
 
             {/* Actions Section */}
             <div className="px-6 py-4 border-t border-border">
               <h3 className="text-sm font-semibold text-foreground mb-3">Actions</h3>
               <div className="space-y-2">
-                {/* Edit Role & Group */}
-                <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">
-                  <Edit size={18} className="text-muted-foreground" />
-                  <span className="text-sm text-foreground">Edit Role & Group</span>
-                </button>
+                {!isEditingUser && (
+                  <button
+                    onClick={() => startEditingUser(selectedUser)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left"
+                  >
+                    <Edit size={18} className="text-muted-foreground" />
+                    <span className="text-sm text-foreground">Edit Role & Group</span>
+                  </button>
+                )}
 
                 {/* Send Password Reset Link */}
                 <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted rounded-lg transition-colors text-left">

@@ -122,17 +122,24 @@ export function ResponseFeedbackButtons({
 
   const tooltipLabel = (rating: FeedbackRating) => {
     if (activeRating === rating) return 'Remove feedback';
-    return rating === 'positive' ? 'Good response' : 'Bad response';
+    return rating === 'positive' ? 'Accurate' : 'Report a wrong answer';
   };
 
-  const ariaLabel = (rating: FeedbackRating) => {
-    if (activeRating === rating) return 'Remove feedback';
-    return rating === 'positive' ? 'Good response' : 'Bad response';
-  };
+  const ariaLabel = tooltipLabel;
 
   return (
     <>
-      <div className={cn('flex items-center gap-0.5', className)}>
+      <div
+        role="group"
+        aria-labelledby={`${messageId}-feedback-label`}
+        className={cn('flex items-center gap-0.5', className)}
+      >
+        <span
+          id={`${messageId}-feedback-label`}
+          className="mr-1.5 text-xs font-medium text-muted-foreground"
+        >
+          Was this helpful?
+        </span>
         <Tooltip>
           <TooltipTrigger asChild>
             <button

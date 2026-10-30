@@ -37,6 +37,7 @@ import {
 import { cn } from './ui/utils';
 import { getDocumentContent, type DocumentContent } from '../data/documentDetailData';
 import { chatEmphasisClass } from './chat/chatEmphasis';
+import { useAutoResizeTextarea } from '../hooks/useAutoResizeTextarea';
 import type { AppView } from '../types/navigation';
 
 interface ChatMessage {
@@ -179,12 +180,7 @@ function DocumentChatComposer({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const canSend = Boolean(chatQuery.trim()) && !isTyping;
 
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  }, [chatQuery]);
+  useAutoResizeTextarea(inputRef, chatQuery, 200);
 
   return (
     <form
@@ -221,7 +217,7 @@ function DocumentChatComposer({
               : 'Ask about this resource…'
           }
           disabled={isTyping}
-          className="focus-ring-container-control max-h-[120px] min-h-6 w-full resize-none overflow-y-auto border-0 bg-transparent py-0.5 text-sm leading-6 text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 disabled:opacity-60"
+          className="focus-ring-container-control min-h-6 w-full resize-none border-0 bg-transparent py-0.5 text-sm leading-6 text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 disabled:opacity-60"
         />
         <div className="mt-2 flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-2">

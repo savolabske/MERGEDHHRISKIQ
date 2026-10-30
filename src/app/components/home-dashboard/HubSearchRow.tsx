@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { ComposerSendButton } from '../ui/ComposerSendButton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { cn } from '../ui/utils';
+import { useAutoResizeTextarea } from '../../hooks/useAutoResizeTextarea';
 import { HubKeyInsightsCard } from './HubKeyInsightsCard';
 import { hubCard } from './hubStyles';
 
@@ -83,6 +84,7 @@ export function HubSearchRow({
   const [activePanel, setActivePanel] = useState<HubQuickActionId | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useAutoResizeTextarea(textareaRef, query, 200);
 
   useEffect(() => {
     if (!activePanel) return;
@@ -203,7 +205,7 @@ export function HubSearchRow({
                       event.stopPropagation();
                       const nextState = !isPrivate;
                       setIsPrivate(nextState);
-                      toast.success(nextState ? 'Private to me is on' : 'Private to me is off');
+                      toast.success(nextState ? 'My Resources Only is on' : 'My Resources Only is off');
                     }}
                     className={cn(
                       'inline-flex max-w-[170px] items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
@@ -213,8 +215,8 @@ export function HubSearchRow({
                     )}
                   >
                       <Lock size={12} strokeWidth={2.25} aria-hidden />
-                      <span className="ml-1.5 truncate sm:hidden">Private</span>
-                      <span className="ml-1.5 hidden truncate sm:inline">Private to me</span>
+                      <span className="ml-1.5 truncate sm:hidden">My resources</span>
+                      <span className="ml-1.5 hidden truncate sm:inline">My Resources Only</span>
                       {isPrivate ? (
                         <span className="ml-1.5">
                           <X size={12} />

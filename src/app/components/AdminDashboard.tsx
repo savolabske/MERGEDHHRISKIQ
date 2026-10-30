@@ -17,14 +17,17 @@ import {
 import type { AppView } from '../types/navigation';
 import {
   DASHBOARD_COUNTRIES,
-  adminReportStats,
   aiUsageStats,
   countryPortion,
   distributeCounts,
   interestStats,
+  reportCreationStats,
+  reportViewStats,
   splitTotal,
   serverStats,
+  type AdminReportStat,
   type DashboardCountryId,
+  type ReportSource,
 } from '../data/adminCountryStats';
 import { PageScrollShell } from './PageScrollShell';
 import { cn } from './ui/utils';
@@ -789,8 +792,89 @@ function InterestStatList({ items }: { items: ReturnType<typeof interestStats> }
   );
 }
 
-function ReportStatList({ items }: { items: ReturnType<typeof adminReportStats> }) {
+const REPORT_SOURCES: { id: ReportSource; label: string }[] = [
+  { id: 'admin', label: 'By admins' },
+  { id: 'user', label: 'By users' },
+];
+
+function ReportSourceToggle({
+  value,
+  onChange,
+}: {
+  value: ReportSource;
+  onChange: (source: ReportSource) => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Report creator"
+      className="flex w-fit items-center gap-0.5 rounded-lg border border-border bg-muted p-0.5"
+    >
+      {REPORT_SOURCES.map((source) => (
+        <button
+          key={source.id}
+          type="button"
+          aria-pressed={value === source.id}
+          onClick={() => onChange(source.id)}
+          className={cn(
+            segmentPillClass.base,
+            value === source.id ? segmentPillClass.active : segmentPillClass.idle,
+          )}
+        >
+          {source.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ReportCreationTile({
+  label,
+  total,
+  added,
+  rangePhrase,
+  note,
+  dotColor,
+}: {
+  label: string;
+  total: number;
+  added: number;
+  rangePhrase: string;
+  note?: string;
+  dotColor: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/40 px-4 py-3">
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden />
+        {label}
+      </p>
+      <p className="mt-1.5 text-2xl font-semibold leading-none tabular-nums text-foreground-emphasis">
+        {total.toLocaleString('en-US')}
+      </p>
+      <p
+        className={cn(
+          'mt-1.5 text-xs tabular-nums',
+          added > 0 ? 'font-medium text-success' : 'text-muted-foreground',
+        )}
+      >
+        {added > 0 ? `+${added} new ${rangePhrase}` : `None new ${rangePhrase}`}
+      </p>
+      {note ? <p className="mt-0.5 text-xs text-muted-foreground">{note}</p> : null}
+    </div>
+  );
+}
+
+const REPORT_SOURCE_COLOR: Record<ReportSource, string> = {
+  admin: 'var(--chart-2)',
+  user: 'var(--success)',
+};
+
+function ReportStatList({ items, source }: { items: AdminReportStat[]; source: ReportSource }) {
   const max = Math.max(...items.map((report) => report.views), 0);
+  if (items.length === 0) {
+    return <p className="py-2 text-sm text-muted-foreground">No report views in this period.</p>;
+  }
   return (
     <ol className="space-y-3">
       {items.map((report, index) => (
@@ -799,7 +883,7 @@ function ReportStatList({ items }: { items: ReturnType<typeof adminReportStats> 
           <TruncatedLabel text={report.title} />
           <UsageBar
             width={max === 0 ? '0%' : `${(report.views / max) * 100}%`}
-            color="var(--chart-2)"
+            color={REPORT_SOURCE_COLOR[source]}
           />
           <span className="w-10 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground-emphasis">
             {report.views.toLocaleString('en-US')}
@@ -1113,6 +1197,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const [searchSurface, setSearchSurface] = useState<SearchSurface>('all');
   const [interestsDrawerOpen, setInterestsDrawerOpen] = useState(false);
   const [reportsDrawerOpen, setReportsDrawerOpen] = useState(false);
+  const [reportSource, setReportSource] = useState<ReportSource>('admin');
   const [country, setCountry] = useState<DashboardCountryId>('all');
   const [usageRange, setUsageRange] = useState<UsageRange>('week');
   const [customFrom, setCustomFrom] = useState('');
@@ -1156,9 +1241,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const interests = interestStats(country, usagePreset);
   const previewInterests = interests.slice(0, PREVIEW_LIMIT);
   const hasMoreInterests = interests.length > PREVIEW_LIMIT;
-  const adminReports = adminReportStats(country, usagePreset);
-  const previewReports = adminReports.slice(0, PREVIEW_LIMIT);
-  const hasMoreReports = adminReports.length > PREVIEW_LIMIT;
+  const reportCreation = reportCreationStats(country, usagePreset);
+  const viewedReports = reportViewStats(country, usagePreset, reportSource);
+  const previewReports = viewedReports.slice(0, PREVIEW_LIMIT);
+  const hasMoreReports = viewedReports.length > PREVIEW_LIMIT;
   const aiWindow = aiUsageWindow(usageRange, customFrom, customTo);
   const aiUsage = aiUsageStats(country, aiWindow.days);
   const periodMarkLabel =
@@ -1598,13 +1684,38 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         <div className="flex h-full min-w-0 flex-col rounded-2xl border border-border bg-card p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground-emphasis">Admin report views</h3>
-              <p className="mt-0.5 text-sm text-muted-foreground">Opens on reports added by admin</p>
+              <h3 className="text-sm font-semibold text-foreground-emphasis">Reports</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {reportCreation.admin.total + reportCreation.user.total === 0
+                  ? 'No reports yet'
+                  : `Users created ${reportCreation.userShare}% of all reports`}
+              </p>
             </div>
             <PeriodMark>{periodMarkLabel}</PeriodMark>
           </div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <ReportCreationTile
+              label="Created by admins"
+              total={reportCreation.admin.total}
+              added={reportCreation.admin.added}
+              rangePhrase={rangePhrase}
+              dotColor={REPORT_SOURCE_COLOR.admin}
+            />
+            <ReportCreationTile
+              label="Created by users"
+              total={reportCreation.user.total}
+              added={reportCreation.user.added}
+              rangePhrase={rangePhrase}
+              note={`by ${reportCreation.user.authors.toLocaleString('en-US')} people`}
+              dotColor={REPORT_SOURCE_COLOR.user}
+            />
+          </div>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground-emphasis">Most viewed</p>
+            <ReportSourceToggle value={reportSource} onChange={setReportSource} />
+          </div>
           <div className="mt-3">
-            <ReportStatList items={previewReports} />
+            <ReportStatList items={previewReports} source={reportSource} />
           </div>
           <div className="mt-auto flex items-center justify-between gap-3 pt-4">
             {hasMoreReports ? (
@@ -2031,9 +2142,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           side="right"
           className="w-full gap-0 border-l border-border bg-card p-0 sm:max-w-[440px] [&>button.absolute]:hidden"
         >
-          <SheetTitle className="sr-only">Admin report views</SheetTitle>
+          <SheetTitle className="sr-only">Most viewed reports</SheetTitle>
           <SheetDescription className="sr-only">
-            Views on reports added by admin for the country and period
+            Views on reports created by admins or users for the country and period
           </SheetDescription>
           <div className="flex items-center justify-between gap-3 px-5 py-4">
             <div className="flex items-center gap-3 min-w-0">
@@ -2041,9 +2152,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                 <FileText size={18} strokeWidth={1.75} aria-hidden />
               </div>
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-foreground">Admin report views</h2>
+                <h2 className="text-lg font-semibold text-foreground">Most viewed reports</h2>
                 <p className="text-sm text-muted-foreground">
-                  {adminReports.length} reports · {rangeLabel}{countryPhrase}
+                  {viewedReports.length} {reportSource === 'admin' ? 'admin' : 'user'} reports · {rangeLabel}
+                  {countryPhrase}
                 </p>
               </div>
             </div>
@@ -2053,8 +2165,11 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             </SheetClose>
           </div>
           <div className="h-px bg-border" />
-          <div className="flex-1 overflow-y-auto px-5 py-3">
-            <ReportStatList items={adminReports} />
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            <ReportSourceToggle value={reportSource} onChange={setReportSource} />
+            <div className="mt-4">
+              <ReportStatList items={viewedReports} source={reportSource} />
+            </div>
           </div>
         </SheetContent>
       </Sheet>

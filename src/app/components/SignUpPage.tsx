@@ -12,7 +12,7 @@ import {
   useFormValidation,
 } from './ui/form-validation';
 
-const unLogo = '/branding/un-somalia-login-logo.png';
+const unLogo = '/branding/un-humanity-hub-logo.png';
 
 const organisations = [
   'United Nations Somalia',
@@ -58,9 +58,16 @@ function OrganisationField({
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const query = search.trim();
   const filtered = organisations.filter((org) =>
-    org.toLowerCase().includes(search.toLowerCase())
+    org.toLowerCase().includes(query.toLowerCase())
   );
+
+  const selectOrganisation = (org: string) => {
+    onChange(org);
+    setSearch('');
+    setIsOpen(false);
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -102,17 +109,26 @@ function OrganisationField({
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg z-50 max-h-[220px] overflow-y-auto shadow-lg">
           {filtered.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-text-subtle">No organisations found</p>
+            <div>
+              <p className="px-4 pt-3 pb-2 text-sm text-foreground leading-snug">
+                <span className="font-medium">&ldquo;{query}&rdquo;</span> is not available
+              </p>
+              <button
+                type="button"
+                onClick={() => selectOrganisation('Other')}
+                className={`w-full px-4 py-2.5 text-left text-sm border-t border-border hover:bg-muted transition-colors last:rounded-b-lg ${
+                  value === 'Other' ? 'bg-primary-subtle text-primary font-medium' : 'text-foreground'
+                }`}
+              >
+                Other
+              </button>
+            </div>
           ) : (
             filtered.map((org) => (
               <button
                 key={org}
                 type="button"
-                onClick={() => {
-                  onChange(org);
-                  setSearch('');
-                  setIsOpen(false);
-                }}
+                onClick={() => selectOrganisation(org)}
                 className={`w-full px-4 py-2.5 text-left text-sm hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
                   org === value ? 'bg-primary-subtle text-primary font-medium' : 'text-foreground'
                 }`}
@@ -165,7 +181,7 @@ export function SignUpPage({ onSubmit, onNavigateToSignIn }: SignUpPageProps) {
   return (
     <AuthPageLayout>
           <div className="mb-8 -ml-2">
-            <img src={unLogo} alt="United Nations Somalia" className="h-14 w-auto" />
+            <img src={unLogo} alt="United Nations Humanity Hub" className="h-14 w-auto" />
           </div>
 
           <h2 className="text-page-title mb-2">Create Account</h2>

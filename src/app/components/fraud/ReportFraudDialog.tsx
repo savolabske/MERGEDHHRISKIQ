@@ -39,7 +39,7 @@ export function ReportFraudDialog({ open, onOpenChange }: ReportFraudDialogProps
     event.preventDefault();
     const trimmed = description.trim();
     if (trimmed.length < 20) {
-      setDescriptionError('Describe what happened in a sentence or two so the team can follow up.');
+      setDescriptionError('Describe what happened in a sentence or two.');
       return;
     }
 

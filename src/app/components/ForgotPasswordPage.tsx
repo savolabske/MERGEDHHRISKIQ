@@ -8,7 +8,7 @@ import {
   useFormValidation,
 } from './ui/form-validation';
 
-const unLogo = '/branding/un-somalia-login-logo.png';
+const unLogo = '/branding/un-humanity-hub-logo.png';
 const SUPPORT_EMAIL = 'alerts.rmu@undp.org';
 
 interface ForgotPasswordPageProps {
@@ -33,7 +33,7 @@ export function ForgotPasswordPage({ onSubmit, onNavigateToSignIn }: ForgotPassw
   return (
     <AuthPageLayout>
       <div className="mb-8 -ml-2">
-        <img src={unLogo} alt="United Nations Somalia" className="h-14 w-auto" />
+        <img src={unLogo} alt="United Nations Humanity Hub" className="h-14 w-auto" />
       </div>
 
       <button

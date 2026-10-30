@@ -20,38 +20,6 @@
   will-change: background-position;
 }
 
-@keyframes waveHand {
-  0%,
-  82%,
-  100% {
-    transform: rotate(0deg);
-  }
-  4% {
-    transform: rotate(16deg);
-  }
-  8% {
-    transform: rotate(-10deg);
-  }
-  12% {
-    transform: rotate(16deg);
-  }
-  16% {
-    transform: rotate(-6deg);
-  }
-  20% {
-    transform: rotate(12deg);
-  }
-  24% {
-    transform: rotate(0deg);
-  }
-}
-
-.wave-hand {
-  display: inline-block;
-  transform-origin: 70% 70%;
-  animation: waveHand 5s ease-in-out infinite;
-}
-
 /* Intelligence loading screen (dashboard + reports) */
 @keyframes intelligenceLoadRing {
   0% {

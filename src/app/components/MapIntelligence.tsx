@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "./ui/utils";
+import { useAutoResizeTextarea } from "../hooks/useAutoResizeTextarea";
 import { chatEmphasisClass } from "./chat/chatEmphasis";
 import { iconButtonSmClass } from "./ui/interaction";
 import { ConfirmDeleteDialog } from "./ui/ConfirmDeleteDialog";
@@ -1454,6 +1455,8 @@ const isRefinementPrompt = (query: string) => {
 
 export function MapIntelligence() {
   const [mapQuery, setMapQuery] = useState("");
+  const mapQueryInputRef = useRef<HTMLTextAreaElement>(null);
+  useAutoResizeTextarea(mapQueryInputRef, mapQuery, 160);
   const [isPromptCollapsed, setIsPromptCollapsed] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isMobilePromptOpen, setIsMobilePromptOpen] = useState(false);
@@ -2161,28 +2164,33 @@ export function MapIntelligence() {
                   </>
                 )}
                 <div className="relative">
-                  <input
+                  <textarea
+                    ref={mapQueryInputRef}
+                    rows={1}
                     value={mapQuery}
                     onChange={(e) => setMapQuery(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !isAssistantStreaming) {
-                        submitMapQuery(mapQuery, { isFollowUp: chatMessages.length > 0 });
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (!isAssistantStreaming) {
+                          submitMapQuery(mapQuery, { isFollowUp: chatMessages.length > 0 });
+                        }
                       }
                     }}
                     placeholder="Ask a question about map risks..."
                     disabled={isAssistantStreaming}
-                    className="composer-shell w-full h-11 border rounded-xl pl-4 pr-11 text-sm text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary disabled:opacity-70"
+                    className="composer-shell block w-full min-h-11 resize-none border rounded-xl py-3 pl-4 pr-11 text-sm leading-5 text-foreground placeholder:text-text-subtle focus:outline-none focus:border-primary disabled:opacity-70"
                   />
                   {isAssistantStreaming ? (
                     <ChatStopButton
                       onClick={stopGeneration}
                       size="sm"
-                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                      className="absolute right-2 bottom-1.5"
                     />
                   ) : (
                     <button
                       onClick={() => submitMapQuery(mapQuery, { isFollowUp: chatMessages.length > 0 })}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="absolute right-2 bottom-1.5 inline-flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                       disabled={!mapQuery.trim()}
                       aria-label="Send"
                     >

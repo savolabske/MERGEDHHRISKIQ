@@ -5,6 +5,14 @@ import {
   isTermsPageRequest,
   TermsAndConditionsPage,
 } from "./components/TermsAndConditionsPage";
+import {
+  isPrivacyPageRequest,
+  PrivacyNoticePage,
+} from "./components/PrivacyNoticePage";
+import {
+  isWhatsNewPageRequest,
+  WhatsNewPage,
+} from "./components/WhatsNewPage";
 import { Chat } from "./components/Chat";
 import { Reports, type ActiveReport } from "./components/Reports";
 import { MapView } from "./components/MapView";
@@ -59,6 +67,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { generateHistoryConversations } from "./utils/chatHistoryData";
+import { useAutoResizeTextarea } from "./hooks/useAutoResizeTextarea";
 import {
   createChatHistoryThread,
   normalizePreloadedMessages,
@@ -1026,12 +1035,7 @@ export default function App() {
     });
   }, []);
 
-  useEffect(() => {
-    const el = riskIqLandingInputRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  }, [aiSearchInput]);
+  useAutoResizeTextarea(riskIqLandingInputRef, aiSearchInput, 200);
 
   useEffect(() => {
     if (!isAuthenticated || !pendingLinkState) return;
@@ -1091,6 +1095,12 @@ export default function App() {
   // Public legal page — reachable without authentication (e.g. from sign-up)
   if (isTermsPageRequest()) {
     return <TermsAndConditionsPage />;
+  }
+  if (isPrivacyPageRequest()) {
+    return <PrivacyNoticePage />;
+  }
+  if (isWhatsNewPageRequest()) {
+    return <WhatsNewPage />;
   }
 
   // Show Auth screen if not authenticated
@@ -1967,7 +1977,7 @@ export default function App() {
                             ? 'Ask in Extended Knowledge mode...'
                             : 'Ask anything about operational risks, security threats, or field conditions...'
                         }
-                        className="focus-ring-container-control max-h-[120px] min-h-6 w-full resize-none overflow-y-auto border-0 bg-transparent py-0.5 text-base leading-6 text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors"
+                        className="focus-ring-container-control min-h-6 w-full resize-none border-0 bg-transparent py-0.5 text-base leading-6 text-foreground placeholder:text-text-subtle outline-none focus:outline-none focus:ring-0 transition-colors"
                         value={aiSearchInput}
                         onChange={(e) => setAiSearchInput(e.target.value)}
                         onKeyDown={(e) => {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Check, Clock } from 'lucide-react';
 import AnimatedIntelligenceBackgroundLayer from '../../imports/AnimatedIntelligenceBackgroundLayer';
-import logoImage from '../../assets/un-somalia-logo.png';
+import logoImage from '../../assets/un-humanity-hub-logo.png';
 import { LoginPage } from './LoginPage';
 import { SignUpPage } from './SignUpPage';
 import { ForgotPasswordPage } from './ForgotPasswordPage';
@@ -24,7 +24,7 @@ function PendingVerification({ email, onBackToLogin }: { email: string; onBackTo
             <div className="mb-6 lg:mb-8">
               <img 
                 src={logoImage} 
-                alt="United Nations Somalia" 
+                alt="United Nations Humanity Hub" 
                 className="w-44 h-auto mx-[-6px] my-[0px]"
               />
             </div>
@@ -209,7 +209,7 @@ export function Auth({ onLogin }: AuthProps) {
             <div className="mb-8 lg:mb-10">
               <img 
                 src={logoImage} 
-                alt="United Nations Somalia" 
+                alt="United Nations Humanity Hub" 
                 className="w-44 h-auto mx-[-6px] my-[0px]"
               />
             </div>

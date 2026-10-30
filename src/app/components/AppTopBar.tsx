@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, CircleHelp, Menu, X } from 'lucide-react';
+import { Bell, CircleHelp, Menu, Sparkles, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +12,14 @@ import { NotificationsPanel } from './NotificationsPanel';
 import type { AppNotification } from '../types/notifications';
 import { cn } from './ui/utils';
 import { brandHomeButtonClass, iconButtonClass } from './ui/interaction';
+import { WHATS_NEW_PAGE_HREF } from './WhatsNewPage';
+import { APP_VERSION } from '../data/releases';
+import { useUnseenRelease } from '../hooks/useUnseenRelease';
 
 const HELP_CENTRE_EMAIL = 'alerts.rmu@undp.org';
 
-const helpCentreItemClass =
-  'cursor-pointer justify-center rounded-md bg-secondary px-3 py-2.5 text-sm font-medium text-secondary-foreground hover:bg-secondary/80 focus:bg-secondary/80 focus:text-secondary-foreground data-[highlighted]:bg-secondary/80 data-[highlighted]:text-secondary-foreground';
+const helpMenuItemClass =
+  'cursor-pointer gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground';
 
 interface AppTopBarProps {
   onNavigateHome?: () => void;
@@ -40,6 +43,7 @@ export function AppTopBar({
   className,
 }: AppTopBarProps) {
   const [panelOpen, setPanelOpen] = useState(false);
+  const [hasUnseenRelease, markReleaseSeen] = useUnseenRelease();
   const unreadCount = notifications.filter((item) => item.unread).length;
   const badge =
     unreadCount > 0 ? (unreadCount > 9 ? '9+' : String(unreadCount)) : null;
@@ -121,20 +125,48 @@ export function AppTopBar({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className={iconButtonClass}
-                  aria-label="Help and support"
+                  className={cn(iconButtonClass, 'relative')}
+                  aria-label={
+                    hasUnseenRelease ? 'Help and support, new release available' : 'Help and support'
+                  }
                 >
                   <CircleHelp size={20} strokeWidth={1.75} aria-hidden />
+                  {hasUnseenRelease && (
+                    <span
+                      className="pointer-events-none absolute top-1.5 right-1.5 size-2 rounded-full bg-primary ring-2 ring-card"
+                      aria-hidden
+                    />
+                  )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Support
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className={helpCentreItemClass}>
-                  <a href={`mailto:${HELP_CENTRE_EMAIL}`}>Help centre</a>
+              <DropdownMenuContent align="end" className="w-64 p-1.5">
+                <DropdownMenuItem asChild className={helpMenuItemClass}>
+                  <a href={`mailto:${HELP_CENTRE_EMAIL}`}>
+                    <CircleHelp size={16} strokeWidth={1.75} aria-hidden />
+                    Help centre
+                  </a>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild className={helpMenuItemClass}>
+                  <a
+                    href={WHATS_NEW_PAGE_HREF}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={markReleaseSeen}
+                  >
+                    <Sparkles size={16} strokeWidth={1.75} aria-hidden />
+                    Changelog
+                    {hasUnseenRelease && (
+                      <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-primary-subtle px-2 py-0.5 text-xs font-semibold text-primary-text">
+                        <span className="size-1.5 rounded-full bg-primary" aria-hidden />
+                        New
+                      </span>
+                    )}
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="px-3 py-1.5 text-xs font-normal text-text-subtle">
+                  Version {APP_VERSION}
+                </DropdownMenuLabel>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

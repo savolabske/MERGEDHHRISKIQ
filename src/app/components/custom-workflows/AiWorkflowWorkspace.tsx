@@ -20,6 +20,7 @@ import {
 } from '../ui/ChatThinkingStatus';
 import { querySimulatesAssistantFailure } from '../../utils/chatRequestFailure';
 import { cn } from '../ui/utils';
+import { useAutoResizeTextarea } from '../../hooks/useAutoResizeTextarea';
 
 type WorkspaceChatMessage =
   | { role: 'user' | 'assistant'; text: string }
@@ -37,6 +38,8 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
   const [selection, setSelection] = useState<OutputSelection>(null);
   const [railTab, setRailTab] = useState<RailTab>('ask');
   const [chatInput, setChatInput] = useState('');
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  useAutoResizeTextarea(chatInputRef, chatInput, 160);
   const [chatMessages, setChatMessages] = useState<WorkspaceChatMessage[]>([]);
   const [isQuerying, setIsQuerying] = useState(false);
   const queryTimeoutRef = useRef<number | null>(null);
@@ -305,21 +308,26 @@ export function AiWorkflowWorkspace({ workflow, onBack }: AiWorkflowWorkspacePro
                   )}
                 </div>
                 <div className="relative mt-3">
-                  <input
+                  <textarea
+                    ref={chatInputRef}
+                    rows={1}
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') sendChat(chatInput);
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendChat(chatInput);
+                      }
                     }}
                     placeholder="Ask about these outputs…"
-                    className="composer-shell w-full rounded-xl border py-2.5 pl-3 pr-12 text-sm outline-none focus:border-primary"
+                    className="composer-shell block w-full resize-none rounded-xl border py-2.5 pl-3 pr-12 text-sm leading-5 outline-none focus:border-primary"
                   />
                   <ComposerSendButton
                     onClick={() => sendChat(chatInput)}
                     disabled={!chatInput.trim() || isQuerying}
                     size="sm"
                     rounded="lg"
-                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    className="absolute right-2 bottom-1"
                     aria-label="Send"
                   />
                 </div>

@@ -29,7 +29,7 @@ import {
 import type { AppView } from '../types/navigation';
 import { countOpenFraudReports, FRAUD_REPORTS_CHANGED_EVENT } from '../data/fraudReportStore';
 import { useState, useRef, useEffect, type ReactNode } from 'react';
-import logoImage from '../../assets/un-somalia-logo.png';
+import logoImage from '../../assets/un-humanity-hub-logo.png';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Button } from './ui/button';
 import { cn } from './ui/utils';
@@ -371,7 +371,7 @@ export function Sidebar({
               {!displayCollapsed && (
                 <img
                   src={logoImage}
-                  alt="United Nations Somalia"
+                  alt="United Nations Humanity Hub"
                   className="max-w-[calc(var(--sidebar-w)-56px)] h-auto"
                 />
               )}

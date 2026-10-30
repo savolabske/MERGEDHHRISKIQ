@@ -258,23 +258,134 @@ const REPORT_SEEDS: ReportSeed[] = [
   },
 ];
 
+type UserReportSeed = ReportSeed & { author: string };
+
+const USER_REPORT_SEEDS: UserReportSeed[] = [
+  {
+    id: 'u-baidoa-cholera',
+    title: 'Baidoa Cholera Response Tracker',
+    countryId: 'somalia',
+    countryLabel: 'Somalia',
+    author: 'Amina Hassan',
+    weekViews: 118,
+  },
+  {
+    id: 'u-gedo-access',
+    title: 'Gedo Access Constraints',
+    countryId: 'somalia',
+    countryLabel: 'Somalia',
+    author: 'James Wilson',
+    weekViews: 87,
+  },
+  {
+    id: 'u-banadir-evictions',
+    title: 'Banadir Eviction Monitoring',
+    countryId: 'somalia',
+    countryLabel: 'Somalia',
+    author: 'Sarah Chen',
+    weekViews: 64,
+  },
+  {
+    id: 'u-wash-pipeline',
+    title: 'WASH Pipeline Mogadishu',
+    countryId: 'somalia',
+    countryLabel: 'Somalia',
+    author: 'David Kumar',
+    weekViews: 39,
+  },
+  {
+    id: 'u-turkana-water',
+    title: 'Turkana Water Trucking',
+    countryId: 'kenya',
+    countryLabel: 'Kenya',
+    author: 'Emily Rodriguez',
+    weekViews: 33,
+  },
+  {
+    id: 'u-tigray-nutrition',
+    title: 'Tigray Nutrition Sites',
+    countryId: 'ethiopia',
+    countryLabel: 'Ethiopia',
+    author: 'Michael Brown',
+    weekViews: 21,
+  },
+  {
+    id: 'u-jonglei-flood',
+    title: 'Jonglei Flood Displacement',
+    countryId: 'south-sudan',
+    countryLabel: 'South Sudan',
+    author: 'Mohamed Ali',
+    weekViews: 12,
+  },
+];
+
+/** All-time report totals and reports added in a typical week, per country. */
+const REPORT_CREATION: Record<
+  SpecificCountry,
+  { admin: number; adminWeek: number; user: number; userWeek: number; userAuthors: number }
+> = {
+  somalia: { admin: 3, adminWeek: 0, user: 31, userWeek: 4, userAuthors: 14 },
+  kenya: { admin: 3, adminWeek: 1, user: 9, userWeek: 1, userAuthors: 5 },
+  ethiopia: { admin: 2, adminWeek: 0, user: 6, userWeek: 1, userAuthors: 3 },
+  'south-sudan': { admin: 2, adminWeek: 0, user: 3, userWeek: 0, userAuthors: 2 },
+};
+
+export type ReportSource = 'admin' | 'user';
+
 export type AdminReportStat = {
   id: string;
   title: string;
   countryLabel: string;
+  author?: string;
   views: number;
 };
 
-export function adminReportStats(country: DashboardCountryId, preset: DashboardUsagePreset): AdminReportStat[] {
-  return REPORT_SEEDS.filter((report) => country === 'all' || report.countryId === country)
+export function reportViewStats(
+  country: DashboardCountryId,
+  preset: DashboardUsagePreset,
+  source: ReportSource,
+): AdminReportStat[] {
+  const seeds: (ReportSeed & { author?: string })[] = source === 'admin' ? REPORT_SEEDS : USER_REPORT_SEEDS;
+  return seeds
+    .filter((report) => country === 'all' || report.countryId === country)
     .map((report) => ({
       id: report.id,
       title: report.title,
       countryLabel: report.countryLabel,
+      author: report.author,
       views: periodCount(report.weekViews, preset),
     }))
     .filter((report) => report.views > 0)
     .sort((a, b) => b.views - a.views);
+}
+
+export type ReportCreationStats = {
+  admin: { total: number; added: number };
+  user: { total: number; added: number; authors: number };
+  userShare: number;
+};
+
+export function reportCreationStats(
+  country: DashboardCountryId,
+  preset: DashboardUsagePreset,
+): ReportCreationStats {
+  const ids = country === 'all' ? COUNTRY_IDS : [country];
+  const sum = (pick: (row: (typeof REPORT_CREATION)[SpecificCountry]) => number) =>
+    ids.reduce((running, id) => running + pick(REPORT_CREATION[id]), 0);
+
+  const adminTotal = sum((row) => row.admin);
+  const userTotal = sum((row) => row.user);
+  const total = adminTotal + userTotal;
+
+  return {
+    admin: { total: adminTotal, added: periodCount(sum((row) => row.adminWeek), preset) },
+    user: {
+      total: userTotal,
+      added: periodCount(sum((row) => row.userWeek), preset),
+      authors: sum((row) => row.userAuthors),
+    },
+    userShare: total === 0 ? 0 : Math.round((userTotal / total) * 100),
+  };
 }
 
 /** Model totals for 1 Jan 2026–5 Oct 2026. Shorter filters take a share of these days. */

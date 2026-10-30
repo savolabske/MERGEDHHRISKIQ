@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import {
-  ArrowRight,
   ShieldCheck,
   Sparkles,
   Workflow,
@@ -197,18 +196,6 @@ export function CustomWorkflows() {
                     {workflow.description}
                   </p>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    open();
-                  }}
-                  className="mt-auto inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline underline-offset-2"
-                >
-                  Open workflow
-                  <ArrowRight size={16} strokeWidth={2} />
-                </button>
               </article>
             );
           })}

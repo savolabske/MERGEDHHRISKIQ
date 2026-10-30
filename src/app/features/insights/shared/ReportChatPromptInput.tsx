@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
 import { ChatStopButton } from '../../../components/ui/ChatStopButton';
 import { ComposerSendButton } from '../../../components/ui/ComposerSendButton';
+import { useAutoResizeTextarea } from '../../../hooks/useAutoResizeTextarea';
 import { useReportChatPanel } from './ReportChatLayout';
 
 export interface ReportChatPromptTheme {
@@ -76,6 +77,7 @@ export function ReportChatPromptInput({
     consumePromptFocusRequest,
   } = useReportChatPanel();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useAutoResizeTextarea(textareaRef, value, 160);
   const showMinimize = variant === 'sheet' && mobileChatOpen;
   const showDisclaimer = variant !== 'sheet' || mobileChatOpen;
   const inputDisabled = disabled && !isGenerating;
@@ -141,8 +143,9 @@ export function ReportChatPromptInput({
             onKeyDown={handleKeyDown}
             disabled={inputDisabled}
             placeholder={placeholder}
+            rows={1}
             className={cn(
-              'focus-ring-container-control min-h-[36px] max-h-[90px] flex-1 resize-none bg-transparent text-[12.8px] outline-none disabled:opacity-50',
+              'focus-ring-container-control min-h-[36px] flex-1 resize-none py-2 leading-5 bg-transparent text-[12.8px] outline-none disabled:opacity-50',
               theme.text,
             )}
           />
